@@ -1,0 +1,23 @@
+From 1c7a4d1512be96b49a63435980d2312e46e92f89 Mon Sep 17 00:00:00 2001
+From: Aliaksei Syrel <alex.syrel@gmail.com>
+Date: Tue, 8 Dec 2020 19:34:27 +0100
+Subject: [PATCH] worker vm should not block the main thread
+
+---
+ src/client.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/client.c b/src/client.c
+index 7c33d3252..a965fa912 100644
+--- a/src/client.c
++++ b/src/client.c
+@@ -263,5 +263,5 @@ runOnWorkerThread(VMParameters *parameters)
+ 
+     pthread_detach(thread_id);
+ 
+-    return runMainThreadWorker();
++    return 0;
+ }
+-- 
+2.24.3 (Apple Git-128)
+
