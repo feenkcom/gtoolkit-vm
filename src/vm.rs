@@ -1,8 +1,8 @@
-use crate::bindings::{isVMRunOnWorkerThread, sqInt, VirtualMachine};
+use crate::bindings::{getHandler, isVMRunOnWorkerThread, sqInt, VirtualMachine};
 
 use std::sync::mpsc::Sender;
 
-use crate::cointerp::numSlotsOf;
+use crate::cointerp::{marshallArgumentFromatIndexintoofTypewithSize, numSlotsOf};
 use crate::prelude::NativeTransmutable;
 use libc::c_char;
 use libc::c_int;
@@ -120,6 +120,15 @@ impl GToolkitVM {
         unsafe { ObjectPointer::from_native_c(function(offset.into_native())) }
     }
 
+    pub fn get_handler(&self, object: ObjectPointer) -> *mut c_void {
+        unsafe { getHandler(object.into_native()) }
+    }
+
+    pub fn stack_integer_value(&self, offset: StackOffset) -> sqInt {
+        let function = self.interpreter.stackIntegerValue.unwrap();
+        unsafe { function(offset.into_native()) }
+    }
+
     pub fn array_item_at(
         &self,
         object: ObjectPointer,
@@ -153,6 +162,30 @@ impl GToolkitVM {
         unsafe { function(object.into_native()) }
     }
 
+    pub fn checked_integer_value_of(&self, object: ObjectPointer) -> sqInt {
+        let function = self.interpreter.checkedIntegerValueOf.unwrap();
+        unsafe { function(object.into_native()) }
+    }
+
+    pub fn marshall_argument_from_at_index_into_of_type_with_size(
+        &self,
+        arguments: ObjectPointer,
+        index: usize,
+        arg_holder: sqInt,
+        arg_type: sqInt,
+        arg_type_size: sqInt,
+    ) {
+        unsafe {
+            marshallArgumentFromatIndexintoofTypewithSize(
+                arguments.into_native(),
+                index as sqInt,
+                arg_holder,
+                arg_type,
+                arg_type_size,
+            )
+        };
+    }
+
     pub fn is_on_worker_thread(&self) -> bool {
         unsafe { isVMRunOnWorkerThread() != 0 }
     }
@@ -162,6 +195,7 @@ impl GToolkitVM {
     }
 
     pub fn call(&self, callout: GToolkitCallout) {
+        println!("Requesting callout {:?}", &callout);
         self.send(GToolkitVMRequest::Call(callout));
     }
 

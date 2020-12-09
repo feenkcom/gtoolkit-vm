@@ -5,8 +5,8 @@
 extern crate libc;
 extern crate libffi;
 
-//use gtoolkit_vm::app_main;
+use gtoolkit_vm::app_main;
 
 fn main() {
-    //app_main()
+    app_main()
 }

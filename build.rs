@@ -1,23 +1,25 @@
 extern crate bindgen;
 extern crate fs_extra;
 
-use std::env;
 use std::path::PathBuf;
 use std::process::Command;
 
-use fs_extra::dir::{copy, get_dir_content};
 use fs_extra::{copy_items, dir};
 
 use std::fs;
 
-fn run<F>(name: &str, mut configure: F)
+fn run<F>(name: &str, mut configure: F, panic: bool)
 where
     F: FnMut(&mut Command) -> &mut Command,
 {
     let mut command = Command::new(name);
     let configured = configure(&mut command);
     if !configured.status().unwrap().success() {
-        panic!("failed to execute {:?}", configured);
+        if panic {
+            panic!("failed to execute {:?}", configured);
+        } else {
+            println!("failed to execute {:?}", configured);
+        }
     }
 }
 
@@ -25,11 +27,22 @@ const VM_PATH: &str = "opensmalltalk-vm";
 const PATCHES_PATH: &str = "patch";
 
 fn compile_opensmalltalk_vm() {
-    run("cmake", |options| options.current_dir(VM_PATH).arg("."));
+    run(
+        "cmake",
+        |options| {
+            options
+                .current_dir(VM_PATH)
+                .arg("-DPHARO_VM_IN_WORKER_THREAD=1")
+                .arg(".")
+        },
+        true,
+    );
 
-    run("make", |options| {
-        options.current_dir(VM_PATH).arg("install")
-    });
+    run(
+        "make",
+        |options| options.current_dir(VM_PATH).arg("install"),
+        true,
+    );
 }
 
 fn generate_bindings() {
@@ -40,12 +53,10 @@ fn generate_bindings() {
     println!("cargo:rustc-link-lib=PharoVMCore");
     println!("cargo:rustc-link-lib=framework=AppKit");
     println!("cargo:rustc-link-lib=framework=CoreGraphics");
-
     println!(
-        "cargo:rustc-link-search={}/Plugins",
-        env::var("OUT_DIR").unwrap()
+        "cargo:rustc-link-search=target/{}/Plugins",
+        std::env::var("PROFILE").unwrap()
     );
-    println!("cargo:rustc-link-search=target/release/Plugins");
 
     // The bindgen::Builder is the main entry point
     // to bindgen, and lets you build up options for
@@ -83,8 +94,12 @@ fn package_libraries() {
         VM_PATH
     ));
 
-    copy_items(&from_paths, "target/debug", &options);
-    copy_items(&from_paths, "target/release", &options);
+    copy_items(
+        &from_paths,
+        format!("target/{}", std::env::var("PROFILE").unwrap()),
+        &options,
+    )
+    .unwrap();
 }
 
 fn patch_opensmalltalk_vm() {
@@ -92,10 +107,25 @@ fn patch_opensmalltalk_vm() {
 
     for path in paths {
         let patch_name = path.unwrap().file_name();
-        let patch_file_name = format!("../{}/{}",PATCHES_PATH,patch_name.clone().into_string().unwrap());
+        let patch_file_name = format!(
+            "../{}/{}",
+            PATCHES_PATH,
+            patch_name.clone().into_string().unwrap()
+        );
 
-        println!("Patching {}",&patch_file_name);
-        run("git", |options| options.current_dir(VM_PATH).arg("apply").arg(patch_file_name.clone()));
+        println!("Patching {}", &patch_file_name);
+        run(
+            "git",
+            |options| {
+                options
+                    .current_dir(VM_PATH)
+                    .arg("apply")
+                    .arg("--reject")
+                    .arg("--whitespace=fix")
+                    .arg(patch_file_name.clone())
+            },
+            false,
+        );
     }
 }
 
@@ -104,10 +134,24 @@ fn revert_opensmalltalk_vm() {
 
     for path in paths {
         let patch_name = path.unwrap().file_name();
-        let patch_file_name = format!("../{}/{}",PATCHES_PATH,patch_name.clone().into_string().unwrap());
+        let patch_file_name = format!(
+            "../{}/{}",
+            PATCHES_PATH,
+            patch_name.clone().into_string().unwrap()
+        );
 
-        println!("Reverting {}",&patch_file_name);
-        run("git", |options| options.current_dir(VM_PATH).arg("apply").arg("-R").arg(patch_file_name.clone()));
+        println!("Reverting {}", &patch_file_name);
+        run(
+            "git",
+            |options| {
+                options
+                    .current_dir(VM_PATH)
+                    .arg("apply")
+                    .arg("-R")
+                    .arg(patch_file_name.clone())
+            },
+            false,
+        );
     }
 }
 
