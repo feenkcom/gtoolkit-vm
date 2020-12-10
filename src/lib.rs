@@ -12,7 +12,7 @@ use libc::c_char;
 use libc::c_int;
 use libffi::low::{ffi_cif, ffi_type, CodePtr};
 
-use crate::bindings::{checkedLongAtput, firstIndexableField, instantiateClassindexableSize, isVMRunOnWorkerThread, loadModuleHandle, malloc, memcpy, methodArgumentCount, signalSemaphoreWithIndex, sqGetInterpreterProxy, sqInt, stackObjectValue, vm_main_with_parameters, vm_parameters_parse, vm_run_interpreter, BytesPerWord, VMParameterVector, VirtualMachine, TRUE, calloc, usqInt};
+use crate::bindings::{checkedLongAtput, firstIndexableField, instantiateClassindexableSize, isVMRunOnWorkerThread, loadModuleHandle, malloc, memcpy, methodArgumentCount, signalSemaphoreWithIndex, sqGetInterpreterProxy, sqInt, stackObjectValue, vm_main_with_parameters, vm_parameters_parse, vm_run_interpreter, BytesPerWord, VMParameterVector, VirtualMachine, TRUE, calloc, usqInt, free};
 
 use crate::prelude::NativeTransmutable;
 use crate::vm::{
@@ -42,27 +42,20 @@ lazy_static! {
 pub fn primitiveGetAddressOfGToolkitVM() {
     unsafe {
         let gtvm_raw = unsafe { Arc::into_raw(GTVM.clone()) };
-        let gtvm_ptr = gtvm_raw as usize;
 
         let gt_lock = GTVM.lock().unwrap();
         let gt = gt_lock.as_ref().unwrap();
 
         let mut stack_pointer = gt.get_stack_pointer();
-        let external_address_class = gt.class_external_address();
-        let external_address = instantiateClassindexableSize(
-            external_address_class.into_native(),
-            std::mem::size_of_val(&gtvm_ptr) as sqInt,
-        );
 
-        let external_address_ptr = firstIndexableField(external_address) as *mut usize;
-        *external_address_ptr = gtvm_ptr;
+        let external_address = gt.new_external_address_from_pointer(gtvm_raw);
 
-        *stack_pointer = external_address as sqInt;
+        *stack_pointer = external_address.into_native();
     }
 }
 
 #[repr(u16)]
-enum TFCallout {
+enum TFPrimitiveCallout {
     SemaphoreIndex,
     Arguments,
     ExternalFunction,
@@ -78,15 +71,13 @@ enum TFExternalFunction {
 }
 
 #[no_mangle]
-pub fn primitiveMainThreadCalloutGToolkitVM() -> sqInt {
+pub fn primitiveMainThreadCalloutGToolkitVM() {
     unsafe {
         let gt_lock = GTVM.lock().unwrap();
         let gt = gt_lock.as_ref().unwrap();
 
-        let mut stack_pointer = gt.get_stack_pointer();
-
         let external_function_oop = gt.stack_object_value(StackOffset::from_native_c(
-            TFCallout::ExternalFunction as sqInt,
+            TFPrimitiveCallout::ExternalFunction as sqInt,
         ));
         let external_function = gt.get_handler(external_function_oop);
 
@@ -99,58 +90,123 @@ pub fn primitiveMainThreadCalloutGToolkitVM() -> sqInt {
         let cif: &ffi_cif = transmute(cif_ptr);
 
         let semaphore_index = gt.stack_integer_value(StackOffset::from_native_c(
-            TFCallout::SemaphoreIndex as sqInt,
+            TFPrimitiveCallout::SemaphoreIndex as sqInt,
         ));
 
         let arguments_array_oop =
-            gt.stack_object_value(StackOffset::from_native_c(TFCallout::Arguments as sqInt));
+            gt.stack_object_value(StackOffset::from_native_c(TFPrimitiveCallout::Arguments as sqInt));
         let argument_size: usize = cif.nargs as usize;
 
         let arg_types: &[*mut ffi_type] =
             std::slice::from_raw_parts_mut(cif.arg_types, argument_size as usize);
 
-        let parameters = (if argument_size > 0 {
-            calloc(argument_size as usqInt, size_of::<c_void>() as usqInt)
+        let parameters = if argument_size > 0 {
+            Some(calloc(argument_size as usqInt, size_of::<c_void>() as usqInt) as *mut *mut c_void)
         } else {
-            std::ptr::null_mut()
-        }) as *mut *mut c_void;
+            None
+        };
 
-        let mut parameters_slice = std::slice::from_raw_parts_mut(parameters, argument_size);
+        if parameters.is_some() {
+            let mut parameters_slice = std::slice::from_raw_parts_mut(parameters.unwrap(), argument_size);
 
-        for argument_index in 0..argument_size {
-            let arg_type: &mut ffi_type = transmute(arg_types[argument_index]);
+            for argument_index in 0..argument_size {
+                let arg_type: &mut ffi_type = transmute(arg_types[argument_index]);
 
-            let arg_holder = malloc(arg_type.size as u64);
-            parameters_slice[argument_index] = arg_holder;
+                let arg_holder = malloc(arg_type.size as u64);
+                parameters_slice[argument_index] = arg_holder;
 
-            gt.marshall_argument_from_at_index_into_of_type_with_size(
-                arguments_array_oop,
-                argument_index,
-                arg_holder as sqInt,
-                arg_type.type_ as sqInt,
-                arg_type.size as sqInt,
-            );
+                gt.marshall_argument_from_at_index_into_of_type_with_size(
+                    arguments_array_oop,
+                    argument_index,
+                    arg_holder as sqInt,
+                    arg_type.type_ as sqInt,
+                    arg_type.size as sqInt,
+                );
+            }
         }
 
         let return_type: &ffi_type = transmute(cif.rtype);
         let return_holder = if return_type.size > 0 {
-            malloc(return_type.size as usqInt)
+            Some(malloc(return_type.size as usqInt))
         }
         else {
-            std::ptr::null_mut()
+            None
         };
 
-        gt.call(GToolkitCallout {
+        let callout = GToolkitCallout {
             cif: cif_ptr,
             func: CodePtr(external_function),
             args: parameters,
             result: return_holder,
             semaphore: semaphore_index,
-        });
+        };
 
-        //*stack_pointer = stack_pointer.into_native();
+        gt.call(callout);
+
+        // intentionally leak the callout so that it can be released later, once the return value is read
+        let callout_ptr = Box::into_raw(Box::new(callout));
+
+        gt.pop_then_push(4, gt.new_external_address_from_pointer(callout_ptr));
     }
-    0
+}
+
+#[repr(u16)]
+enum TFPrimitiveReturnValue {
+    CalloutAddress,
+    Receiver,
+}
+#[no_mangle]
+pub fn primitiveExtractReturnValueGToolkitVM() {
+    unsafe {
+        let gt_lock = GTVM.lock().unwrap();
+        let gt = gt_lock.as_ref().unwrap();
+
+        let callout_address_oop = gt.stack_object_value(StackOffset::from_native_c(
+            TFPrimitiveReturnValue::CalloutAddress as sqInt,
+        ));
+        let callout_address = gt.read_address(callout_address_oop) as *mut GToolkitCallout;
+
+        let mut callout = Box::from_raw(callout_address);
+
+        if callout.result.is_some() {
+            let return_holder = callout.result.unwrap();
+
+            gt.marshall_and_push_return_value_of_type_popping(
+                return_holder,
+                callout.return_type(),
+                2 // one for the argument + one for the receiver
+            );
+        }
+
+        // start freeing memory:
+        // - arguments
+        // - return holder
+        if callout.args.is_some() {
+            let arguments = callout.args.unwrap();
+            let arguments_size: usize = callout.number_of_arguments();
+
+            let mut arguments_slice = std::slice::from_raw_parts_mut(arguments, arguments_size);
+            for index in 0..arguments_size {
+                let argument = arguments_slice[index];
+                if !argument.is_null() {
+                    free(argument);
+                }
+            }
+
+            free(arguments as *mut c_void);
+            callout.args = None;
+        }
+
+        if callout.result.is_some() {
+            let return_holder = callout.result.unwrap();
+            if !return_holder.is_null() {
+                free(return_holder);
+            }
+            callout.result = None;
+        }
+
+        drop(callout);
+    }
 }
 
 #[no_mangle]
@@ -174,13 +230,6 @@ pub fn gtoolkit_vm_is_on_worker_thread(gt_vm_ptr: *const Mutex<Option<GToolkitVM
 }
 
 #[no_mangle]
-pub fn gtoolkit_vm_test(a: i32, b: i32) -> i32 {
-    println!("a: {}", a);
-    println!("a: {}", b);
-    a + b
-}
-
-#[no_mangle]
 pub fn gtoolkit_vm_main_thread_callout(
     gt_vm_ptr: *const Mutex<Option<GToolkitVM>>,
     cif: *mut ffi_cif,
@@ -193,8 +242,8 @@ pub fn gtoolkit_vm_main_thread_callout(
         gt_vm.call(GToolkitCallout {
             cif,
             func: CodePtr(func),
-            args: args as *mut *mut c_void,
-            result,
+            args: Some(args as *mut *mut c_void),
+            result: Some(result),
             semaphore,
         })
     });
