@@ -1,0 +1,25 @@
+From 690fee4a1d54012fc52cc9069546bf6740a1fe6d Mon Sep 17 00:00:00 2001
+From: Aliaksei Syrel <alex.syrel@gmail.com>
+Date: Thu, 10 Dec 2020 09:56:29 +0100
+Subject: [PATCH] enable PHARO_VM_IN_WORKER_THREAD
+
+---
+ CMakeLists.txt | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 16a999831..1833d66c5 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -9,6 +9,8 @@ cmake_minimum_required(VERSION 2.8.4)
+ # Use new and simpler escape sequences
+ cmake_policy(SET CMP0053 NEW)
+ 
++add_definitions(-DPHARO_VM_IN_WORKER_THREAD)
++
+ include(macros.cmake)
+ 
+ set(VERSION_MAJOR 9)
+-- 
+2.24.3 (Apple Git-128)
+

@@ -32,7 +32,6 @@ fn compile_opensmalltalk_vm() {
         |options| {
             options
                 .current_dir(VM_PATH)
-                .arg("-DPHARO_VM_IN_WORKER_THREAD=1")
                 .arg(".")
         },
         true,
@@ -120,34 +119,7 @@ fn patch_opensmalltalk_vm() {
                 options
                     .current_dir(VM_PATH)
                     .arg("apply")
-                    .arg("--reject")
                     .arg("--whitespace=fix")
-                    .arg(patch_file_name.clone())
-            },
-            false,
-        );
-    }
-}
-
-fn revert_opensmalltalk_vm() {
-    let paths = fs::read_dir(PATCHES_PATH).unwrap();
-
-    for path in paths {
-        let patch_name = path.unwrap().file_name();
-        let patch_file_name = format!(
-            "../{}/{}",
-            PATCHES_PATH,
-            patch_name.clone().into_string().unwrap()
-        );
-
-        println!("Reverting {}", &patch_file_name);
-        run(
-            "git",
-            |options| {
-                options
-                    .current_dir(VM_PATH)
-                    .arg("apply")
-                    .arg("-R")
                     .arg(patch_file_name.clone())
             },
             false,
@@ -158,7 +130,6 @@ fn revert_opensmalltalk_vm() {
 fn main() {
     patch_opensmalltalk_vm();
     compile_opensmalltalk_vm();
-    revert_opensmalltalk_vm();
     generate_bindings();
     package_libraries();
 }
