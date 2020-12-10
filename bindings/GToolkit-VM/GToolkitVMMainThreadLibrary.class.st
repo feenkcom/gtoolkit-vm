@@ -11,6 +11,6 @@ Class {
 { #category : #accessing }
 GToolkitVMMainThreadLibrary >> runner [
 	^ GToolkitVM current isOnWorkerThread
-		ifTrue: [ GToolkitVMMainThreadRunner uniqueInstance ]
+		ifTrue: [ GToolkitVMMainThreadAsyncRunner uniqueInstance ]
 		ifFalse: [ TFSameThreadRunner uniqueInstance ]
 ]

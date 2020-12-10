@@ -60,6 +60,16 @@ GToolkitVM >> minorVersion [
 ]
 
 { #category : #'private - ffi' }
+GToolkitVM >> primGetReceiverSignaller: anExternalAddress [
+	^ self ffiCall: #(GToolkitVMReceiverSignaller gtoolkit_vm_get_receiver_signaller(self, void** anExternalAddress))
+]
+
+{ #category : #'private - ffi' }
+GToolkitVM >> primGetSemaphoreSignaller: anExternalAddress [
+	^ self ffiCall: #(GToolkitVMSemaphoreSignaller gtoolkit_vm_get_semaphore_signaller(self, void** anExternalAddress))
+]
+
+{ #category : #'private - ffi' }
 GToolkitVM >> primIsOnWorkerThread [
 	^ self ffiCall: #(bool gtoolkit_vm_is_on_worker_thread(self))
 ]
@@ -77,6 +87,28 @@ GToolkitVM >> primMinorVersion [
 { #category : #'private - ffi' }
 GToolkitVM >> primWakeUp [
 	^ self ffiCall: #(void gtoolkit_vm_wake_up(self))
+]
+
+{ #category : #accessing }
+GToolkitVM >> receiverSignaller [
+	<return: #GToolkitVMReceiverSignaller>
+	| aReceiverSignaller aThunkAddress|
+	
+	aThunkAddress := ExternalAddress newPointer.
+	aReceiverSignaller := self primGetReceiverSignaller: aThunkAddress.
+	aReceiverSignaller thunk: aThunkAddress.
+	^ aReceiverSignaller
+]
+
+{ #category : #accessing }
+GToolkitVM >> semaphoreSignaller [
+	<return: #GToolkitVMSemaphoreSignaller>
+	| aSemaphoreSignaller aThunkAddress|
+	
+	aThunkAddress := ExternalAddress newPointer.
+	aSemaphoreSignaller := self primGetSemaphoreSignaller: aThunkAddress.
+	aSemaphoreSignaller thunk: aThunkAddress.
+	^ aSemaphoreSignaller
 ]
 
 { #category : #accessing }

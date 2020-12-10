@@ -1,7 +1,3 @@
-"
-!Main thread runner
-Allows users to perform an FFI callout on the main thread of ${class:GToolkitVM}$
-"
 Class {
 	#name : #GToolkitVMMainThreadRunner,
 	#superclass : #TFRunner,
@@ -31,6 +27,13 @@ GToolkitVMMainThreadRunner >> doInitialize [
 
 { #category : #executing }
 GToolkitVMMainThreadRunner >> executeFunction: aTFExternalFunction withArguments: arguments usingSemaphore: anInteger [
+	NonInteractiveTranscript stdout
+		nextPutAll: '[Main thread runner] executeFunction: ';
+		nextPutAll: aTFExternalFunction functionName;
+		nextPutAll: ' in ';
+		nextPutAll: aTFExternalFunction moduleName;
+		cr.
+
 	^ self
 		primitiveExecuteFunction: aTFExternalFunction
 		withArguments: arguments
@@ -53,13 +56,6 @@ GToolkitVMMainThreadRunner >> primCall: aGToolkitVM cif: aCifHandle function: aF
 		long aSemaphoreIndex ))
 ]
 
-{ #category : #'private - ffi' }
-GToolkitVMMainThreadRunner >> primitiveExecuteFunction: aTFExternalFunction withArguments: arguments usingSemaphore: anInteger [
-	<primitive: 'primitiveMainThreadCalloutGToolkitVM'>
-	
-	self primitiveFailed
-]
-
 { #category : #'private - deprecated' }
 GToolkitVMMainThreadRunner >> primitivePerformWorkerCall: aTFExternalFunction withArguments: argumentHolder withReturnHolder: aReturnHolder usingSemaphore: anInteger [
 	"Obsolete in Pharo9"
@@ -78,9 +74,4 @@ GToolkitVMMainThreadRunner >> primitiveReadReturnValueFromTask: anExternalAddres
 	<primitive: 'primitiveExtractReturnValueGToolkitVM'>
 
 	self primitiveFailed
-]
-
-{ #category : #executing }
-GToolkitVMMainThreadRunner >> readReturnValueFromTask: anExternalAddress [
-	^ self primitiveReadReturnValueFromTask: anExternalAddress
 ]
