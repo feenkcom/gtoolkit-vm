@@ -1,0 +1,32 @@
+From b91eb95147d1e3328e0afccb40d4963543a80b18 Mon Sep 17 00:00:00 2001
+From: Aliaksei Syrel <alex.syrel@gmail.com>
+Date: Thu, 10 Dec 2020 11:49:03 +0100
+Subject: [PATCH] export marshallAndPushReturnValueFrom
+
+---
+ smalltalksrc/VMMaker/StackInterpreterPrimitives.class.st | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/smalltalksrc/VMMaker/StackInterpreterPrimitives.class.st b/smalltalksrc/VMMaker/StackInterpreterPrimitives.class.st
+index 534698edf..afea4bb9f 100644
+--- a/smalltalksrc/VMMaker/StackInterpreterPrimitives.class.st
++++ b/smalltalksrc/VMMaker/StackInterpreterPrimitives.class.st
+@@ -459,6 +459,7 @@ StackInterpreterPrimitives >> marshallAndPushReturnValueFrom: returnHolder ofTyp
+ 
+ 	<option: #FEATURE_FFI>
+ 	<var: #ffiType type: #'ffi_type *'>
++	<export: true>
+ 
+ 	[ ffiType type ]
+ 		caseOf: {
+@@ -487,6 +488,7 @@ StackInterpreterPrimitives >> marshallAndPushReturnValueFrom: returnHolder ofTyp
+ StackInterpreterPrimitives >> marshallArgumentFrom: argumentsArrayOop atIndex: i into: argHolder ofType: argType withSize: argTypeSize [
+ 
+ 	<option: #FEATURE_FFI>
++	<export: true>
+ 	[ argType ]
+ 		caseOf:
+ 			{([ FFI_TYPE_POINTER ]
+-- 
+2.24.3 (Apple Git-128)
+

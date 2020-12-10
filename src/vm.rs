@@ -1,14 +1,17 @@
-use crate::bindings::{getHandler, isVMRunOnWorkerThread, sqInt, VirtualMachine};
+use crate::bindings::{getHandler, isVMRunOnWorkerThread, sqInt, VirtualMachine, instantiateClassindexableSize, BytesPerWord, usqInt, firstIndexableField, readAddress};
 
 use std::sync::mpsc::Sender;
 
-use crate::cointerp::{marshallArgumentFromatIndexintoofTypewithSize, numSlotsOf};
+use crate::cointerp::{marshallArgumentFromatIndexintoofTypewithSize, numSlotsOf, instantiateClassindexableSizeisPinned, marshallAndPushReturnValueFromofTypepoping};
 use crate::prelude::NativeTransmutable;
 use libc::c_char;
 use libc::c_int;
-use libffi::low::{ffi_cif, CodePtr};
+use libffi::low::{ffi_cif, ffi_type, CodePtr};
+
+
 use std::os::raw::c_void;
 use std::sync::{Arc, Mutex};
+use std::intrinsics::transmute;
 
 #[derive(Debug, Clone)]
 pub struct GToolkitVM {
@@ -124,6 +127,10 @@ impl GToolkitVM {
         unsafe { getHandler(object.into_native()) }
     }
 
+    pub fn read_address(&self, external_address_object: ObjectPointer) -> *mut c_void {
+        unsafe { readAddress(external_address_object.into_native()) }
+    }
+
     pub fn stack_integer_value(&self, offset: StackOffset) -> sqInt {
         let function = self.interpreter.stackIntegerValue.unwrap();
         unsafe { function(offset.into_native()) }
@@ -186,6 +193,51 @@ impl GToolkitVM {
         };
     }
 
+    pub fn marshall_and_push_return_value_of_type_popping(
+        &self,
+        return_holder: *mut c_void,
+        return_type: &ffi_type,
+        primitive_arguments_and_receiver_count: usize,
+    ) {
+        unsafe {
+            let return_type_ptr: *mut ffi_type = transmute(return_type);
+
+            marshallAndPushReturnValueFromofTypepoping(
+                return_holder as sqInt,
+                return_type_ptr,
+                primitive_arguments_and_receiver_count as sqInt
+            )
+        };
+    }
+
+    pub fn instantiate_indexable_class_of_size(&self, class: ObjectPointer, size: usize, is_pinned: bool) -> ObjectPointer {
+        let oop = unsafe { instantiateClassindexableSizeisPinned(
+            class.into_native(),
+            size as usqInt,
+            is_pinned as sqInt
+        ) };
+
+        ObjectPointer::from_native_c(oop)
+    }
+
+    pub fn new_external_address(&self) -> ObjectPointer {
+        let external_address_class = self.class_external_address();
+        self.instantiate_indexable_class_of_size(external_address_class, std::mem::size_of::<c_void>(), true)
+    }
+
+    pub fn new_external_address_from_pointer<T>(&self, ptr: *const T) -> ObjectPointer {
+        let external_address = self.new_external_address();
+
+        let external_address_ptr = unsafe { firstIndexableField(external_address.into_native()) as *mut usize };
+        unsafe { *external_address_ptr = ptr as usize };
+        external_address
+    }
+
+    pub fn pop_then_push(&self, amount_of_stack_items: usize, object: ObjectPointer) {
+        let function = self.interpreter.popthenPush.unwrap();
+        unsafe { function(amount_of_stack_items as sqInt, object.into_native()); }
+    }
+
     pub fn is_on_worker_thread(&self) -> bool {
         unsafe { isVMRunOnWorkerThread() != 0 }
     }
@@ -214,8 +266,8 @@ impl GToolkitVM {
 pub struct GToolkitCallout {
     pub(crate) cif: *mut ffi_cif,
     pub(crate) func: CodePtr,
-    pub(crate) args: *mut *mut c_void,
-    pub(crate) result: *mut c_void,
+    pub(crate) args: Option<*mut *mut c_void>,
+    pub(crate) result: Option<*mut c_void>,
     pub(crate) semaphore: sqInt,
 }
 
@@ -225,10 +277,21 @@ impl GToolkitCallout {
             libffi::raw::ffi_call(
                 self.cif,
                 Some(*unsafe { self.func.as_safe_fun() }),
-                self.result,
-                self.args,
+                self.result.unwrap_or(std::ptr::null_mut()),
+                self.args.unwrap_or(std::ptr::null_mut()),
             )
         }
+    }
+
+    pub fn return_type(&self) -> &ffi_type {
+        let cif: &ffi_cif = unsafe { transmute(self.cif) };
+        let rtype: &ffi_type = unsafe { transmute(cif.rtype) };
+        rtype
+    }
+
+    pub fn number_of_arguments(&self) -> usize {
+        let cif: &ffi_cif = unsafe { transmute(self.cif) };
+        cif.nargs as usize
     }
 }
 
