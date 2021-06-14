@@ -12,21 +12,24 @@ use libc::c_char;
 use libc::c_int;
 use libffi::low::{ffi_cif, ffi_type, CodePtr};
 
-use crate::bindings::{checkedLongAtput, firstIndexableField, instantiateClassindexableSize, isVMRunOnWorkerThread, loadModuleHandle, malloc, memcpy, methodArgumentCount, signalSemaphoreWithIndex, sqGetInterpreterProxy, sqInt, stackObjectValue, vm_main_with_parameters, vm_parameters_parse, vm_run_interpreter, BytesPerWord, VMParameterVector, VirtualMachine, TRUE, calloc, usqInt, free};
+use crate::bindings::{
+    calloc, checkedLongAtput, firstIndexableField, free, instantiateClassindexableSize,
+    isVMRunOnWorkerThread, loadModuleHandle, malloc, memcpy, methodArgumentCount,
+    signalSemaphoreWithIndex, sqGetInterpreterProxy, sqInt, stackObjectValue, usqInt,
+    vm_main_with_parameters, vm_parameters_parse, vm_run_interpreter, BytesPerWord,
+    VMParameterVector, VirtualMachine, TRUE,
+};
 
 use crate::prelude::NativeTransmutable;
-use crate::vm::{
-    GToolkitCallout, GToolkitVM, GToolkitVMPointer, GToolkitVMRequest, ObjectFieldIndex,
-    StackOffset,
-};
+use crate::vm::{gtoolkit_null_semaphore_signaller, GToolkitCallout, GToolkitVM, GToolkitVMPointer, GToolkitVMRequest, ObjectFieldIndex, StackOffset, gtoolkit_null_receiver_signaller, gtoolkit_receiver_signaller};
 use bindings::VMParameters;
 use std::cell::RefCell;
 use std::intrinsics::transmute;
+use std::mem::size_of;
 use std::os::raw::{c_uint, c_void};
 use std::ptr::slice_from_raw_parts_mut;
 use std::sync::mpsc::{channel, RecvError, Sender};
 use std::sync::{Arc, Mutex};
-use std::mem::size_of;
 
 unsafe impl Send for VMParameters {}
 
@@ -93,8 +96,9 @@ pub fn primitiveMainThreadCalloutGToolkitVM() {
             TFPrimitiveCallout::SemaphoreIndex as sqInt,
         ));
 
-        let arguments_array_oop =
-            gt.stack_object_value(StackOffset::from_native_c(TFPrimitiveCallout::Arguments as sqInt));
+        let arguments_array_oop = gt.stack_object_value(StackOffset::from_native_c(
+            TFPrimitiveCallout::Arguments as sqInt,
+        ));
         let argument_size: usize = cif.nargs as usize;
 
         let arg_types: &[*mut ffi_type] =
@@ -107,7 +111,8 @@ pub fn primitiveMainThreadCalloutGToolkitVM() {
         };
 
         if parameters.is_some() {
-            let mut parameters_slice = std::slice::from_raw_parts_mut(parameters.unwrap(), argument_size);
+            let mut parameters_slice =
+                std::slice::from_raw_parts_mut(parameters.unwrap(), argument_size);
 
             for argument_index in 0..argument_size {
                 let arg_type: &mut ffi_type = transmute(arg_types[argument_index]);
@@ -128,8 +133,7 @@ pub fn primitiveMainThreadCalloutGToolkitVM() {
         let return_type: &ffi_type = transmute(cif.rtype);
         let return_holder = if return_type.size > 0 {
             Some(malloc(return_type.size as usqInt))
-        }
-        else {
+        } else {
             None
         };
 
@@ -174,7 +178,7 @@ pub fn primitiveExtractReturnValueGToolkitVM() {
             gt.marshall_and_push_return_value_of_type_popping(
                 return_holder,
                 callout.return_type(),
-                2 // one for the argument + one for the receiver
+                2, // one for the argument + one for the receiver
             );
         }
 
@@ -226,7 +230,31 @@ pub fn gtoolkit_vm_wake_up(gt_vm_ptr: *const Mutex<Option<GToolkitVM>>) {
 
 #[no_mangle]
 pub fn gtoolkit_vm_is_on_worker_thread(gt_vm_ptr: *const Mutex<Option<GToolkitVM>>) -> bool {
-    gt_vm_ptr.with(||false, |gt_vm| gt_vm.is_on_worker_thread())
+    gt_vm_ptr.with(|| false, |gt_vm| gt_vm.is_on_worker_thread())
+}
+
+#[no_mangle]
+pub fn gtoolkit_vm_get_semaphore_signaller(
+    gt_vm_ptr: *const Mutex<Option<GToolkitVM>>,
+    thunk_ret_ptr: &mut *const c_void
+) -> unsafe extern "C" fn(usize, *const c_void) {
+    *thunk_ret_ptr = gt_vm_ptr as *const c_void;
+    gt_vm_ptr.with(
+        || gtoolkit_null_semaphore_signaller as unsafe extern "C" fn(usize, *const c_void),
+        |gt_vm| gt_vm.get_semaphore_signaller(),
+    )
+}
+
+#[no_mangle]
+pub fn gtoolkit_vm_get_receiver_signaller(
+    gt_vm_ptr: *const Mutex<Option<GToolkitVM>>,
+    thunk_ret_ptr: &mut *const c_void
+) -> unsafe extern "C" fn(*const c_void) {
+    *thunk_ret_ptr = gt_vm_ptr as *const c_void;
+    gt_vm_ptr.with(
+        || gtoolkit_null_receiver_signaller as unsafe extern "C" fn(*const c_void),
+        |gt_vm| gtoolkit_receiver_signaller as unsafe extern "C" fn(*const c_void)
+    )
 }
 
 #[no_mangle]
@@ -252,11 +280,13 @@ pub fn gtoolkit_vm_main_thread_callout(
 pub fn app_main() {
     let (sender, receiver) = channel();
 
+
+
     unsafe {
         let interpreter: VirtualMachine = unsafe { *sqGetInterpreterProxy() };
 
         let mut gt_vm = GTVM.lock().unwrap();
-        *gt_vm = Some(GToolkitVM::new(sender, interpreter));
+        *gt_vm = Some(GToolkitVM::new(sender, transmute(&receiver), interpreter));
     };
 
     // create a vector of zero terminated strings
@@ -295,25 +325,6 @@ pub fn app_main() {
     }
 
     loop {
-        match receiver.recv() {
-            Ok(GToolkitVMRequest::Call(callout)) => {
-                println!("GT was told to call {:?}", callout);
-                callout.call();
-                unsafe {
-                    signalSemaphoreWithIndex(callout.semaphore);
-                }
-            }
-            Ok(GToolkitVMRequest::Terminate) => {
-                println!("GT was told to terminate");
-                break;
-            }
-            Err(error) => {
-                println!("[Error] {:?}", error);
-                break;
-            }
-            Ok(GToolkitVMRequest::WakeUp) => {
-                println!("GT woke up");
-            }
-        }
+        GToolkitVM::process_request(receiver.recv());
     }
 }

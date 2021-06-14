@@ -1,21 +1,28 @@
-use crate::bindings::{getHandler, isVMRunOnWorkerThread, sqInt, VirtualMachine, instantiateClassindexableSize, BytesPerWord, usqInt, firstIndexableField, readAddress};
+use crate::bindings::{
+    firstIndexableField, getHandler, instantiateClassindexableSize, isVMRunOnWorkerThread,
+    readAddress, signalSemaphoreWithIndex, sqInt, usqInt, BytesPerWord, VirtualMachine,
+};
 
-use std::sync::mpsc::Sender;
+use std::sync::mpsc::{Sender, Receiver, RecvError};
 
-use crate::cointerp::{marshallArgumentFromatIndexintoofTypewithSize, numSlotsOf, instantiateClassindexableSizeisPinned, marshallAndPushReturnValueFromofTypepoping};
+use crate::cointerp::{
+    instantiateClassindexableSizeisPinned, marshallAndPushReturnValueFromofTypepoping,
+    marshallArgumentFromatIndexintoofTypewithSize, numSlotsOf,
+};
 use crate::prelude::NativeTransmutable;
 use libc::c_char;
 use libc::c_int;
 use libffi::low::{ffi_cif, ffi_type, CodePtr};
 
-
+use std::intrinsics::transmute;
 use std::os::raw::c_void;
 use std::sync::{Arc, Mutex};
-use std::intrinsics::transmute;
+use std::fmt::Debug;
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct GToolkitVM {
     sender: Sender<GToolkitVMRequest>,
+    receiver: &'static Receiver<GToolkitVMRequest>,
     interpreter: VirtualMachine,
 }
 
@@ -80,11 +87,41 @@ impl NativeTransmutable<sqInt> for ObjectFieldIndex {}
 pub struct StackOffset(sqInt);
 impl NativeTransmutable<sqInt> for StackOffset {}
 
+#[no_mangle]
+pub unsafe extern "C" fn gtoolkit_null_semaphore_signaller(
+    _semaphore_index: usize,
+    _gt_vm_ptr: *const c_void,
+) {
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn gtoolkit_semaphore_signaller(
+    semaphore_index: usize,
+    gt_vm_ptr: *const c_void,
+) {
+    (gt_vm_ptr as *const Mutex<Option<GToolkitVM>>)
+        .with_not_null(|gt_vm| gt_vm.signal_semaphore(semaphore_index));
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn gtoolkit_null_receiver_signaller(
+    _gt_vm_ptr: *const c_void,
+) {
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn gtoolkit_receiver_signaller(
+    gt_vm_ptr: *const c_void,
+) {
+    (gt_vm_ptr as *const Mutex<Option<GToolkitVM>>).with_not_null(|gt_vm| gt_vm.try_recv());
+}
+
 impl GToolkitVM {
-    pub fn new(sender: Sender<GToolkitVMRequest>, interpreter: VirtualMachine) -> Self {
+    pub fn new(sender: Sender<GToolkitVMRequest>, receiver: &'static Receiver<GToolkitVMRequest>, interpreter: VirtualMachine) -> Self {
         Self {
             sender,
             interpreter,
+            receiver
         }
     }
 
@@ -205,37 +242,51 @@ impl GToolkitVM {
             marshallAndPushReturnValueFromofTypepoping(
                 return_holder as sqInt,
                 return_type_ptr,
-                primitive_arguments_and_receiver_count as sqInt
+                primitive_arguments_and_receiver_count as sqInt,
             )
         };
     }
 
-    pub fn instantiate_indexable_class_of_size(&self, class: ObjectPointer, size: usize, is_pinned: bool) -> ObjectPointer {
-        let oop = unsafe { instantiateClassindexableSizeisPinned(
-            class.into_native(),
-            size as usqInt,
-            is_pinned as sqInt
-        ) };
+    pub fn instantiate_indexable_class_of_size(
+        &self,
+        class: ObjectPointer,
+        size: usize,
+        is_pinned: bool,
+    ) -> ObjectPointer {
+        let oop = unsafe {
+            instantiateClassindexableSizeisPinned(
+                class.into_native(),
+                size as usqInt,
+                is_pinned as sqInt,
+            )
+        };
 
         ObjectPointer::from_native_c(oop)
     }
 
     pub fn new_external_address(&self) -> ObjectPointer {
         let external_address_class = self.class_external_address();
-        self.instantiate_indexable_class_of_size(external_address_class, std::mem::size_of::<c_void>(), true)
+        self.instantiate_indexable_class_of_size(
+            external_address_class,
+            std::mem::size_of::<c_void>(),
+            true,
+        )
     }
 
     pub fn new_external_address_from_pointer<T>(&self, ptr: *const T) -> ObjectPointer {
         let external_address = self.new_external_address();
 
-        let external_address_ptr = unsafe { firstIndexableField(external_address.into_native()) as *mut usize };
+        let external_address_ptr =
+            unsafe { firstIndexableField(external_address.into_native()) as *mut usize };
         unsafe { *external_address_ptr = ptr as usize };
         external_address
     }
 
     pub fn pop_then_push(&self, amount_of_stack_items: usize, object: ObjectPointer) {
         let function = self.interpreter.popthenPush.unwrap();
-        unsafe { function(amount_of_stack_items as sqInt, object.into_native()); }
+        unsafe {
+            function(amount_of_stack_items as sqInt, object.into_native());
+        }
     }
 
     pub fn is_on_worker_thread(&self) -> bool {
@@ -256,9 +307,50 @@ impl GToolkitVM {
         self.send(GToolkitVMRequest::WakeUp);
     }
 
+    pub fn signal_semaphore(&self, index: usize) {
+        let function = self.interpreter.signalSemaphoreWithIndex.unwrap();
+        unsafe {
+            function(index as sqInt);
+        }
+    }
+
+    pub fn get_semaphore_signaller(&self) -> unsafe extern "C" fn(usize, *const c_void) {
+        gtoolkit_semaphore_signaller
+    }
+
     pub fn terminate(&self) {
         self.send(GToolkitVMRequest::Terminate)
     }
+
+    pub fn recv(&self) {
+        Self::process_request(self.receiver.recv());
+    }
+
+    pub fn try_recv(&self) {
+        Self::process_request(self.receiver.try_recv());
+    }
+
+    pub fn process_request<T>(request: Result<GToolkitVMRequest, T>) where T: Debug {
+        match request {
+            Ok(GToolkitVMRequest::Call(callout)) => {
+                println!("GT was told to call {:?}", callout);
+                callout.call();
+                unsafe {
+                    signalSemaphoreWithIndex(callout.semaphore);
+                }
+            }
+            Ok(GToolkitVMRequest::Terminate) => {
+                println!("GT was told to terminate");
+            }
+            Err(error) => {
+
+            }
+            Ok(GToolkitVMRequest::WakeUp) => {
+                println!("GT woke up");
+            }
+        }
+    }
+
 }
 
 #[repr(C)]

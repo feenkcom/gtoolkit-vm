@@ -29,11 +29,7 @@ const PATCHES_PATH: &str = "patch";
 fn compile_opensmalltalk_vm() {
     run(
         "cmake",
-        |options| {
-            options
-                .current_dir(VM_PATH)
-                .arg(".")
-        },
+        |options| options.current_dir(VM_PATH).arg("."),
         true,
     );
 
@@ -102,7 +98,7 @@ fn package_libraries() {
 }
 
 fn patch_opensmalltalk_vm() {
-    let paths = fs::read_dir(PATCHES_PATH).unwrap();
+    let paths = fs::read_dir(PATCHES_PATH)?;
 
     for path in paths {
         let patch_name = path.unwrap().file_name();
