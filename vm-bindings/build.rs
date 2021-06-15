@@ -1,7 +1,7 @@
 extern crate bindgen;
 extern crate fs_extra;
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use fs_extra::{copy_items, dir};
@@ -59,6 +59,11 @@ fn patch_opensmalltalk_vm() {
 
 fn compile_opensmalltalk_vm() {
     let out_dir = env::var("OUT_DIR").unwrap();
+
+    let vm_binary = format!("{}/build/dist/Pharo.app/Contents/MacOS/Pharo", &out_dir);
+    if Path::new(&vm_binary).exists() {
+        return;
+    }
 
     run(
         "cmake",
@@ -129,30 +134,43 @@ fn generate_bindings() {
 fn package_libraries() {
     let build_dir = env::var("OUT_DIR").unwrap();
 
+    let compiled_plugins_dir =
+        format!("{}/build/dist/Pharo.app/Contents/MacOS/Plugins", &build_dir);
+
+    let export_plugins_folder = PathBuf::new()
+        .join("..")
+        .join(std::env::var("CARGO_TARGET_DIR").unwrap_or("target".to_string()))
+        .join(std::env::var("TARGET").unwrap())
+        .join(std::env::var("PROFILE").unwrap());
+
+    println!(
+        "Current working dir: {}",
+        std::env::current_dir().unwrap().to_str().unwrap()
+    );
+    println!(
+        "Compiled plugins dir ({}): {}",
+        Path::new(&compiled_plugins_dir).exists(),
+        &compiled_plugins_dir
+    );
+    println!(
+        "Export plugins dir ({}): {}",
+        Path::new(&export_plugins_folder).exists(),
+        &export_plugins_folder.display()
+    );
+
     let mut options = dir::CopyOptions::new(); //Initialize default values for CopyOptions
     options.overwrite = true;
+
     let mut from_paths = Vec::new();
-    from_paths.push(format!(
-        "{}/build/dist/Pharo.app/Contents/MacOS/Plugins",
-        &build_dir
-    ));
+    from_paths.push(&compiled_plugins_dir);
 
-    let plugins_folder = std::env::var("CARGO_TARGET_DIR").unwrap();
-
-    copy_items(
-        &from_paths,
-        &plugins_folder,
-        &options,
-    )
-    .unwrap();
+    copy_items(&from_paths, &export_plugins_folder, &options).unwrap();
 
     fs::copy(
         format!("{}/build/dist/libSDL2-2.0d.dylib", &build_dir),
-        format!(
-            "{}/Plugins/libSDL2-2.0.0.dylib",
-            &plugins_folder
-        ),
-    ).unwrap();
+        format!("{}/Plugins/libSDL2-2.0.0.dylib", &export_plugins_folder.display()),
+    )
+    .unwrap();
 }
 
 fn main() {

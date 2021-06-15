@@ -6,8 +6,8 @@ use crate::prelude::{Handle, NativeAccess, NativeDrop};
 use std::borrow::BorrowMut;
 use std::ffi::{CStr, CString};
 use std::fmt;
-use std::os::raw::{c_char, c_int, c_void};
 use std::mem::forget;
+use std::os::raw::{c_char, c_int, c_void};
 
 pub type VMParameters = Handle<NativeVMParameters>;
 
@@ -20,13 +20,11 @@ impl NativeDrop for NativeVMParameters {
 }
 
 impl VMParameters {
-    pub fn from_args() -> Self {
+    pub fn from_args(arguments: Vec<String>) -> Self {
         // create a vector of zero terminated strings
-        let mut args = std::env::args()
-            .map(|arg| CString::new(arg).unwrap())
+        let mut args = arguments.iter()
+            .map(|arg| CString::new(arg.as_str()).unwrap())
             .collect::<Vec<CString>>();
-
-        println!("{:?}", &args);
 
         // convert the strings to raw pointers
         let mut c_args = args
@@ -34,7 +32,20 @@ impl VMParameters {
             .map(|arg| arg.as_ptr())
             .collect::<Vec<*const c_char>>();
 
+        let mut vars = std::env::vars()
+            .map(|arg| CString::new(format!("{}{}", arg.0, arg.1)).unwrap())
+            .collect::<Vec<CString>>();
+
+        let mut c_vars = args
+            .iter()
+            .map(|arg| arg.as_ptr())
+            .collect::<Vec<*const c_char>>();
+
         let mut default_parameters = Self::default();
+        default_parameters.native_mut().processArgc = c_args.len() as c_int;
+        default_parameters.native_mut().processArgv = c_args.as_mut_ptr();
+        default_parameters.native_mut().environmentVector = c_vars.as_mut_ptr();
+
         unsafe {
             vm_parameters_parse(
                 c_args.len() as c_int,
@@ -45,7 +56,14 @@ impl VMParameters {
         // "leak" the args, since the memory is handled by parameters now
         unsafe { forget(args) };
         unsafe { forget(c_args) };
+        unsafe { forget(vars) };
+        unsafe { forget(c_vars) };
+
         default_parameters
+    }
+
+    pub fn from_env_args() -> Self {
+        Self::from_args(std::env::args().collect())
     }
 
     pub fn image_file_name(&self) -> String {
@@ -53,6 +71,8 @@ impl VMParameters {
         let str_slice: &str = c_str.to_str().unwrap();
         str_slice.to_owned()
     }
+
+    pub fn set_environment_vars(&mut self, vars: std::env::Vars) {}
 
     pub fn set_image_file_name(&mut self, file_name: String) {
         if self.image_file_name() == file_name {
@@ -77,6 +97,10 @@ impl VMParameters {
 
     pub fn is_interactive_session(&self) -> bool {
         self.native().isInteractiveSession
+    }
+
+    pub fn set_is_interactive_session(&mut self, is_interactive_session: bool) {
+        self.native_mut().isInteractiveSession = is_interactive_session;
     }
 
     pub fn max_stack_frames_to_print(&self) -> usize {

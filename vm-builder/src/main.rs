@@ -1,12 +1,19 @@
 extern crate clap;
+extern crate serde;
+#[macro_use]
+extern crate serde_derive;
+extern crate mustache;
+
+mod bundlers;
 
 use std::process::{Command, Stdio};
 
-use clap::{AppSettings, Clap};
+use clap::{AppSettings, ArgEnum, Clap};
 use fs_extra::{copy_items, dir};
 use std::str::FromStr;
 
-use clap::ArgEnum;
+use crate::bundlers::mac::MacBundler;
+use crate::bundlers::Bundler;
 use rustc_version::version_meta;
 use std::path::PathBuf;
 
@@ -43,34 +50,58 @@ impl Targets {
 #[derive(Clap, Clone, Debug)]
 #[clap(version = "1.0", author = "feenk gmbh <contact@feenk.com>")]
 #[clap(setting = AppSettings::ColoredHelp)]
-struct Opts {
+struct BuildOptions {
     /// A level of verbosity, and can be used multiple times
     #[clap(short, long, parse(from_occurrences))]
     verbose: i32,
     /// To bundle a release build
-    #[clap(short, long)]
+    #[clap(long)]
     release: bool,
-    #[clap(short, long, possible_values = Targets::VARIANTS, case_insensitive = true)]
+    #[clap(long, possible_values = Targets::VARIANTS, case_insensitive = true)]
     /// To cross-compile and bundle an application for another OS
     target: Option<Targets>,
-    #[clap(short, long)]
+    #[clap(long)]
     /// Path to directory which cargo will use as the root of build directory.
-    build: Option<String>,
+    target_dir: Option<String>,
+    /// A name of the app
+    #[clap(long)]
+    app_name: Option<String>,
+    /// An output location of the bundle. By default a bundle is placed inside of the cargo's target dir in the following format: target/{target architecture}/{build|release}/
+    #[clap(long)]
+    bundle_dir: Option<String>,
+    /// MacOS only. Specify a path to a plist file to be bundled with the app
+    #[clap(long)]
+    plist_file: Option<String>,
+    /// Change the name of the executable. By default it is the same as app_name.
+    #[clap(long)]
+    executable_name: Option<String>,
+    /// A major version of the bundle. Defaults to 0 if minor is specified.
+    #[clap(long)]
+    major_version: Option<usize>,
+    /// A minor version of the bundle. Defaults to 0 if major is specified.
+    #[clap(long)]
+    minor_version: Option<usize>,
+    /// A patch version of the bundle. Defaults to 0.
+    #[clap(long)]
+    patch_version: Option<usize>,
+    /// A unique app identifier in the reverse domain notation, for example com.example.app
+    #[clap(long)]
+    identifier: Option<String>
 }
 
 const DEFAULT_BUILD_DIR: &str = "target";
 
 fn main() {
-    let build_config: Opts = Opts::parse();
-    let final_config = compile_bundle(&build_config);
-    package_libraries(&final_config);
+    let build_config: BuildOptions = BuildOptions::parse();
+    let final_config = compile_binary(&build_config);
+    create_bundle(&final_config);
 }
 
-fn compile_bundle(opts: &Opts) -> Opts {
+fn compile_binary(opts: &BuildOptions) -> BuildOptions {
     let mut final_config = opts.clone();
 
     let build_dir = opts
-        .build
+        .target_dir
         .as_ref()
         .map_or(DEFAULT_BUILD_DIR.to_owned(), |build_dir| build_dir.clone());
 
@@ -79,18 +110,29 @@ fn compile_bundle(opts: &Opts) -> Opts {
         |target| target.clone(),
     );
 
-    final_config.build = Some(build_dir.clone());
+    final_config.target_dir = Some(build_dir.clone());
     final_config.target = Some(target.clone());
 
-    std::env::set_var("CARGO_TARGET_DIR", format!("../{}", build_dir));
+    std::env::set_var("CARGO_TARGET_DIR", build_dir);
 
     let mut command = Command::new("cargo");
     command
         .stdout(Stdio::inherit())
-        .current_dir("vm-client")
-        .arg("bundle")
+        .arg("build")
+        .arg("--package")
+        .arg("vm-client")
         .arg("--target")
         .arg(target.to_string());
+
+    match opts.verbose {
+        0 => {}
+        1 => {
+            command.arg("-v");
+        }
+        _ => {
+            command.arg("-vv");
+        }
+    }
 
     if opts.release {
         command.arg("--release");
@@ -101,9 +143,17 @@ fn compile_bundle(opts: &Opts) -> Opts {
     final_config
 }
 
-fn package_libraries(final_config: &Opts) {
+fn create_bundle(final_config: &BuildOptions) {
+    let bundler = match final_config.target.as_ref().unwrap() {
+        Targets::X8664appleDarwin => MacBundler::new(),
+    };
+
+    bundler.bundle(final_config);
+}
+
+fn package_libraries(final_config: &BuildOptions) {
     let mut bundle_dir = PathBuf::new();
-    bundle_dir.push(final_config.build.as_ref().unwrap());
+    bundle_dir.push(final_config.target_dir.as_ref().unwrap());
     bundle_dir.push(final_config.target.as_ref().unwrap().to_string());
     bundle_dir.push(if final_config.release {
         "release"
@@ -117,7 +167,10 @@ fn package_libraries(final_config: &Opts) {
     options.overwrite = true;
     let mut from_paths = Vec::new();
 
-    from_paths.push(format!("{}/Plugins", final_config.build.as_ref().unwrap()));
+    from_paths.push(format!(
+        "{}/Plugins",
+        final_config.target_dir.as_ref().unwrap()
+    ));
 
     copy_items(
         &from_paths,
