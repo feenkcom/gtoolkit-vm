@@ -1,0 +1,14 @@
+[package]
+name = "vm-builder"
+version = "0.1.0"
+authors = ["feenk gmbh <contact@feenk.com>"]
+edition = "2018"
+
+[[bin]]
+name = "vm-builder"
+path = "src/main.rs"
+
+[dependencies]
+clap = "3.0.0-beta.2"
+fs_extra = "1.1.0"
+rustc_version = "0.2"

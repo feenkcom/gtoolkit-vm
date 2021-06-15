@@ -1,0 +1,30 @@
+[package]
+name = "glamorous_toolkit"
+version = "0.1.0"
+authors = ["Aliaksei Syrel <alex.syrel@gmail.com>"]
+edition = "2018"
+description = "GToolkit VM"
+
+[[bin]]
+name = "glamorous_toolkit"
+path = "src/main.rs"
+
+[dependencies]
+vm-bindings = { path = "../vm-bindings" }
+nfd = "0.0.4"
+clap = "3.0.0-beta.2"
+
+[package.metadata.bundle]
+name = "GlamorousToolkit"
+identifier = "com.gtoolkit"
+version = "1.0.0"
+copyright = "Copyright (c) Jane Doe 2016. All rights reserved."
+category = "Developer Tool"
+short_description = "An example application."
+long_description = """
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
+eiusmod tempor incididunt ut labore et dolore magna aliqua.  Ut
+enim ad minim veniam, quis nostrud exercitation ullamco laboris
+nisi ut aliquip ex ea commodo consequat.
+"""
+osx_minimum_system_version = "10.9"

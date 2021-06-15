@@ -2,16 +2,13 @@
 Client side Rust implementation of the Glamorous Toolkit VM
 
 ## Building
+
+To build a release version of the bundle:
 ```
-cargo build --release
+cargo run --bin vm-builder -- --release
 ```
 
-
-## Image-side bindings to the Glamorous Toolkit VM
-
+To see all possible options of the `vm-builder`:
 ```
-Metacello new
-   baseline: 'GToolkitVM';
-   repository: 'github://feenkcom/gtoolkit-vm:main/src';
-   load.
+cargo run --bin vm-builder -- --help
 ```
