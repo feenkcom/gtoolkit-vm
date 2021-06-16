@@ -3,7 +3,6 @@ use crate::bindings::{
     VMParameters as NativeVMParameters,
 };
 use crate::prelude::{Handle, NativeAccess, NativeDrop};
-use std::borrow::BorrowMut;
 use std::ffi::{CStr, CString};
 use std::fmt;
 use std::mem::forget;
@@ -22,7 +21,7 @@ impl NativeDrop for NativeVMParameters {
 impl VMParameters {
     pub fn from_args(arguments: Vec<String>) -> Self {
         // create a vector of zero terminated strings
-        let mut args = arguments
+        let args = arguments
             .iter()
             .map(|arg| CString::new(arg.as_str()).unwrap())
             .collect::<Vec<CString>>();
@@ -33,7 +32,7 @@ impl VMParameters {
             .map(|arg| arg.as_ptr())
             .collect::<Vec<*const c_char>>();
 
-        let mut vars = std::env::vars()
+        let vars = std::env::vars()
             .map(|arg| CString::new(format!("{}{}", arg.0, arg.1)).unwrap())
             .collect::<Vec<CString>>();
 
@@ -55,10 +54,10 @@ impl VMParameters {
             )
         };
         // "leak" the args, since the memory is handled by parameters now
-        unsafe { forget(args) };
-        unsafe { forget(c_args) };
-        unsafe { forget(vars) };
-        unsafe { forget(c_vars) };
+        forget(args);
+        forget(c_args);
+        forget(vars);
+        forget(c_vars);
 
         default_parameters
     }
@@ -72,8 +71,6 @@ impl VMParameters {
         let str_slice: &str = c_str.to_str().unwrap();
         str_slice.to_owned()
     }
-
-    pub fn set_environment_vars(&mut self, vars: std::env::Vars) {}
 
     pub fn set_image_file_name(&mut self, file_name: String) {
         if self.image_file_name() == file_name {

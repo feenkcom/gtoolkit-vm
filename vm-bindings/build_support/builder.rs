@@ -90,10 +90,9 @@ pub trait Builder: Debug {
             // Unwrap the Result and panic on failure.
             .expect("Unable to generate bindings");
 
-        // Write the bindings to the src/bindings.rs file.
-        let out_path = PathBuf::from("src");
+        // Write the bindings to the $OUT_DIR/bindings.rs file.
         bindings
-            .write_to_file(out_path.join("bindings.rs"))
+            .write_to_file(self.output_directory().join("bindings.rs"))
             .expect("Couldn't write bindings!");
     }
 

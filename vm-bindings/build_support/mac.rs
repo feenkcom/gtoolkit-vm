@@ -1,7 +1,7 @@
 use crate::build_support::Builder;
+use std::fmt;
 use std::fmt::{Debug, Formatter};
 use std::path::PathBuf;
-use std::{fmt, fs};
 
 #[derive(Default, Clone)]
 pub struct MacBuilder {}

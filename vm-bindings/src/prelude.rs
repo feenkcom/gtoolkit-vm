@@ -23,6 +23,7 @@
 
 // See https://github.com/rust-skia/rust-skia
 // Licence https://github.com/rust-skia/rust-skia/blob/master/LICENSE
+#![allow(dead_code)]
 
 use std::hash::{Hash, Hasher};
 use std::mem::MaybeUninit;

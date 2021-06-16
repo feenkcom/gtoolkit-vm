@@ -1,13 +1,10 @@
 extern crate nfd;
 extern crate vm_bindings;
 
-use clap::{App, AppSettings, Arg, ArgMatches, Clap};
+use clap::{App, AppSettings, Arg, ArgMatches};
 use nfd::Response;
-use std::error::Error;
-use std::fs::{DirEntry, File};
-use std::io::Write;
-use std::path::{Path, PathBuf};
-use std::{fmt, fs};
+use std::fs;
+use std::path::PathBuf;
 use vm_bindings::{VMParameters, VM};
 
 fn try_find_image_file_in_directory(path: PathBuf) -> Option<PathBuf> {
@@ -56,7 +53,7 @@ fn validate_user_image_file(image_name: Option<&str>) -> Option<PathBuf> {
 
 fn pick_image_with_dialog() -> Option<PathBuf> {
     let result = nfd::dialog().filter("image").open().unwrap_or_else(|e| {
-        panic!(e);
+        panic!("{}", e);
     });
 
     match result {
@@ -84,8 +81,8 @@ fn detect_image(matches: &ArgMatches) -> Option<PathBuf> {
 }
 
 fn main() {
-    /// if true, we will attempt to find an .image file automatically and if not found show a file picker dialog
-    /// if false, an image file must be specified, unless --image-picker flag is set
+    // if true, we will attempt to find an .image file automatically and if not found show a file picker dialog
+    // if false, an image file must be specified, unless --image-picker flag is set
     let wants_interactive =
         std::env::var("WANTS_INTERACTIVE_SESSION").map_or(false, |value| value == "true");
 
@@ -102,7 +99,7 @@ fn main() {
             })
         });
         if app_dir.is_some() {
-            std::env::set_current_dir(app_dir.unwrap());
+            std::env::set_current_dir(app_dir.unwrap()).unwrap();
         }
     }
 
@@ -129,7 +126,7 @@ fn main() {
         )
         .get_matches();
 
-    /// If evaluates to true, we should try to find an image in the nearby folder or show an image picker dialog if image was not specified
+    // If evaluates to true, we should try to find an image in the nearby folder or show an image picker dialog if image was not specified
     let should_use_image_picker = wants_interactive | matches.is_present("image-picker");
 
     if !matches.is_present("image") & !should_use_image_picker {
@@ -163,5 +160,5 @@ fn main() {
     parameters.set_image_file_name(image_path.as_os_str().to_str().unwrap().to_owned());
     parameters.set_is_interactive_session(true);
 
-    VM::start(parameters);
+    VM::start(parameters).unwrap();
 }
