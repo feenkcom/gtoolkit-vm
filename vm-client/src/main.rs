@@ -4,11 +4,11 @@ extern crate vm_bindings;
 use clap::{App, AppSettings, Arg, ArgMatches, Clap};
 use nfd::Response;
 use std::error::Error;
+use std::fs::{DirEntry, File};
+use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::{fmt, fs};
 use vm_bindings::{VMParameters, VM};
-use std::fs::File;
-use std::io::Write;
 
 fn try_find_image_file_in_directory(path: PathBuf) -> Option<PathBuf> {
     let files = fs::read_dir(&path).unwrap();
@@ -31,17 +31,17 @@ fn try_find_image_file_in_directory(path: PathBuf) -> Option<PathBuf> {
 }
 
 fn search_image_file_nearby() -> Option<PathBuf> {
-    std::env::current_exe().map(|path| {
-        if let Some(exe_folder) = path.parent() {
-            let exe_path = exe_folder.to_path_buf();
-            try_find_image_file_in_directory(exe_path).map(|path| return Some(path));
-        }
+    let image_file = std::env::current_exe().map_or(None, |path| {
+        path.parent().map_or(None, |exe_path| {
+            try_find_image_file_in_directory(exe_path.to_path_buf())
+        })
     });
 
-    std::env::current_dir()
-        .map(|path| try_find_image_file_in_directory(path).map(|path| return Some(path)));
+    if image_file.is_some() {
+        return image_file;
+    }
 
-    None
+    std::env::current_dir().map_or(None, |path| try_find_image_file_in_directory(path))
 }
 
 fn validate_user_image_file(image_name: Option<&str>) -> Option<PathBuf> {
@@ -88,6 +88,23 @@ fn main() {
     /// if false, an image file must be specified, unless --image-picker flag is set
     let wants_interactive =
         std::env::var("WANTS_INTERACTIVE_SESSION").map_or(false, |value| value == "true");
+
+    if wants_interactive {
+        let app_dir = std::env::current_exe().map_or(None, |exe_path| {
+            exe_path.parent().map_or(None, |parent| {
+                parent.parent().map_or(None, |parent| {
+                    parent.parent().map_or(None, |parent| {
+                        parent
+                            .parent()
+                            .map_or(None, |parent| Some(parent.to_path_buf()))
+                    })
+                })
+            })
+        });
+        if app_dir.is_some() {
+            std::env::set_current_dir(app_dir.unwrap());
+        }
+    }
 
     let mut image_argument = Arg::new("image")
         .value_name("image")
@@ -138,8 +155,8 @@ fn main() {
             for each in sub_m.values_of("").unwrap() {
                 vm_args.push(each.to_owned());
             }
-        },
-        _ => {},
+        }
+        _ => {}
     }
 
     let mut parameters = VMParameters::from_args(vm_args);
