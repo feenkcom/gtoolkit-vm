@@ -154,35 +154,3 @@ fn create_bundle(final_config: &BuildOptions) {
 
     bundler.bundle(final_config);
 }
-
-fn package_libraries(final_config: &BuildOptions) {
-    let mut bundle_dir = PathBuf::new();
-    bundle_dir.push(final_config.target_dir.as_ref().unwrap());
-    bundle_dir.push(final_config.target.as_ref().unwrap().to_string());
-    bundle_dir.push(if final_config.release {
-        "release"
-    } else {
-        "debug"
-    });
-    bundle_dir.push("bundle");
-    bundle_dir.push(final_config.target.as_ref().unwrap().bundle_folder());
-
-    let mut options = dir::CopyOptions::new(); //Initialize default values for CopyOptions
-    options.overwrite = true;
-    let mut from_paths = Vec::new();
-
-    from_paths.push(format!(
-        "{}/Plugins",
-        final_config.target_dir.as_ref().unwrap()
-    ));
-
-    copy_items(
-        &from_paths,
-        format!(
-            "{}/GlamorousToolkit.app/Contents/MacOS/",
-            bundle_dir.display()
-        ),
-        &options,
-    )
-    .unwrap();
-}
