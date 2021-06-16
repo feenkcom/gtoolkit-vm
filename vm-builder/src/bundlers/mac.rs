@@ -33,10 +33,11 @@ impl Bundler for MacBundler {
         let bundle_location = self.bundle_location(configuration);
         let app_name = self.app_name(configuration);
 
-        let app_dir = bundle_location.join(Path::new(&format!("{}.app", &app_name)));
-        let contents_dir = app_dir.join(Path::new("Contents"));
-        let resources_dir = contents_dir.join(Path::new("Resources"));
-        let macos_dir = contents_dir.join(Path::new("MacOS"));
+        let app_dir = bundle_location.join(format!("{}.app", &app_name));
+        let contents_dir = app_dir.join("Contents");
+        let resources_dir = contents_dir.join("Resources");
+        let macos_dir = contents_dir.join("MacOS");
+        let plugins_dir = macos_dir.join("Plugins");
 
         if app_dir.exists() {
             fs::remove_dir_all(&app_dir).unwrap();
@@ -45,6 +46,7 @@ impl Bundler for MacBundler {
         fs::create_dir(&contents_dir).unwrap();
         fs::create_dir(&resources_dir).unwrap();
         fs::create_dir(&macos_dir).unwrap();
+        fs::create_dir(&plugins_dir).unwrap();
 
         let target_executable_path =
             macos_dir.join(Path::new(&self.executable_name(configuration)));
@@ -56,8 +58,8 @@ impl Bundler for MacBundler {
         .unwrap();
 
         fs_extra::copy_items(
-            &vec![self.libraries_path(configuration)],
-            macos_dir,
+            &self.compiled_libraries(configuration),
+            plugins_dir,
             &fs_extra::dir::CopyOptions::new(),
         )
         .unwrap();
@@ -79,7 +81,9 @@ impl Bundler for MacBundler {
             executable_name: self.executable_name(configuration),
             bundle_identifier: self.bundle_identifier(configuration),
             bundle_version: self.bundle_version(configuration),
-            bundle_icon: icon.as_ref().map_or("".to_string(), |icon| icon.file_name().unwrap().to_str().unwrap().to_string())
+            bundle_icon: icon.as_ref().map_or("".to_string(), |icon| {
+                icon.file_name().unwrap().to_str().unwrap().to_string()
+            }),
         };
 
         let mut file = File::create(contents_dir.join(Path::new("Info.plist"))).unwrap();
@@ -94,7 +98,7 @@ struct Info {
     executable_name: String,
     bundle_identifier: String,
     bundle_version: String,
-    bundle_icon: String
+    bundle_icon: String,
 }
 
 const INFO_PLIST: &str = r#"<?xml version="1.0" encoding="UTF-8"?>

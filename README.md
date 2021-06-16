@@ -12,3 +12,12 @@ To see all possible options of the `vm-builder`:
 ```
 cargo run --bin vm-builder -- --help
 ```
+
+
+### Compiling for Apple M1
+
+Install the corresponding rust target and toolchain
+```
+rustup target add aarch64-apple-darwin
+rustup toolchain install stable-aarch64-apple-darwin
+```

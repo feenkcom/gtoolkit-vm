@@ -22,7 +22,8 @@ impl NativeDrop for NativeVMParameters {
 impl VMParameters {
     pub fn from_args(arguments: Vec<String>) -> Self {
         // create a vector of zero terminated strings
-        let mut args = arguments.iter()
+        let mut args = arguments
+            .iter()
             .map(|arg| CString::new(arg.as_str()).unwrap())
             .collect::<Vec<CString>>();
 

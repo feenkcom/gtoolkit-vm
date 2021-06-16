@@ -90,7 +90,7 @@ struct BuildOptions {
     /// A list of icons of different sizes to package with the app. When packaging for MacOS the icons converted
     /// into one .icns icon file. If .icns file is provided it is used instead and not processed.
     #[clap(long)]
-    icons: Option<Vec<String>>
+    icons: Option<Vec<String>>,
 }
 
 const DEFAULT_BUILD_DIR: &str = "target";

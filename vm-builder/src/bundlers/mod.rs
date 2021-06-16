@@ -51,9 +51,17 @@ pub trait Bundler {
             .map_or_else(|| self.app_name(configuration), |name| name.to_owned())
     }
 
-    fn libraries_path(&self, configuration: &BuildOptions) -> PathBuf {
+    fn compiled_libraries_directory(&self, configuration: &BuildOptions) -> PathBuf {
         self.compilation_location(configuration)
-            .join(Path::new("Plugins"))
+            .join(Path::new("shared_libraries"))
+    }
+
+    fn compiled_libraries(&self, configuration: &BuildOptions) -> Vec<PathBuf> {
+        self.compiled_libraries_directory(configuration)
+            .read_dir()
+            .unwrap()
+            .map(|each| each.unwrap().path())
+            .collect()
     }
 
     fn bundle_version(&self, configuration: &BuildOptions) -> String {
