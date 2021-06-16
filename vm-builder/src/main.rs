@@ -13,16 +13,18 @@ use fs_extra::{copy_items, dir};
 use std::str::FromStr;
 
 use crate::bundlers::mac::MacBundler;
+use crate::bundlers::windows::WindowsBundler;
 use crate::bundlers::Bundler;
 use rustc_version::version_meta;
 use std::path::PathBuf;
 
-// Define your enum
 #[derive(ArgEnum, Copy, Clone, Debug)]
 #[repr(u32)]
 enum Targets {
     #[clap(name = "x86_64-apple-darwin")]
     X8664appleDarwin,
+    #[clap(name = "x86_64-pc-windows-msvc")]
+    X8664pcWindowsMsvc,
 }
 
 impl FromStr for Targets {
@@ -36,14 +38,6 @@ impl FromStr for Targets {
 impl ToString for Targets {
     fn to_string(&self) -> String {
         (Targets::VARIANTS[*self as usize]).to_owned()
-    }
-}
-
-impl Targets {
-    pub fn bundle_folder(&self) -> &'static str {
-        match self {
-            Targets::X8664appleDarwin => "osx",
-        }
     }
 }
 
@@ -150,6 +144,7 @@ fn compile_binary(opts: &BuildOptions) -> BuildOptions {
 fn create_bundle(final_config: &BuildOptions) {
     let bundler = match final_config.target.as_ref().unwrap() {
         Targets::X8664appleDarwin => MacBundler::new(),
+        Targets::X8664pcWindowsMsvc => WindowsBundler::new(),
     };
 
     bundler.bundle(final_config);

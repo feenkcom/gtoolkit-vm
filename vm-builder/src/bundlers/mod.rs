@@ -2,6 +2,7 @@ use crate::BuildOptions;
 use std::path::{Path, PathBuf};
 
 pub mod mac;
+pub mod windows;
 
 pub trait Bundler {
     fn bundle(&self, configuration: &BuildOptions);
