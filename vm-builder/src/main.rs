@@ -86,7 +86,11 @@ struct BuildOptions {
     patch_version: Option<usize>,
     /// A unique app identifier in the reverse domain notation, for example com.example.app
     #[clap(long)]
-    identifier: Option<String>
+    identifier: Option<String>,
+    /// A list of icons of different sizes to package with the app. When packaging for MacOS the icons converted
+    /// into one .icns icon file. If .icns file is provided it is used instead and not processed.
+    #[clap(long)]
+    icons: Option<Vec<String>>
 }
 
 const DEFAULT_BUILD_DIR: &str = "target";

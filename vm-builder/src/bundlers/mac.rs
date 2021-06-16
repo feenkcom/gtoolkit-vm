@@ -1,14 +1,30 @@
 use crate::bundlers::Bundler;
 use crate::BuildOptions;
 use std::fs;
-use std::path::Path;
 use std::fs::File;
+use std::path::{Path, PathBuf};
 
 pub struct MacBundler {}
 
 impl MacBundler {
     pub fn new() -> Self {
         Self {}
+    }
+
+    pub fn create_icns(&self, configuration: &BuildOptions) -> Option<PathBuf> {
+        if let Some(icons) = configuration.icons.as_ref() {
+            for icon in icons {
+                let icon_path = Path::new(icon);
+                if icon_path.exists() {
+                    if let Some(extension) = icon_path.extension() {
+                        if extension == "icns" {
+                            return Some(icon_path.to_path_buf());
+                        }
+                    }
+                }
+            }
+        }
+        None
     }
 }
 
@@ -46,13 +62,24 @@ impl Bundler for MacBundler {
         )
         .unwrap();
 
+        let icon = if let Some(icon) = self.create_icns(configuration) {
+            let resource_icon_name = resources_dir
+                .join(self.app_name(configuration))
+                .with_extension("icns");
+            fs::copy(icon, resource_icon_name.clone()).unwrap();
+            Some(resource_icon_name.clone())
+        } else {
+            None
+        };
+
         let info_plist_template = mustache::compile_str(INFO_PLIST).unwrap();
         let info = Info {
             bundle_name: self.app_name(configuration),
             bundle_display_name: self.app_name(configuration),
             executable_name: self.executable_name(configuration),
             bundle_identifier: self.bundle_identifier(configuration),
-            bundle_version: self.bundle_version(configuration)
+            bundle_version: self.bundle_version(configuration),
+            bundle_icon: icon.as_ref().map_or("".to_string(), |icon| icon.file_name().unwrap().to_str().unwrap().to_string())
         };
 
         let mut file = File::create(contents_dir.join(Path::new("Info.plist"))).unwrap();
@@ -66,11 +93,11 @@ struct Info {
     bundle_display_name: String,
     executable_name: String,
     bundle_identifier: String,
-    bundle_version: String
+    bundle_version: String,
+    bundle_icon: String
 }
 
-const INFO_PLIST: &str = r#"
-<?xml version="1.0" encoding="UTF-8"?>
+const INFO_PLIST: &str = r#"<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
@@ -82,6 +109,8 @@ const INFO_PLIST: &str = r#"
   <string>{{executable_name}}</string>
   <key>CFBundleIdentifier</key>
   <string>{{bundle_identifier}}</string>
+  <key>CFBundleIconFile</key>
+  <string>{{bundle_icon}}</string>
   <key>CFBundleInfoDictionaryVersion</key>
   <string>6.0</string>
   <key>CFBundleName</key>

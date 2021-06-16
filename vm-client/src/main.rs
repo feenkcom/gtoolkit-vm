@@ -7,6 +7,8 @@ use std::error::Error;
 use std::path::{Path, PathBuf};
 use std::{fmt, fs};
 use vm_bindings::{VMParameters, VM};
+use std::fs::File;
+use std::io::Write;
 
 fn try_find_image_file_in_directory(path: PathBuf) -> Option<PathBuf> {
     let files = fs::read_dir(&path).unwrap();
