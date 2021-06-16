@@ -9,14 +9,12 @@ mod bundlers;
 use std::process::{Command, Stdio};
 
 use clap::{AppSettings, ArgEnum, Clap};
-use fs_extra::{copy_items, dir};
 use std::str::FromStr;
 
 use crate::bundlers::mac::MacBundler;
 use crate::bundlers::windows::WindowsBundler;
 use crate::bundlers::Bundler;
 use rustc_version::version_meta;
-use std::path::PathBuf;
 
 #[derive(ArgEnum, Copy, Clone, Debug)]
 #[repr(u32)]
@@ -44,7 +42,7 @@ impl ToString for Targets {
 #[derive(Clap, Clone, Debug)]
 #[clap(version = "1.0", author = "feenk gmbh <contact@feenk.com>")]
 #[clap(setting = AppSettings::ColoredHelp)]
-struct BuildOptions {
+pub struct BuildOptions {
     /// A level of verbosity, and can be used multiple times
     #[clap(short, long, parse(from_occurrences))]
     verbose: i32,
@@ -142,9 +140,9 @@ fn compile_binary(opts: &BuildOptions) -> BuildOptions {
 }
 
 fn create_bundle(final_config: &BuildOptions) {
-    let bundler = match final_config.target.as_ref().unwrap() {
-        Targets::X8664appleDarwin => MacBundler::new(),
-        Targets::X8664pcWindowsMsvc => WindowsBundler::new(),
+    let bundler: Box<dyn Bundler> = match final_config.target.as_ref().unwrap() {
+        Targets::X8664appleDarwin => Box::new(MacBundler::new()),
+        Targets::X8664pcWindowsMsvc => Box::new(WindowsBundler::new()),
     };
 
     bundler.bundle(final_config);
