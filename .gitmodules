@@ -1,4 +1,4 @@
 [submodule "opensmalltalk-vm"]
 	path = opensmalltalk-vm
-	url = https://github.com/pharo-project/opensmalltalk-vm.git
+	url = https://github.com/syrel/opensmalltalk-vm.git
 	branch = headless
