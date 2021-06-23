@@ -49,6 +49,9 @@ pub struct BuildOptions {
     /// To bundle a release build
     #[clap(long)]
     release: bool,
+    /// Include debug symbols in the binary
+    #[clap(long)]
+    debug_symbols: bool,
     #[clap(long, possible_values = Targets::VARIANTS, case_insensitive = true)]
     /// To cross-compile and bundle an application for another OS
     target: Option<Targets>,
@@ -79,6 +82,9 @@ pub struct BuildOptions {
     /// A unique app identifier in the reverse domain notation, for example com.example.app
     #[clap(long)]
     identifier: Option<String>,
+    /// An author entity of the application (company or person)
+    #[clap(long)]
+    author: Option<String>,
     /// A list of icons of different sizes to package with the app. When packaging for MacOS the icons converted
     /// into one .icns icon file. If .icns file is provided it is used instead and not processed.
     #[clap(long)]
@@ -89,11 +95,16 @@ const DEFAULT_BUILD_DIR: &str = "target";
 
 fn main() {
     let build_config: BuildOptions = BuildOptions::parse();
-    let final_config = compile_binary(&build_config);
-    create_bundle(&final_config);
+    let final_config = resolve_final_build_options(&build_config);
+
+    let bundler = bundler(&final_config);
+    bundler.pre_compile(&final_config);
+    compile_binary(&final_config);
+    bundler.post_compile(&final_config);
+    bundler.bundle(&final_config);
 }
 
-fn compile_binary(opts: &BuildOptions) -> BuildOptions {
+fn resolve_final_build_options(opts: &BuildOptions) -> BuildOptions {
     let mut final_config = opts.clone();
 
     let build_dir = opts
@@ -109,7 +120,19 @@ fn compile_binary(opts: &BuildOptions) -> BuildOptions {
     final_config.target_dir = Some(build_dir.clone());
     final_config.target = Some(target.clone());
 
-    std::env::set_var("CARGO_TARGET_DIR", build_dir);
+    final_config
+}
+
+fn compile_binary(opts: &BuildOptions) {
+    std::env::set_var(
+        "CARGO_TARGET_DIR",
+        opts.target_dir.as_ref().unwrap().clone(),
+    );
+
+    std::env::set_var(
+        "VM_CLIENT_EMBED_DEBUG_SYMBOLS",
+        format!("{}", opts.debug_symbols),
+    );
 
     let mut command = Command::new("cargo");
     command
@@ -118,7 +141,7 @@ fn compile_binary(opts: &BuildOptions) -> BuildOptions {
         .arg("--package")
         .arg("vm-client")
         .arg("--target")
-        .arg(target.to_string());
+        .arg(opts.target.as_ref().unwrap().to_string());
 
     match opts.verbose {
         0 => {}
@@ -135,15 +158,11 @@ fn compile_binary(opts: &BuildOptions) -> BuildOptions {
     }
 
     command.status().unwrap();
-
-    final_config
 }
 
-fn create_bundle(final_config: &BuildOptions) {
-    let bundler: Box<dyn Bundler> = match final_config.target.as_ref().unwrap() {
+fn bundler(final_config: &BuildOptions) -> Box<dyn Bundler> {
+    match final_config.target.as_ref().unwrap() {
         Targets::X8664appleDarwin => Box::new(MacBundler::new()),
         Targets::X8664pcWindowsMsvc => Box::new(WindowsBundler::new()),
-    };
-
-    bundler.bundle(final_config);
+    }
 }

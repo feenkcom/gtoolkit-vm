@@ -11,5 +11,8 @@ path = "src/main.rs"
 
 [dependencies]
 vm-bindings = { path = "../vm-bindings" }
-nfd = "0.0.4"
+nfd = {  git = "https://github.com/saurvs/nfd-rs.git", rev = "07578c5fea4d7b1f35fbf128f04b6264c3bf3c5a" }
 clap = "3.0.0-beta.2"
+
+[build-dependencies]
+embed-resource = "1.6"

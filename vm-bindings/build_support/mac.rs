@@ -33,6 +33,10 @@ impl Builder for MacBuilder {
             .join("Plugins")
     }
 
+    fn platform_include_directory(&self) -> PathBuf {
+        self.squeak_include_directory().join("osx")
+    }
+
     fn link_libraries(&self) {
         println!("cargo:rustc-link-lib=PharoVMCore");
         println!("cargo:rustc-link-lib=framework=AppKit");

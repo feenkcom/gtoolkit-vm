@@ -1,3 +1,5 @@
+#![windows_subsystem = "windows"]
+
 extern crate nfd;
 extern crate vm_bindings;
 

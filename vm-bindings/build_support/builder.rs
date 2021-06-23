@@ -1,4 +1,5 @@
 use std::fmt::Debug;
+use std::io::Error;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::{env, fmt, fs};
@@ -6,6 +7,30 @@ use std::{env, fmt, fs};
 pub trait Builder: Debug {
     fn is_compiled(&self) -> bool {
         self.vm_binary().exists()
+    }
+
+    fn profile(&self) -> String {
+        std::env::var("PROFILE").unwrap()
+    }
+
+    fn is_debug(&self) -> bool {
+        self.profile() == "debug"
+    }
+
+    fn should_embed_debug_symbols(&self) -> bool {
+        std::env::var("VM_CLIENT_EMBED_DEBUG_SYMBOLS").map_or(false, |value| value == "true")
+    }
+
+    fn cmake_build_type(&self) -> String {
+        (if self.is_debug() {
+            "-DCMAKE_BUILD_TYPE=RelWithDebInfo"
+        }
+        else if self.should_embed_debug_symbols() {
+            "-DCMAKE_BUILD_TYPE=RelWithDebInfo"
+        }
+        else {
+            "-DCMAKE_BUILD_TYPE=Release"
+        }).to_string()
     }
 
     fn output_directory(&self) -> PathBuf {
@@ -32,7 +57,7 @@ pub trait Builder: Debug {
             .join("..")
             .join(std::env::var("CARGO_TARGET_DIR").unwrap_or("target".to_string()))
             .join(std::env::var("TARGET").unwrap())
-            .join(std::env::var("PROFILE").unwrap())
+            .join(self.profile())
             .join("shared_libraries")
     }
 
@@ -47,26 +72,42 @@ pub trait Builder: Debug {
     }
 
     fn compile_sources(&self) {
-        Command::new("make")
-            .current_dir(self.output_directory())
-            .arg("install")
+        Command::new("cmake")
+            .arg("--build")
+            .arg(self.output_directory())
+            .arg("--config")
+            .arg(self.profile())
             .status()
             .unwrap();
     }
 
+    fn squeak_include_directory(&self) -> PathBuf {
+        self.vm_sources_directory()
+            .join("extracted")
+            .join("vm")
+            .join("include")
+    }
+
+    fn common_include_directory(&self) -> PathBuf {
+        self.squeak_include_directory().join("common")
+    }
+
+    fn platform_include_directory(&self) -> PathBuf;
+    fn generated_config_directory(&self) -> PathBuf;
+
     fn generate_bindings(&self) {
-        let include_dir = self
+        let include_dir = self.vm_sources_directory().join("include");
+
+        let generated_vm_include_dir = self
             .output_directory()
-            .join("build")
-            .join("dist")
+            .join("generated")
+            .join("64")
+            .join("vm")
             .join("include");
 
-        // The bindgen::Builder is the main entry point
-        // to bindgen, and lets you build up options for
-        // the resulting bindings.
         let bindings = bindgen::Builder::default()
-            // The input header we would like to generate
-            // bindings for.
+            .whitelist_function("vm_.*")
+            .whitelist_function("free")
             .header(
                 include_dir
                     .join("pharovm")
@@ -74,14 +115,15 @@ pub trait Builder: Debug {
                     .display()
                     .to_string(),
             )
-            .header(
-                include_dir
-                    .join("pharovm")
-                    .join("sqMemoryAccess.h")
-                    .display()
-                    .to_string(),
-            )
             .clang_arg(format!("-I{}", &include_dir.display()))
+            .clang_arg(format!("-I{}", &include_dir.join("pharovm").display()))
+            .clang_arg(format!(
+                "-I{}",
+                &self.generated_config_directory().display()
+            ))
+            .clang_arg(format!("-I{}", &generated_vm_include_dir.display()))
+            .clang_arg(format!("-I{}", self.common_include_directory().display()))
+            .clang_arg(format!("-I{}", self.platform_include_directory().display()))
             // Tell cargo to invalidate the built crate whenever any of the
             // included header files changed.
             .parse_callbacks(Box::new(bindgen::CargoCallbacks))
@@ -112,7 +154,17 @@ pub trait Builder: Debug {
             );
 
             let target = self.exported_libraries_directory().join(target_file_name);
-            fs::copy(origin, target).unwrap();
+            match fs::copy(&origin, &target) {
+                Ok(_) => {}
+                Err(error) => {
+                    panic!(
+                        "Could not copy {} to {} due to {}",
+                        &origin.display(),
+                        &target.display(),
+                        error
+                    )
+                }
+            }
         }
     }
 
