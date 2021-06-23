@@ -1,5 +1,4 @@
 use std::fmt::Debug;
-use std::io::Error;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::{env, fmt, fs};
@@ -63,6 +62,7 @@ pub trait Builder: Debug {
 
     fn generate_sources(&self) {
         Command::new("cmake")
+            .arg(self.cmake_build_type())
             .arg("-S")
             .arg(self.vm_sources_directory())
             .arg("-B")
