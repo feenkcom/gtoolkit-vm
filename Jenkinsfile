@@ -43,6 +43,10 @@ pipeline {
                     agent {
                         label "windows" // a labelled node defined in jenkins
                     }
+
+                    steps {
+                        powershell 'echo $PATH'
+                    }
                 }
             }
         }
