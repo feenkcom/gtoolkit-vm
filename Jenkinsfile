@@ -34,9 +34,9 @@ pipeline {
                         // the .app is in ./target/x86_64-apple-darwin/release/bundle/GlamorousToolkit.app
                         //sh 'cargo run --package vm-builder --target ${env.TARGET} -- --app-name GlamorousToolkit -vv --release'
 
-                        sh 'mkdir -p target/${TARGET}/release/bundle/GlamorousToolkit.app'
+                        sh "mkdir -p target/${TARGET}/release/bundle/GlamorousToolkit.app"
 
-                        stash includes: 'target/${TARGET}/release/bundle/GlamorousToolkit.app', name: '${TARGET}'
+                        stash includes: "target/${TARGET}/release/bundle/GlamorousToolkit.app", name: "${TARGET}"
                     }
                 }
                 stage ('Windows') {
