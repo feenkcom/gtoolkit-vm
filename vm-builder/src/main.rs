@@ -21,6 +21,8 @@ use rustc_version::version_meta;
 enum Targets {
     #[clap(name = "x86_64-apple-darwin")]
     X8664appleDarwin,
+    #[clap(name = "aarch64-apple-darwin")]
+    AArch64appleDarwin,
     #[clap(name = "x86_64-pc-windows-msvc")]
     X8664pcWindowsMsvc,
 }
@@ -163,6 +165,7 @@ fn compile_binary(opts: &BuildOptions) {
 fn bundler(final_config: &BuildOptions) -> Box<dyn Bundler> {
     match final_config.target.as_ref().unwrap() {
         Targets::X8664appleDarwin => Box::new(MacBundler::new()),
+        Targets::AArch64appleDarwin => Box::new(MacBundler::new()),
         Targets::X8664pcWindowsMsvc => Box::new(WindowsBundler::new()),
     }
 }
