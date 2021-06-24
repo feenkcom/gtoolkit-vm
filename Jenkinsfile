@@ -19,31 +19,29 @@ pipeline {
     stages {
         stage ('Parallel build') {
             parallel {
-                stages {
-                    stage ('MacOSX') {
-                        agent {
-                            label "macosx" // a labelled node defined in jenkins
-                        }
-
-                        environment {
-                            TARGET = 'x86_64-apple-darwin'
-                        }
-
-                        steps {
-                            sh 'git clean -fdx'
-
-                            // the .app is in ./target/x86_64-apple-darwin/release/bundle/GlamorousToolkit.app
-                            //sh 'cargo run --package vm-builder --target ${env.TARGET} -- --app-name GlamorousToolkit -vv --release'
-
-                            sh 'mkdir -p target/${TARGET}/release/bundle/GlamorousToolkit.app'
-
-                            stash includes: 'target/${TARGET}/release/bundle/GlamorousToolkit.app', name: '${TARGET}'
-                        }
+                stage ('MacOSX') {
+                    agent {
+                        label "macosx" // a labelled node defined in jenkins
                     }
-                    stage ('Windows') {
-                        agent {
-                            label "windows" // a labelled node defined in jenkins
-                        }
+
+                    environment {
+                        TARGET = 'x86_64-apple-darwin'
+                    }
+
+                    steps {
+                        sh 'git clean -fdx'
+
+                        // the .app is in ./target/x86_64-apple-darwin/release/bundle/GlamorousToolkit.app
+                        //sh 'cargo run --package vm-builder --target ${env.TARGET} -- --app-name GlamorousToolkit -vv --release'
+
+                        sh 'mkdir -p target/${TARGET}/release/bundle/GlamorousToolkit.app'
+
+                        stash includes: 'target/${TARGET}/release/bundle/GlamorousToolkit.app', name: '${TARGET}'
+                    }
+                }
+                stage ('Windows') {
+                    agent {
+                        label "windows" // a labelled node defined in jenkins
                     }
                 }
             }
