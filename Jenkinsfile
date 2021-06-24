@@ -35,8 +35,9 @@ pipeline {
                         //sh 'cargo run --package vm-builder --target ${env.TARGET} -- --app-name GlamorousToolkit -vv --release'
 
                         sh "mkdir -p target/${TARGET}/release/bundle/GlamorousToolkit.app"
+                        sh "zip GlamorousToolkitMacOSx86_64.app.zip target/${TARGET}/release/bundle/GlamorousToolkit.app"
 
-                        stash includes: "target/${TARGET}/release/bundle/GlamorousToolkit.app", name: "${TARGET}"
+                        stash includes: "GlamorousToolkitMacOSx86_64.app.zip", name: "${TARGET}"
                     }
                 }
                 stage ('Windows') {
