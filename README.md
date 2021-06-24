@@ -16,6 +16,11 @@ After cloning the repository please update the submodules:
 git submodule update --init --recursive
 ```
 
+To update a submodule:
+```
+git submodule update --remote --recursive
+```
+
 ## Building
 
 First build a `vm-builder`:

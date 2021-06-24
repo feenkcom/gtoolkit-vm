@@ -60,16 +60,7 @@ pub trait Builder: Debug {
             .join("shared_libraries")
     }
 
-    fn generate_sources(&self) {
-        Command::new("cmake")
-            .arg(self.cmake_build_type())
-            .arg("-S")
-            .arg(self.vm_sources_directory())
-            .arg("-B")
-            .arg(self.output_directory())
-            .status()
-            .unwrap();
-    }
+    fn generate_sources(&self);
 
     fn compile_sources(&self) {
         Command::new("cmake")

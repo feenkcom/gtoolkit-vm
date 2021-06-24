@@ -5,7 +5,7 @@ use crate::bindings::{
 use crate::prelude::{Handle, NativeAccess, NativeDrop};
 use std::ffi::{CStr, CString};
 use std::fmt;
-use std::mem::forget;
+use std::mem::{forget, ManuallyDrop};
 use std::os::raw::{c_char, c_int, c_void};
 
 pub type VMParameters = Handle<NativeVMParameters>;
@@ -19,45 +19,32 @@ impl NativeDrop for NativeVMParameters {
 }
 
 impl VMParameters {
-    pub fn from_args(arguments: Vec<String>) -> Self {
-        // create a vector of zero terminated strings
-        let args = arguments
-            .iter()
-            .map(|arg| CString::new(arg.as_str()).unwrap())
-            .collect::<Vec<CString>>();
-
-        // convert the strings to raw pointers
-        let mut c_args = args
-            .iter()
-            .map(|arg| arg.as_ptr())
-            .collect::<Vec<*const c_char>>();
-
+    pub fn from_args<P: AsRef<str>>(arguments: Vec<P>) -> Self {
         let vars = std::env::vars()
-            .map(|arg| CString::new(format!("{}{}", arg.0, arg.1)).unwrap())
+            .map(|arg| CString::new(format!("{}={}", arg.0, arg.1)).unwrap())
             .collect::<Vec<CString>>();
 
-        let mut c_vars = args
+        let mut c_vars = vars
             .iter()
             .map(|arg| arg.as_ptr())
             .collect::<Vec<*const c_char>>();
 
         let mut default_parameters = Self::default();
-        default_parameters.native_mut().processArgc = c_args.len() as c_int;
-        default_parameters.native_mut().processArgv = c_args.as_mut_ptr();
+        default_parameters.set_arguments(arguments);
         default_parameters.native_mut().environmentVector = c_vars.as_mut_ptr();
 
-        unsafe {
-            vm_parameters_parse(
-                c_args.len() as c_int,
-                c_args.as_mut_ptr(),
-                default_parameters.native_mut(),
-            )
-        };
-        // "leak" the args, since the memory is handled by parameters now
-        forget(args);
-        forget(c_args);
         forget(vars);
         forget(c_vars);
+
+        if default_parameters.has_arguments() {
+            unsafe {
+                vm_parameters_parse(
+                    default_parameters.native().processArgc,
+                    default_parameters.native().processArgv,
+                    default_parameters.native_mut(),
+                )
+            };
+        }
 
         default_parameters
     }
@@ -67,22 +54,76 @@ impl VMParameters {
     }
 
     pub fn image_file_name(&self) -> String {
+        if self.native().imageFileName.is_null() {
+            return "".to_string();
+        }
+
         let c_str: &CStr = unsafe { CStr::from_ptr(self.native().imageFileName) };
         let str_slice: &str = c_str.to_str().unwrap();
         str_slice.to_owned()
     }
 
-    pub fn set_image_file_name(&mut self, file_name: String) {
-        if self.image_file_name() == file_name {
+    pub fn set_image_file_name<P: Into<String>>(&mut self, file_name: P) {
+        let new_image_name: String = file_name.into();
+
+        if self.image_file_name() == new_image_name {
             return;
         }
 
         let previous_file_name = self.native().imageFileName as *mut c_void;
         unsafe { crate::bindings::free(previous_file_name) };
 
-        let c_str = CString::new(file_name).unwrap();
+        let c_str = CString::new(new_image_name).unwrap();
         self.native_mut().imageFileName = c_str.into_raw();
         self.native_mut().isDefaultImage = false;
+    }
+
+    pub fn arguments(&self) -> Vec<String> {
+        let args_ptr = self.native().processArgv as *mut *mut c_char;
+        let args_length = self.native().processArgc as usize;
+
+        let arg_ptrs: Vec<*mut c_char>  = unsafe { Vec::from_raw_parts(args_ptr, args_length, args_length) };
+        let arguments: Vec<String> = arg_ptrs.iter().map(|each| {
+            unsafe { CStr::from_ptr(*each).to_string_lossy().into_owned() }
+        }).collect();
+
+        std::mem::forget(arg_ptrs);
+        arguments
+    }
+
+    pub fn has_arguments(&self) -> bool {
+        self.native().processArgc > 0
+    }
+
+    pub fn set_arguments<P: AsRef<str>>(&mut self, arguments: Vec<P>) {
+        // create a vector of zero terminated strings
+        let mut args = arguments
+            .iter()
+            .map(|each| each.as_ref().to_string())
+            .map(|each| CString::into_raw(CString::new(each).unwrap()))
+            .collect::<Vec<*mut c_char>>();
+
+        args.shrink_to_fit();
+
+        let args_ptr = args.as_ptr() as *mut *const c_char;
+        let args_length = args.len() as i32;
+        std::mem::forget(args);
+
+        if !self.native().processArgv.is_null() {
+            let previous_ptr = self.native().processArgv as *mut *mut c_char;
+            let previous_length = self.native().processArgc as usize;
+
+            let previous_arg_ptrs: Vec<*mut c_char>  = unsafe { Vec::from_raw_parts(previous_ptr, previous_length, previous_length) };
+            let previous_args = previous_arg_ptrs.iter().map(|each| {
+                unsafe { CString::from_raw(*each) }
+            }).collect::<Vec<CString>>();
+
+            drop(previous_args);
+            drop(previous_arg_ptrs);
+        }
+
+        self.native_mut().processArgv = args_ptr;
+        self.native_mut().processArgc = args_length;
     }
 
     pub fn is_default_image(&self) -> bool {
@@ -122,6 +163,7 @@ impl fmt::Debug for VMParameters {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("VMParameters")
             .field("image_file_name", &self.image_file_name())
+            .field("arguments", &self.arguments())
             .field("is_default_image", &self.is_default_image())
             .field("is_default_image_found", &self.is_default_image_found())
             .field("is_interactive_session", &self.is_interactive_session())
