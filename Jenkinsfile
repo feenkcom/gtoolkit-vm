@@ -77,8 +77,8 @@ pipeline {
 
                         //powershell "cargo run --package vm-builder --target ${TARGET} -- --app-name ${APP_NAME} -vv --release"
 
-                        powershell "New-Item -path target\${TARGET}\release\bundle\${APP_NAME}\bin -type directory"
-                        powershell "Compress-Archive -Path target\${TARGET}\release\bundle\${APP_NAME} -DestinationPath ${APP_NAME}${TARGET}.zip"
+                        powershell "New-Item -path target/${TARGET}/release/bundle/${APP_NAME}/bin -type directory"
+                        powershell "Compress-Archive -Path target/${TARGET}/release/bundle/${APP_NAME} -DestinationPath ${APP_NAME}${TARGET}.zip"
                         stash includes: "${APP_NAME}${TARGET}.zip", name: "${TARGET}"
                     }
                 }
