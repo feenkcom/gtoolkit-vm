@@ -10,6 +10,18 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ### CMake
 Is responsible for managing the build process of C/C++ third party libraries. Install it according to the Linux distribution.
 
+### GTK
+Is required by the [nativefiledialog](https://github.com/saurvs/nfd-rs) to open an image picker. Install it according to the Linux distribution. In case of Ubuntu:
+```
+sudo apt install libgtk-3-dev
+```
+
+### LLVM / CLang
+The native libraries are such as Skia and Pharo are compiled using CLang. Install it according to the Linux distribution. In case of Ubuntu:
+```
+sudo apt install clang llvm
+```
+
 ## Cloning
 ```
 git clone git@github.com:feenkcom/gtoolkit-vm.git

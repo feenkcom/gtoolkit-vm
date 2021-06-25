@@ -32,16 +32,10 @@ impl Builder for LinuxBuilder {
     }
 
     fn generate_sources(&self) {
-        Command::new("cmake")
-            .arg(self.cmake_build_type())
-            .arg("-DCOMPILE_EXECUTABLE=OFF")
-            .arg("-S")
-            .arg(self.vm_sources_directory())
-            .arg("-B")
-            .arg(self.output_directory())
-            .status()
-            .unwrap();
+        cmake::Config::new(self.vm_sources_directory()).define("COMPILE_EXECUTABLE", "OFF").build();
     }
+
+    fn compile_sources(&self) {}
 
     fn platform_include_directory(&self) -> PathBuf {
         self.squeak_include_directory().join("unix")
@@ -56,6 +50,7 @@ impl Builder for LinuxBuilder {
 
     fn link_libraries(&self) {
         println!("cargo:rustc-link-lib=PharoVMCore");
+        println!("cargo:rustc-link-lib=GTK-3");
 
         println!(
             "cargo:rustc-link-search={}",
