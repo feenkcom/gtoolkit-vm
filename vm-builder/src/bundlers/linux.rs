@@ -13,7 +13,5 @@ impl LinuxBundler {
 }
 
 impl Bundler for LinuxBundler {
-    fn bundle(&self, _configuration: &BuildOptions) {
-
-    }
+    fn bundle(&self, _configuration: &BuildOptions) {}
 }

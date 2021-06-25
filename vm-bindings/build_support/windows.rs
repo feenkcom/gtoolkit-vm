@@ -185,7 +185,11 @@ impl WindowsBuilder {
     fn sdl2_binary(&self) -> PathBuf {
         self.sdl2_build_directory()
             .join(self.profile())
-            .join(if self.is_debug() { "SDL2d.dll" } else { "SDL2.dll" })
+            .join(if self.is_debug() {
+                "SDL2d.dll"
+            } else {
+                "SDL2.dll"
+            })
     }
 
     fn pthreads_library_directory(&self) -> PathBuf {

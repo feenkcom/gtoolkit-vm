@@ -11,6 +11,7 @@ use std::process::{Command, Stdio};
 use clap::{AppSettings, ArgEnum, Clap};
 use std::str::FromStr;
 
+use crate::bundlers::linux::LinuxBundler;
 use crate::bundlers::mac::MacBundler;
 use crate::bundlers::windows::WindowsBundler;
 use crate::bundlers::Bundler;
@@ -25,8 +26,8 @@ enum Targets {
     AArch64appleDarwin,
     #[clap(name = "x86_64-pc-windows-msvc")]
     X8664pcWindowsMsvc,
-    #[clap(name= "x86_64-unknown-linux-gnu")]
-    X8664UnknownlinuxGNU
+    #[clap(name = "x86_64-unknown-linux-gnu")]
+    X8664UnknownlinuxGNU,
 }
 
 impl FromStr for Targets {
@@ -169,5 +170,6 @@ fn bundler(final_config: &BuildOptions) -> Box<dyn Bundler> {
         Targets::X8664appleDarwin => Box::new(MacBundler::new()),
         Targets::AArch64appleDarwin => Box::new(MacBundler::new()),
         Targets::X8664pcWindowsMsvc => Box::new(WindowsBundler::new()),
+        Targets::X8664UnknownlinuxGNU => Box::new(LinuxBundler::new()),
     }
 }

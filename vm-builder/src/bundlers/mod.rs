@@ -1,9 +1,9 @@
 use crate::BuildOptions;
 use std::path::{Path, PathBuf};
 
+pub mod linux;
 pub mod mac;
 pub mod windows;
-pub mod linux;
 
 pub trait Bundler {
     fn pre_compile(&self, _configuration: &BuildOptions) {}

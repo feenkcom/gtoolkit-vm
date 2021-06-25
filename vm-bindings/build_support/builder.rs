@@ -11,16 +11,12 @@ pub(crate) enum Name<'a> {
     Optional(&'a str),
 }
 
-impl <'a> Name<'a> {
+impl<'a> Name<'a> {
     pub(crate) fn find_file(&self, directory: &PathBuf) -> Option<PathBuf> {
         match self {
             Name::Exact(name) => {
                 let file = directory.join(name);
-                assert!(
-                    file.exists(),
-                    "File named {} must exist!",
-                    name
-                );
+                assert!(file.exists(), "File named {} must exist!", name);
                 Some(file)
             }
             Name::Any(names) => {

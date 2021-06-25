@@ -82,10 +82,12 @@ impl VMParameters {
         let args_ptr = self.native().processArgv as *mut *mut c_char;
         let args_length = self.native().processArgc as usize;
 
-        let arg_ptrs: Vec<*mut c_char>  = unsafe { Vec::from_raw_parts(args_ptr, args_length, args_length) };
-        let arguments: Vec<String> = arg_ptrs.iter().map(|each| {
-            unsafe { CStr::from_ptr(*each).to_string_lossy().into_owned() }
-        }).collect();
+        let arg_ptrs: Vec<*mut c_char> =
+            unsafe { Vec::from_raw_parts(args_ptr, args_length, args_length) };
+        let arguments: Vec<String> = arg_ptrs
+            .iter()
+            .map(|each| unsafe { CStr::from_ptr(*each).to_string_lossy().into_owned() })
+            .collect();
 
         std::mem::forget(arg_ptrs);
         arguments
@@ -113,10 +115,12 @@ impl VMParameters {
             let previous_ptr = self.native().processArgv as *mut *mut c_char;
             let previous_length = self.native().processArgc as usize;
 
-            let previous_arg_ptrs: Vec<*mut c_char>  = unsafe { Vec::from_raw_parts(previous_ptr, previous_length, previous_length) };
-            let previous_args = previous_arg_ptrs.iter().map(|each| {
-                unsafe { CString::from_raw(*each) }
-            }).collect::<Vec<CString>>();
+            let previous_arg_ptrs: Vec<*mut c_char> =
+                unsafe { Vec::from_raw_parts(previous_ptr, previous_length, previous_length) };
+            let previous_args = previous_arg_ptrs
+                .iter()
+                .map(|each| unsafe { CString::from_raw(*each) })
+                .collect::<Vec<CString>>();
 
             drop(previous_args);
             drop(previous_arg_ptrs);
