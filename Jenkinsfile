@@ -68,6 +68,10 @@ pipeline {
                         label "${WINDOWS_AMD64_TARGET}"
                     }
 
+                    environment {
+                        TARGET = "${WINDOWS_AMD64_TARGET}"
+                    }
+
                     steps {
                         powershell 'git clean -fdx'
 
