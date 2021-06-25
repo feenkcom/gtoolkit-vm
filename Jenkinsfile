@@ -59,8 +59,10 @@ pipeline {
             }
             steps {
                 unstash "${MACOS_INTEL_TARGET}"
+                sh "unzip ${APP_NAME}${TARGET}.app.zip -d ${APP_NAME}${TARGET}"
 
                 sh 'ls -la'
+                sh 'ls -la ${APP_NAME}${TARGET}'
 
                 //sh "cargo run --package vm-releaser -- --owner feenkcom --repo ${APP_NAME} --token GITHUB_TOKEN --bump-patch --auto-accept --assets"
 
