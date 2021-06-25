@@ -14,6 +14,8 @@ pipeline {
         AWSIP = 'ec2-18-197-145-81.eu-central-1.compute.amazonaws.com'
         MASTER_WORKSPACE = ""
         APP_NAME = "GlamorousToolkit"
+
+        MACOS_INTEL_TARGET = 'x86_64-apple-darwin'
     }
 
     stages {
@@ -25,19 +27,18 @@ pipeline {
                     }
 
                     environment {
-                        TARGET = 'x86_64-apple-darwin'
+                        TARGET = "${MACOS_INTEL_TARGET}"
                     }
 
                     steps {
                         sh 'git clean -fdx'
 
-                        // the .app is in ./target/x86_64-apple-darwin/release/bundle/GlamorousToolkit.app
-                        //sh 'cargo run --package vm-builder --target ${env.TARGET} -- --app-name GlamorousToolkit -vv --release'
+                        //sh "cargo run --package vm-builder --target ${env.TARGET} -- --app-name ${APP_NAME} -vv --release"
 
-                        sh "mkdir -p target/${TARGET}/release/bundle/GlamorousToolkit.app"
-                        sh "zip GlamorousToolkitMacOSx86_64.app.zip target/${TARGET}/release/bundle/GlamorousToolkit.app"
+                        sh "mkdir -p target/${TARGET}/release/bundle/${APP_NAME}.app"
+                        sh "zip ${APP_NAME}${TARGET}.app.zip target/${TARGET}/release/bundle/${APP_NAME}.app"
 
-                        stash includes: "GlamorousToolkitMacOSx86_64.app.zip", name: "${TARGET}"
+                        stash includes: "${APP_NAME}${TARGET}.app.zip", name: "${TARGET}"
                     }
                 }
                 stage ('Windows') {
@@ -49,6 +50,20 @@ pipeline {
                         powershell 'echo $PATH'
                     }
                 }
+            }
+        }
+
+        stage ('Deployment') {
+            agent {
+                label "unix"
+            }
+            steps {
+                unstash "${MACOS_INTEL_TARGET}"
+
+                sh 'ls -la'
+
+                //sh "cargo run --package vm-releaser -- --owner feenkcom --repo ${APP_NAME} --token GITHUB_TOKEN --bump-patch --auto-accept --assets"
+
             }
         }
     }
