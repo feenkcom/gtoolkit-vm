@@ -25,6 +25,8 @@ enum Targets {
     AArch64appleDarwin,
     #[clap(name = "x86_64-pc-windows-msvc")]
     X8664pcWindowsMsvc,
+    #[clap(name= "x86_64-unknown-linux-gnu")]
+    X8664UnknownlinuxGNU
 }
 
 impl FromStr for Targets {
