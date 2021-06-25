@@ -16,14 +16,16 @@ pipeline {
         APP_NAME = "GlamorousToolkit"
 
         MACOS_INTEL_TARGET = 'x86_64-apple-darwin'
+        MACOS_M1_TARGET = 'aarch64-apple-darwin'
+        WINDOWS_AMD64_TARGET = 'x86_64-pc-windows-msvc'
     }
 
     stages {
         stage ('Parallel build') {
             parallel {
-                stage ('MacOSX') {
+                stage ('MacOS x86_64') {
                     agent {
-                        label "macosx" // a labelled node defined in jenkins
+                        label "${MACOS_INTEL_TARGET}"
                     }
 
                     environment {
@@ -33,21 +35,47 @@ pipeline {
                     steps {
                         sh 'git clean -fdx'
 
-                        //sh "cargo run --package vm-builder --target ${env.TARGET} -- --app-name ${APP_NAME} -vv --release"
+                        //sh "cargo run --package vm-builder --target ${TARGET} -- --app-name ${APP_NAME} -vv --release"
 
                         sh "mkdir -p target/${TARGET}/release/bundle/${APP_NAME}.app"
-                        sh "zip ${APP_NAME}${TARGET}.app.zip target/${TARGET}/release/bundle/${APP_NAME}.app"
+                        sh "ditto -c -k --sequesterRsrc --keepParent target/${TARGET}/release/bundle/${APP_NAME}.app ${APP_NAME}${TARGET}.app.zip"
 
                         stash includes: "${APP_NAME}${TARGET}.app.zip", name: "${TARGET}"
                     }
                 }
-                stage ('Windows') {
+                stage ('MacOS M1') {
                     agent {
-                        label "windows" // a labelled node defined in jenkins
+                        label "${MACOS_M1_TARGET}"
+                    }
+
+                    environment {
+                        TARGET = "${MACOS_M1_TARGET}"
                     }
 
                     steps {
-                        powershell 'echo $PATH'
+                        sh 'git clean -fdx'
+
+                        //sh "cargo run --package vm-builder --target ${TARGET} -- --app-name ${APP_NAME} -vv --release"
+
+                        sh "mkdir -p target/${TARGET}/release/bundle/${APP_NAME}.app"
+                        sh "ditto -c -k --sequesterRsrc --keepParent target/${TARGET}/release/bundle/${APP_NAME}.app ${APP_NAME}${TARGET}.app.zip"
+
+                        stash includes: "${APP_NAME}${TARGET}.app.zip", name: "${TARGET}"
+                    }
+                }
+                stage ('Windows x86_64') {
+                    agent {
+                        label "${WINDOWS_AMD64_TARGET}"
+                    }
+
+                    steps {
+                        powershell 'git clean -fdx'
+
+                        //powershell "cargo run --package vm-builder --target ${TARGET} -- --app-name ${APP_NAME} -vv --release"
+
+                        powershell "New-Item -path target\${TARGET}\release\bundle\${APP_NAME}\bin -type directory"
+                        powershell "Compress-Archive -Path target\${TARGET}\release\bundle\${APP_NAME} -DestinationPath ${APP_NAME}${TARGET}.zip"
+                        stash includes: "${APP_NAME}${TARGET}.zip", name: "${TARGET}"
                     }
                 }
             }
@@ -59,13 +87,10 @@ pipeline {
             }
             steps {
                 unstash "${MACOS_INTEL_TARGET}"
-                sh "unzip ${APP_NAME}${MACOS_INTEL_TARGET}.app.zip -d ${APP_NAME}${MACOS_INTEL_TARGET}"
+                unstash "${MACOS_M1_TARGET}"
+                unstash "${WINDOWS_AMD64_TARGET}"
 
-                sh 'ls -la'
-                sh 'ls -la ${APP_NAME}${MACOS_INTEL_TARGET}'
-
-                //sh "cargo run --package vm-releaser -- --owner feenkcom --repo ${APP_NAME} --token GITHUB_TOKEN --bump-patch --auto-accept --assets"
-
+                sh "cargo run --package vm-releaser -- --owner feenkcom --repo gtoolkit-vm --token GITHUB_TOKEN --bump-patch --auto-accept --assets ${APP_NAME}${MACOS_INTEL_TARGET}.app.zip ${APP_NAME}${MACOS_M1_TARGET}.app.zip ${APP_NAME}${WINDOWS_AMD64_TARGET}.zip"
             }
         }
     }
