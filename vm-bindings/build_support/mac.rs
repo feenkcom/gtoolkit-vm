@@ -103,7 +103,7 @@ impl Builder for MacBuilder {
                 Name::Any(vec!["libpng12.dylib", "libpng16.dylib"]),
                 Some("libpng.dylib"),
             ),
-            (Name::Regex("libSDL2.*.dylib"), Some("libSDL2.dylib")),
+            (Name::Regex("libSDL2.*dylib"), Some("libSDL2.dylib")),
             // testing
             (Name::Exact("libTestLibrary.dylib"), None),
         ]
