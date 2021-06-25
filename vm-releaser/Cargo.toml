@@ -1,0 +1,21 @@
+[package]
+name = "vm-releaser"
+version = "0.1.0"
+authors = ["Aliaksei Syrel <alex.syrel@gmail.com>"]
+edition = "2018"
+
+[[bin]]
+name = "vm-releaser"
+path = "src/main.rs"
+
+[dependencies]
+octocrab = "0.9"
+futures = "0.3"
+tokio = { version = "1.0", features = ["full"] }
+tokio-util = "0.6"
+semver = "1.0"
+clap = "3.0.0-beta.2"
+serde = "1.0.0"
+serde_derive = "1.0.0"
+question = "0.2"
+reqwest = { version = "0.11", features = [ "stream" ] }

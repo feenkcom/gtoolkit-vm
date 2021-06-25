@@ -1,3 +1,4 @@
+use regex::Regex;
 use std::fmt::Debug;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -23,13 +24,12 @@ pub trait Builder: Debug {
     fn cmake_build_type(&self) -> String {
         (if self.is_debug() {
             "-DCMAKE_BUILD_TYPE=RelWithDebInfo"
-        }
-        else if self.should_embed_debug_symbols() {
+        } else if self.should_embed_debug_symbols() {
             "-DCMAKE_BUILD_TYPE=RelWithDebInfo"
-        }
-        else {
+        } else {
             "-DCMAKE_BUILD_TYPE=Release"
-        }).to_string()
+        })
+        .to_string()
     }
 
     fn output_directory(&self) -> PathBuf {
@@ -183,4 +183,29 @@ pub trait Builder: Debug {
             )
             .finish()
     }
+
+    fn find_file_in_directory_matching(
+        &self,
+        file_name_regex: &str,
+        directory: &PathBuf,
+    ) -> Option<PathBuf> {
+        directory.read_dir().map_or(None, |dir| {
+            dir.filter(|each_entry| each_entry.is_ok())
+                .map(|each_entry| each_entry.unwrap())
+                .map(|each_entry| each_entry.path())
+                .filter(|each_path| each_path.is_file())
+                .filter(|each_path| {
+                    each_path.file_name().map_or(false, |file_name| {
+                        file_name.to_str().map_or(false, |file_name| {
+                            Regex::new(file_name_regex)
+                                .map_or(false, |regex| regex.is_match(file_name))
+                        })
+                    })
+                })
+                .collect::<Vec<PathBuf>>()
+                .first()
+                .map(|path| path.clone())
+        })
+    }
 }
+

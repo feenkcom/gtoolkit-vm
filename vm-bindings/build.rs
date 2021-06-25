@@ -1,5 +1,6 @@
 extern crate bindgen;
 extern crate fs_extra;
+extern crate regex;
 
 mod build_support;
 
