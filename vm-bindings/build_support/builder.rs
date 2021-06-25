@@ -4,6 +4,79 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::{env, fmt, fs};
 
+pub(crate) enum Name<'a> {
+    Exact(&'a str),
+    Any(Vec<&'a str>),
+    Regex(&'a str),
+    Optional(&'a str),
+}
+
+impl <'a> Name<'a> {
+    pub(crate) fn find_file(&self, directory: &PathBuf) -> Option<PathBuf> {
+        match self {
+            Name::Exact(name) => {
+                let file = directory.join(name);
+                assert!(
+                    file.exists(),
+                    "File named {} must exist!",
+                    name
+                );
+                Some(file)
+            }
+            Name::Any(names) => {
+                let files = names
+                    .iter()
+                    .map(|each| directory.join(each))
+                    .filter(|each| each.exists())
+                    .collect::<Vec<PathBuf>>();
+                assert!(
+                    files.len() > 0,
+                    "At least one file out of {:?} must exist",
+                    names
+                );
+                Some(files.first().unwrap().clone())
+            }
+            Name::Regex(regex) => {
+                let file = self.find_file_in_directory_matching(regex, directory);
+                assert!(file.is_some(), "At least one file must match {}", regex);
+                file
+            }
+            Name::Optional(name) => {
+                let file = directory.join(name);
+                if file.exists() {
+                    Some(file)
+                } else {
+                    None
+                }
+            }
+        }
+    }
+
+    fn find_file_in_directory_matching(
+        &self,
+        file_name_regex: &str,
+        directory: &PathBuf,
+    ) -> Option<PathBuf> {
+        directory.read_dir().map_or(None, |dir| {
+            dir.filter(|each_entry| each_entry.is_ok())
+                .map(|each_entry| each_entry.unwrap())
+                .map(|each_entry| each_entry.path())
+                .filter(|each_path| each_path.is_file())
+                .filter(|each_path| {
+                    each_path.file_name().map_or(false, |file_name| {
+                        file_name.to_str().map_or(false, |file_name| {
+                            Regex::new(file_name_regex)
+                                .map_or(false, |regex| regex.is_match(file_name))
+                        })
+                    })
+                })
+                .collect::<Vec<PathBuf>>()
+                .first()
+                .map(|path| path.clone())
+        })
+    }
+}
+
 pub trait Builder: Debug {
     fn is_compiled(&self) -> bool {
         self.vm_binary().exists()
@@ -183,29 +256,4 @@ pub trait Builder: Debug {
             )
             .finish()
     }
-
-    fn find_file_in_directory_matching(
-        &self,
-        file_name_regex: &str,
-        directory: &PathBuf,
-    ) -> Option<PathBuf> {
-        directory.read_dir().map_or(None, |dir| {
-            dir.filter(|each_entry| each_entry.is_ok())
-                .map(|each_entry| each_entry.unwrap())
-                .map(|each_entry| each_entry.path())
-                .filter(|each_path| each_path.is_file())
-                .filter(|each_path| {
-                    each_path.file_name().map_or(false, |file_name| {
-                        file_name.to_str().map_or(false, |file_name| {
-                            Regex::new(file_name_regex)
-                                .map_or(false, |regex| regex.is_match(file_name))
-                        })
-                    })
-                })
-                .collect::<Vec<PathBuf>>()
-                .first()
-                .map(|path| path.clone())
-        })
-    }
 }
-

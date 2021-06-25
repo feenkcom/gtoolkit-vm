@@ -1,4 +1,6 @@
+use crate::build_support::builder::Name;
 use crate::build_support::Builder;
+
 use std::fmt;
 use std::fmt::{Debug, Formatter};
 use std::path::PathBuf;
@@ -72,39 +74,48 @@ impl Builder for MacBuilder {
 
         vec![
             // core
-            ("libPharoVMCore.dylib", None),
+            (Name::Exact("libPharoVMCore.dylib"), None),
             // plugins
-            ("libB2DPlugin.dylib", None),
-            ("libBitBltPlugin.dylib", None),
-            ("libDSAPrims.dylib", None),
-            ("libFileAttributesPlugin.dylib", None),
-            ("libFilePlugin.dylib", None),
-            ("libJPEGReaderPlugin.dylib", None),
-            ("libJPEGReadWriter2Plugin.dylib", None),
-            ("libLargeIntegers.dylib", None),
-            ("libLocalePlugin.dylib", None),
-            ("libMiscPrimitivePlugin.dylib", None),
-            ("libSocketPlugin.dylib", None),
-            ("libSqueakSSL.dylib", None),
-            ("libSurfacePlugin.dylib", None),
-            ("libUnixOSProcessPlugin.dylib", None),
-            ("libUUIDPlugin.dylib", None),
+            (Name::Exact("libB2DPlugin.dylib"), None),
+            (Name::Exact("libBitBltPlugin.dylib"), None),
+            (Name::Exact("libDSAPrims.dylib"), None),
+            (Name::Exact("libFileAttributesPlugin.dylib"), None),
+            (Name::Exact("libFilePlugin.dylib"), None),
+            (Name::Exact("libJPEGReaderPlugin.dylib"), None),
+            (Name::Exact("libJPEGReadWriter2Plugin.dylib"), None),
+            (Name::Exact("libLargeIntegers.dylib"), None),
+            (Name::Exact("libLocalePlugin.dylib"), None),
+            (Name::Exact("libMiscPrimitivePlugin.dylib"), None),
+            (Name::Exact("libSocketPlugin.dylib"), None),
+            (Name::Exact("libSqueakSSL.dylib"), None),
+            (Name::Exact("libSurfacePlugin.dylib"), None),
+            (Name::Exact("libUnixOSProcessPlugin.dylib"), None),
+            (Name::Exact("libUUIDPlugin.dylib"), None),
             // third party
-            ("libcairo.2.dylib", None),
-            ("libgit2.1.0.1.dylib", Some("libgit2.dylib")),
-            ("libpixman-1.0.dylib", None),
-            ("libpng12.0.dylib", None),
-            ("libSDL2-2.0.dylib", Some("libSDL2.dylib")),
+            (Name::Exact("libcairo.2.dylib"), None),
+            (
+                Name::Optional("libfreetype.6.16.0.dylib"),
+                Some("libfreetype.dylib"),
+            ),
+            (Name::Exact("libgit2.1.0.1.dylib"), Some("libgit2.dylib")),
+            (Name::Exact("libpixman-1.dylib"), None),
+            (
+                Name::Any(vec!["libpng12.dylib", "libpng16.dylib"]),
+                Some("libpng.dylib"),
+            ),
+            (Name::Regex("libSDL2.*.dylib"), Some("libSDL2.dylib")),
             // testing
-            ("libTestLibrary.dylib", None),
+            (Name::Exact("libTestLibrary.dylib"), None),
         ]
         .iter()
         .map(|(library, rename)| {
             (
-                self.compiled_libraries_directory().join(library),
+                library.find_file(&self.compiled_libraries_directory()),
                 rename.map(|name| name.to_string()),
             )
         })
+        .filter(|(library, rename)| library.is_some())
+        .map(|(library, rename)| (library.unwrap(), rename))
         .collect()
     }
 }
