@@ -32,7 +32,10 @@ impl Builder for LinuxBuilder {
     }
 
     fn generate_sources(&self) {
-        cmake::Config::new(self.vm_sources_directory()).define("COMPILE_EXECUTABLE", "OFF").build();
+        cmake::Config::new(self.vm_sources_directory())
+            .define("COMPILE_EXECUTABLE", "OFF")
+            .cflag("-Wno-error=implicit-function-declaration")
+            .build();
     }
 
     fn compile_sources(&self) {}

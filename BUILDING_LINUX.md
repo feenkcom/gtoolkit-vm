@@ -19,7 +19,15 @@ sudo apt install libgtk-3-dev
 ### LLVM / CLang
 The native libraries are such as Skia and Pharo are compiled using CLang. Install it according to the Linux distribution. In case of Ubuntu:
 ```
-sudo apt install clang llvm
+sudo apt install clang llvm lld
+```
+
+You may need to override the default compiler and linker:
+```
+sudo ln -sf /usr/bin/clang /usr/bin/cc
+sudo ln -sf /usr/bin/clang++ /usr/bin/c++
+sudo ln -sf /usr/bin/clang-cpp /usr/bin/cpp
+sudo ln -sf /usr/bin/ld.lld /usr/bin/ld
 ```
 
 ## Cloning
