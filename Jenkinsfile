@@ -18,6 +18,7 @@ pipeline {
         MACOS_INTEL_TARGET = 'x86_64-apple-darwin'
         MACOS_M1_TARGET = 'aarch64-apple-darwin'
         WINDOWS_AMD64_TARGET = 'x86_64-pc-windows-msvc'
+        LINUX_AMD64_TARGET = 'x86_64-unknown-linux-gnu'
     }
 
     stages {
@@ -63,6 +64,31 @@ pipeline {
                         stash includes: "${APP_NAME}${TARGET}.app.zip", name: "${TARGET}"
                     }
                 }
+                stage ('Linux x86_64') {
+                    agent {
+                        label "${LINUX_AMD64_TARGET}"
+                    }
+
+                    environment {
+                        TARGET = "${LINUX_AMD64_TARGET}"
+                    }
+
+                    steps {
+                        sh 'git clean -fdx'
+
+                        //sh "cargo run --package vm-builder --target ${TARGET} -- --app-name ${APP_NAME} -vv --release"
+
+                        sh "mkdir -p target/${TARGET}/release/bundle/${APP_NAME}"
+
+                        sh """
+                            pushd target/${TARGET}/release/bundle/${APP_NAME}
+                            zip -r ${APP_NAME}${TARGET}.zip ./${APP_NAME}/
+                            popd
+                            mv target/${TARGET}/release/bundle/${APP_NAME}${TARGET}.zip ./${APP_NAME}${TARGET}.zip """
+
+                        stash includes: "${APP_NAME}${TARGET}.zip", name: "${TARGET}"
+                    }
+                }
                 stage ('Windows x86_64') {
                     agent {
                         label "${WINDOWS_AMD64_TARGET}"
@@ -93,8 +119,20 @@ pipeline {
                 unstash "${MACOS_INTEL_TARGET}"
                 unstash "${MACOS_M1_TARGET}"
                 unstash "${WINDOWS_AMD64_TARGET}"
+                unstash "${LINUX_AMD64_TARGET}"
 
-                sh "cargo run --package vm-releaser -- --owner feenkcom --repo gtoolkit-vm --token GITHUB_TOKEN --bump-patch --auto-accept --assets ${APP_NAME}${MACOS_INTEL_TARGET}.app.zip ${APP_NAME}${MACOS_M1_TARGET}.app.zip ${APP_NAME}${WINDOWS_AMD64_TARGET}.zip"
+                sh """
+                cargo run --package vm-releaser -- \
+                    --owner feenkcom \
+                    --repo gtoolkit-vm \
+                    --token GITHUB_TOKEN \
+                    --bump-patch \
+                    --auto-accept \
+                    --assets \
+                        ${APP_NAME}${MACOS_INTEL_TARGET}.app.zip \
+                        ${APP_NAME}${MACOS_M1_TARGET}.app.zip \
+                        ${APP_NAME}${WINDOWS_AMD64_TARGET}.zip \
+                        ${APP_NAME}${LINUX_AMD64_TARGET}.zip """
             }
         }
     }
