@@ -154,16 +154,18 @@ pub trait Builder: Debug {
 
     fn platform_include_directory(&self) -> PathBuf;
     fn generated_config_directory(&self) -> PathBuf;
+    fn generated_include_directory(&self) -> PathBuf {
+        self.output_directory()
+            .join("generated")
+            .join("64")
+            .join("vm")
+            .join("include")
+    }
 
     fn generate_bindings(&self) {
         let include_dir = self.vm_sources_directory().join("include");
 
-        let generated_vm_include_dir = self
-            .output_directory()
-            .join("generated")
-            .join("64")
-            .join("vm")
-            .join("include");
+        let generated_vm_include_dir = self.generated_include_directory();
 
         let bindings = bindgen::Builder::default()
             .whitelist_function("vm_.*")
