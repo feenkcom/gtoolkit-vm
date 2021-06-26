@@ -28,13 +28,12 @@ impl Builder for LinuxBuilder {
     }
 
     fn compiled_libraries_directory(&self) -> PathBuf {
-        self.output_directory().join("build").join("vm")
+        self.output_directory().join("build").join("build").join("vm")
     }
 
     fn generate_sources(&self) {
         cmake::Config::new(self.vm_sources_directory())
             .define("COMPILE_EXECUTABLE", "OFF")
-            .out_dir(self.output_directory())
             .build();
     }
 
@@ -46,6 +45,7 @@ impl Builder for LinuxBuilder {
 
     fn generated_config_directory(&self) -> PathBuf {
         self.output_directory()
+            .join("build")
             .join("build")
             .join("include")
             .join("pharovm")

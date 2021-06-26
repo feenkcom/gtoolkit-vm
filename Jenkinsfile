@@ -80,7 +80,7 @@ pipeline {
 
                         sh "mkdir -p target/${TARGET}/release/bundle/${APP_NAME}"
 
-                        sh """
+                        bash """
                             pushd target/${TARGET}/release/bundle/${APP_NAME}
                             zip -r ${APP_NAME}${TARGET}.zip ./${APP_NAME}/
                             popd
