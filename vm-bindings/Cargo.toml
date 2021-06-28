@@ -18,3 +18,15 @@ bindgen = "0.52.0"
 fs_extra = "1.1.0"
 regex = "1"
 cmake = "0.1"
+
+[profile.release]
+rpath = true
+
+[profile.dev]
+rpath = true
+
+[profile.test]
+rpath = true
+
+[profile.bench]
+rpath = true
