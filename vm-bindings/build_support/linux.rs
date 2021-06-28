@@ -65,7 +65,6 @@ impl Builder for LinuxBuilder {
 
     fn link_libraries(&self) {
         println!("cargo:rustc-link-lib=PharoVMCore");
-        println!("cargo:rustc-link-lib=GTK-3");
 
         println!(
             "cargo:rustc-link-search={}",
