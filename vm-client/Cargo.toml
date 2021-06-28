@@ -16,3 +16,15 @@ clap = "3.0.0-beta.2"
 
 [build-dependencies]
 embed-resource = "1.6"
+
+[profile.release]
+rpath = true
+
+[profile.dev]
+rpath = true
+
+[profile.test]
+rpath = true
+
+[profile.bench]
+rpath = true
