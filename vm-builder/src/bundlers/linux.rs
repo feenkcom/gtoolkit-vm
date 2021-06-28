@@ -13,7 +13,7 @@ impl LinuxBundler {
 }
 
 impl Bundler for LinuxBundler {
-    fn bundle(&self, _configuration: &BuildOptions) {
+    fn bundle(&self, configuration: &BuildOptions) {
         let bundle_location = self.bundle_location(configuration);
         let app_name = self.app_name(configuration);
 
