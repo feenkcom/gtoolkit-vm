@@ -100,17 +100,7 @@ impl Builder for LinuxBuilder {
             (Name::Exact("libUnixOSProcessPlugin.so"), None),
             (Name::Exact("libUUIDPlugin.so"), None),
             // third party
-            (Name::Exact("libcairo.2.so"), None),
-            (
-                Name::Optional("libfreetype.6.16.0.so"),
-                Some("libfreetype.so"),
-            ),
-            (Name::Exact("libgit2.1.0.1.so"), Some("libgit2.so")),
-            (Name::Exact("libpixman-1.so"), None),
-            (
-                Name::Any(vec!["libpng12.so", "libpng16.so"]),
-                Some("libpng.so"),
-            ),
+            (Name::Exact("libgit2.so.1.0.1"), Some("libgit2.so")),
             (Name::Regex("libSDL2.*so"), Some("libSDL2.so")),
             // testing
             (Name::Exact("libTestLibrary.so"), None),
