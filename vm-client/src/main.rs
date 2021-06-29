@@ -1,10 +1,10 @@
 #![windows_subsystem = "windows"]
 
-extern crate nfd;
+extern crate nfd2;
 extern crate vm_bindings;
 
 use clap::{App, AppSettings, Arg, ArgMatches};
-use nfd::Response;
+use nfd2::{Response, dialog};
 use std::fs;
 use std::path::PathBuf;
 use vm_bindings::{VMParameters, VM};
@@ -54,7 +54,7 @@ fn validate_user_image_file(image_name: Option<&str>) -> Option<PathBuf> {
 }
 
 fn pick_image_with_dialog() -> Option<PathBuf> {
-    let result = nfd::dialog().filter("image").open().unwrap_or_else(|e| {
+    let result = dialog().filter("image").open().unwrap_or_else(|e| {
         panic!("{}", e);
     });
 
