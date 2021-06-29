@@ -85,7 +85,7 @@ pipeline {
                             zip -r ${APP_NAME}${TARGET}.zip ./${APP_NAME}/
                             """
 
-                        mv target/${TARGET}/release/bundle/${APP_NAME}${TARGET}.zip ./${APP_NAME}${TARGET}.zip
+                        sh 'mv target/${TARGET}/release/bundle/${APP_NAME}${TARGET}.zip ./${APP_NAME}${TARGET}.zip'
 
                         stash includes: "${APP_NAME}${TARGET}.zip", name: "${TARGET}"
                     }
