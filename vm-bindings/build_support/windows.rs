@@ -248,6 +248,9 @@ impl Builder for WindowsBuilder {
         which::which("cmake").expect("Could not find cmake. Please add it to PATH");
         which::which("git").expect("Could not find git. Please add it to PATH");
         which::which("MSBuild").expect("Could not find MSBuild. Please add it to PATH");
+        which::which("clang").expect("Could not find clang. Please add it to PATH");
+        which::which("clang++").expect("Could not find clang++. Please add it to PATH");
+        which::which("lld").expect("Could not find lld. Please add it to PATH");
     }
 
     fn vm_binary(&self) -> PathBuf {
@@ -255,7 +258,7 @@ impl Builder for WindowsBuilder {
             .join("build")
             .join("vm")
             .join(self.profile())
-            .join("Pharo.exe")
+            .join("PharoVMCore.dll")
     }
 
     fn compiled_libraries_directory(&self) -> PathBuf {
@@ -284,6 +287,7 @@ impl Builder for WindowsBuilder {
             ))
             .arg("-DFEATURE_LIB_GIT2=OFF")
             .arg("-DFEATURE_LIB_SDL2=OFF")
+            .arg("-DCOMPILE_EXECUTABLE=OFF")
             .arg("-S")
             .arg(self.vm_sources_directory())
             .arg("-B")
