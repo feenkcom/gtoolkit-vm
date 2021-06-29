@@ -31,7 +31,7 @@ pipeline {
 
                     environment {
                         TARGET = "${MACOS_INTEL_TARGET}"
-                        PATH = "$HOME/.cargo/bin:$PATH"
+                        PATH = "$HOME/.cargo/bin:/opt/homebrew/bin:$PATH"
                     }
 
                     steps {
@@ -51,7 +51,7 @@ pipeline {
 
                     environment {
                         TARGET = "${MACOS_M1_TARGET}"
-                        PATH = "$HOME/.cargo/bin:$PATH"
+                        PATH = "$HOME/.cargo/bin:/opt/homebrew/bin:$PATH"
                     }
 
                     steps {
