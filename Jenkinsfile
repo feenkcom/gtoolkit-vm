@@ -31,13 +31,10 @@ pipeline {
 
                     environment {
                         TARGET = "${MACOS_INTEL_TARGET}"
-                        PATH = "$HOME/.cargo/bin:/opt/homebrew/bin:$PATH"
+                        PATH = "$HOME/.cargo/bin:/usr/local/bin/:$PATH"
                     }
 
                     steps {
-                        sh 'cmake --version'
-
-
                         sh 'git clean -fdx'
                         sh 'git submodule update --init --recursive'
 
@@ -58,8 +55,6 @@ pipeline {
                     }
 
                     steps {
-                        sh 'cmake --version'
-
                         sh 'git clean -fdx'
                         sh 'git submodule update --init --recursive'
 
