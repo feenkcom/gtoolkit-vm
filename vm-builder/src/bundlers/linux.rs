@@ -56,7 +56,7 @@ impl Bundler for LinuxBundler {
         Command::new("patchelf")
             .arg("--set-rpath")
             .arg("$ORIGIN/../lib")
-            .arg(&target_executable_path.display())
+            .arg(&target_executable_path)
             .status()
             .unwrap();
     }
