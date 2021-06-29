@@ -86,6 +86,8 @@ pub trait Builder: Debug {
         self.profile() == "debug"
     }
 
+    fn ensure_build_tools(&self) {}
+
     fn should_embed_debug_symbols(&self) -> bool {
         std::env::var("VM_CLIENT_EMBED_DEBUG_SYMBOLS").map_or(false, |value| value == "true")
     }

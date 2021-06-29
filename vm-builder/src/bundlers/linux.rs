@@ -1,10 +1,10 @@
 use crate::bundlers::Bundler;
 use crate::BuildOptions;
+use std::env::args;
 use std::fs;
 use std::fs::File;
 use std::path::{Path, PathBuf};
 use std::process::Command;
-use std::env::args;
 
 pub struct LinuxBundler {}
 
@@ -49,7 +49,8 @@ impl Bundler for LinuxBundler {
             &self.compiled_libraries(configuration),
             &binary_dir,
             &fs_extra::dir::CopyOptions::new(),
-        ).unwrap();
+        )
+        .unwrap();
 
         Command::new("patchelf")
             .arg("--set-rpath")

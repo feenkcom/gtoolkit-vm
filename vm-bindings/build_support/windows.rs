@@ -104,10 +104,21 @@ impl WindowsBuilder {
     }
 
     fn compile_pthread(&self) {
-        let solution = self.pthreads_directory().join("build.vs").join("pthreads.sln");
+        let solution = self
+            .pthreads_directory()
+            .join("build.vs")
+            .join("pthreads.sln");
 
-        assert!(self.pthreads_directory().exists(), "Pthread source folder must exist: {:?}", self.pthreads_directory().display());
-        assert!(solution.exists(), "Solution file must exist: {:?}", &solution.display());
+        assert!(
+            self.pthreads_directory().exists(),
+            "Pthread source folder must exist: {:?}",
+            self.pthreads_directory().display()
+        );
+        assert!(
+            solution.exists(),
+            "Solution file must exist: {:?}",
+            &solution.display()
+        );
 
         Command::new("MSBuild")
             .current_dir(self.pthreads_directory())
@@ -233,6 +244,12 @@ impl WindowsBuilder {
 }
 
 impl Builder for WindowsBuilder {
+    fn ensure_build_tools(&self) {
+        which::which("cmake").unwrap();
+        which::which("git").unwrap();
+        which::which("MSBuild").unwrap();
+    }
+
     fn vm_binary(&self) -> PathBuf {
         self.output_directory()
             .join("build")

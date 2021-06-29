@@ -4,7 +4,7 @@ extern crate nfd2;
 extern crate vm_bindings;
 
 use clap::{App, AppSettings, Arg, ArgMatches};
-use nfd2::{Response, dialog};
+use nfd2::{dialog, Response};
 use std::fs;
 use std::path::PathBuf;
 use vm_bindings::{VMParameters, VM};

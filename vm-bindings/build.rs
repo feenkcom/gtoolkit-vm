@@ -2,6 +2,7 @@ extern crate bindgen;
 extern crate cmake;
 extern crate fs_extra;
 extern crate regex;
+extern crate which;
 
 mod build_support;
 
