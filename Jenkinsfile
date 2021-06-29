@@ -76,7 +76,6 @@ pipeline {
                     steps {
                         sh 'git clean -fdx'
 
-                        bash 'cargo --version'
                         sh 'cargo --version'
                         sh """
                            cargo --version """
@@ -127,7 +126,6 @@ pipeline {
                 unstash "${WINDOWS_AMD64_TARGET}"
                 unstash "${LINUX_AMD64_TARGET}"
 
-                bash 'cargo --version'
                 sh 'cargo --version'
                 sh """
                     cargo --version """
