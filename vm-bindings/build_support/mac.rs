@@ -28,20 +28,30 @@ impl Builder for MacBuilder {
     }
 
     fn compiled_libraries_directory(&self) -> PathBuf {
-        self.output_directory().join("build").join("vm")
+        self.output_directory()
+            .join("build")
+            .join("build")
+            .join("vm")
     }
 
     fn generate_sources(&self) {
-        Command::new("cmake")
-            .arg(self.cmake_build_type())
-            .arg("-DCOMPILE_EXECUTABLE=OFF")
-            .arg("-S")
-            .arg(self.vm_sources_directory())
-            .arg("-B")
-            .arg(self.output_directory())
-            .status()
-            .unwrap();
+        assert!(
+            self.vm_sources_directory().exists(),
+            "Source directory must exist: {:?}",
+            self.vm_sources_directory().display()
+        );
+        assert!(
+            self.output_directory().exists(),
+            "Output directory must exist: {:?}",
+            self.output_directory().display()
+        );
+
+        cmake::Config::new(self.vm_sources_directory())
+            .define("COMPILE_EXECUTABLE", "OFF")
+            .build();
     }
+
+    fn compile_sources(&self) {}
 
     fn platform_include_directory(&self) -> PathBuf {
         self.squeak_include_directory().join("osx")
@@ -50,8 +60,18 @@ impl Builder for MacBuilder {
     fn generated_config_directory(&self) -> PathBuf {
         self.output_directory()
             .join("build")
+            .join("build")
             .join("include")
             .join("pharovm")
+    }
+
+    fn generated_include_directory(&self) -> PathBuf {
+        self.output_directory()
+            .join("build")
+            .join("generated")
+            .join("64")
+            .join("vm")
+            .join("include")
     }
 
     fn link_libraries(&self) {

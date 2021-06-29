@@ -120,6 +120,11 @@ pipeline {
             environment {
                 PATH = "$HOME/.cargo/bin:$PATH"
             }
+            when {
+                expression {
+                    (currentBuild.result == null || currentBuild.result == 'SUCCESS') && env.BRANCH_NAME.toString().equals('main')
+                }
+            }
             steps {
                 unstash "${MACOS_INTEL_TARGET}"
                 unstash "${MACOS_M1_TARGET}"
