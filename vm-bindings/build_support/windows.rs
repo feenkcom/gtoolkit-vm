@@ -245,9 +245,9 @@ impl WindowsBuilder {
 
 impl Builder for WindowsBuilder {
     fn ensure_build_tools(&self) {
-        which::which("cmake").unwrap();
-        which::which("git").unwrap();
-        which::which("MSBuild").unwrap();
+        which::which("cmake").expect("Could not find cmake. Please add it to PATH");
+        which::which("git").expect("Could not find git. Please add it to PATH");
+        which::which("MSBuild").expect("Could not find MSBuild. Please add it to PATH");
     }
 
     fn vm_binary(&self) -> PathBuf {
