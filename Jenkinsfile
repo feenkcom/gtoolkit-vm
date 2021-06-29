@@ -99,15 +99,12 @@ pipeline {
                     }
 
                     steps {
-                        powershell 'cmake --version'
-
                         powershell 'git clean -fdx'
                         powershell 'git submodule update --init --recursive'
-                        //powershell 'cargo --version'
 
-                        //powershell "cargo run --package vm-builder --target ${TARGET} -- --app-name ${APP_NAME} -vv --release"
+                        powershell "cargo run --package vm-builder --target ${TARGET} -- --app-name ${APP_NAME} -vv --release"
 
-                        powershell "New-Item -path target/${TARGET}/release/bundle/${APP_NAME}/bin -type directory"
+                        //powershell "New-Item -path target/${TARGET}/release/bundle/${APP_NAME}/bin -type directory"
                         powershell "Compress-Archive -Path target/${TARGET}/release/bundle/${APP_NAME} -DestinationPath ${APP_NAME}${TARGET}.zip"
                         stash includes: "${APP_NAME}${TARGET}.zip", name: "${TARGET}"
                     }
@@ -128,10 +125,10 @@ pipeline {
                 }
             }
             steps {
+                unstash "${LINUX_AMD64_TARGET}"
                 unstash "${MACOS_INTEL_TARGET}"
                 unstash "${MACOS_M1_TARGET}"
                 unstash "${WINDOWS_AMD64_TARGET}"
-                unstash "${LINUX_AMD64_TARGET}"
 
                 sh """
                 cargo run --package vm-releaser -- \
@@ -141,9 +138,10 @@ pipeline {
                     --bump-patch \
                     --auto-accept \
                     --assets \
+                        ${APP_NAME}${LINUX_AMD64_TARGET}.zip \
                         ${APP_NAME}${MACOS_INTEL_TARGET}.app.zip \
                         ${APP_NAME}${MACOS_M1_TARGET}.app.zip \
-                        ${APP_NAME}${LINUX_AMD64_TARGET}.zip """
+                        ${APP_NAME}${WINDOWS_AMD64_TARGET}.zip """
             }
         }
     }
