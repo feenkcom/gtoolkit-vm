@@ -36,6 +36,7 @@ pipeline {
 
                     steps {
                         sh 'git clean -fdx'
+                        sh 'git submodule update --init --recursive'
 
                         sh "cargo run --package vm-builder --target ${TARGET} -- --app-name ${APP_NAME} -vv --release"
                         sh "ditto -c -k --sequesterRsrc --keepParent target/${TARGET}/release/bundle/${APP_NAME}.app ${APP_NAME}${TARGET}.app.zip"
@@ -55,6 +56,7 @@ pipeline {
 
                     steps {
                         sh 'git clean -fdx'
+                        sh 'git submodule update --init --recursive'
 
                         sh "cargo run --package vm-builder --target ${TARGET} -- --app-name ${APP_NAME} -vv --release"
                         sh "ditto -c -k --sequesterRsrc --keepParent target/${TARGET}/release/bundle/${APP_NAME}.app ${APP_NAME}${TARGET}.app.zip"
@@ -73,6 +75,7 @@ pipeline {
 
                     steps {
                         sh 'git clean -fdx'
+                        sh 'git submodule update --init --recursive'
 
                         sh "cargo run --package vm-builder --target ${TARGET} -- --app-name ${APP_NAME} -vv --release"
 
@@ -97,6 +100,7 @@ pipeline {
 
                     steps {
                         powershell 'git clean -fdx'
+                        powershell 'git submodule update --init --recursive'
                         //powershell 'cargo --version'
 
                         //powershell "cargo run --package vm-builder --target ${TARGET} -- --app-name ${APP_NAME} -vv --release"
