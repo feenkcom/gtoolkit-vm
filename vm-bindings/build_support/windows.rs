@@ -265,7 +265,6 @@ impl Builder for WindowsBuilder {
         self.output_directory()
             .join("build")
             .join("vm")
-            .join(self.profile())
             .join("PharoVMCore.dll")
     }
 
@@ -273,7 +272,6 @@ impl Builder for WindowsBuilder {
         self.output_directory()
             .join("build")
             .join("vm")
-            .join(self.profile())
     }
 
     fn generate_sources(&self) {
@@ -284,6 +282,8 @@ impl Builder for WindowsBuilder {
         self.compile_pthread();
         self.compile_libgit2();
         self.compile_sdl2();
+
+        std::fs::create_dir_all(self.compiled_libraries_directory()).unwrap();
 
         Command::new("cmake")
             .stdout(Stdio::inherit())
