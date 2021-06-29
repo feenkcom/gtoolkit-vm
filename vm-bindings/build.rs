@@ -11,6 +11,7 @@ use crate::build_support::{Builder, PlatformBuilder};
 fn main() {
     let builder = Box::new(PlatformBuilder::default());
     println!("About to build a vm using {:?}", &builder);
+    builder.ensure_build_tools();
 
     if !builder.is_compiled() {
         builder.generate_sources();
