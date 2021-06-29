@@ -104,9 +104,14 @@ impl WindowsBuilder {
     }
 
     fn compile_pthread(&self) {
+        let solution = self.pthreads_directory().join("build.vs").join("pthreads.sln");
+
+        assert!(self.pthreads_directory().exists(), "Pthread source folder must exist: {:?}", self.pthreads_directory().display());
+        assert!(solution.exists(), "Solution file must exist: {:?}", &solution.display());
+
         Command::new("MSBuild")
             .current_dir(self.pthreads_directory())
-            .arg("build.vs/pthreads.sln")
+            .arg(&solution)
             .arg("/p:Platform=x64")
             .arg(format!("/property:Configuration={}", self.profile()))
             .status()
