@@ -38,7 +38,7 @@ pipeline {
                         sh 'git clean -fdx'
                         sh 'git submodule update --init --recursive'
 
-                        sh "cargo run --package vm-builder --target ${TARGET} -- --app-name ${APP_NAME} -vv --release"
+                        //sh "cargo run --package vm-builder --target ${TARGET} -- --app-name ${APP_NAME} -vv --release"
                         sh "ditto -c -k --sequesterRsrc --keepParent target/${TARGET}/release/bundle/${APP_NAME}.app ${APP_NAME}${TARGET}.app.zip"
 
                         stash includes: "${APP_NAME}${TARGET}.app.zip", name: "${TARGET}"
@@ -58,7 +58,7 @@ pipeline {
                         sh 'git clean -fdx'
                         sh 'git submodule update --init --recursive'
 
-                        sh "cargo run --package vm-builder --target ${TARGET} -- --app-name ${APP_NAME} -vv --release"
+                        //sh "cargo run --package vm-builder --target ${TARGET} -- --app-name ${APP_NAME} -vv --release"
                         sh "ditto -c -k --sequesterRsrc --keepParent target/${TARGET}/release/bundle/${APP_NAME}.app ${APP_NAME}${TARGET}.app.zip"
 
                         stash includes: "${APP_NAME}${TARGET}.app.zip", name: "${TARGET}"
@@ -77,7 +77,7 @@ pipeline {
                         sh 'git clean -fdx'
                         sh 'git submodule update --init --recursive'
 
-                        sh "cargo run --package vm-builder --target ${TARGET} -- --app-name ${APP_NAME} -vv --release"
+                        //sh "cargo run --package vm-builder --target ${TARGET} -- --app-name ${APP_NAME} -vv --release"
 
                         sh """
                             cd target/${TARGET}/release/bundle/
@@ -96,9 +96,11 @@ pipeline {
 
                     environment {
                         TARGET = "${WINDOWS_AMD64_TARGET}"
+                        PATH = "$HOME\.cargo\bin;$PATH"
                     }
 
                     steps {
+                        powershell 'echo $env:path'
                         powershell 'git clean -fdx'
                         powershell 'git submodule update --init --recursive'
 
