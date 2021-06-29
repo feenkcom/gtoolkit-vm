@@ -96,8 +96,11 @@ pipeline {
 
                     environment {
                         TARGET = "${WINDOWS_AMD64_TARGET}"
-                        LIBCLANG_PATH = "C:/Program Files (x86)/Microsoft Visual Studio/2019/BuildTools/VC/Tools/Llvm/x64/bin/"
-                        PATH = "${homedrive}${homepath}\\.cargo\\bin;C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\BuildTools\\MSBuild\\Current\\Bin;C:\\Program Files\\CMake\\bin;$PATH"
+                        LIBCLANG_PATH = 'C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\BuildTools\\VC\\Tools\\Llvm\\x64\\bin\\'
+                        CMAKE_PATH = 'C:\\Program Files\\CMake\\bin\\'
+                        MSBUILD_PATH = 'C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\BuildTools\\MSBuild\\Current\\Bin\\'
+                        CARGO_PATH = "${homedrive}${homepath}\\.cargo\\bin\\"
+                        PATH = "${CARGO_PATH};${LIBCLANG_PATH};${MSBUILD_PATH};${CMAKE_PATH};$PATH"
                     }
 
                     steps {

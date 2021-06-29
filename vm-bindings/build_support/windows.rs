@@ -1,7 +1,7 @@
 use crate::build_support::Builder;
 use std::fmt;
 use std::fmt::{Debug, Formatter};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
 #[derive(Default, Clone)]
@@ -251,6 +251,13 @@ impl Builder for WindowsBuilder {
         which::which("clang").expect("Could not find clang. Please add it to PATH");
         which::which("clang++").expect("Could not find clang++. Please add it to PATH");
         which::which("lld").expect("Could not find lld. Please add it to PATH");
+        if !Path::new(&std::env::var("LIBCLANG_PATH").expect("LIBCLANG_PATH must be set")).exists()
+        {
+            panic!(
+                "LIBCLANG_PATH must exist: {:?}",
+                &std::env::var("LIBCLANG_PATH")
+            )
+        }
     }
 
     fn vm_binary(&self) -> PathBuf {
