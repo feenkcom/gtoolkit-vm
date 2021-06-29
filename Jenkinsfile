@@ -31,6 +31,7 @@ pipeline {
 
                     environment {
                         TARGET = "${MACOS_INTEL_TARGET}"
+                        PATH = "$HOME/.cargo/bin:$PATH"
                     }
 
                     steps {
@@ -51,6 +52,7 @@ pipeline {
 
                     environment {
                         TARGET = "${MACOS_M1_TARGET}"
+                        PATH = "$HOME/.cargo/bin:$PATH"
                     }
 
                     steps {
@@ -75,10 +77,6 @@ pipeline {
 
                     steps {
                         sh 'git clean -fdx'
-
-                        sh 'cargo --version'
-                        sh """
-                           cargo --version """
 
                         //sh "cargo run --package vm-builder --target ${TARGET} -- --app-name ${APP_NAME} -vv --release"
 
@@ -105,6 +103,7 @@ pipeline {
 
                     steps {
                         powershell 'git clean -fdx'
+                        //powershell 'cargo --version'
 
                         //powershell "cargo run --package vm-builder --target ${TARGET} -- --app-name ${APP_NAME} -vv --release"
 
@@ -129,24 +128,17 @@ pipeline {
                 unstash "${WINDOWS_AMD64_TARGET}"
                 unstash "${LINUX_AMD64_TARGET}"
 
-                sh 'cargo --version'
                 sh """
-                    cargo --version """
-
-
-
-                //sh """
-                //cargo run --package vm-releaser -- \
-                //    --owner feenkcom \
-                //    --repo gtoolkit-vm \
-                //    --token GITHUB_TOKEN \
-                //    --bump-patch \
-                //    --auto-accept \
-                //    --assets \
-                //        ${APP_NAME}${MACOS_INTEL_TARGET}.app.zip \
-                //       ${APP_NAME}${MACOS_M1_TARGET}.app.zip \
-                //        ${APP_NAME}${WINDOWS_AMD64_TARGET}.zip \
-                //        ${APP_NAME}${LINUX_AMD64_TARGET}.zip """
+                cargo run --package vm-releaser -- \
+                    --owner feenkcom \
+                    --repo gtoolkit-vm \
+                    --token GITHUB_TOKEN \
+                    --bump-patch \
+                    --auto-accept \
+                    --assets \
+                        ${APP_NAME}${MACOS_INTEL_TARGET}.app.zip \
+                        ${APP_NAME}${MACOS_M1_TARGET}.app.zip \
+                        ${APP_NAME}${LINUX_AMD64_TARGET}.zip """
             }
         }
     }
