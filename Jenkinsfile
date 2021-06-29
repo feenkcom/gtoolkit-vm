@@ -76,6 +76,10 @@ pipeline {
                     steps {
                         sh 'git clean -fdx'
 
+                        sh 'cargo --version'
+                        sh """
+                           cargo --version """
+
                         //sh "cargo run --package vm-builder --target ${TARGET} -- --app-name ${APP_NAME} -vv --release"
 
                         sh "mkdir -p target/${TARGET}/release/bundle/${APP_NAME}"
@@ -122,18 +126,25 @@ pipeline {
                 unstash "${WINDOWS_AMD64_TARGET}"
                 unstash "${LINUX_AMD64_TARGET}"
 
+                bash 'cargo --version'
+                sh 'cargo --version'
                 sh """
-                cargo run --package vm-releaser -- \
-                    --owner feenkcom \
-                    --repo gtoolkit-vm \
-                    --token GITHUB_TOKEN \
-                    --bump-patch \
-                    --auto-accept \
-                    --assets \
-                        ${APP_NAME}${MACOS_INTEL_TARGET}.app.zip \
-                        ${APP_NAME}${MACOS_M1_TARGET}.app.zip \
-                        ${APP_NAME}${WINDOWS_AMD64_TARGET}.zip \
-                        ${APP_NAME}${LINUX_AMD64_TARGET}.zip """
+                    cargo --version """
+
+
+
+                //sh """
+                //cargo run --package vm-releaser -- \
+                //    --owner feenkcom \
+                //    --repo gtoolkit-vm \
+                //    --token GITHUB_TOKEN \
+                //    --bump-patch \
+                //    --auto-accept \
+                //    --assets \
+                //        ${APP_NAME}${MACOS_INTEL_TARGET}.app.zip \
+                //       ${APP_NAME}${MACOS_M1_TARGET}.app.zip \
+                //        ${APP_NAME}${WINDOWS_AMD64_TARGET}.zip \
+                //        ${APP_NAME}${LINUX_AMD64_TARGET}.zip """
             }
         }
     }
