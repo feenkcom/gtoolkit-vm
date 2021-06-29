@@ -96,7 +96,7 @@ pipeline {
 
                     environment {
                         TARGET = "${WINDOWS_AMD64_TARGET}"
-                        PATH = "$HOME/.cargo/bin;$PATH"
+                        PATH = "${homedrive}${homepath}\\.cargo\\bin;$PATH"
                     }
 
                     steps {
