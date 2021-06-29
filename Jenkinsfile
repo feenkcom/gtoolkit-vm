@@ -35,6 +35,9 @@ pipeline {
                     }
 
                     steps {
+                        sh 'cmake --version'
+
+
                         sh 'git clean -fdx'
                         sh 'git submodule update --init --recursive'
 
@@ -55,6 +58,8 @@ pipeline {
                     }
 
                     steps {
+                        sh 'cmake --version'
+
                         sh 'git clean -fdx'
                         sh 'git submodule update --init --recursive'
 
@@ -99,6 +104,8 @@ pipeline {
                     }
 
                     steps {
+                        powershell 'cmake --version'
+
                         powershell 'git clean -fdx'
                         powershell 'git submodule update --init --recursive'
                         //powershell 'cargo --version'
