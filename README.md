@@ -41,30 +41,8 @@ To see all possible options of the `vm-builder`:
 ./target/release/vm-builder --help
 ```
 
-### Dependencies
-The client side is written in Rust. It can be installed via `rustup`:
-```
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-```
-
-#### Windows
- - [Microsoft C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
- - [Chocolatey](https://chocolatey.org/install) as a package manager. Then in the Administrator PowerShell:
- - CMake: `choco install cmake`  
- - Pkg-Config: `choco install pkgconfiglite`
-   
- - `MSBuild.exe .\build.vs\pthreads.sln /p:Platform="x64" /property:Configuration=Release`
-
-Note, the Windows build of the Pharo VM does not use `make`, Mingw or Cygwin; instead it relies on Visual Studio. Here is how it is built:
-```
-cmake -S opensmalltalk-vm -B build
-cmake --build build --config Release
-```
-
-### Compiling for Apple M1
-
-Install the corresponding rust target and toolchain
-```
-rustup target add aarch64-apple-darwin
-rustup toolchain install stable-aarch64-apple-darwin
-```
+### Building
+Please see a corresponding how-to guide based on the target platform:
+ - [Linux](BUILDING_LINUX.md)
+ - [MacOS](BUILDING_MAC.md)
+ - [Windows](BUILDING_WINDOWS.md)

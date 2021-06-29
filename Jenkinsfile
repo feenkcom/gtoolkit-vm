@@ -37,9 +37,7 @@ pipeline {
                     steps {
                         sh 'git clean -fdx'
 
-                        //sh "cargo run --package vm-builder --target ${TARGET} -- --app-name ${APP_NAME} -vv --release"
-
-                        sh "mkdir -p target/${TARGET}/release/bundle/${APP_NAME}.app"
+                        sh "cargo run --package vm-builder --target ${TARGET} -- --app-name ${APP_NAME} -vv --release"
                         sh "ditto -c -k --sequesterRsrc --keepParent target/${TARGET}/release/bundle/${APP_NAME}.app ${APP_NAME}${TARGET}.app.zip"
 
                         stash includes: "${APP_NAME}${TARGET}.app.zip", name: "${TARGET}"
@@ -58,9 +56,7 @@ pipeline {
                     steps {
                         sh 'git clean -fdx'
 
-                        //sh "cargo run --package vm-builder --target ${TARGET} -- --app-name ${APP_NAME} -vv --release"
-
-                        sh "mkdir -p target/${TARGET}/release/bundle/${APP_NAME}.app"
+                        sh "cargo run --package vm-builder --target ${TARGET} -- --app-name ${APP_NAME} -vv --release"
                         sh "ditto -c -k --sequesterRsrc --keepParent target/${TARGET}/release/bundle/${APP_NAME}.app ${APP_NAME}${TARGET}.app.zip"
 
                         stash includes: "${APP_NAME}${TARGET}.app.zip", name: "${TARGET}"
@@ -78,9 +74,7 @@ pipeline {
                     steps {
                         sh 'git clean -fdx'
 
-                        //sh "cargo run --package vm-builder --target ${TARGET} -- --app-name ${APP_NAME} -vv --release"
-
-                        sh "mkdir -p target/${TARGET}/release/bundle/${APP_NAME}"
+                        sh "cargo run --package vm-builder --target ${TARGET} -- --app-name ${APP_NAME} -vv --release"
 
                         sh """
                             cd target/${TARGET}/release/bundle/
