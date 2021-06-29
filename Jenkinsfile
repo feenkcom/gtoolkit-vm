@@ -76,6 +76,7 @@ pipeline {
                     steps {
                         sh 'git clean -fdx'
 
+                        bash 'cargo --version'
                         sh 'cargo --version'
                         sh """
                            cargo --version """
