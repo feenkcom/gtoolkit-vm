@@ -68,9 +68,9 @@ pipeline {
                     agent {
                         label "${LINUX_AMD64_TARGET}"
                     }
-
                     environment {
                         TARGET = "${LINUX_AMD64_TARGET}"
+                        PATH = "$HOME/.cargo/bin:$PATH"
                     }
 
                     steps {
@@ -119,6 +119,9 @@ pipeline {
         stage ('Deployment') {
             agent {
                 label "unix"
+            }
+            environment {
+                PATH = "$HOME/.cargo/bin:$PATH"
             }
             steps {
                 unstash "${MACOS_INTEL_TARGET}"
