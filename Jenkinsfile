@@ -123,7 +123,13 @@ pipeline {
                         powershell 'git clean -fdx'
                         powershell 'git submodule update --init --recursive'
 
-                        powershell "cargo run --package vm-builder --target ${TARGET} -- --app-name ${APP_NAME} -vv --release"
+                        //powershell "cargo run --package vm-builder --target ${TARGET} -- --app-name ${APP_NAME} -vv --release"
+                        powershell """
+                            cargo run --package vm-builder --target ${TARGET} -- `
+                                --app-name ${APP_NAME} `
+                                --identifier ${APP_IDENTIFIER} `
+                                --libraries boxer clipboard gleam glutin skia `
+                                --release """
 
                         //powershell "New-Item -path target/${TARGET}/release/bundle/${APP_NAME}/bin -type directory"
                         powershell "Compress-Archive -Path target/${TARGET}/release/bundle/${APP_NAME} -DestinationPath ${APP_NAME}${TARGET}.zip"
