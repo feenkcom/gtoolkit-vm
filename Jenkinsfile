@@ -43,8 +43,6 @@ pipeline {
                             cargo run --package vm-builder --target ${TARGET} -- \
                                 --app-name ${APP_NAME} \
                                 --identifier ${APP_IDENTIFIER} \
-                                --libraries boxer clipboard gleam glutin skia \
-                                -vv \
                                 --release """
 
                         sh "ditto -c -k --sequesterRsrc --keepParent target/${TARGET}/release/bundle/${APP_NAME}.app ${APP_NAME}${TARGET}.app.zip"
@@ -70,8 +68,7 @@ pipeline {
                             cargo run --package vm-builder --target ${TARGET} -- \
                                 --app-name ${APP_NAME} \
                                 --identifier ${APP_IDENTIFIER} \
-                                --libraries boxer clipboard gleam glutin skia \
-                                -vv \
+                                --libraries boxer clipboard gleam skia \
                                 --release """
                         sh "ditto -c -k --sequesterRsrc --keepParent target/${TARGET}/release/bundle/${APP_NAME}.app ${APP_NAME}${TARGET}.app.zip"
 
@@ -95,8 +92,6 @@ pipeline {
                             cargo run --package vm-builder --target ${TARGET} -- \
                                 --app-name ${APP_NAME} \
                                 --identifier ${APP_IDENTIFIER} \
-                                --libraries boxer clipboard gleam glutin skia \
-                                -vv \
                                 --release """
 
                         sh """

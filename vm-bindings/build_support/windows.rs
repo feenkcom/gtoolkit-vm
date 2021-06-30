@@ -304,14 +304,6 @@ impl Builder for WindowsBuilder {
         self.squeak_include_directory().join("win")
     }
 
-    fn generated_config_directory(&self) -> PathBuf {
-        self.output_directory()
-            .join("build")
-            .join("build")
-            .join("include")
-            .join("pharovm")
-    }
-
     fn link_libraries(&self) {
         println!("cargo:rustc-link-lib=PharoVMCore");
 

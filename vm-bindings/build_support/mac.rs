@@ -57,23 +57,6 @@ impl Builder for MacBuilder {
         self.squeak_include_directory().join("osx")
     }
 
-    fn generated_config_directory(&self) -> PathBuf {
-        self.output_directory()
-            .join("build")
-            .join("build")
-            .join("include")
-            .join("pharovm")
-    }
-
-    fn generated_include_directory(&self) -> PathBuf {
-        self.output_directory()
-            .join("build")
-            .join("generated")
-            .join("64")
-            .join("vm")
-            .join("include")
-    }
-
     fn link_libraries(&self) {
         println!("cargo:rustc-link-lib=PharoVMCore");
         println!("cargo:rustc-link-lib=framework=AppKit");

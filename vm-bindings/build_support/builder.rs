@@ -155,9 +155,18 @@ pub trait Builder: Debug {
     }
 
     fn platform_include_directory(&self) -> PathBuf;
-    fn generated_config_directory(&self) -> PathBuf;
+
+    fn generated_config_directory(&self) -> PathBuf {
+        self.output_directory()
+            .join("build")
+            .join("build")
+            .join("include")
+            .join("pharovm")
+    }
+
     fn generated_include_directory(&self) -> PathBuf {
         self.output_directory()
+            .join("build")
             .join("generated")
             .join("64")
             .join("vm")
@@ -168,6 +177,18 @@ pub trait Builder: Debug {
         let include_dir = self.vm_sources_directory().join("include");
 
         let generated_vm_include_dir = self.generated_include_directory();
+        assert!(
+            generated_vm_include_dir.exists(),
+            "Generated vm include directory must exist: {:?}",
+            generated_vm_include_dir.display()
+        );
+
+        let generated_config_directory = self.generated_config_directory();
+        assert!(
+            generated_config_directory.exists(),
+            "Generated config.h directory must exist: {:?}",
+            generated_config_directory.display()
+        );
 
         let bindings = bindgen::Builder::default()
             .whitelist_function("vm_.*")
@@ -181,11 +202,8 @@ pub trait Builder: Debug {
             )
             .clang_arg(format!("-I{}", &include_dir.display()))
             .clang_arg(format!("-I{}", &include_dir.join("pharovm").display()))
-            .clang_arg(format!(
-                "-I{}",
-                &self.generated_config_directory().display()
-            ))
-            .clang_arg(format!("-I{}", &generated_vm_include_dir.display()))
+            .clang_arg(format!("-I{}", generated_config_directory.display()))
+            .clang_arg(format!("-I{}", generated_vm_include_dir.display()))
             .clang_arg(format!("-I{}", self.common_include_directory().display()))
             .clang_arg(format!("-I{}", self.platform_include_directory().display()))
             .clang_arg("-DLSB_FIRST=1")
