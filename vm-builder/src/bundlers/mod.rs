@@ -1,48 +1,51 @@
-use crate::BuildOptions;
+use crate::options::FinalOptions;
 use std::path::{Path, PathBuf};
 
 pub mod linux;
 pub mod mac;
 pub mod windows;
 
+pub use crate::libraries::Library;
+
 pub trait Bundler {
-    fn pre_compile(&self, _configuration: &BuildOptions) {}
-    fn bundle(&self, configuration: &BuildOptions);
-    fn post_compile(&self, _configuration: &BuildOptions) {}
+    fn pre_compile(&self, _configuration: &FinalOptions) {}
+    fn bundle(&self, configuration: &FinalOptions);
+    fn post_compile(&self, _configuration: &FinalOptions) {}
 
-    fn bundle_location(&self, configuration: &BuildOptions) -> PathBuf {
-        configuration.bundle_dir.as_ref().map_or_else(
-            || self.default_bundle_location(configuration),
-            |bundle_dir| PathBuf::new().join(Path::new(&bundle_dir)),
-        )
+    fn compile_third_party_libraries(&self, final_options: &FinalOptions) {
+        final_options
+            .third_party_libraries()
+            .iter()
+            .for_each(|library| {
+                library.download(&final_options);
+                assert!(library.is_downloaded(&final_options));
+                library.compile(&final_options);
+                assert!(library.is_compiled(&final_options));
+                std::fs::copy(
+                    library.compiled_library(&final_options),
+                    self.compiled_libraries_directory(&final_options).join(library.compiled_library(&final_options).file_name().unwrap()),
+                )
+                .unwrap();
+            })
     }
 
-    fn compilation_location(&self, configuration: &BuildOptions) -> PathBuf {
-        let mut bundle_dir = PathBuf::new();
-        bundle_dir.push(configuration.target_dir.as_ref().unwrap());
-        bundle_dir.push(configuration.target.as_ref().unwrap().to_string());
-        bundle_dir.push(if configuration.release {
-            "release"
-        } else {
-            "debug"
-        });
-        bundle_dir
+    fn bundle_location(&self, configuration: &FinalOptions) -> PathBuf {
+        configuration.bundle_location()
     }
 
-    fn default_bundle_location(&self, configuration: &BuildOptions) -> PathBuf {
-        let mut path_buf = self.compilation_location(configuration);
-        path_buf.push("bundle");
-        path_buf
+    fn compilation_location(&self, configuration: &FinalOptions) -> PathBuf {
+        configuration.compilation_location()
     }
 
-    fn app_name(&self, configuration: &BuildOptions) -> String {
-        configuration
-            .app_name
-            .as_ref()
-            .map_or("VM".to_owned(), |name| name.to_owned())
+    fn default_bundle_location(&self, configuration: &FinalOptions) -> PathBuf {
+        configuration.default_bundle_location()
     }
 
-    fn compiled_executable_path(&self, configuration: &BuildOptions) -> PathBuf {
+    fn app_name(&self, configuration: &FinalOptions) -> String {
+        configuration.app_name()
+    }
+
+    fn compiled_executable_path(&self, configuration: &FinalOptions) -> PathBuf {
         let mut path_buf = self.compilation_location(configuration);
         match self.executable_extension(configuration) {
             None => {
@@ -55,28 +58,20 @@ pub trait Bundler {
         path_buf
     }
 
-    fn executable_name(&self, configuration: &BuildOptions) -> String {
-        let mut executable_name = configuration
-            .executable_name
-            .as_ref()
-            .map_or_else(|| self.app_name(configuration), |name| name.to_owned());
-
-        if let Some(extension) = self.executable_extension(configuration) {
-            executable_name = format!("{}.{}", &executable_name, extension);
-        };
-        executable_name
+    fn executable_name(&self, configuration: &FinalOptions) -> String {
+        configuration.executable_name()
     }
 
-    fn executable_extension(&self, _configuration: &BuildOptions) -> Option<String> {
-        None
+    fn executable_extension(&self, configuration: &FinalOptions) -> Option<String> {
+        configuration.executable_extension()
     }
 
-    fn compiled_libraries_directory(&self, configuration: &BuildOptions) -> PathBuf {
+    fn compiled_libraries_directory(&self, configuration: &FinalOptions) -> PathBuf {
         self.compilation_location(configuration)
             .join(Path::new("shared_libraries"))
     }
 
-    fn compiled_libraries(&self, configuration: &BuildOptions) -> Vec<PathBuf> {
+    fn compiled_libraries(&self, configuration: &FinalOptions) -> Vec<PathBuf> {
         self.compiled_libraries_directory(configuration)
             .read_dir()
             .unwrap()
@@ -84,42 +79,18 @@ pub trait Bundler {
             .collect()
     }
 
-    fn bundle_version(&self, configuration: &BuildOptions) -> String {
-        let major = configuration.major_version.unwrap_or_else(|| {
-            if configuration.minor_version.is_some() | configuration.patch_version.is_some() {
-                0
-            } else {
-                1
-            }
-        });
+    fn bundle_version(&self, configuration: &FinalOptions) -> String {
+        let major = configuration.major_version();
 
-        let minor = configuration.minor_version.unwrap_or(0);
-        let patch = configuration.patch_version.unwrap_or(0);
+        let minor = configuration.minor_version();
+        let patch = configuration.patch_version();
 
         format!("{}.{}.{}", major, minor, patch)
     }
 
-    fn bundle_major_version(&self, configuration: &BuildOptions) -> usize {
-        configuration.major_version.unwrap_or_else(|| {
-            if configuration.minor_version.is_some() | configuration.patch_version.is_some() {
-                0
-            } else {
-                1
-            }
-        })
-    }
-
-    fn bundle_minor_version(&self, configuration: &BuildOptions) -> usize {
-        configuration.minor_version.unwrap_or(0)
-    }
-
-    fn bundle_patch_version(&self, configuration: &BuildOptions) -> usize {
-        configuration.patch_version.unwrap_or(0)
-    }
-
-    fn bundle_identifier(&self, configuration: &BuildOptions) -> String {
+    fn bundle_identifier(&self, configuration: &FinalOptions) -> String {
         configuration
-            .identifier
+            .identifier()
             .as_ref()
             .map_or_else(|| self.app_name(configuration), |id| id.to_owned())
     }

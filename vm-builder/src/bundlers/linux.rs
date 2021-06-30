@@ -1,9 +1,6 @@
 use crate::bundlers::Bundler;
-use crate::BuildOptions;
-use std::env::args;
+use crate::options::FinalOptions;
 use std::fs;
-use std::fs::File;
-use std::path::{Path, PathBuf};
 use std::process::Command;
 
 pub struct LinuxBundler {}
@@ -15,9 +12,9 @@ impl LinuxBundler {
 }
 
 impl Bundler for LinuxBundler {
-    fn bundle(&self, configuration: &BuildOptions) {
-        let bundle_location = self.bundle_location(configuration);
-        let app_name = self.app_name(configuration);
+    fn bundle(&self, configuration: &FinalOptions) {
+        let bundle_location = configuration.bundle_location();
+        let app_name = configuration.app_name();
 
         let app_dir = bundle_location.join(&app_name);
         let binary_dir = app_dir.join("bin");

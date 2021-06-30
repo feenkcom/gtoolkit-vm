@@ -1,5 +1,5 @@
 use crate::bundlers::Bundler;
-use crate::BuildOptions;
+use crate::options::FinalOptions;
 use std::fs;
 use std::fs::File;
 use std::path::{Path, PathBuf};
@@ -11,15 +11,13 @@ impl WindowsBundler {
         Self {}
     }
 
-    pub fn create_ico(&self, configuration: &BuildOptions) -> Option<PathBuf> {
-        if let Some(icons) = configuration.icons.as_ref() {
-            for icon in icons {
-                let icon_path = Path::new(icon);
-                if icon_path.exists() {
-                    if let Some(extension) = icon_path.extension() {
-                        if extension == "ico" {
-                            return Some(icon_path.to_path_buf());
-                        }
+    pub fn create_ico(&self, configuration: &FinalOptions) -> Option<PathBuf> {
+        for icon in configuration.icons() {
+            let icon_path = Path::new(&icon);
+            if icon_path.exists() {
+                if let Some(extension) = icon_path.extension() {
+                    if extension == "ico" {
+                        return Some(icon_path.to_path_buf());
                     }
                 }
             }
@@ -33,18 +31,18 @@ impl WindowsBundler {
 }
 
 impl Bundler for WindowsBundler {
-    fn pre_compile(&self, configuration: &BuildOptions) {
+    fn pre_compile(&self, configuration: &FinalOptions) {
         let temp_dir = self.temporary_directory();
 
         let icon = self.create_ico(configuration);
 
         let info = Info {
-            bundle_name: self.app_name(configuration),
+            bundle_name: configuration.app_name(),
             bundle_identifier: self.bundle_identifier(configuration),
             bundle_author: "".to_string(),
-            bundle_major_version: self.bundle_major_version(configuration),
-            bundle_minor_version: self.bundle_minor_version(configuration),
-            bundle_patch_version: self.bundle_patch_version(configuration),
+            bundle_major_version: configuration.major_version(),
+            bundle_minor_version: configuration.minor_version(),
+            bundle_patch_version: configuration.patch_version(),
             bundle_icon: icon.as_ref().map_or("".to_string(), |icon| {
                 format!("100 ICON \"{}\"", icon.display())
             }),
@@ -76,9 +74,9 @@ impl Bundler for WindowsBundler {
         );
     }
 
-    fn bundle(&self, configuration: &BuildOptions) {
-        let bundle_location = self.bundle_location(configuration);
-        let app_name = self.app_name(configuration);
+    fn bundle(&self, configuration: &FinalOptions) {
+        let bundle_location = configuration.bundle_location();
+        let app_name = configuration.app_name();
 
         let app_dir = bundle_location.join(&app_name);
         let binary_dir = app_dir.join("bin");
@@ -114,15 +112,11 @@ impl Bundler for WindowsBundler {
         .unwrap();
     }
 
-    fn post_compile(&self, _configuration: &BuildOptions) {
+    fn post_compile(&self, _configuration: &FinalOptions) {
         let temp_dir = self.temporary_directory();
         if temp_dir.exists() {
             fs::remove_dir_all(&temp_dir).unwrap();
         }
-    }
-
-    fn executable_extension(&self, _configuration: &BuildOptions) -> Option<String> {
-        Some("exe".to_string())
     }
 }
 

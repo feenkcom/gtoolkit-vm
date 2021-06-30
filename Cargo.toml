@@ -6,3 +6,5 @@ members = [
     "vm-builder",
     "vm-releaser"
 ]
+
+exclude = ["target"]

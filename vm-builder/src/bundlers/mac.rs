@@ -1,5 +1,5 @@
 use crate::bundlers::Bundler;
-use crate::BuildOptions;
+use crate::options::FinalOptions;
 use std::fs;
 use std::fs::File;
 use std::path::{Path, PathBuf};
@@ -11,15 +11,13 @@ impl MacBundler {
         Self {}
     }
 
-    pub fn create_icns(&self, configuration: &BuildOptions) -> Option<PathBuf> {
-        if let Some(icons) = configuration.icons.as_ref() {
-            for icon in icons {
-                let icon_path = Path::new(icon);
-                if icon_path.exists() {
-                    if let Some(extension) = icon_path.extension() {
-                        if extension == "icns" {
-                            return Some(icon_path.to_path_buf());
-                        }
+    pub fn create_icns(&self, configuration: &FinalOptions) -> Option<PathBuf> {
+        for icon in configuration.icons() {
+            let icon_path = Path::new(&icon);
+            if icon_path.exists() {
+                if let Some(extension) = icon_path.extension() {
+                    if extension == "icns" {
+                        return Some(icon_path.to_path_buf());
                     }
                 }
             }
@@ -29,9 +27,9 @@ impl MacBundler {
 }
 
 impl Bundler for MacBundler {
-    fn bundle(&self, configuration: &BuildOptions) {
-        let bundle_location = self.bundle_location(configuration);
-        let app_name = self.app_name(configuration);
+    fn bundle(&self, configuration: &FinalOptions) {
+        let bundle_location = configuration.bundle_location();
+        let app_name = configuration.app_name();
 
         let app_dir = bundle_location.join(format!("{}.app", &app_name));
         let contents_dir = app_dir.join("Contents");
@@ -66,7 +64,7 @@ impl Bundler for MacBundler {
 
         let icon = if let Some(icon) = self.create_icns(configuration) {
             let resource_icon_name = resources_dir
-                .join(self.app_name(configuration))
+                .join(configuration.app_name())
                 .with_extension("icns");
             fs::copy(icon, resource_icon_name.clone()).unwrap();
             Some(resource_icon_name.clone())
@@ -76,8 +74,8 @@ impl Bundler for MacBundler {
 
         let info_plist_template = mustache::compile_str(INFO_PLIST).unwrap();
         let info = Info {
-            bundle_name: self.app_name(configuration),
-            bundle_display_name: self.app_name(configuration),
+            bundle_name: configuration.app_name(),
+            bundle_display_name: configuration.app_name(),
             executable_name: self.executable_name(configuration),
             bundle_identifier: self.bundle_identifier(configuration),
             bundle_version: self.bundle_version(configuration),
