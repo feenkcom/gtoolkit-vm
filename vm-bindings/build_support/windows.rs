@@ -316,7 +316,7 @@ impl Builder for WindowsBuilder {
         println!("cargo:rustc-link-lib=PharoVMCore");
 
         println!(
-            "cargo:rustc-link-search={}\\build\\vm",
+            "cargo:rustc-link-search={}",
             self.output_directory()
                 .join("build")
                 .join(titlecase(&self.profile()))

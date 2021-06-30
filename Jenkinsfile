@@ -126,7 +126,7 @@ pipeline {
                             cargo run --package vm-builder --target ${TARGET} -- `
                                 --app-name ${APP_NAME} `
                                 --identifier ${APP_IDENTIFIER} `
-                                --libraries boxer clipboard gleam glutin skia `
+                                --libraries skia `
                                 --release """
 
                         //powershell "New-Item -path target/${TARGET}/release/bundle/${APP_NAME}/bin -type directory"
