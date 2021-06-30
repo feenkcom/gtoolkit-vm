@@ -13,6 +13,7 @@ Install [Microsoft C++ Build Tools](https://visualstudio.microsoft.com/visual-cp
 Make sure the following environmental variables are set:
 ```
 LIBCLANG_PATH = C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\VC\Tools\Llvm\x64\bin
+LLVM_HOME = C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\VC\Tools\Llvm\x64
 PATH = C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\MSBuild\Current\Bin
 ```
 
@@ -31,3 +32,7 @@ choco install -y cmake
 choco install -y pkgconfiglite
 ```
 
+### Python2 (for Skia)
+```
+choco install -y python2
+```

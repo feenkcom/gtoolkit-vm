@@ -20,6 +20,7 @@ use crate::bundlers::mac::MacBundler;
 use crate::bundlers::windows::WindowsBundler;
 use crate::bundlers::Bundler;
 use crate::options::{BuildOptions, FinalOptions, Target};
+use std::intrinsics::abort;
 
 fn main() {
     let build_config: BuildOptions = BuildOptions::parse();
@@ -64,7 +65,10 @@ fn compile_binary(opts: &FinalOptions) {
         command.arg("--release");
     }
 
-    command.status().unwrap();
+    let status = command.status().unwrap();
+    if !status.success() {
+        panic!("Could not compile {}", opts.app_name());
+    }
 }
 
 fn bundler(final_config: &FinalOptions) -> Box<dyn Bundler> {
