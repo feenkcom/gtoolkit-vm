@@ -119,11 +119,9 @@ pipeline {
                     }
 
                     steps {
-                        powershell 'echo $env:path'
                         powershell 'git clean -fdx'
                         powershell 'git submodule update --init --recursive'
 
-                        //powershell "cargo run --package vm-builder --target ${TARGET} -- --app-name ${APP_NAME} -vv --release"
                         powershell """
                             cargo run --package vm-builder --target ${TARGET} -- `
                                 --app-name ${APP_NAME} `

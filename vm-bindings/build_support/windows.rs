@@ -310,7 +310,10 @@ impl Builder for WindowsBuilder {
 
         println!(
             "cargo:rustc-link-search={}\\build\\vm",
-            self.output_directory().display()
+            self.output_directory()
+                .join("build")
+                .join(titlecase(&self.profile()))
+                .display()
         );
     }
 
