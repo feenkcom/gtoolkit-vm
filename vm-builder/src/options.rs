@@ -41,9 +41,9 @@ pub enum ThirdPartyLibrary {
     Skia,
     #[clap(name = "glutin")]
     Glutin,
-    #[clap(name = "winit")]
-    Gleam,
     #[clap(name = "gleam")]
+    Gleam,
+    #[clap(name = "winit")]
     Winit,
     #[clap(name = "clipboard")]
     Clipboard,

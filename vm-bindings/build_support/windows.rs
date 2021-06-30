@@ -264,12 +264,16 @@ impl Builder for WindowsBuilder {
     fn vm_binary(&self) -> PathBuf {
         self.output_directory()
             .join("build")
+            .join("build")
             .join("vm")
             .join("PharoVMCore.dll")
     }
 
     fn compiled_libraries_directory(&self) -> PathBuf {
-        self.output_directory().join("build").join("vm")
+        self.output_directory()
+            .join("build")
+            .join("build")
+            .join("vm")
     }
 
     fn generate_sources(&self) {
@@ -303,6 +307,7 @@ impl Builder for WindowsBuilder {
     fn generated_config_directory(&self) -> PathBuf {
         self.output_directory()
             .join("build")
+            .join("build")
             .join("include")
             .join("pharovm")
     }
@@ -320,7 +325,11 @@ impl Builder for WindowsBuilder {
         let mut libraries = vec![];
 
         self.export_dll_from_directory(
-            &self.output_directory().join("build").join("vm"),
+            &self
+                .output_directory()
+                .join("build")
+                .join("build")
+                .join("vm"),
             &mut libraries,
         );
 
