@@ -68,7 +68,6 @@ pipeline {
                             cargo run --package vm-builder --target ${TARGET} -- \
                                 --app-name ${APP_NAME} \
                                 --identifier ${APP_IDENTIFIER} \
-                                --libraries boxer clipboard gleam skia \
                                 --release """
                         sh "ditto -c -k --sequesterRsrc --keepParent target/${TARGET}/release/bundle/${APP_NAME}.app ${APP_NAME}${TARGET}.app.zip"
 
@@ -111,7 +110,8 @@ pipeline {
 
                     environment {
                         TARGET = "${WINDOWS_AMD64_TARGET}"
-                        LIBCLANG_PATH = 'C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\BuildTools\\VC\\Tools\\Llvm\\x64\\bin'
+                        LLVM_HOME = 'C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\BuildTools\\VC\\Tools\\Llvm\\x64'
+                        LIBCLANG_PATH = "${LLVM_HOME}\\bin"
                         CMAKE_PATH = 'C:\\Program Files\\CMake\\bin'
                         MSBUILD_PATH = 'C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\BuildTools\\MSBuild\\Current\\Bin'
                         CARGO_PATH = "${homedrive}${homepath}\\.cargo\\bin"
