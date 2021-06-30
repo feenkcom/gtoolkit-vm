@@ -3,6 +3,7 @@ use std::fmt;
 use std::fmt::{Debug, Formatter};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
+use titlecase::titlecase;
 
 #[derive(Default, Clone)]
 pub struct WindowsBuilder {}
@@ -322,6 +323,14 @@ impl Builder for WindowsBuilder {
                 .join("build")
                 .join("build")
                 .join("vm"),
+            &mut libraries,
+        );
+
+        self.export_dll_from_directory(
+            &self
+                .output_directory()
+                .join("build")
+                .join(titlecase(&self.profile())),
             &mut libraries,
         );
 
