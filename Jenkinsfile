@@ -14,6 +14,7 @@ pipeline {
         AWSIP = 'ec2-18-197-145-81.eu-central-1.compute.amazonaws.com'
         MASTER_WORKSPACE = ""
         APP_NAME = "GlamorousToolkit"
+        APP_IDENTIFIER = 'com.gtoolkit'
 
         MACOS_INTEL_TARGET = 'x86_64-apple-darwin'
         MACOS_M1_TARGET = 'aarch64-apple-darwin'
@@ -38,7 +39,14 @@ pipeline {
                         sh 'git clean -fdx'
                         sh 'git submodule update --init --recursive'
 
-                        sh "cargo run --package vm-builder --target ${TARGET} -- --app-name ${APP_NAME} -vv --release"
+                        sh """
+                        cargo run
+                            --package vm-builder --target ${TARGET} -- \
+                            --app-name ${APP_NAME} \
+                            --identifier ${APP_IDENTIFIER} \
+                            -vv \
+                            --release """
+
                         sh "ditto -c -k --sequesterRsrc --keepParent target/${TARGET}/release/bundle/${APP_NAME}.app ${APP_NAME}${TARGET}.app.zip"
 
                         stash includes: "${APP_NAME}${TARGET}.app.zip", name: "${TARGET}"
