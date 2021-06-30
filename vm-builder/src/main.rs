@@ -45,7 +45,6 @@ fn compile_binary(opts: &FinalOptions) {
 
     let mut command = Command::new("cargo");
     command
-        .stdout(Stdio::inherit())
         .arg("build")
         .arg("--package")
         .arg("vm-client")
@@ -66,10 +65,7 @@ fn compile_binary(opts: &FinalOptions) {
         command.arg("--release");
     }
 
-    let status = command.status().unwrap();
-    if !status.success() {
-        panic!("Could not compile {}", opts.app_name());
-    }
+    command.status().unwrap();
 }
 
 fn bundler(final_config: &FinalOptions) -> Box<dyn Bundler> {
