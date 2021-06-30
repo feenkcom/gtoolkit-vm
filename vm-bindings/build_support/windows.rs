@@ -286,7 +286,7 @@ impl Builder for WindowsBuilder {
         cmake::Config::new(self.vm_sources_directory())
             .define("COMPILE_EXECUTABLE", "OFF")
             .define("FEATURE_LIB_PTHREADW32", "ON")
-            .define("PTHREADW32_DIR", self.pthreads_library_directory().display())
+            .define("PTHREADW32_DIR", self.pthreads_library_directory())
             .define("FEATURE_LIB_GIT2", "OFF")
             .define("FEATURE_LIB_SDL2", "OFF")
             .generator("Visual Studio 16 2019")
