@@ -66,42 +66,25 @@ impl ToString for ThirdPartyLibrary {
 impl ThirdPartyLibrary {
     pub fn as_library(&self) -> impl Library {
         match self {
-            ThirdPartyLibrary::Boxer => RustLibrary::new(
-                "Boxer",
-                "https://github.com/feenkcom/gtoolkit-boxer.git",
-                None,
-                vec![],
-            ),
-            ThirdPartyLibrary::Skia => RustLibrary::new(
-                "Skia",
-                "https://github.com/feenkcom/libskia.git",
-                None,
-                vec![],
-            ),
-            ThirdPartyLibrary::Glutin => RustLibrary::new(
-                "Glutin",
-                "https://github.com/feenkcom/libglutin.git",
-                None,
-                vec![],
-            ),
-            ThirdPartyLibrary::Gleam => RustLibrary::new(
-                "Gleam",
-                "https://github.com/feenkcom/libgleam.git",
-                None,
-                vec![],
-            ),
-            ThirdPartyLibrary::Winit => RustLibrary::new(
-                "Winit",
-                "https://github.com/feenkcom/libwinit.git",
-                None,
-                vec![],
-            ),
-            ThirdPartyLibrary::Clipboard => RustLibrary::new(
-                "Clipboard",
-                "https://github.com/feenkcom/libclipboard.git",
-                None,
-                vec![],
-            ),
+            ThirdPartyLibrary::Boxer => {
+                RustLibrary::new("Boxer", "https://github.com/feenkcom/gtoolkit-boxer.git")
+            }
+            ThirdPartyLibrary::Skia => {
+                RustLibrary::new("Skia", "https://github.com/feenkcom/libskia.git")
+                    .requires("python")
+            }
+            ThirdPartyLibrary::Glutin => {
+                RustLibrary::new("Glutin", "https://github.com/feenkcom/libglutin.git")
+            }
+            ThirdPartyLibrary::Gleam => {
+                RustLibrary::new("Gleam", "https://github.com/feenkcom/libgleam.git")
+            }
+            ThirdPartyLibrary::Winit => {
+                RustLibrary::new("Winit", "https://github.com/feenkcom/libwinit.git")
+            }
+            ThirdPartyLibrary::Clipboard => {
+                RustLibrary::new("Clipboard", "https://github.com/feenkcom/libclipboard.git")
+            }
         }
     }
 }

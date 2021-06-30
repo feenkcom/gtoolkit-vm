@@ -4,6 +4,7 @@ extern crate serde;
 extern crate serde_derive;
 extern crate mustache;
 extern crate url;
+extern crate which;
 
 mod bundlers;
 mod libraries;
@@ -20,13 +21,13 @@ use crate::bundlers::mac::MacBundler;
 use crate::bundlers::windows::WindowsBundler;
 use crate::bundlers::Bundler;
 use crate::options::{BuildOptions, FinalOptions, Target};
-use std::intrinsics::abort;
 
 fn main() {
     let build_config: BuildOptions = BuildOptions::parse();
     let final_config = FinalOptions::new(build_config);
 
     let bundler = bundler(&final_config);
+    bundler.ensure_third_party_requirements(&final_config);
     bundler.pre_compile(&final_config);
     compile_binary(&final_config);
     bundler.post_compile(&final_config);

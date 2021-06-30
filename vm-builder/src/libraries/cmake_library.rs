@@ -1,7 +1,7 @@
-use url::Url;
-use crate::Library;
 use crate::options::FinalOptions;
+use crate::Library;
 use std::path::PathBuf;
+use url::Url;
 
 pub struct CMakeLibrary {
     name: String,
@@ -9,9 +9,7 @@ pub struct CMakeLibrary {
     tag: Option<String>,
 }
 
-impl CMakeLibrary {
-
-}
+impl CMakeLibrary {}
 
 impl Library for CMakeLibrary {
     fn is_downloaded(&self, options: &FinalOptions) -> bool {
@@ -27,6 +25,10 @@ impl Library for CMakeLibrary {
     }
 
     fn compiled_library(&self, options: &FinalOptions) -> PathBuf {
+        unimplemented!()
+    }
+
+    fn ensure_requirements(&self) {
         unimplemented!()
     }
 }

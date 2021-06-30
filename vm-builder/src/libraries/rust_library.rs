@@ -1,24 +1,51 @@
 use crate::options::FinalOptions;
-use crate::{BuildOptions, Library};
-use std::path::{Path, PathBuf};
-use std::process::{Command, ExitStatus, Stdio};
+use crate::Library;
+use std::path::PathBuf;
+use std::process::Command;
 use url::Url;
 
+#[derive(Clone, Debug)]
 pub struct RustLibrary {
     name: String,
     repository: Url,
     commit: Option<String>,
     features: Vec<String>,
+    requires: Vec<String>,
 }
 
 impl RustLibrary {
-    pub fn new(name: &str, repository: &str, commit: Option<&str>, features: Vec<&str>) -> Self {
+    pub fn new(name: &str, repository: &str) -> Self {
         Self {
             name: name.to_owned(),
             repository: Url::parse(repository).unwrap(),
-            commit: commit.map(|hash| hash.to_owned()),
-            features: features.iter().map(|each| each.to_string()).collect(),
+            commit: None,
+            features: vec![],
+            requires: vec![],
         }
+    }
+
+    pub fn commit(self, commit: impl Into<String>) -> Self {
+        let mut library = self.clone();
+        library.commit = Some(commit.into());
+        library
+    }
+
+    pub fn feature(self, feature: impl Into<String>) -> Self {
+        let mut library = self.clone();
+        library.features.push(feature.into());
+        library
+    }
+
+    pub fn requires(self, executable: impl Into<String>) -> Self {
+        let mut library = self.clone();
+        library.requires.push(executable.into());
+        library
+    }
+
+    pub fn features(self, features: Vec<&str>) -> Self {
+        let mut library = self.clone();
+        library.features = features.iter().map(|each| each.to_string()).collect();
+        library
     }
 
     fn crate_source_directory(&self, options: &FinalOptions) -> PathBuf {
@@ -97,5 +124,14 @@ impl Library for RustLibrary {
             .join(options.target().to_string())
             .join(options.profile())
             .join(binary_name)
+    }
+
+    fn ensure_requirements(&self) {
+        self.requires.iter().for_each(|each| {
+            which::which(each).expect(&format!(
+                "{} must exist in the system. Make sure it is in the PATH",
+                each
+            ));
+        })
     }
 }

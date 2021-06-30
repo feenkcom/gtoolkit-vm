@@ -5,8 +5,8 @@ use crate::bindings::{
 use crate::prelude::{Handle, NativeAccess, NativeDrop};
 use std::ffi::{CStr, CString};
 use std::fmt;
-use std::mem::{forget, ManuallyDrop};
-use std::os::raw::{c_char, c_int, c_void};
+use std::mem::forget;
+use std::os::raw::{c_char, c_void};
 
 pub type VMParameters = Handle<NativeVMParameters>;
 

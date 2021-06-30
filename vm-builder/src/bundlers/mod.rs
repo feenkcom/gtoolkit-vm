@@ -12,6 +12,13 @@ pub trait Bundler {
     fn bundle(&self, configuration: &FinalOptions);
     fn post_compile(&self, _configuration: &FinalOptions) {}
 
+    fn ensure_third_party_requirements(&self, final_options: &FinalOptions) {
+        final_options
+            .third_party_libraries()
+            .iter()
+            .for_each(|library| library.ensure_requirements());
+    }
+
     fn compile_third_party_libraries(&self, final_options: &FinalOptions) {
         final_options
             .third_party_libraries()

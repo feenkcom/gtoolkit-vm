@@ -260,12 +260,8 @@ impl Builder for WindowsBuilder {
                 &std::env::var("LIBCLANG_PATH")
             )
         }
-        if !Path::new(&std::env::var("LLVM_HOME").expect("LLVM_HOME must be set")).exists()
-        {
-            panic!(
-                "LLVM_HOME must exist: {:?}",
-                &std::env::var("LLVM_HOME")
-            )
+        if !Path::new(&std::env::var("LLVM_HOME").expect("LLVM_HOME must be set")).exists() {
+            panic!("LLVM_HOME must exist: {:?}", &std::env::var("LLVM_HOME"))
         }
     }
 

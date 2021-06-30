@@ -25,4 +25,6 @@ pub trait Library {
     fn force_compile(&self, options: &FinalOptions);
 
     fn compiled_library(&self, options: &FinalOptions) -> PathBuf;
+
+    fn ensure_requirements(&self);
 }
