@@ -269,9 +269,7 @@ impl Builder for WindowsBuilder {
     }
 
     fn compiled_libraries_directory(&self) -> PathBuf {
-        self.output_directory()
-            .join("build")
-            .join("vm")
+        self.output_directory().join("build").join("vm")
     }
 
     fn generate_sources(&self) {
@@ -285,30 +283,18 @@ impl Builder for WindowsBuilder {
 
         std::fs::create_dir_all(self.compiled_libraries_directory()).unwrap();
 
-        Command::new("cmake")
-            .stdout(Stdio::inherit())
-            .arg(self.cmake_build_type())
-            .arg("-DFEATURE_LIB_PTHREADW32=ON")
-            .arg(format!(
-                "-DPTHREADW32_DIR={}",
-                self.pthreads_library_directory().display()
-            ))
-            .arg("-DFEATURE_LIB_GIT2=OFF")
-            .arg("-DFEATURE_LIB_SDL2=OFF")
-            .arg("-DCOMPILE_EXECUTABLE=OFF")
-            .arg("-S")
-            .arg(self.vm_sources_directory())
-            .arg("-B")
-            .arg(self.output_directory())
-            .arg("-G")
-            .arg("Visual Studio 16 2019")
-            .arg("-T")
-            .arg("ClangCL")
-            .arg("-A")
-            .arg("x64")
-            .status()
-            .unwrap();
+        cmake::Config::new(self.vm_sources_directory())
+            .define("COMPILE_EXECUTABLE", "OFF")
+            .define("FEATURE_LIB_PTHREADW32", "ON")
+            .define("PTHREADW32_DIR", self.pthreads_library_directory().display())
+            .define("FEATURE_LIB_GIT2", "OFF")
+            .define("FEATURE_LIB_SDL2", "OFF")
+            .generator("Visual Studio 16 2019")
+            .generator_toolset("ClangCL")
+            .build();
     }
+
+    fn compile_sources(&self) {}
 
     fn platform_include_directory(&self) -> PathBuf {
         self.squeak_include_directory().join("win")
@@ -325,22 +311,13 @@ impl Builder for WindowsBuilder {
         println!("cargo:rustc-link-lib=PharoVMCore");
 
         println!(
-            "cargo:rustc-link-search={}\\build\\vm\\{}",
-            self.output_directory().display(),
-            self.profile()
+            "cargo:rustc-link-search={}\\build\\vm",
+            self.output_directory().display()
         );
     }
 
     fn shared_libraries_to_export(&self) -> Vec<(PathBuf, Option<String>)> {
         let mut libraries = vec![];
-        self.export_dll_from_directory(
-            &self
-                .output_directory()
-                .join("build")
-                .join("vm")
-                .join(self.profile()),
-            &mut libraries,
-        );
 
         self.export_dll_from_directory(
             &self.output_directory().join("build").join("vm"),
