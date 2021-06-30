@@ -26,6 +26,7 @@ pub trait Bundler {
             .for_each(|library| {
                 library.download(&final_options);
                 assert!(library.is_downloaded(&final_options));
+                library.checkout(&final_options);
                 library.compile(&final_options);
                 assert!(library.is_compiled(&final_options));
                 std::fs::copy(

@@ -51,12 +51,6 @@ impl RustLibrary {
     fn crate_source_directory(&self, options: &FinalOptions) -> PathBuf {
         options.third_party_libraries_directory().join(&self.name)
     }
-
-    fn crate_target_directory(&self, options: &FinalOptions) -> PathBuf {
-        options
-            .third_party_libraries_directory()
-            .join(format!("{}-build", &self.name))
-    }
 }
 
 impl Library for RustLibrary {
@@ -65,14 +59,8 @@ impl Library for RustLibrary {
     }
 
     fn force_download(&self, options: &FinalOptions) {
-        let mut command = Command::new("git");
-        command.arg("clone");
-
-        if self.commit.is_some() {
-            command.arg("-n");
-        }
-
-        let result = command
+        let result = Command::new("git")
+            .arg("clone")
             .arg(self.repository.to_string())
             .arg(self.crate_source_directory(options))
             .status()
@@ -81,6 +69,15 @@ impl Library for RustLibrary {
         if !result.success() {
             panic!("Could not clone {:?}", self.repository.to_string())
         }
+    }
+
+    fn checkout(&self, options: &FinalOptions) {
+        Command::new("git")
+            .current_dir(self.crate_source_directory(options))
+            .arg("clean")
+            .arg("-fdx")
+            .status()
+            .unwrap();
 
         if let Some(ref commit) = self.commit {
             Command::new("git")
@@ -100,7 +97,7 @@ impl Library for RustLibrary {
             .arg("--target")
             .arg(options.target().to_string())
             .arg("--target-dir")
-            .arg(self.crate_target_directory(options));
+            .arg(options.target_dir());
 
         if options.release() {
             command.arg("--release");
@@ -120,7 +117,8 @@ impl Library for RustLibrary {
         #[cfg(target_os = "windows")]
         let binary_name = format!("{}.dll", &self.name);
 
-        self.crate_target_directory(options)
+        options
+            .target_dir()
             .join(options.target().to_string())
             .join(options.profile())
             .join(binary_name)

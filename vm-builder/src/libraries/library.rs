@@ -11,14 +11,13 @@ pub trait Library {
     }
     fn force_download(&self, options: &FinalOptions);
 
+    fn checkout(&self, options: &FinalOptions);
+
     fn is_compiled(&self, options: &FinalOptions) -> bool {
         self.compiled_library(options).exists()
     }
 
     fn compile(&self, options: &FinalOptions) {
-        if self.is_compiled(options) {
-            return;
-        }
         self.force_compile(options);
     }
 

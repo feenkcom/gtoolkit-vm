@@ -1,7 +1,7 @@
 use crate::{Library, RustLibrary};
 use clap::{AppSettings, ArgEnum, Clap};
 use rustc_version::version_meta;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::str::FromStr;
 
@@ -150,34 +150,22 @@ pub struct FinalOptions {
     build_options: BuildOptions,
 }
 
-fn workspace_directory() -> Option<PathBuf> {
-    let output = Command::new("cargo")
-        .arg("locate-project")
-        .arg("--workspace")
-        .arg("--message-format")
-        .arg("plain")
-        .stdout(Stdio::piped())
-        .output()
-        .expect("Failed to execute command");
-
-    let workspace_toml_path =
-        PathBuf::new().join(String::from_utf8_lossy(&output.stdout).to_string());
-    Some(workspace_toml_path.parent().unwrap().to_path_buf())
-}
-
 impl FinalOptions {
     pub fn new(build_options: BuildOptions) -> Self {
         let mut final_config = Self { build_options };
 
         let build_dir = final_config.build_options.target_dir.as_ref().map_or_else(
             || {
-                workspace_directory().map_or(DEFAULT_BUILD_DIR.to_owned(), |workspace| {
-                    workspace
-                        .join(DEFAULT_BUILD_DIR)
-                        .to_str()
-                        .unwrap()
-                        .to_owned()
-                })
+                final_config.workspace_directory().map_or(
+                    DEFAULT_BUILD_DIR.to_owned(),
+                    |workspace| {
+                        workspace
+                            .join(DEFAULT_BUILD_DIR)
+                            .to_str()
+                            .unwrap()
+                            .to_owned()
+                    },
+                )
             },
             |build_dir| build_dir.clone(),
         );
@@ -197,8 +185,8 @@ impl FinalOptions {
         self.build_options.target.unwrap()
     }
 
-    pub fn target_dir(&self) -> String {
-        self.build_options.target_dir.as_ref().unwrap().clone()
+    pub fn target_dir(&self) -> PathBuf {
+        Path::new(self.build_options.target_dir.as_ref().unwrap()).to_path_buf()
     }
 
     pub fn debug_symbols(&self) -> bool {
@@ -256,6 +244,21 @@ impl FinalOptions {
         self.build_options.bundle_dir.clone()
     }
 
+    pub fn workspace_directory(&self) -> Option<PathBuf> {
+        let output = Command::new("cargo")
+            .arg("locate-project")
+            .arg("--workspace")
+            .arg("--message-format")
+            .arg("plain")
+            .stdout(Stdio::piped())
+            .output()
+            .expect("Failed to execute command");
+
+        let workspace_toml_path =
+            PathBuf::new().join(String::from_utf8_lossy(&output.stdout).to_string());
+        Some(workspace_toml_path.parent().unwrap().to_path_buf())
+    }
+
     pub fn third_party_libraries(&self) -> Vec<impl Library> {
         self.build_options
             .libraries
@@ -295,8 +298,7 @@ impl FinalOptions {
     }
 
     pub fn compilation_location(&self) -> PathBuf {
-        PathBuf::new()
-            .join(self.target_dir())
+        self.target_dir()
             .join(self.target().to_string())
             .join(if self.release() { "release" } else { "debug" })
     }

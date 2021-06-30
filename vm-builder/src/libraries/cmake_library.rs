@@ -20,6 +20,10 @@ impl Library for CMakeLibrary {
         unimplemented!()
     }
 
+    fn checkout(&self, options: &FinalOptions) {
+        unimplemented!()
+    }
+
     fn force_compile(&self, options: &FinalOptions) {
         unimplemented!()
     }
