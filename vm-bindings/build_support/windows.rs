@@ -274,12 +274,12 @@ impl Builder for WindowsBuilder {
 
     fn generate_sources(&self) {
         self.clone_pthread();
-        self.clone_libgit2();
-        self.clone_libssh2();
-        self.clone_sdl2();
+        //self.clone_libgit2();
+        //self.clone_libssh2();
+        //self.clone_sdl2();
         self.compile_pthread();
-        self.compile_libgit2();
-        self.compile_sdl2();
+        //self.compile_libgit2();
+        //self.compile_sdl2();
 
         std::fs::create_dir_all(self.compiled_libraries_directory()).unwrap();
 
@@ -324,9 +324,8 @@ impl Builder for WindowsBuilder {
             &mut libraries,
         );
 
-        libraries.push((self.libgit2_binary(), Some("libgit2.dll".to_string())));
-
-        libraries.push((self.sdl2_binary(), Some("SDL2.dll".to_string())));
+        //libraries.push((self.libgit2_binary(), Some("libgit2.dll".to_string())));
+        //libraries.push((self.sdl2_binary(), Some("SDL2.dll".to_string())));
 
         libraries
     }

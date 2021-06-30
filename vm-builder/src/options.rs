@@ -274,11 +274,12 @@ impl FinalOptions {
     }
 
     pub fn third_party_libraries(&self) -> Vec<impl Library> {
-        self.build_options.libraries.as_ref().map_or(vec![], |libraries| {
-            libraries.iter().map(|each| {
-                each.as_library()
-            }).collect()
-        })
+        self.build_options
+            .libraries
+            .as_ref()
+            .map_or(vec![], |libraries| {
+                libraries.iter().map(|each| each.as_library()).collect()
+            })
     }
 
     pub fn app_name(&self) -> String {

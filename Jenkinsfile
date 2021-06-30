@@ -40,12 +40,12 @@ pipeline {
                         sh 'git submodule update --init --recursive'
 
                         sh """
-                        cargo run
-                            --package vm-builder --target ${TARGET} -- \
-                            --app-name ${APP_NAME} \
-                            --identifier ${APP_IDENTIFIER} \
-                            -vv \
-                            --release """
+                            cargo run --package vm-builder --target ${TARGET} -- \
+                                --app-name ${APP_NAME} \
+                                --identifier ${APP_IDENTIFIER} \
+                                --libraries boxer clipboard gleam glutin skia \
+                                -vv \
+                                --release """
 
                         sh "ditto -c -k --sequesterRsrc --keepParent target/${TARGET}/release/bundle/${APP_NAME}.app ${APP_NAME}${TARGET}.app.zip"
 
@@ -66,7 +66,13 @@ pipeline {
                         sh 'git clean -fdx'
                         sh 'git submodule update --init --recursive'
 
-                        sh "cargo run --package vm-builder --target ${TARGET} -- --app-name ${APP_NAME} -vv --release"
+                        sh """
+                            cargo run --package vm-builder --target ${TARGET} -- \
+                                --app-name ${APP_NAME} \
+                                --identifier ${APP_IDENTIFIER} \
+                                --libraries boxer clipboard gleam glutin skia \
+                                -vv \
+                                --release """
                         sh "ditto -c -k --sequesterRsrc --keepParent target/${TARGET}/release/bundle/${APP_NAME}.app ${APP_NAME}${TARGET}.app.zip"
 
                         stash includes: "${APP_NAME}${TARGET}.app.zip", name: "${TARGET}"
@@ -85,7 +91,13 @@ pipeline {
                         sh 'git clean -fdx'
                         sh 'git submodule update --init --recursive'
 
-                        sh "cargo run --package vm-builder --target ${TARGET} -- --app-name ${APP_NAME} -vv --release"
+                        sh """
+                            cargo run --package vm-builder --target ${TARGET} -- \
+                                --app-name ${APP_NAME} \
+                                --identifier ${APP_IDENTIFIER} \
+                                --libraries boxer clipboard gleam glutin skia \
+                                -vv \
+                                --release """
 
                         sh """
                             cd target/${TARGET}/release/bundle/

@@ -23,7 +23,12 @@ pub trait Bundler {
                 assert!(library.is_compiled(&final_options));
                 std::fs::copy(
                     library.compiled_library(&final_options),
-                    self.compiled_libraries_directory(&final_options).join(library.compiled_library(&final_options).file_name().unwrap()),
+                    self.compiled_libraries_directory(&final_options).join(
+                        library
+                            .compiled_library(&final_options)
+                            .file_name()
+                            .unwrap(),
+                    ),
                 )
                 .unwrap();
             })

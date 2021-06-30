@@ -99,21 +99,3 @@ impl Library for RustLibrary {
             .join(binary_name)
     }
 }
-
-#[test]
-pub fn compile_winit() {
-    let build_options = BuildOptions::default();
-    let final_options = FinalOptions::new(build_options);
-
-    let library = RustLibrary::new(
-        "Clipboard",
-        "https://github.com/feenkcom/libclipboard.git",
-        None,
-        vec![],
-    );
-
-    library.download(&final_options);
-    assert!(library.is_downloaded(&final_options));
-    library.compile(&final_options);
-    assert!(library.is_compiled(&final_options));
-}
