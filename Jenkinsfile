@@ -47,9 +47,9 @@ pipeline {
                                 --libraries ${APP_LIBRARIES} \
                                 --release """
 
-                        sh "ditto -c -k --sequesterRsrc --keepParent target/${TARGET}/release/bundle/${APP_NAME}.app ${APP_NAME}${TARGET}.app.zip"
+                        sh "ditto -c -k --sequesterRsrc --keepParent target/${TARGET}/release/bundle/${APP_NAME}.app ${APP_NAME}-${TARGET}.app.zip"
 
-                        stash includes: "${APP_NAME}${TARGET}.app.zip", name: "${TARGET}"
+                        stash includes: "${APP_NAME}-${TARGET}.app.zip", name: "${TARGET}"
                     }
                 }
                 stage ('MacOS M1') {
@@ -73,9 +73,9 @@ pipeline {
                                 --libraries ${APP_LIBRARIES} \
                                 --release """
 
-                        sh "ditto -c -k --sequesterRsrc --keepParent target/${TARGET}/release/bundle/${APP_NAME}.app ${APP_NAME}${TARGET}.app.zip"
+                        sh "ditto -c -k --sequesterRsrc --keepParent target/${TARGET}/release/bundle/${APP_NAME}.app ${APP_NAME}-${TARGET}.app.zip"
 
-                        stash includes: "${APP_NAME}${TARGET}.app.zip", name: "${TARGET}"
+                        stash includes: "${APP_NAME}-${TARGET}.app.zip", name: "${TARGET}"
                     }
                 }
                 stage ('Linux x86_64') {
@@ -103,9 +103,9 @@ pipeline {
                             zip -r ${APP_NAME}${TARGET}.zip ./${APP_NAME}/
                             """
 
-                        sh 'mv target/${TARGET}/release/bundle/${APP_NAME}${TARGET}.zip ./${APP_NAME}${TARGET}.zip'
+                        sh 'mv target/${TARGET}/release/bundle/${APP_NAME}${TARGET}.zip ./${APP_NAME}-${TARGET}.zip'
 
-                        stash includes: "${APP_NAME}${TARGET}.zip", name: "${TARGET}"
+                        stash includes: "${APP_NAME}-${TARGET}.zip", name: "${TARGET}"
                     }
                 }
                 // stage ('Windows x86_64') {
@@ -134,8 +134,8 @@ pipeline {
                 //                --libraries ${APP_LIBRARIES} `
                 //                --release """
                 //
-                //        powershell "Compress-Archive -Path target/${TARGET}/release/bundle/${APP_NAME} -DestinationPath ${APP_NAME}${TARGET}.zip"
-                //        stash includes: "${APP_NAME}${TARGET}.zip", name: "${TARGET}"
+                //        powershell "Compress-Archive -Path target/${TARGET}/release/bundle/${APP_NAME} -DestinationPath ${APP_NAME}-${TARGET}.zip"
+                //        stash includes: "${APP_NAME}-${TARGET}.zip", name: "${TARGET}"
                 //    }
                 // }
             }
@@ -167,9 +167,9 @@ pipeline {
                     --bump-patch \
                     --auto-accept \
                     --assets \
-                        ${APP_NAME}${LINUX_AMD64_TARGET}.zip \
-                        ${APP_NAME}${MACOS_INTEL_TARGET}.app.zip \
-                        ${APP_NAME}${MACOS_M1_TARGET}.app.zip """
+                        ${APP_NAME}-${LINUX_AMD64_TARGET}.zip \
+                        ${APP_NAME}-${MACOS_INTEL_TARGET}.app.zip \
+                        ${APP_NAME}-${MACOS_M1_TARGET}.app.zip """
             }
         }
     }
