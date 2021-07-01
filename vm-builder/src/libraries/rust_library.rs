@@ -98,12 +98,13 @@ impl Library for RustLibrary {
     fn force_compile(&self, options: &FinalOptions) {
         let mut command = Command::new("cargo");
         command
-            .current_dir(self.crate_source_directory(options))
             .arg("build")
             .arg("--target")
             .arg(options.target().to_string())
             .arg("--target-dir")
-            .arg(options.target_dir());
+            .arg(options.target_dir())
+            .arg("--manifest-path")
+            .arg(self.crate_source_directory(options).join("Cargo.toml"));
 
         if options.release() {
             command.arg("--release");
