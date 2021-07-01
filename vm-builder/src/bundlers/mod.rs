@@ -71,6 +71,19 @@ pub trait Bundler {
         path_buf
     }
 
+    fn compiled_cli_executable_path(&self, configuration: &FinalOptions) -> PathBuf {
+        let mut path_buf = self.compilation_location(configuration);
+        match self.executable_extension(configuration) {
+            None => {
+                path_buf.push("vm_client-cli");
+            }
+            Some(extension) => {
+                path_buf.push(format!("{}.{}", "vm_client-cli", extension));
+            }
+        }
+        path_buf
+    }
+
     fn executable_name(&self, configuration: &FinalOptions) -> String {
         configuration.executable_name()
     }

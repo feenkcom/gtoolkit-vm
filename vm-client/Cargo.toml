@@ -9,6 +9,10 @@ description = "GToolkit VM"
 name = "vm_client"
 path = "src/main.rs"
 
+[[bin]]
+name = "vm_client-cli"
+path = "src/main_cli.rs"
+
 [dependencies]
 vm-bindings = { path = "../vm-bindings" }
 nfd2 = "0.3.0"

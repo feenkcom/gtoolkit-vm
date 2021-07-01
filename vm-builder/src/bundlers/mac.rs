@@ -46,12 +46,15 @@ impl Bundler for MacBundler {
         fs::create_dir(&macos_dir).unwrap();
         fs::create_dir(&plugins_dir).unwrap();
 
-        let target_executable_path =
-            macos_dir.join(Path::new(&self.executable_name(configuration)));
-
         fs::copy(
             self.compiled_executable_path(configuration),
-            target_executable_path,
+            macos_dir.join(configuration.executable_name()),
+        )
+        .unwrap();
+
+        fs::copy(
+            self.compiled_cli_executable_path(configuration),
+            macos_dir.join(configuration.cli_executable_name()),
         )
         .unwrap();
 

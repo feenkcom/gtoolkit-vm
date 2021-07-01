@@ -288,6 +288,22 @@ impl FinalOptions {
         executable_name
     }
 
+    pub fn cli_executable_name(&self) -> String {
+        let mut executable_name = self
+            .build_options
+            .executable_name
+            .as_ref()
+            .map_or_else(|| self.app_name(), |name| name.to_owned());
+
+        executable_name = format!("{}-cli", executable_name);
+
+        if let Some(extension) = self.executable_extension() {
+            executable_name = format!("{}.{}", &executable_name, extension);
+        } else {
+        }
+        executable_name
+    }
+
     pub fn executable_extension(&self) -> Option<String> {
         #[cfg(target_os = "linux")]
         return None;
