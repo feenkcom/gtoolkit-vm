@@ -10,6 +10,7 @@
 .DS_Store
 /build
 /src/bindings.rs
+third_party/
 /captures
 .externalNativeBuild
 .cxx
