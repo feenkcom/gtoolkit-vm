@@ -315,6 +315,8 @@ impl FinalOptions {
     }
 
     pub fn third_party_libraries_directory(&self) -> PathBuf {
-        self.workspace_directory().unwrap_or(std::env::current_dir().unwrap()).join("third_party")
+        self.workspace_directory()
+            .unwrap_or(std::env::current_dir().unwrap())
+            .join("third_party")
     }
 }

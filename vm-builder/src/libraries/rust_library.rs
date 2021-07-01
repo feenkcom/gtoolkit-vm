@@ -86,6 +86,12 @@ impl Library for RustLibrary {
                 .arg(commit)
                 .status()
                 .unwrap();
+        } else {
+            Command::new("git")
+                .current_dir(self.crate_source_directory(options))
+                .arg("pull")
+                .status()
+                .unwrap();
         }
     }
 
