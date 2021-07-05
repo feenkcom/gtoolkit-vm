@@ -2,6 +2,7 @@ use crate::bindings::{
     vm_parameters_destroy, vm_parameters_parse, VMParameterVector as NativeVMParameterVector,
     VMParameters as NativeVMParameters,
 };
+use crate::parameter_vector::{ImageParameters, VirtualMachineParameters};
 use crate::prelude::{Handle, NativeAccess, NativeDrop};
 use std::ffi::{CStr, CString};
 use std::fmt;
@@ -161,6 +162,14 @@ impl VMParameters {
     pub fn eden_size(&self) -> usize {
         self.native().edenSize as usize
     }
+
+    pub fn image_parameters(&self) -> &ImageParameters {
+        ImageParameters::borrow_from_native(&self.native().imageParameters)
+    }
+
+    pub fn virtual_machine_parameters(&self) -> &VirtualMachineParameters {
+        VirtualMachineParameters::borrow_from_native(&self.native().imageParameters)
+    }
 }
 
 impl fmt::Debug for VMParameters {
@@ -178,6 +187,11 @@ impl fmt::Debug for VMParameters {
             .field("max_old_space_size", &self.max_old_space_size())
             .field("max_code_size", &self.max_code_size())
             .field("eden_size", &self.eden_size())
+            .field("image_parameters", &self.image_parameters().as_vec())
+            .field(
+                "virtual_machine_parameters",
+                &self.virtual_machine_parameters().as_vec(),
+            )
             .finish()
     }
 }

@@ -14,6 +14,7 @@ fn main() {
         .version("1.0")
         .author("feenk gmbh. <contact@feenk.com>")
         .setting(AppSettings::AllowExternalSubcommands)
+        .setting(AppSettings::SubcommandRequiredElseHelp)
         .setting(AppSettings::ColoredHelp)
         .arg(
             Arg::new("image")

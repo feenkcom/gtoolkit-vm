@@ -1,3 +1,4 @@
+use nfd2::{dialog, Response};
 use std::fs;
 use std::path::PathBuf;
 
@@ -33,6 +34,24 @@ pub fn search_image_file_nearby() -> Option<PathBuf> {
     }
 
     std::env::current_dir().map_or(None, |path| try_find_image_file_in_directory(path))
+}
+
+pub fn pick_image_with_dialog() -> Option<PathBuf> {
+    let result = dialog().filter("image").open().unwrap_or_else(|e| {
+        panic!("{}", e);
+    });
+
+    match result {
+        Response::Okay(file_name) => {
+            let file_path = PathBuf::new().join(file_name);
+            if file_path.exists() {
+                Some(file_path)
+            } else {
+                None
+            }
+        }
+        _ => None,
+    }
 }
 
 pub fn validate_user_image_file(image_name: Option<&str>) -> Option<PathBuf> {

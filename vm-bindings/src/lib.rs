@@ -1,4 +1,5 @@
 mod bindings;
+mod parameter_vector;
 mod parameters;
 mod prelude;
 mod vm;

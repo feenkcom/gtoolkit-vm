@@ -4,73 +4,62 @@ extern crate nfd2;
 extern crate vm_bindings;
 
 mod image_finder;
+mod working_directory;
 
-use crate::image_finder::{search_image_file_nearby, validate_user_image_file};
-use clap::{App, AppSettings, Arg, ArgMatches};
-use nfd2::{dialog, Response};
+use crate::image_finder::{
+    pick_image_with_dialog, search_image_file_nearby, validate_user_image_file,
+};
+use crate::working_directory::ensure_working_directory;
+use clap::{AppSettings, ArgEnum, Clap};
+
 use std::fs;
-use std::path::PathBuf;
+use std::io::Error;
+use std::path::{Path, PathBuf};
 use vm_bindings::{VMParameters, VM};
 
-fn pick_image_with_dialog() -> Option<PathBuf> {
-    let result = dialog().filter("image").open().unwrap_or_else(|e| {
-        panic!("{}", e);
-    });
-
-    match result {
-        Response::Okay(file_name) => {
-            let file_path = PathBuf::new().join(file_name);
-            if file_path.exists() {
-                Some(file_path)
-            } else {
-                None
-            }
-        }
-        _ => None,
-    }
+#[derive(Clap, Clone, Debug)]
+#[clap(version = "1.0", author = "feenk gmbh <contact@feenk.com>")]
+#[clap(setting = AppSettings::ColoredHelp)]
+pub struct AppOptions {
+    /// A path to a custom Pharo .image to use instead of automatically detecting one
+    #[clap(long, parse(from_os_str))]
+    image: Option<PathBuf>,
 }
 
-fn detect_image(matches: &ArgMatches) -> Option<PathBuf> {
-    if matches.is_present("image") {
-        return validate_user_image_file(matches.value_of("image"));
+impl AppOptions {
+    pub fn image(&self) -> Option<PathBuf> {
+        self.image.as_ref().map_or_else(
+            || {
+                search_image_file_nearby()
+                    .map_or_else(|| pick_image_with_dialog(), |image| Some(image))
+            },
+            |image| Some(image.clone()),
+        )
     }
 
-    if let Some(image) = search_image_file_nearby() {
-        return Some(image);
+    pub fn canonicalize(&mut self) {
+        if let Some(ref image) = self.image {
+            match fs::canonicalize(image) {
+                Ok(image) => self.image = Some(image),
+                Err(error) => {
+                    panic!("Image does not exist {:?}: {:?}", image.display(), error)
+                }
+            }
+        }
     }
-    pick_image_with_dialog()
 }
 
 fn main() {
-    let app_dir = std::env::current_exe().map_or(None, |exe_path| {
-        exe_path.parent().map_or(None, |parent| {
-            parent.parent().map_or(None, |parent| {
-                parent.parent().map_or(None, |parent| {
-                    parent
-                        .parent()
-                        .map_or(None, |parent| Some(parent.to_path_buf()))
-                })
-            })
-        })
-    });
-    if app_dir.is_some() {
-        std::env::set_current_dir(app_dir.unwrap()).unwrap();
-    }
+    let args = std::env::args().collect::<Vec<String>>();
+    let executable_path =
+        fs::canonicalize(Path::new(&args[0])).expect("Executable could not be located");
 
-    let matches = App::new("Virtual Machine")
-        .version("1.0")
-        .author("feenk gmbh. <contact@feenk.com>")
-        .setting(AppSettings::AllowExternalSubcommands)
-        .setting(AppSettings::ColoredHelp)
-        .arg(
-            Arg::new("image")
-                .value_name("image")
-                .index(1)
-                .about("A path to an image file to run"),
-        )
-        .get_matches();
+    let mut options: AppOptions = AppOptions::parse();
+    options.canonicalize();
 
-    let image_path = match detect_image(&matches) {
+    ensure_working_directory();
+
+    let image_path = match options.image() {
         None => {
             eprintln!("Could not find an .image file");
             return;
@@ -79,18 +68,8 @@ fn main() {
     };
 
     let mut vm_args: Vec<String> = vec![];
-    vm_args.push(std::env::args().collect::<Vec<String>>()[0].to_owned());
+    vm_args.push(executable_path.as_os_str().to_str().unwrap().to_owned());
     vm_args.push(image_path.as_os_str().to_str().unwrap().to_owned());
-
-    match matches.subcommand() {
-        Some((external, sub_m)) => {
-            vm_args.push(external.to_owned());
-            for each in sub_m.values_of("").unwrap() {
-                vm_args.push(each.to_owned());
-            }
-        }
-        _ => {}
-    }
 
     let mut parameters = VMParameters::from_args(vm_args);
     parameters.set_image_file_name(image_path.as_os_str().to_str().unwrap().to_owned());

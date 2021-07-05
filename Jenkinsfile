@@ -16,6 +16,7 @@ pipeline {
         APP_NAME = "GlamorousToolkit"
         APP_IDENTIFIER = 'com.gtoolkit'
         APP_LIBRARIES = 'boxer clipboard gleam glutin skia'
+        APP_AUTHOR = "feenk gmbh <contact@feenk.com>"
 
         MACOS_INTEL_TARGET = 'x86_64-apple-darwin'
         MACOS_M1_TARGET = 'aarch64-apple-darwin'
@@ -44,6 +45,8 @@ pipeline {
                             cargo run --package vm-builder --target ${TARGET} -- \
                                 --app-name ${APP_NAME} \
                                 --identifier ${APP_IDENTIFIER} \
+                                --author ${APP_AUTHOR} \
+                                --icons icons/GlamorousToolkit.icns \
                                 --libraries ${APP_LIBRARIES} \
                                 --release """
 
@@ -70,6 +73,8 @@ pipeline {
                             cargo run --package vm-builder --target ${TARGET} -- \
                                 --app-name ${APP_NAME} \
                                 --identifier ${APP_IDENTIFIER} \
+                                --author ${APP_AUTHOR} \
+                                --icons icons/GlamorousToolkit.icns \
                                 --libraries ${APP_LIBRARIES} \
                                 --release """
 
@@ -95,6 +100,7 @@ pipeline {
                             cargo run --package vm-builder --target ${TARGET} -- \
                                 --app-name ${APP_NAME} \
                                 --identifier ${APP_IDENTIFIER} \
+                                --author ${APP_AUTHOR} \
                                 --libraries ${APP_LIBRARIES} \
                                 --release """
 
@@ -131,6 +137,7 @@ pipeline {
                 //           cargo run --package vm-builder --target ${TARGET} -- `
                 //                --app-name ${APP_NAME} `
                 //                --identifier ${APP_IDENTIFIER} `
+                //                --author ${APP_AUTHOR} `
                 //                --libraries ${APP_LIBRARIES} `
                 //                --release """
                 //
