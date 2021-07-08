@@ -143,6 +143,7 @@ pipeline {
                                 --identifier ${APP_IDENTIFIER} `
                                 --author ${APP_AUTHOR} `
                                 --libraries ${APP_LIBRARIES} `
+                                --icons icons/GlamorousToolkit.ico `
                                 --release """
                 
                         powershell "Compress-Archive -Path target/${TARGET}/release/bundle/${APP_NAME} -DestinationPath ${APP_NAME}-${TARGET}.zip"
