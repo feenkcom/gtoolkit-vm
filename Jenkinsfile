@@ -171,7 +171,7 @@ pipeline {
                 unstash "${MACOS_M1_TARGET}"
                 unstash "${WINDOWS_AMD64_TARGET}"
 
-                sh "wget -O feenk-releaser https://github.com/feenkcom/releaser-rs/releases/latest/feenk-releaser-${TARGET}"
+                sh "wget -O feenk-releaser https://github.com/feenkcom/releaser-rs/releases/latest/download/feenk-releaser-${TARGET}"
 
                 sh """
                 ./feenk-releaser \
