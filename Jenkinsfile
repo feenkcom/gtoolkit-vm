@@ -118,7 +118,7 @@ pipeline {
                     agent {
                         node {
                           label "${WINDOWS_AMD64_TARGET}"
-                          customWorkspace 'C:\\j\gtvm'
+                          customWorkspace 'C:\\j\\gtvm'
                         }
                     }
 
