@@ -29,16 +29,21 @@ pub trait Bundler {
                 library.checkout(&final_options);
                 library.compile(&final_options);
                 assert!(library.is_compiled(&final_options));
-                std::fs::copy(
-                    library.compiled_library(&final_options),
-                    self.compiled_libraries_directory(&final_options).join(
-                        library
-                            .compiled_library(&final_options)
-                            .file_name()
-                            .unwrap(),
+
+                let library_path = self.compiled_libraries_directory(&final_options).join(
+                    library
+                        .compiled_library(&final_options)
+                        .file_name()
+                        .unwrap(),
+                );
+
+                std::fs::copy(library.compiled_library(&final_options), &library_path).expect(
+                    &format!(
+                        "Could not copy {} to {}",
+                        &library_path.display(),
+                        library.compiled_library(&final_options).display()
                     ),
-                )
-                .unwrap();
+                );
             })
     }
 
