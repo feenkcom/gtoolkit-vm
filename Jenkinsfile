@@ -142,7 +142,7 @@ pipeline {
                                 --app-name ${APP_NAME} `
                                 --identifier ${APP_IDENTIFIER} `
                                 --author ${APP_AUTHOR} `
-                                --icons icons/GlamorousToolkit.ico `
+                                --icons icons\\GlamorousToolkit.ico `
                                 --libraries ${APP_LIBRARIES} `
                                 --release """
                 
