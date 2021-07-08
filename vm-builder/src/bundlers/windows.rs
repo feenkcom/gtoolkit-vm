@@ -17,7 +17,9 @@ impl WindowsBundler {
             if icon_path.exists() {
                 if let Some(extension) = icon_path.extension() {
                     if extension == "ico" {
-                        return Some(icon_path.to_path_buf());
+                        let icon_path =
+                            fs::canonicalize(icon_path).expect("Icon could not be located");
+                        return Some(icon_path);
                     }
                 }
             }
@@ -44,7 +46,7 @@ impl Bundler for WindowsBundler {
             bundle_minor_version: configuration.minor_version(),
             bundle_patch_version: configuration.patch_version(),
             bundle_icon: icon.as_ref().map_or("".to_string(), |icon| {
-                format!("100 ICON \"{}\"", icon.display())
+                format!("100 ICON {:?}", icon.display())
             }),
             executable_name: self.executable_name(configuration),
         };
@@ -120,7 +122,7 @@ impl Bundler for WindowsBundler {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 struct Info {
     bundle_name: String,
     bundle_identifier: String,
@@ -165,7 +167,7 @@ const MANIFEST: &str = r#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?
 const RESOURCE: &str = r#"#include "windows.h"
 
 1 RT_MANIFEST "{{executable_name}}.manifest"
-{{bundle_icon}}
+{{{bundle_icon}}}
 
 VS_VERSION_INFO VERSIONINFO
 FILEVERSION     {{bundle_major_version}},{{bundle_minor_version}},{{bundle_patch_version}},0

@@ -118,7 +118,7 @@ pipeline {
                     agent {
                         node {
                           label "${WINDOWS_AMD64_TARGET}"
-                          customWorkspace 'C:\\gtvm'
+                          customWorkspace 'C:\\j\gtvm'
                         }
                     }
 
@@ -172,7 +172,7 @@ pipeline {
 
                 sh "wget -O feenk-releaser https://github.com/feenkcom/releaser-rs/releases/latest/download/feenk-releaser-${TARGET}"
                 sh "chmod +x feenk-releaser"
-                
+
                 sh """
                 ./feenk-releaser \
                     --owner feenkcom \
