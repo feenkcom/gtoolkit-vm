@@ -116,8 +116,10 @@ pipeline {
                 }
                  stage ('Windows x86_64') {
                     agent {
-                        label "${WINDOWS_AMD64_TARGET}"
-                        customWorkspace 'C:\\w'
+                        node {
+                          label "${WINDOWS_AMD64_TARGET}"
+                          customWorkspace 'C:\\w'
+                        }
                     }
 
                     environment {
