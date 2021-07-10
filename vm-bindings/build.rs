@@ -20,7 +20,7 @@ fn main() {
     }
 
     if !builder.is_compiled() {
-        panic!("Failed to compile {}", builder.vm_binary())
+        panic!("Failed to compile {:?}", builder.vm_binary().display())
     }
 
     builder.link_libraries();
