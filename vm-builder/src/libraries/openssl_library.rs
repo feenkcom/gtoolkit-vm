@@ -77,7 +77,7 @@ impl Library for OpenSSLLibrary {
         }
     }
 
-    fn compiled_library(&self, options: &FinalOptions) -> PathBuf {
+    fn compiled_library_directories(&self, options: &FinalOptions) -> Vec<PathBuf> {
         unimplemented!()
     }
 

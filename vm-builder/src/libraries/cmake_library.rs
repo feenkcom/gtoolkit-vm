@@ -1,14 +1,16 @@
 use crate::options::FinalOptions;
-use crate::{Library, LibraryLocation, NativeLibrary, NativeLibraryDependencies};
+use crate::{
+    CompiledLibraryName, Library, LibraryLocation, NativeLibrary, NativeLibraryDependencies,
+};
 use rustc_version::version_meta;
 use std::error::Error;
 use std::path::{Path, PathBuf};
 
 pub struct CMakeLibrary {
     name: String,
+    compiled_name: CompiledLibraryName,
     location: LibraryLocation,
     defines: Vec<(String, String)>,
-    aliases: Vec<String>,
     dependencies: NativeLibraryDependencies,
 }
 
@@ -16,9 +18,9 @@ impl CMakeLibrary {
     pub fn new(name: &str, location: LibraryLocation) -> Self {
         Self {
             name: name.to_owned(),
+            compiled_name: CompiledLibraryName::Default,
             location,
             defines: vec![],
-            aliases: vec![],
             dependencies: NativeLibraryDependencies::new(),
         }
     }
@@ -28,9 +30,9 @@ impl CMakeLibrary {
         defines.push((define.into(), value.into()));
         Self {
             name: self.name,
+            compiled_name: self.compiled_name,
             location: self.location,
             defines,
-            aliases: self.aliases,
             dependencies: self.dependencies,
         }
     }
@@ -38,21 +40,19 @@ impl CMakeLibrary {
     pub fn depends(self, library: Box<dyn NativeLibrary>) -> Self {
         Self {
             name: self.name,
+            compiled_name: self.compiled_name,
             location: self.location,
             defines: self.defines,
-            aliases: self.aliases,
             dependencies: self.dependencies.add(library),
         }
     }
 
-    pub fn alias(self, alias: impl Into<String>) -> Self {
-        let mut aliases = self.aliases;
-        aliases.push(alias.into());
+    pub fn compiled_name(self, compiled_name: CompiledLibraryName) -> Self {
         Self {
             name: self.name,
+            compiled_name,
             location: self.location,
             defines: self.defines,
-            aliases,
             dependencies: self.dependencies,
         }
     }
@@ -75,6 +75,10 @@ impl Library for CMakeLibrary {
 
     fn name(&self) -> &str {
         &self.name
+    }
+
+    fn compiled_library_name(&self) -> &CompiledLibraryName {
+        &self.compiled_name
     }
 
     fn ensure_sources(&self, options: &FinalOptions) -> Result<(), Box<dyn Error>> {
@@ -100,7 +104,11 @@ impl Library for CMakeLibrary {
             .out_dir(&out_dir)
             .profile(&options.profile());
 
-        println!("Building CMake library for target = {:?} and host = {:?}", &options.target().to_string(), &version_meta().unwrap().host);
+        println!(
+            "Building CMake library for target = {:?} and host = {:?}",
+            &options.target().to_string(),
+            &version_meta().unwrap().host
+        );
 
         let mut cmake_prefix_paths = self.native_library_dependency_prefixes(options);
         if let Ok(ref path) = std::env::var("CMAKE_PREFIX_PATH") {
@@ -132,23 +140,10 @@ impl Library for CMakeLibrary {
         config.build();
     }
 
-    fn compiled_library(&self, options: &FinalOptions) -> PathBuf {
-        let mut possible_names = self.aliases.clone();
-        possible_names.push(self.name().to_string());
-
-        for folder in vec!["lib", "bin"] {
-            for name in &possible_names {
-                let path = self
-                    .native_library_prefix(options)
-                    .join(folder)
-                    .join(self.compiled_library_name(&name));
-
-                if path.exists() {
-                    return path;
-                }
-            }
-        }
-        panic!("Could not find a compiled library for {}", self.name())
+    fn compiled_library_directories(&self, options: &FinalOptions) -> Vec<PathBuf> {
+        let lib_dir = self.native_library_prefix(options).join("lib");
+        let bin_dir = self.native_library_prefix(options).join("bin");
+        vec![lib_dir, bin_dir]
     }
 
     fn ensure_requirements(&self) {}

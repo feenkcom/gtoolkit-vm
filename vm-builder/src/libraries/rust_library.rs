@@ -74,19 +74,12 @@ impl Library for RustLibrary {
         }
     }
 
-    fn compiled_library(&self, options: &FinalOptions) -> PathBuf {
-        #[cfg(target_os = "linux")]
-        let binary_name = format!("lib{}.so", &self.name);
-        #[cfg(target_os = "macos")]
-        let binary_name = format!("lib{}.dylib", &self.name);
-        #[cfg(target_os = "windows")]
-        let binary_name = format!("{}.dll", &self.name);
-
-        options
+    fn compiled_library_directories(&self, options: &FinalOptions) -> Vec<PathBuf> {
+        let path = options
             .target_dir()
             .join(options.target().to_string())
-            .join(options.profile())
-            .join(binary_name)
+            .join(options.profile());
+        vec![path]
     }
 
     fn ensure_requirements(&self) {

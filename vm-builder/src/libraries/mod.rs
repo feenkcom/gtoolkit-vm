@@ -7,7 +7,7 @@ mod system_library;
 
 pub use cmake_library::CMakeLibrary;
 pub use library::{
-    GitLocation as LibraryGitLocation, Library, LibraryLocation,
+    CompiledLibraryName, GitLocation as LibraryGitLocation, Library, LibraryLocation,
     PathLocation as LibraryPathLocation,
 };
 pub use native_library::{NativeLibrary, NativeLibraryDependencies};
@@ -49,7 +49,7 @@ pub fn git() -> CMakeLibrary {
             LibraryGitLocation::new("https://github.com/libgit2/libgit2.git").tag("v1.1.1"),
         ),
     )
-    .alias("git2.1.1.1")
+    .compiled_name(CompiledLibraryName::Matching("git2".to_string()))
     .define("CMAKE_SHARED_LINKER_FLAGS:STRING", "-lssl -lcrypto")
     .define("BUILD_CLAR", "OFF")
     .depends(Box::new(libssh2))
@@ -62,7 +62,7 @@ pub fn sdl2() -> CMakeLibrary {
             LibraryGitLocation::new("https://github.com/libsdl-org/SDL.git").tag("release-2.0.14"),
         ),
     )
-    .alias("SDL2d")
+    .compiled_name(CompiledLibraryName::Matching("SDL2".to_string()))
 }
 
 pub fn glutin() -> RustLibrary {

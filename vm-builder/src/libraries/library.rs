@@ -8,6 +8,9 @@ use user_error::UserFacingError;
 pub trait Library {
     fn location(&self) -> &LibraryLocation;
     fn name(&self) -> &str;
+    fn compiled_library_name(&self) -> &CompiledLibraryName {
+        &CompiledLibraryName::Default
+    }
 
     fn source_directory(&self, options: &FinalOptions) -> PathBuf {
         options.third_party_libraries_directory().join(self.name())
@@ -28,16 +31,29 @@ pub trait Library {
 
     fn force_compile(&self, options: &FinalOptions);
 
-    fn compiled_library(&self, options: &FinalOptions) -> PathBuf;
+    fn compiled_library_directories(&self, options: &FinalOptions) -> Vec<PathBuf>;
 
-    fn compiled_library_name(&self, name: &str) -> String {
-        #[cfg(target_os = "linux")]
-        let binary_name = format!("lib{}.so", name);
-        #[cfg(target_os = "macos")]
-        let binary_name = format!("lib{}.dylib", name);
-        #[cfg(target_os = "windows")]
-        let binary_name = format!("{}.dll", name);
-        binary_name
+    fn compiled_library(&self, options: &FinalOptions) -> PathBuf {
+        let library_name = self.name();
+        let compiled_library_name = self.compiled_library_name();
+        for directory in self.compiled_library_directories(options) {
+            if let Ok(dir) = directory.read_dir() {
+                let libraries = dir
+                    .filter(|each| each.is_ok())
+                    .map(|each| each.unwrap())
+                    .filter(|each| each.path().is_file())
+                    .filter(|each| compiled_library_name.matches(library_name, &each.path()))
+                    .map(|each| each.path())
+                    .collect::<Vec<PathBuf>>();
+
+                if libraries.len() > 0 {
+                    println!("Found library {}", libraries.get(0).unwrap().display());
+                    return libraries.get(0).unwrap().clone();
+                }
+            }
+        }
+
+        panic!("Could not find a compiled library for {}", self.name())
     }
 
     fn ensure_requirements(&self);
@@ -70,6 +86,55 @@ impl LibraryLocation {
                 }
                 Ok(())
             }
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum CompiledLibraryName {
+    /// same as Library::name
+    Default,
+    /// find a platform specific library with a name that includes String
+    Matching(String),
+}
+
+impl CompiledLibraryName {
+    fn platform_library_ending(&self) -> String {
+        #[cfg(target_os = "linux")]
+        let ending = "so";
+        #[cfg(target_os = "macos")]
+        let ending = "dylib";
+        #[cfg(target_os = "windows")]
+        let ending = "dll";
+        ending.to_string()
+    }
+
+    fn platform_library_name(&self, name: &str) -> String {
+        #[cfg(target_os = "linux")]
+        let binary_name = format!("lib{}.so", name);
+        #[cfg(target_os = "macos")]
+        let binary_name = format!("lib{}.dylib", name);
+        #[cfg(target_os = "windows")]
+        let binary_name = format!("{}.dll", name);
+        binary_name
+    }
+
+    pub fn matches(&self, library_name: &str, path: &PathBuf) -> bool {
+        match path.file_name() {
+            None => false,
+            Some(actual_name) => match actual_name.to_str() {
+                None => false,
+                Some(actual_name) => match self {
+                    CompiledLibraryName::Default => {
+                        let expected_name = self.platform_library_name(library_name);
+                        actual_name.eq_ignore_ascii_case(&expected_name)
+                    }
+                    CompiledLibraryName::Matching(substring) => {
+                        actual_name.contains(&format!(".{}", self.platform_library_ending()))
+                            && actual_name.contains(substring)
+                    }
+                },
+            },
         }
     }
 }
@@ -199,7 +264,7 @@ impl GitLocation {
                 .unwrap(),
             GitVersion::Latest => Command::new("git")
                 .current_dir(&source_directory)
-                .arg("pull.ff")
+                .arg("pull")
                 .status()
                 .unwrap(),
         };
