@@ -100,6 +100,8 @@ impl Library for CMakeLibrary {
             .out_dir(&out_dir)
             .profile(&options.profile());
 
+        println!("Building CMake library for target = {:?} and host = {:?}", &options.target().to_string(), &version_meta().unwrap().host);
+
         let mut cmake_prefix_paths = self.native_library_dependency_prefixes(options);
         if let Ok(ref path) = std::env::var("CMAKE_PREFIX_PATH") {
             cmake_prefix_paths.push(Path::new(path).to_path_buf());
@@ -134,14 +136,16 @@ impl Library for CMakeLibrary {
         let mut possible_names = self.aliases.clone();
         possible_names.push(self.name().to_string());
 
-        for name in possible_names {
-            let path = self
-                .native_library_prefix(options)
-                .join("lib")
-                .join(self.compiled_library_name(&name));
+        for folder in vec!["lib", "bin"] {
+            for name in &possible_names {
+                let path = self
+                    .native_library_prefix(options)
+                    .join(folder)
+                    .join(self.compiled_library_name(&name));
 
-            if path.exists() {
-                return path;
+                if path.exists() {
+                    return path;
+                }
             }
         }
         panic!("Could not find a compiled library for {}", self.name())

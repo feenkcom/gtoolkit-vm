@@ -49,6 +49,7 @@ pub fn git() -> CMakeLibrary {
             LibraryGitLocation::new("https://github.com/libgit2/libgit2.git").tag("v1.1.1"),
         ),
     )
+    .alias("git2.1.1.1")
     .define("CMAKE_SHARED_LINKER_FLAGS:STRING", "-lssl -lcrypto")
     .define("BUILD_CLAR", "OFF")
     .depends(Box::new(libssh2))
