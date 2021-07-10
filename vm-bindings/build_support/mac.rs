@@ -48,6 +48,7 @@ impl Builder for MacBuilder {
         cmake::Config::new(self.vm_sources_directory())
             .define("COMPILE_EXECUTABLE", "OFF")
             .define("FEATURE_LIB_GIT2", "OFF")
+            .define("FEATURE_LIB_SDL2", "OFF")
             .build();
     }
 
@@ -100,13 +101,11 @@ impl Builder for MacBuilder {
                 Name::Optional("libfreetype.6.16.0.dylib"),
                 Some("libfreetype.dylib"),
             ),
-            (Name::Exact("libgit2.1.0.1.dylib"), Some("libgit2.dylib")),
             (Name::Exact("libpixman-1.dylib"), None),
             (
                 Name::Any(vec!["libpng12.dylib", "libpng16.dylib"]),
                 Some("libpng.dylib"),
             ),
-            (Name::Regex("libSDL2.*dylib"), Some("libSDL2.dylib")),
             // testing
             (Name::Exact("libTestLibrary.dylib"), None),
         ]

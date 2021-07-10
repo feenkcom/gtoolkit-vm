@@ -19,14 +19,6 @@ impl WindowsBuilder {
         self.output_directory().join("pthreads")
     }
 
-    fn sdl2_directory(&self) -> PathBuf {
-        self.output_directory().join("sdl2-src")
-    }
-
-    fn sdl2_build_directory(&self) -> PathBuf {
-        self.output_directory().join("sdl2-build")
-    }
-
     fn clone_pthread(&self) {
         if self.pthreads_directory().exists() {
             return;
@@ -36,22 +28,6 @@ impl WindowsBuilder {
             .current_dir(self.output_directory())
             .arg("clone")
             .arg("https://github.com/BrianGladman/pthreads.git")
-            .status()
-            .unwrap();
-    }
-
-    fn clone_sdl2(&self) {
-        if self.sdl2_directory().exists() {
-            return;
-        }
-
-        Command::new("git")
-            .current_dir(self.output_directory())
-            .arg("clone")
-            .arg("-b")
-            .arg("release-2.0.14")
-            .arg("https://github.com/libsdl-org/SDL.git")
-            .arg(self.sdl2_directory())
             .status()
             .unwrap();
     }
@@ -80,45 +56,6 @@ impl WindowsBuilder {
             .arg(format!("/property:Configuration={}", self.profile()))
             .status()
             .unwrap();
-    }
-
-    fn compile_sdl2(&self) {
-        if self.sdl2_binary().exists() {
-            return;
-        }
-
-        Command::new("cmake")
-            .current_dir(self.output_directory())
-            .arg(self.cmake_build_type())
-            .arg("-S")
-            .arg(self.sdl2_directory())
-            .arg("-B")
-            .arg(self.sdl2_build_directory())
-            .arg("-G")
-            .arg("Visual Studio 16 2019")
-            .arg("-A")
-            .arg("x64")
-            .status()
-            .unwrap();
-
-        Command::new("cmake")
-            .current_dir(self.output_directory())
-            .arg("--build")
-            .arg(self.sdl2_build_directory())
-            .arg("--config")
-            .arg(self.profile())
-            .status()
-            .unwrap();
-    }
-
-    fn sdl2_binary(&self) -> PathBuf {
-        self.sdl2_build_directory()
-            .join(self.profile())
-            .join(if self.is_debug() {
-                "SDL2d.dll"
-            } else {
-                "SDL2.dll"
-            })
     }
 
     fn pthreads_library_directory(&self) -> PathBuf {
@@ -194,9 +131,7 @@ impl Builder for WindowsBuilder {
 
     fn generate_sources(&self) {
         self.clone_pthread();
-        self.clone_sdl2();
         self.compile_pthread();
-        self.compile_sdl2();
 
         std::fs::create_dir_all(self.compiled_libraries_directory()).unwrap();
 
@@ -248,8 +183,6 @@ impl Builder for WindowsBuilder {
                 .join(titlecase(&self.profile())),
             &mut libraries,
         );
-
-        //libraries.push((self.sdl2_binary(), Some("SDL2.dll".to_string())));
 
         libraries
     }

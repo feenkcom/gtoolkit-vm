@@ -38,6 +38,7 @@ impl Builder for LinuxBuilder {
         cmake::Config::new(self.vm_sources_directory())
             .define("COMPILE_EXECUTABLE", "OFF")
             .define("FEATURE_LIB_GIT2", "OFF")
+            .define("FEATURE_LIB_SDL2", "OFF")
             .build();
     }
 
@@ -81,9 +82,6 @@ impl Builder for LinuxBuilder {
             (Name::Exact("libSurfacePlugin.so"), None),
             (Name::Exact("libUnixOSProcessPlugin.so"), None),
             (Name::Exact("libUUIDPlugin.so"), None),
-            // third party
-            (Name::Exact("libgit2.so.1.0.1"), Some("libgit2.so")),
-            (Name::Regex("libSDL2.*so"), Some("libSDL2.so")),
             // testing
             (Name::Exact("libTestLibrary.so"), None),
         ]

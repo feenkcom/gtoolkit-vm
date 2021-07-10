@@ -1,7 +1,4 @@
-use crate::{
-    boxer, clipboard, git, gleam, glutin, skia, winit, Library, LibraryGitLocation,
-    LibraryLocation, RustLibrary,
-};
+use crate::{boxer, clipboard, git, gleam, glutin, sdl2, skia, winit, Library};
 use clap::{AppSettings, ArgEnum, Clap};
 use rustc_version::version_meta;
 use std::path::{Path, PathBuf};
@@ -38,6 +35,10 @@ impl ToString for Target {
 #[derive(ArgEnum, Copy, Clone, Debug)]
 #[repr(u32)]
 pub enum ThirdPartyLibrary {
+    #[clap(name = "git")]
+    Git,
+    #[clap(name = "sld2")]
+    Sdl2,
     #[clap(name = "boxer")]
     Boxer,
     #[clap(name = "skia")]
@@ -46,8 +47,6 @@ pub enum ThirdPartyLibrary {
     Glutin,
     #[clap(name = "gleam")]
     Gleam,
-    #[clap(name = "git")]
-    Git,
     #[clap(name = "winit")]
     Winit,
     #[clap(name = "clipboard")]
@@ -78,6 +77,7 @@ impl ThirdPartyLibrary {
             ThirdPartyLibrary::Winit => winit().into(),
             ThirdPartyLibrary::Clipboard => clipboard().into(),
             ThirdPartyLibrary::Git => git().into(),
+            ThirdPartyLibrary::Sdl2 => sdl2().into(),
         }
     }
 }

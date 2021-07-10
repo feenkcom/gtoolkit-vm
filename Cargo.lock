@@ -596,12 +596,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "target-lexicon"
-version = "0.12.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "64ae3b39281e4b14b8123bdbaddd472b7dfe215e444181f2f9d2443c2444f834"
-
-[[package]]
 name = "termcolor"
 version = "1.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -753,7 +747,6 @@ dependencies = [
 name = "vm-builder"
 version = "0.1.0"
 dependencies = [
- "cc",
  "clap 3.0.0-beta.2",
  "cmake",
  "fs_extra",
@@ -761,7 +754,6 @@ dependencies = [
  "rustc_version",
  "serde",
  "serde_derive",
- "target-lexicon",
  "url",
  "user-error",
  "which 4.1.0",

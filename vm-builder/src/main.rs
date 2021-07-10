@@ -2,10 +2,8 @@ extern crate clap;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
-extern crate cc;
 extern crate cmake;
 extern crate mustache;
-extern crate target_lexicon;
 extern crate url;
 extern crate user_error;
 extern crate which;
@@ -18,7 +16,7 @@ pub use libraries::*;
 
 use clap::Clap;
 
-use std::process::{Command, Stdio};
+use std::process::Command;
 
 use crate::bundlers::linux::LinuxBundler;
 use crate::bundlers::mac::MacBundler;
@@ -32,11 +30,11 @@ fn main() {
 
     let bundler = bundler(&final_config);
     bundler.ensure_third_party_requirements(&final_config);
-    bundler.pre_compile(&final_config);
-    compile_binary(&final_config);
-    bundler.post_compile(&final_config);
+    //bundler.pre_compile(&final_config);
+    //compile_binary(&final_config);
+    //bundler.post_compile(&final_config);
     bundler.compile_third_party_libraries(&final_config);
-    bundler.bundle(&final_config);
+    //bundler.bundle(&final_config);
 }
 
 fn compile_binary(opts: &FinalOptions) {

@@ -1,15 +1,7 @@
-use crate::options::FinalOptions;
+use crate::options::{FinalOptions, Target};
 use crate::{Library, LibraryGitLocation, LibraryLocation, NativeLibrary};
-use cc::Tool;
-use rustc_version::version_meta;
-use std::error::Error;
-use std::ffi::OsString;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::process::Command;
-use std::str::FromStr;
-use target_lexicon::Triple;
-use url::Url;
-use user_error::UserFacingError;
 
 pub struct OpenSSLLibrary {
     location: LibraryLocation,
@@ -25,8 +17,13 @@ impl OpenSSLLibrary {
         }
     }
 
-    pub fn compiler(&self, _options: &FinalOptions) -> &str {
-        "gcc"
+    pub fn compiler(&self, options: &FinalOptions) -> &str {
+        match options.target() {
+            Target::X8664appleDarwin => "darwin64-x86_64-cc",
+            Target::AArch64appleDarwin => "darwin64-arm64-cc",
+            Target::X8664pcWindowsMsvc => "VC-WIN64A",
+            Target::X8664UnknownlinuxGNU => "linux-x86_64-clang",
+        }
     }
 }
 

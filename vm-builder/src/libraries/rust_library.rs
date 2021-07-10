@@ -2,7 +2,6 @@ use crate::options::FinalOptions;
 use crate::{Library, LibraryLocation};
 use std::path::PathBuf;
 use std::process::Command;
-use url::Url;
 
 #[derive(Clone, Debug)]
 pub struct RustLibrary {

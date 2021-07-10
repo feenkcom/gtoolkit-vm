@@ -14,8 +14,6 @@ pub use native_library::{NativeLibrary, NativeLibraryDependencies};
 pub use openssl_library::OpenSSLLibrary;
 pub use rust_library::RustLibrary;
 
-use std::path::PathBuf;
-
 #[cfg(target_os = "windows")]
 pub fn git() -> CMakeLibrary {
     let libssh2 = LibraryLocation::Git(
@@ -54,6 +52,16 @@ pub fn git() -> CMakeLibrary {
     .define("CMAKE_SHARED_LINKER_FLAGS:STRING", "-lssl -lcrypto")
     .define("BUILD_CLAR", "OFF")
     .depends(Box::new(libssh2))
+}
+
+pub fn sdl2() -> CMakeLibrary {
+    CMakeLibrary::new(
+        "SDL2",
+        LibraryLocation::Git(
+            LibraryGitLocation::new("https://github.com/libsdl-org/SDL.git").tag("release-2.0.14"),
+        ),
+    )
+    .alias("SDL2d")
 }
 
 pub fn glutin() -> RustLibrary {

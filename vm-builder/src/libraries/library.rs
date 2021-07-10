@@ -3,7 +3,7 @@ use std::error::Error;
 use std::path::PathBuf;
 use std::process::Command;
 use url::Url;
-use user_error::{UserFacingError, UFE};
+use user_error::UserFacingError;
 
 pub trait Library {
     fn location(&self) -> &LibraryLocation;
@@ -29,6 +29,16 @@ pub trait Library {
     fn force_compile(&self, options: &FinalOptions);
 
     fn compiled_library(&self, options: &FinalOptions) -> PathBuf;
+
+    fn compiled_library_name(&self, name: &str) -> String {
+        #[cfg(target_os = "linux")]
+        let binary_name = format!("lib{}.so", name);
+        #[cfg(target_os = "macos")]
+        let binary_name = format!("lib{}.dylib", name);
+        #[cfg(target_os = "windows")]
+        let binary_name = format!("{}.dll", name);
+        binary_name
+    }
 
     fn ensure_requirements(&self);
 }

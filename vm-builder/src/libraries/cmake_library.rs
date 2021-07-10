@@ -2,16 +2,13 @@ use crate::options::FinalOptions;
 use crate::{Library, LibraryLocation, NativeLibrary, NativeLibraryDependencies};
 use rustc_version::version_meta;
 use std::error::Error;
-use std::ffi::OsString;
 use std::path::{Path, PathBuf};
-use std::process::Command;
-use url::Url;
-use user_error::UserFacingError;
 
 pub struct CMakeLibrary {
     name: String,
     location: LibraryLocation,
     defines: Vec<(String, String)>,
+    aliases: Vec<String>,
     dependencies: NativeLibraryDependencies,
 }
 
@@ -21,6 +18,7 @@ impl CMakeLibrary {
             name: name.to_owned(),
             location,
             defines: vec![],
+            aliases: vec![],
             dependencies: NativeLibraryDependencies::new(),
         }
     }
@@ -32,6 +30,7 @@ impl CMakeLibrary {
             name: self.name,
             location: self.location,
             defines,
+            aliases: self.aliases,
             dependencies: self.dependencies,
         }
     }
@@ -41,7 +40,20 @@ impl CMakeLibrary {
             name: self.name,
             location: self.location,
             defines: self.defines,
+            aliases: self.aliases,
             dependencies: self.dependencies.add(library),
+        }
+    }
+
+    pub fn alias(self, alias: impl Into<String>) -> Self {
+        let mut aliases = self.aliases;
+        aliases.push(alias.into());
+        Self {
+            name: self.name,
+            location: self.location,
+            defines: self.defines,
+            aliases,
+            dependencies: self.dependencies,
         }
     }
 }
@@ -119,15 +131,20 @@ impl Library for CMakeLibrary {
     }
 
     fn compiled_library(&self, options: &FinalOptions) -> PathBuf {
-        #[cfg(target_os = "linux")]
-        let binary_name = format!("lib{}.so", self.name());
-        #[cfg(target_os = "macos")]
-        let binary_name = format!("lib{}.dylib", self.name());
-        #[cfg(target_os = "windows")]
-        let binary_name = format!("{}.dll", self.name());
-        self.native_library_prefix(options)
-            .join("lib")
-            .join(&binary_name)
+        let mut possible_names = self.aliases.clone();
+        possible_names.push(self.name().to_string());
+
+        for name in possible_names {
+            let path = self
+                .native_library_prefix(options)
+                .join("lib")
+                .join(self.compiled_library_name(&name));
+
+            if path.exists() {
+                return path;
+            }
+        }
+        panic!("Could not find a compiled library for {}", self.name())
     }
 
     fn ensure_requirements(&self) {}
