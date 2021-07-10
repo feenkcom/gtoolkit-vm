@@ -1,5 +1,5 @@
 use crate::options::FinalOptions;
-use crate::Library;
+use crate::{Library, LibraryLocation};
 use std::path::PathBuf;
 use std::process::Command;
 use url::Url;
@@ -7,27 +7,19 @@ use url::Url;
 #[derive(Clone, Debug)]
 pub struct RustLibrary {
     name: String,
-    repository: Url,
-    commit: Option<String>,
+    location: LibraryLocation,
     features: Vec<String>,
     requires: Vec<String>,
 }
 
 impl RustLibrary {
-    pub fn new(name: &str, repository: &str) -> Self {
+    pub fn new(name: &str, location: LibraryLocation) -> Self {
         Self {
             name: name.to_owned(),
-            repository: Url::parse(repository).unwrap(),
-            commit: None,
+            location,
             features: vec![],
             requires: vec![],
         }
-    }
-
-    pub fn commit(self, commit: impl Into<String>) -> Self {
-        let mut library = self.clone();
-        library.commit = Some(commit.into());
-        library
     }
 
     pub fn feature(self, feature: impl Into<String>) -> Self {
@@ -54,45 +46,12 @@ impl RustLibrary {
 }
 
 impl Library for RustLibrary {
-    fn is_downloaded(&self, options: &FinalOptions) -> bool {
-        self.crate_source_directory(options).exists()
+    fn location(&self) -> &LibraryLocation {
+        &self.location
     }
 
-    fn force_download(&self, options: &FinalOptions) {
-        let result = Command::new("git")
-            .arg("clone")
-            .arg(self.repository.to_string())
-            .arg(self.crate_source_directory(options))
-            .status()
-            .unwrap();
-
-        if !result.success() {
-            panic!("Could not clone {:?}", self.repository.to_string())
-        }
-    }
-
-    fn checkout(&self, options: &FinalOptions) {
-        Command::new("git")
-            .current_dir(self.crate_source_directory(options))
-            .arg("clean")
-            .arg("-fdx")
-            .status()
-            .unwrap();
-
-        if let Some(ref commit) = self.commit {
-            Command::new("git")
-                .current_dir(self.crate_source_directory(options))
-                .arg("checkout")
-                .arg(commit)
-                .status()
-                .unwrap();
-        } else {
-            Command::new("git")
-                .current_dir(self.crate_source_directory(options))
-                .arg("pull")
-                .status()
-                .unwrap();
-        }
+    fn name(&self) -> &str {
+        &self.name
     }
 
     fn force_compile(&self, options: &FinalOptions) {
@@ -138,5 +97,11 @@ impl Library for RustLibrary {
                 each
             ));
         })
+    }
+}
+
+impl From<RustLibrary> for Box<dyn Library> {
+    fn from(library: RustLibrary) -> Self {
+        Box::new(library)
     }
 }

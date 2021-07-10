@@ -4,7 +4,6 @@ use crate::build_support::Builder;
 use std::fmt;
 use std::fmt::{Debug, Formatter};
 use std::path::PathBuf;
-use std::process::Command;
 
 #[derive(Default, Clone)]
 pub struct MacBuilder {}
@@ -48,6 +47,7 @@ impl Builder for MacBuilder {
 
         cmake::Config::new(self.vm_sources_directory())
             .define("COMPILE_EXECUTABLE", "OFF")
+            .define("FEATURE_LIB_GIT2", "OFF")
             .build();
     }
 

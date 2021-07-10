@@ -19,28 +19,12 @@ impl WindowsBuilder {
         self.output_directory().join("pthreads")
     }
 
-    fn libgit2_directory(&self) -> PathBuf {
-        self.output_directory().join("libgit2-src")
-    }
-
-    fn libgit2_build_directory(&self) -> PathBuf {
-        self.output_directory().join("libgit2-build")
-    }
-
     fn sdl2_directory(&self) -> PathBuf {
         self.output_directory().join("sdl2-src")
     }
 
     fn sdl2_build_directory(&self) -> PathBuf {
         self.output_directory().join("sdl2-build")
-    }
-
-    fn libssh2_directory_name(&self) -> String {
-        "libssh2-src".to_string()
-    }
-
-    fn libssh2_directory(&self) -> PathBuf {
-        self.output_directory().join(self.libssh2_directory_name())
     }
 
     fn clone_pthread(&self) {
@@ -52,38 +36,6 @@ impl WindowsBuilder {
             .current_dir(self.output_directory())
             .arg("clone")
             .arg("https://github.com/BrianGladman/pthreads.git")
-            .status()
-            .unwrap();
-    }
-
-    fn clone_libgit2(&self) {
-        if self.libgit2_directory().exists() {
-            return;
-        }
-
-        Command::new("git")
-            .current_dir(self.output_directory())
-            .arg("clone")
-            .arg("-b")
-            .arg("v1.1.0")
-            .arg("https://github.com/libgit2/libgit2.git")
-            .arg(self.libgit2_directory())
-            .status()
-            .unwrap();
-    }
-
-    fn clone_libssh2(&self) {
-        if self.libssh2_directory().exists() {
-            return;
-        }
-
-        Command::new("git")
-            .current_dir(self.output_directory())
-            .arg("clone")
-            .arg("-b")
-            .arg("libssh2-1.9.0")
-            .arg("https://github.com/libssh2/libssh2.git")
-            .arg(self.libssh2_directory())
             .status()
             .unwrap();
     }
@@ -130,40 +82,6 @@ impl WindowsBuilder {
             .unwrap();
     }
 
-    fn compile_libgit2(&self) {
-        if self.libgit2_binary().exists() {
-            return;
-        }
-
-        Command::new("cmake")
-            .current_dir(self.output_directory())
-            .arg(self.cmake_build_type())
-            .arg(format!(
-                "-DEMBED_SSH_PATH=../../{}",
-                self.libssh2_directory_name()
-            ))
-            .arg("-DBUILD_CLAR=OFF")
-            .arg("-S")
-            .arg(self.libgit2_directory())
-            .arg("-B")
-            .arg(self.libgit2_build_directory())
-            .arg("-G")
-            .arg("Visual Studio 16 2019")
-            .arg("-A")
-            .arg("x64")
-            .status()
-            .unwrap();
-
-        Command::new("cmake")
-            .current_dir(self.output_directory())
-            .arg("--build")
-            .arg(self.libgit2_build_directory())
-            .arg("--config")
-            .arg(self.profile())
-            .status()
-            .unwrap();
-    }
-
     fn compile_sdl2(&self) {
         if self.sdl2_binary().exists() {
             return;
@@ -191,12 +109,6 @@ impl WindowsBuilder {
             .arg(self.profile())
             .status()
             .unwrap();
-    }
-
-    fn libgit2_binary(&self) -> PathBuf {
-        self.libgit2_build_directory()
-            .join(self.profile())
-            .join("git2.dll")
     }
 
     fn sdl2_binary(&self) -> PathBuf {
@@ -282,12 +194,9 @@ impl Builder for WindowsBuilder {
 
     fn generate_sources(&self) {
         self.clone_pthread();
-        //self.clone_libgit2();
-        //self.clone_libssh2();
-        //self.clone_sdl2();
+        self.clone_sdl2();
         self.compile_pthread();
-        //self.compile_libgit2();
-        //self.compile_sdl2();
+        self.compile_sdl2();
 
         std::fs::create_dir_all(self.compiled_libraries_directory()).unwrap();
 
@@ -340,7 +249,6 @@ impl Builder for WindowsBuilder {
             &mut libraries,
         );
 
-        //libraries.push((self.libgit2_binary(), Some("libgit2.dll".to_string())));
         //libraries.push((self.sdl2_binary(), Some("SDL2.dll".to_string())));
 
         libraries

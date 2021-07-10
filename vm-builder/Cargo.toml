@@ -17,3 +17,7 @@ serde = "1.0.0"
 serde_derive = "1.0.0"
 url = "2.2.2"
 which = "4.1.0"
+user-error = "1.2.8"
+cmake = { git = "https://github.com/syrel/cmake-rs", rev = "cce9d58d87bd5dd95afb9183fdbbf4cb5d4b2255" }
+cc = "1.0"
+target-lexicon = "0.12"

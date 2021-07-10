@@ -1,4 +1,7 @@
-use crate::{Library, RustLibrary};
+use crate::{
+    boxer, clipboard, git, gleam, glutin, skia, winit, Library, LibraryGitLocation,
+    LibraryLocation, RustLibrary,
+};
 use clap::{AppSettings, ArgEnum, Clap};
 use rustc_version::version_meta;
 use std::path::{Path, PathBuf};
@@ -43,6 +46,8 @@ pub enum ThirdPartyLibrary {
     Glutin,
     #[clap(name = "gleam")]
     Gleam,
+    #[clap(name = "git")]
+    Git,
     #[clap(name = "winit")]
     Winit,
     #[clap(name = "clipboard")]
@@ -64,27 +69,15 @@ impl ToString for ThirdPartyLibrary {
 }
 
 impl ThirdPartyLibrary {
-    pub fn as_library(&self) -> impl Library {
+    pub fn as_library(&self) -> Box<dyn Library> {
         match self {
-            ThirdPartyLibrary::Boxer => {
-                RustLibrary::new("Boxer", "https://github.com/feenkcom/gtoolkit-boxer.git")
-            }
-            ThirdPartyLibrary::Skia => {
-                RustLibrary::new("Skia", "https://github.com/feenkcom/libskia.git")
-                    .requires("python")
-            }
-            ThirdPartyLibrary::Glutin => {
-                RustLibrary::new("Glutin", "https://github.com/feenkcom/libglutin.git")
-            }
-            ThirdPartyLibrary::Gleam => {
-                RustLibrary::new("Gleam", "https://github.com/feenkcom/libgleam.git")
-            }
-            ThirdPartyLibrary::Winit => {
-                RustLibrary::new("Winit", "https://github.com/feenkcom/libwinit.git")
-            }
-            ThirdPartyLibrary::Clipboard => {
-                RustLibrary::new("Clipboard", "https://github.com/feenkcom/libclipboard.git")
-            }
+            ThirdPartyLibrary::Boxer => boxer().into(),
+            ThirdPartyLibrary::Skia => skia().into(),
+            ThirdPartyLibrary::Glutin => glutin().into(),
+            ThirdPartyLibrary::Gleam => gleam().into(),
+            ThirdPartyLibrary::Winit => winit().into(),
+            ThirdPartyLibrary::Clipboard => clipboard().into(),
+            ThirdPartyLibrary::Git => git().into(),
         }
     }
 }
@@ -259,7 +252,7 @@ impl FinalOptions {
         Some(workspace_toml_path.parent().unwrap().to_path_buf())
     }
 
-    pub fn third_party_libraries(&self) -> Vec<impl Library> {
+    pub fn third_party_libraries(&self) -> Vec<Box<dyn Library>> {
         self.build_options
             .libraries
             .as_ref()

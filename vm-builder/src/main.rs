@@ -2,8 +2,12 @@ extern crate clap;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
+extern crate cc;
+extern crate cmake;
 extern crate mustache;
+extern crate target_lexicon;
 extern crate url;
+extern crate user_error;
 extern crate which;
 
 mod bundlers;

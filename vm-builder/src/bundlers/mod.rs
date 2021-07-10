@@ -24,11 +24,9 @@ pub trait Bundler {
             .third_party_libraries()
             .iter()
             .for_each(|library| {
-                library.download(&final_options);
-                assert!(library.is_downloaded(&final_options));
-                library.checkout(&final_options);
+                library.ensure_sources(&final_options).expect(&format!("Could not validate sources of {}", library.name()));
                 library.compile(&final_options);
-                assert!(library.is_compiled(&final_options));
+                assert!(library.is_compiled(&final_options), "Compiled library must exist at {:?}", library.compiled_library(final_options).display());
 
                 let library_path = self.compiled_libraries_directory(&final_options).join(
                     library

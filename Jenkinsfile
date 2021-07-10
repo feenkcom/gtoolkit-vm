@@ -15,7 +15,7 @@ pipeline {
         MASTER_WORKSPACE = ""
         APP_NAME = 'GlamorousToolkit'
         APP_IDENTIFIER = 'com.gtoolkit'
-        APP_LIBRARIES = 'boxer clipboard gleam glutin skia'
+        APP_LIBRARIES = 'git boxer clipboard gleam glutin skia'
         APP_AUTHOR = '"feenk gmbh <contact@feenk.com>"'
 
         MACOS_INTEL_TARGET = 'x86_64-apple-darwin'

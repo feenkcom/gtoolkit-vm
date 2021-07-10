@@ -1,38 +1,140 @@
 use crate::options::FinalOptions;
-use crate::Library;
-use std::path::PathBuf;
+use crate::{Library, LibraryLocation, NativeLibrary, NativeLibraryDependencies};
+use rustc_version::version_meta;
+use std::error::Error;
+use std::ffi::OsString;
+use std::path::{Path, PathBuf};
+use std::process::Command;
 use url::Url;
+use user_error::UserFacingError;
 
 pub struct CMakeLibrary {
     name: String,
-    repository: Url,
-    tag: Option<String>,
+    location: LibraryLocation,
+    defines: Vec<(String, String)>,
+    dependencies: NativeLibraryDependencies,
 }
 
-impl CMakeLibrary {}
+impl CMakeLibrary {
+    pub fn new(name: &str, location: LibraryLocation) -> Self {
+        Self {
+            name: name.to_owned(),
+            location,
+            defines: vec![],
+            dependencies: NativeLibraryDependencies::new(),
+        }
+    }
+
+    pub fn define(self, define: impl Into<String>, value: impl Into<String>) -> Self {
+        let mut defines = self.defines;
+        defines.push((define.into(), value.into()));
+        Self {
+            name: self.name,
+            location: self.location,
+            defines,
+            dependencies: self.dependencies,
+        }
+    }
+
+    pub fn depends(self, library: Box<dyn NativeLibrary>) -> Self {
+        Self {
+            name: self.name,
+            location: self.location,
+            defines: self.defines,
+            dependencies: self.dependencies.add(library),
+        }
+    }
+}
+
+impl NativeLibrary for CMakeLibrary {
+    fn native_library_prefix(&self, options: &FinalOptions) -> PathBuf {
+        options.target_dir().join(self.name())
+    }
+
+    fn native_library_dependency_prefixes(&self, options: &FinalOptions) -> Vec<PathBuf> {
+        self.dependencies.dependency_prefixes(options)
+    }
+}
 
 impl Library for CMakeLibrary {
-    fn is_downloaded(&self, options: &FinalOptions) -> bool {
-        unimplemented!()
+    fn location(&self) -> &LibraryLocation {
+        &self.location
     }
 
-    fn force_download(&self, options: &FinalOptions) {
-        unimplemented!()
+    fn name(&self) -> &str {
+        &self.name
     }
 
-    fn checkout(&self, options: &FinalOptions) {
-        unimplemented!()
+    fn ensure_sources(&self, options: &FinalOptions) -> Result<(), Box<dyn Error>> {
+        self.location()
+            .ensure_sources(&self.source_directory(options), options)?;
+        self.dependencies.ensure_sources(options)?;
+        Ok(())
     }
 
     fn force_compile(&self, options: &FinalOptions) {
-        unimplemented!()
+        self.dependencies.compile(options);
+
+        let mut config = cmake::Config::new(self.source_directory(options));
+
+        let out_dir = self.native_library_prefix(options);
+        if !out_dir.exists() {
+            std::fs::create_dir_all(&out_dir).expect(&format!("Could not create {:?}", &out_dir));
+        }
+
+        config
+            .target(&options.target().to_string())
+            .host(&version_meta().unwrap().host)
+            .out_dir(&out_dir)
+            .profile(&options.profile());
+
+        let mut cmake_prefix_paths = self.native_library_dependency_prefixes(options);
+        if let Ok(ref path) = std::env::var("CMAKE_PREFIX_PATH") {
+            cmake_prefix_paths.push(Path::new(path).to_path_buf());
+        }
+
+        let cmake_prefix_path = cmake_prefix_paths
+            .into_iter()
+            .map(|each| each.into_os_string().to_string_lossy().to_string())
+            .collect::<Vec<String>>()
+            .join(";");
+
+        config.define("CMAKE_PREFIX_PATH", &cmake_prefix_path);
+
+        let ld_library_paths = self
+            .native_library_dependency_prefixes(options)
+            .into_iter()
+            .map(|each| each.join("lib"))
+            .collect::<Vec<PathBuf>>();
+
+        for library_path in &ld_library_paths {
+            config.cflag(format!("-L{}", library_path.display()));
+        }
+
+        for define in &self.defines {
+            config.define(&define.0, &define.1);
+        }
+
+        config.build();
     }
 
     fn compiled_library(&self, options: &FinalOptions) -> PathBuf {
-        unimplemented!()
+        #[cfg(target_os = "linux")]
+        let binary_name = format!("lib{}.so", self.name());
+        #[cfg(target_os = "macos")]
+        let binary_name = format!("lib{}.dylib", self.name());
+        #[cfg(target_os = "windows")]
+        let binary_name = format!("{}.dll", self.name());
+        self.native_library_prefix(options)
+            .join("lib")
+            .join(&binary_name)
     }
 
-    fn ensure_requirements(&self) {
-        unimplemented!()
+    fn ensure_requirements(&self) {}
+}
+
+impl From<CMakeLibrary> for Box<dyn Library> {
+    fn from(library: CMakeLibrary) -> Self {
+        Box::new(library)
     }
 }

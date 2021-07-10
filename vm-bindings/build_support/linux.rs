@@ -37,6 +37,7 @@ impl Builder for LinuxBuilder {
     fn generate_sources(&self) {
         cmake::Config::new(self.vm_sources_directory())
             .define("COMPILE_EXECUTABLE", "OFF")
+            .define("FEATURE_LIB_GIT2", "OFF")
             .build();
     }
 
