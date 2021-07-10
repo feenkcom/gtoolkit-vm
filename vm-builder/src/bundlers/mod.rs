@@ -20,6 +20,15 @@ pub trait Bundler {
     }
 
     fn compile_third_party_libraries(&self, final_options: &FinalOptions) {
+        let compiled_libraries_directory = self.compiled_libraries_directory(&final_options);
+
+        if !compiled_libraries_directory.exists() {
+            std::fs::create_dir_all(&compiled_libraries_directory).expect(&format!(
+                "Could not create {}",
+                compiled_libraries_directory.display()
+            ));
+        }
+
         final_options
             .third_party_libraries()
             .iter()
@@ -34,12 +43,8 @@ pub trait Bundler {
                     library.compiled_library(final_options).display()
                 );
 
-                let library_path = self.compiled_libraries_directory(&final_options).join(
-                    library
-                        .compiled_library(&final_options)
-                        .file_name()
-                        .unwrap(),
-                );
+                let library_path = compiled_libraries_directory
+                    .join(library.compiled_library_name().file_name(library.name()));
 
                 std::fs::copy(library.compiled_library(&final_options), &library_path).expect(
                     &format!(

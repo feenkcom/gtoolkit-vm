@@ -19,6 +19,10 @@ fn main() {
         builder.compile_sources();
     }
 
+    if !builder.is_compiled() {
+        panic!("Failed to compile {}", builder.vm_binary())
+    }
+
     builder.link_libraries();
     builder.generate_bindings();
     builder.export_shared_libraries();

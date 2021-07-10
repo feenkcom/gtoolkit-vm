@@ -119,6 +119,10 @@ impl CompiledLibraryName {
         binary_name
     }
 
+    pub fn file_name(&self, library_name: &str) -> String {
+        self.platform_library_name(library_name)
+    }
+
     pub fn matches(&self, library_name: &str, path: &PathBuf) -> bool {
         match path.file_name() {
             None => false,
