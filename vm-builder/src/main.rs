@@ -30,11 +30,11 @@ fn main() {
 
     let bundler = bundler(&final_config);
     bundler.ensure_third_party_requirements(&final_config);
-    //bundler.pre_compile(&final_config);
-    //compile_binary(&final_config);
-    //bundler.post_compile(&final_config);
+    bundler.pre_compile(&final_config);
+    compile_binary(&final_config);
+    bundler.post_compile(&final_config);
     bundler.compile_third_party_libraries(&final_config);
-    //bundler.bundle(&final_config);
+    bundler.bundle(&final_config);
 }
 
 fn compile_binary(opts: &FinalOptions) {

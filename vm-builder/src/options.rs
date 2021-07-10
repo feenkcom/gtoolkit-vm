@@ -37,7 +37,7 @@ impl ToString for Target {
 pub enum ThirdPartyLibrary {
     #[clap(name = "git")]
     Git,
-    #[clap(name = "sld2")]
+    #[clap(name = "sdl2")]
     Sdl2,
     #[clap(name = "boxer")]
     Boxer,
