@@ -67,7 +67,7 @@ fn compile_binary(opts: &FinalOptions) {
         command.arg("--release");
     }
 
-    if !command.status().unwrap() {
+    if !command.status().unwrap().success() {
         panic!("Failed to compile a vm-client")
     }
 }
