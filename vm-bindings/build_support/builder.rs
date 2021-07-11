@@ -91,12 +91,8 @@ pub trait Builder: Debug {
     fn vm_maker(&self) -> Option<PathBuf> {
         std::env::var("VM_CLIENT_VMMAKER").map_or(None, |path| {
             let path = Path::new(&path);
-            if let Ok(path) = fs::canonicalize(path) {
-                if path.exists() {
-                    Some(path)
-                } else {
-                    None
-                }
+            if path.exists() {
+                Some(path.to_path_buf())
             } else {
                 None
             }
