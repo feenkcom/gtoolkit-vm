@@ -117,8 +117,7 @@ impl Builder for WindowsBuilder {
     fn vm_binary(&self) -> PathBuf {
         self.output_directory()
             .join("build")
-            .join("build")
-            .join("vm")
+            .join(titlecase(&self.profile()))
             .join("PharoVMCore.dll")
     }
 
