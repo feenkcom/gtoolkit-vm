@@ -146,7 +146,25 @@ impl Builder for WindowsBuilder {
             .generator_toolset("ClangCL");
 
         if let Some(vm_maker) = self.vm_maker() {
-            config.define("GENERATE_PHARO_VM", vm_maker);
+            let path: PathBuf = vm_maker;
+            let mut path = path.into_os_string();
+            #[cfg(windows)]
+            {
+                // CMake doesn't like unescaped `\`s paths
+                use std::os::windows::ffi::{OsStrExt, OsStringExt};
+                let wchars = path
+                    .encode_wide()
+                    .map(|wchar| {
+                        if wchar == b'\\' as u16 {
+                            '/' as u16
+                        } else {
+                            wchar
+                        }
+                    })
+                    .collect::<Vec<_>>();
+                path = OsString::from_wide(&wchars);
+            }
+            config.define("GENERATE_PHARO_VM", path);
         }
 
         config.build();
