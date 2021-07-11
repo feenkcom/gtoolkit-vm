@@ -66,7 +66,7 @@ impl Builder for LinuxBuilder {
             self.compiled_libraries_directory().display()
         );
 
-        vec![
+        let libs: Vec<(Name, Option<&str>)> = vec![
             // core
             (Name::Exact("libPharoVMCore.so"), None),
             // plugins
@@ -87,16 +87,17 @@ impl Builder for LinuxBuilder {
             (Name::Exact("libUUIDPlugin.so"), None),
             // testing
             (Name::Exact("libTestLibrary.so"), None),
-        ]
-        .iter()
-        .map(|(library, rename)| {
-            (
-                library.find_file(&self.compiled_libraries_directory()),
-                rename.map(|name| name.to_string()),
-            )
-        })
-        .filter(|(library, rename)| library.is_some())
-        .map(|(library, rename)| (library.unwrap(), rename))
-        .collect()
+        ];
+
+        libs.iter()
+            .map(|(library, rename)| {
+                (
+                    library.find_file(&self.compiled_libraries_directory()),
+                    rename.map(|name| name.to_string()),
+                )
+            })
+            .filter(|(library, rename)| library.is_some())
+            .map(|(library, rename)| (library.unwrap(), rename))
+            .collect()
     }
 }
