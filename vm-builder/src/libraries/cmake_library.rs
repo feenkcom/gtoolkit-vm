@@ -1,4 +1,4 @@
-use crate::options::FinalOptions;
+use crate::options::{FinalOptions, Target};
 use crate::{
     CompiledLibraryName, Library, LibraryLocation, NativeLibrary, NativeLibraryDependencies,
 };
@@ -122,6 +122,13 @@ impl Library for CMakeLibrary {
             .join(";");
 
         config.define("CMAKE_PREFIX_PATH", &cmake_prefix_path);
+
+        match options.target() {
+            Target::X8664appleDarwin => config.define("CMAKE_OSX_ARCHITECTURES", "x86_64"),
+            Target::AArch64appleDarwin => config.define("CMAKE_OSX_ARCHITECTURES", "arm64"),
+            Target::X8664pcWindowsMsvc => {}
+            Target::X8664UnknownlinuxGNU => {}
+        }
 
         let ld_library_paths = self
             .native_library_dependency_prefixes(options)
