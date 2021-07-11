@@ -37,6 +37,7 @@ impl Builder for LinuxBuilder {
     fn compile_sources(&self) {
         let mut config = cmake::Config::new(self.vm_sources_directory());
         config
+            .no_build_target(true)
             .define("COMPILE_EXECUTABLE", "OFF")
             .define("FEATURE_LIB_GIT2", "OFF")
             .define("FEATURE_LIB_SDL2", "OFF");
