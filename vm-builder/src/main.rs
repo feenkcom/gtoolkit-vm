@@ -67,7 +67,9 @@ fn compile_binary(opts: &FinalOptions) {
         command.arg("--release");
     }
 
-    command.status().unwrap();
+    if !command.status().unwrap() {
+        panic!("Failed to compile a vm-client")
+    }
 }
 
 fn bundler(final_config: &FinalOptions) -> Box<dyn Bundler> {
