@@ -148,7 +148,6 @@ impl Builder for WindowsBuilder {
         if let Some(vm_maker) = self.vm_maker() {
             let path: PathBuf = vm_maker;
             let mut path = path.into_os_string();
-            OsString::from_wide(&wchars);
             #[cfg(windows)]
             {
                 // CMake doesn't like unescaped `\`s paths
