@@ -92,9 +92,6 @@ pub struct BuildOptions {
     /// To bundle a release build
     #[clap(long)]
     release: bool,
-    /// Include debug symbols in the binary
-    #[clap(long)]
-    debug_symbols: bool,
     #[clap(long, possible_values = Target::VARIANTS, case_insensitive = true)]
     /// To cross-compile and bundle an application for another OS
     target: Option<Target>,
@@ -135,6 +132,9 @@ pub struct BuildOptions {
     #[clap(long, possible_values = ThirdPartyLibrary::VARIANTS, case_insensitive = true)]
     /// Include third party libraries
     libraries: Option<Vec<ThirdPartyLibrary>>,
+    /// Use a specific VM to run a VMMaker, must be a path to the executable. When specified, the build will not attempt to download a VM
+    #[clap(long, parse(from_os_str))]
+    vmmaker_vm: Option<PathBuf>,
 }
 
 const DEFAULT_BUILD_DIR: &str = "target";
@@ -180,10 +180,6 @@ impl FinalOptions {
 
     pub fn target_dir(&self) -> PathBuf {
         Path::new(self.build_options.target_dir.as_ref().unwrap()).to_path_buf()
-    }
-
-    pub fn debug_symbols(&self) -> bool {
-        self.build_options.debug_symbols
     }
 
     pub fn verbose(&self) -> i32 {
@@ -235,6 +231,10 @@ impl FinalOptions {
 
     pub fn bundle_dir(&self) -> Option<String> {
         self.build_options.bundle_dir.clone()
+    }
+
+    pub fn vmmaker_vm(&self) -> Option<PathBuf> {
+        self.build_options.vmmaker_vm.clone()
     }
 
     pub fn workspace_directory(&self) -> Option<PathBuf> {

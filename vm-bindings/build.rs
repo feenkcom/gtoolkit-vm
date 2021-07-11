@@ -9,13 +9,15 @@ mod build_support;
 
 use crate::build_support::{Builder, PlatformBuilder};
 
+///
+/// Possible parameters
+///  - VM_CLIENT_VMMAKER to use a specific VM to run a VM Maker image
 fn main() {
     let builder = Box::new(PlatformBuilder::default());
     println!("About to build a vm using {:?}", &builder);
     builder.ensure_build_tools();
 
     if !builder.is_compiled() {
-        builder.generate_sources();
         builder.compile_sources();
     }
 

@@ -34,15 +34,18 @@ impl Builder for LinuxBuilder {
             .join("vm")
     }
 
-    fn generate_sources(&self) {
-        cmake::Config::new(self.vm_sources_directory())
+    fn compile_sources(&self) {
+        let mut config = cmake::Config::new(self.vm_sources_directory());
+        config
             .define("COMPILE_EXECUTABLE", "OFF")
             .define("FEATURE_LIB_GIT2", "OFF")
-            .define("FEATURE_LIB_SDL2", "OFF")
-            .build();
-    }
+            .define("FEATURE_LIB_SDL2", "OFF");
 
-    fn compile_sources(&self) {}
+        if let Some(vm_maker) = self.vm_maker() {
+            config.define("GENERATE_PHARO_VM", vm_maker);
+        }
+        config.build();
+    }
 
     fn platform_include_directory(&self) -> PathBuf {
         self.squeak_include_directory().join("unix")

@@ -55,6 +55,7 @@ pipeline {
 
                         sh """
                             cargo run --package vm-builder --target ${TARGET} -- \
+                                --vmmaker-vm /Users/tudor/vmmaker/Pharo.app/Contents/MacOS/Pharo \
                                 --app-name ${APP_NAME} \
                                 --identifier ${APP_IDENTIFIER} \
                                 --author ${APP_AUTHOR} \
@@ -83,6 +84,7 @@ pipeline {
 
                         sh """
                             cargo run --package vm-builder --target ${TARGET} -- \
+                                --vmmaker-vm /Users/tudor/vmmaker/Pharo.app/Contents/MacOS/Pharo \
                                 --app-name ${APP_NAME} \
                                 --identifier ${APP_IDENTIFIER} \
                                 --author ${APP_AUTHOR} \
@@ -110,6 +112,7 @@ pipeline {
 
                         sh """
                             cargo run --package vm-builder --target ${TARGET} -- \
+                                --vmmaker-vm /data/jenkins/vmmaker/pharo \
                                 --app-name ${APP_NAME} \
                                 --identifier ${APP_IDENTIFIER} \
                                 --author ${APP_AUTHOR} \
@@ -151,6 +154,7 @@ pipeline {
                 
                         powershell """
                            cargo run --package vm-builder --target ${TARGET} -- `
+                                --vmmaker-vm C:/Users/jenkins/vmmaker/PharoConsole.exe `
                                 --app-name ${APP_NAME} `
                                 --identifier ${APP_IDENTIFIER} `
                                 --author ${APP_AUTHOR} `

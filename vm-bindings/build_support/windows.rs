@@ -129,24 +129,28 @@ impl Builder for WindowsBuilder {
             .join("vm")
     }
 
-    fn generate_sources(&self) {
+    fn compile_sources(&self) {
         self.clone_pthread();
         self.compile_pthread();
 
         std::fs::create_dir_all(self.compiled_libraries_directory()).unwrap();
 
-        cmake::Config::new(self.vm_sources_directory())
+        let mut config = cmake::Config::new(self.vm_sources_directory());
+        config
             .define("COMPILE_EXECUTABLE", "OFF")
             .define("FEATURE_LIB_PTHREADW32", "ON")
             .define("PTHREADW32_DIR", self.pthreads_library_directory())
             .define("FEATURE_LIB_GIT2", "OFF")
             .define("FEATURE_LIB_SDL2", "OFF")
             .generator("Visual Studio 16 2019")
-            .generator_toolset("ClangCL")
-            .build();
-    }
+            .generator_toolset("ClangCL");
 
-    fn compile_sources(&self) {}
+        if let Some(vm_maker) = self.vm_maker() {
+            config.define("GENERATE_PHARO_VM", vm_maker);
+        }
+
+        config.build();
+    }
 
     fn platform_include_directory(&self) -> PathBuf {
         self.squeak_include_directory().join("win")

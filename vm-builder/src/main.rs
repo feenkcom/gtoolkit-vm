@@ -40,10 +40,9 @@ fn main() {
 fn compile_binary(opts: &FinalOptions) {
     std::env::set_var("CARGO_TARGET_DIR", opts.target_dir());
 
-    std::env::set_var(
-        "VM_CLIENT_EMBED_DEBUG_SYMBOLS",
-        format!("{}", opts.debug_symbols()),
-    );
+    if let Some(vmmaker_vm) = opts.vmmaker_vm() {
+        std::env::set_var("VM_CLIENT_VMMAKER", vmmaker_vm);
+    }
 
     let mut command = Command::new("cargo");
     command

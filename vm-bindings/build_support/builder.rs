@@ -88,19 +88,19 @@ pub trait Builder: Debug {
 
     fn ensure_build_tools(&self) {}
 
-    fn should_embed_debug_symbols(&self) -> bool {
-        std::env::var("VM_CLIENT_EMBED_DEBUG_SYMBOLS").map_or(false, |value| value == "true")
-    }
-
-    fn cmake_build_type(&self) -> String {
-        (if self.is_debug() {
-            "-DCMAKE_BUILD_TYPE=RelWithDebInfo"
-        } else if self.should_embed_debug_symbols() {
-            "-DCMAKE_BUILD_TYPE=RelWithDebInfo"
-        } else {
-            "-DCMAKE_BUILD_TYPE=Release"
+    fn vm_maker(&self) -> Option<PathBuf> {
+        std::env::var("VM_CLIENT_VMMAKER").map_or(None, |path| {
+            let path = Path::new(&path);
+            if let Ok(path) = fs::canonicalize(path) {
+                if path.exists() {
+                    Some(path)
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
         })
-        .to_string()
     }
 
     fn output_directory(&self) -> PathBuf {
@@ -131,17 +131,7 @@ pub trait Builder: Debug {
             .join("shared_libraries")
     }
 
-    fn generate_sources(&self);
-
-    fn compile_sources(&self) {
-        Command::new("cmake")
-            .arg("--build")
-            .arg(self.output_directory())
-            .arg("--config")
-            .arg(self.profile())
-            .status()
-            .unwrap();
-    }
+    fn compile_sources(&self);
 
     fn squeak_include_directory(&self) -> PathBuf {
         self.vm_sources_directory()
