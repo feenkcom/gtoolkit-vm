@@ -60,6 +60,10 @@ impl<'bundle_options> ExecutableOptions<'bundle_options> {
         self.options.icons()
     }
 
+    pub fn cargo_bin_name(&self) -> &str {
+        self.executable().cargo_bin_name()
+    }
+
     pub fn compiled_executable_name(&self) -> String {
         self.options.compiled_executable_name(self.executable())
     }

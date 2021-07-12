@@ -26,7 +26,7 @@ pub trait Bundler {
             .arg("--package")
             .arg("vm-client")
             .arg("--bin")
-            .arg(options.compiled_executable_name())
+            .arg(options.cargo_bin_name())
             .arg("--target")
             .arg(options.target().to_string());
 

@@ -9,12 +9,15 @@ pub enum Executable {
 }
 
 impl Executable {
-    pub fn compiled_name(&self, options: &ResolvedOptions) -> String {
-        let mut executable_name = (match self {
+    pub fn cargo_bin_name(&self) -> &str {
+        match self {
             Executable::App => "vm_client",
             Executable::Cli => "vm_client-cli",
-        })
-        .to_owned();
+        }
+    }
+
+    pub fn compiled_name(&self, options: &ResolvedOptions) -> String {
+        let mut executable_name = self.cargo_bin_name().to_owned();
 
         if let Some(extension) = options.executable_extension() {
             executable_name = format!("{}.{}", &executable_name, &extension);
