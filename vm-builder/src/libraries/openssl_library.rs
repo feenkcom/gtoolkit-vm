@@ -1,8 +1,9 @@
-use crate::options::{FinalOptions, Target};
+use crate::options::{BundleOptions, Target};
 use crate::{Library, LibraryGitLocation, LibraryLocation, NativeLibrary};
 use std::path::PathBuf;
 use std::process::Command;
 
+#[derive(Debug, Clone)]
 pub struct OpenSSLLibrary {
     location: LibraryLocation,
 }
@@ -17,7 +18,7 @@ impl OpenSSLLibrary {
         }
     }
 
-    pub fn compiler(&self, options: &FinalOptions) -> &str {
+    pub fn compiler(&self, options: &BundleOptions) -> &str {
         match options.target() {
             Target::X8664appleDarwin => "darwin64-x86_64-cc",
             Target::AArch64appleDarwin => "darwin64-arm64-cc",
@@ -36,7 +37,7 @@ impl Library for OpenSSLLibrary {
         "openssl"
     }
 
-    fn force_compile(&self, options: &FinalOptions) {
+    fn force_compile(&self, options: &BundleOptions) {
         let out_dir = self.native_library_prefix(options);
         if !out_dir.exists() {
             std::fs::create_dir_all(&out_dir).expect(&format!("Could not create {:?}", &out_dir));
@@ -72,12 +73,12 @@ impl Library for OpenSSLLibrary {
             .status()
             .unwrap();
 
-        if !configure.success() {
+        if !make.success() {
             panic!("Could not compile {}", self.name());
         }
     }
 
-    fn compiled_library_directories(&self, options: &FinalOptions) -> Vec<PathBuf> {
+    fn compiled_library_directories(&self, _options: &BundleOptions) -> Vec<PathBuf> {
         unimplemented!()
     }
 
@@ -87,11 +88,11 @@ impl Library for OpenSSLLibrary {
 }
 
 impl NativeLibrary for OpenSSLLibrary {
-    fn native_library_prefix(&self, options: &FinalOptions) -> PathBuf {
+    fn native_library_prefix(&self, options: &BundleOptions) -> PathBuf {
         options.target_dir().join(self.name()).join("build")
     }
 
-    fn native_library_dependency_prefixes(&self, options: &FinalOptions) -> Vec<PathBuf> {
+    fn native_library_dependency_prefixes(&self, _options: &BundleOptions) -> Vec<PathBuf> {
         vec![]
     }
 }

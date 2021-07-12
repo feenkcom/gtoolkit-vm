@@ -1,4 +1,4 @@
-use crate::options::{FinalOptions, Target};
+use crate::options::{BundleOptions, Target};
 use crate::{
     CompiledLibraryName, Library, LibraryLocation, NativeLibrary, NativeLibraryDependencies,
 };
@@ -6,6 +6,7 @@ use rustc_version::version_meta;
 use std::error::Error;
 use std::path::{Path, PathBuf};
 
+#[derive(Debug)]
 pub struct CMakeLibrary {
     name: String,
     compiled_name: CompiledLibraryName,
@@ -59,11 +60,11 @@ impl CMakeLibrary {
 }
 
 impl NativeLibrary for CMakeLibrary {
-    fn native_library_prefix(&self, options: &FinalOptions) -> PathBuf {
+    fn native_library_prefix(&self, options: &BundleOptions) -> PathBuf {
         options.target_dir().join(self.name())
     }
 
-    fn native_library_dependency_prefixes(&self, options: &FinalOptions) -> Vec<PathBuf> {
+    fn native_library_dependency_prefixes(&self, options: &BundleOptions) -> Vec<PathBuf> {
         self.dependencies.dependency_prefixes(options)
     }
 }
@@ -81,14 +82,14 @@ impl Library for CMakeLibrary {
         &self.compiled_name
     }
 
-    fn ensure_sources(&self, options: &FinalOptions) -> Result<(), Box<dyn Error>> {
+    fn ensure_sources(&self, options: &BundleOptions) -> Result<(), Box<dyn Error>> {
         self.location()
             .ensure_sources(&self.source_directory(options), options)?;
         self.dependencies.ensure_sources(options)?;
         Ok(())
     }
 
-    fn force_compile(&self, options: &FinalOptions) {
+    fn force_compile(&self, options: &BundleOptions) {
         self.dependencies.compile(options);
 
         let mut config = cmake::Config::new(self.source_directory(options));
@@ -151,7 +152,7 @@ impl Library for CMakeLibrary {
         config.build();
     }
 
-    fn compiled_library_directories(&self, options: &FinalOptions) -> Vec<PathBuf> {
+    fn compiled_library_directories(&self, options: &BundleOptions) -> Vec<PathBuf> {
         let lib_dir = self.native_library_prefix(options).join("lib");
         let bin_dir = self.native_library_prefix(options).join("bin");
         vec![lib_dir, bin_dir]

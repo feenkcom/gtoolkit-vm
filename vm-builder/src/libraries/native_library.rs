@@ -1,13 +1,14 @@
-use crate::options::FinalOptions;
+use crate::options::BundleOptions;
 use crate::Library;
 use std::error::Error;
 use std::path::PathBuf;
 
 pub trait NativeLibrary: Library {
-    fn native_library_prefix(&self, options: &FinalOptions) -> PathBuf;
-    fn native_library_dependency_prefixes(&self, options: &FinalOptions) -> Vec<PathBuf>;
+    fn native_library_prefix(&self, options: &BundleOptions) -> PathBuf;
+    fn native_library_dependency_prefixes(&self, options: &BundleOptions) -> Vec<PathBuf>;
 }
 
+#[derive(Debug)]
 pub struct NativeLibraryDependencies {
     dependencies: Vec<Box<dyn NativeLibrary>>,
 }
@@ -25,7 +26,7 @@ impl NativeLibraryDependencies {
         Self { dependencies }
     }
 
-    pub fn dependency_prefixes(&self, options: &FinalOptions) -> Vec<PathBuf> {
+    pub fn dependency_prefixes(&self, options: &BundleOptions) -> Vec<PathBuf> {
         let mut paths = vec![];
         for dependency in &self.dependencies {
             for each in dependency.native_library_dependency_prefixes(options) {
@@ -36,14 +37,14 @@ impl NativeLibraryDependencies {
         paths
     }
 
-    pub fn ensure_sources(&self, options: &FinalOptions) -> Result<(), Box<dyn Error>> {
+    pub fn ensure_sources(&self, options: &BundleOptions) -> Result<(), Box<dyn Error>> {
         for dependency in &self.dependencies {
             dependency.ensure_sources(options)?
         }
         Ok(())
     }
 
-    pub fn compile(&self, options: &FinalOptions) {
+    pub fn compile(&self, options: &BundleOptions) {
         for dependency in &self.dependencies {
             dependency.compile(options);
         }

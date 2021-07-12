@@ -1,39 +1,40 @@
-use crate::options::FinalOptions;
+use crate::options::BundleOptions;
 use std::error::Error;
 use std::path::PathBuf;
 use std::process::Command;
 use url::Url;
 use user_error::UserFacingError;
+use std::fmt::Debug;
 
-pub trait Library {
+pub trait Library: Debug {
     fn location(&self) -> &LibraryLocation;
     fn name(&self) -> &str;
     fn compiled_library_name(&self) -> &CompiledLibraryName {
         &CompiledLibraryName::Default
     }
 
-    fn source_directory(&self, options: &FinalOptions) -> PathBuf {
+    fn source_directory(&self, options: &BundleOptions) -> PathBuf {
         options.third_party_libraries_directory().join(self.name())
     }
 
-    fn ensure_sources(&self, options: &FinalOptions) -> Result<(), Box<dyn Error>> {
+    fn ensure_sources(&self, options: &BundleOptions) -> Result<(), Box<dyn Error>> {
         let location = self.location();
         location.ensure_sources(&self.source_directory(options), options)
     }
 
-    fn is_compiled(&self, options: &FinalOptions) -> bool {
+    fn is_compiled(&self, options: &BundleOptions) -> bool {
         self.compiled_library(options).exists()
     }
 
-    fn compile(&self, options: &FinalOptions) {
+    fn compile(&self, options: &BundleOptions) {
         self.force_compile(options);
     }
 
-    fn force_compile(&self, options: &FinalOptions);
+    fn force_compile(&self, options: &BundleOptions);
 
-    fn compiled_library_directories(&self, options: &FinalOptions) -> Vec<PathBuf>;
+    fn compiled_library_directories(&self, options: &BundleOptions) -> Vec<PathBuf>;
 
-    fn compiled_library(&self, options: &FinalOptions) -> PathBuf {
+    fn compiled_library(&self, options: &BundleOptions) -> PathBuf {
         let library_name = self.name();
         let compiled_library_name = self.compiled_library_name();
         for directory in self.compiled_library_directories(options) {
@@ -70,7 +71,7 @@ impl LibraryLocation {
     pub fn ensure_sources(
         &self,
         default_source_directory: &PathBuf,
-        options: &FinalOptions,
+        options: &BundleOptions,
     ) -> Result<(), Box<dyn Error>> {
         match self {
             LibraryLocation::Git(git_location) => {
@@ -202,7 +203,7 @@ impl GitLocation {
     fn ensure_sources(
         &self,
         default_source_directory: &PathBuf,
-        options: &FinalOptions,
+        options: &BundleOptions,
     ) -> Result<(), Box<dyn Error>> {
         let source_directory = match self.directory {
             None => options
@@ -301,7 +302,7 @@ impl PathLocation {
     fn ensure_sources(
         &self,
         default_source_directory: &PathBuf,
-        options: &FinalOptions,
+        _options: &BundleOptions,
     ) -> Result<(), Box<dyn Error>> {
         if !default_source_directory.exists() {
             return Err(Box::new(

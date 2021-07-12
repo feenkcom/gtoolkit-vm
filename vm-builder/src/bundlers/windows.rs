@@ -1,5 +1,6 @@
 use crate::bundlers::Bundler;
-use crate::options::FinalOptions;
+use crate::options::BundleOptions;
+use crate::ExecutableOptions;
 use std::fs;
 use std::fs::File;
 use std::path::{Path, PathBuf};
@@ -11,8 +12,8 @@ impl WindowsBundler {
         Self {}
     }
 
-    pub fn create_ico(&self, configuration: &FinalOptions) -> Option<PathBuf> {
-        for icon in configuration.icons() {
+    pub fn create_ico(&self, options: &ExecutableOptions) -> Option<PathBuf> {
+        for icon in options.icons() {
             let icon_path = Path::new(&icon);
             if icon_path.exists() {
                 if let Some(extension) = icon_path.extension() {
@@ -33,22 +34,22 @@ impl WindowsBundler {
 }
 
 impl Bundler for WindowsBundler {
-    fn pre_compile(&self, configuration: &FinalOptions) {
+    fn pre_compile(&self, options: &ExecutableOptions) {
         let temp_dir = self.temporary_directory();
 
-        let icon = self.create_ico(configuration);
+        let icon = self.create_ico(options);
 
         let info = Info {
-            bundle_name: configuration.app_name(),
-            bundle_identifier: self.bundle_identifier(configuration),
+            bundle_name: options.app_name().to_owned(),
+            bundle_identifier: options.identifier().to_owned(),
             bundle_author: "".to_string(),
-            bundle_major_version: configuration.major_version(),
-            bundle_minor_version: configuration.minor_version(),
-            bundle_patch_version: configuration.patch_version(),
+            bundle_major_version: options.version().major(),
+            bundle_minor_version: options.version().minor(),
+            bundle_patch_version: options.version().patch(),
             bundle_icon: icon.as_ref().map_or("".to_string(), |icon| {
                 format!("100 ICON {:?}", icon.display())
             }),
-            executable_name: self.executable_name(configuration),
+            executable_name: options.executable_name(),
         };
 
         let resource = mustache::compile_str(RESOURCE).unwrap();
@@ -58,11 +59,9 @@ impl Bundler for WindowsBundler {
             fs::create_dir_all(&temp_dir).unwrap();
         }
 
-        let resource_file_path =
-            temp_dir.join(format!("{}.rc", self.executable_name(configuration)));
+        let resource_file_path = temp_dir.join(format!("{}.rc", options.executable_name()));
 
-        let manifest_file_path =
-            temp_dir.join(format!("{}.manifest", self.executable_name(configuration)));
+        let manifest_file_path = temp_dir.join(format!("{}.manifest", options.executable_name()));
 
         let mut resource_file = File::create(&resource_file_path).unwrap();
         let mut manifest_file = File::create(&manifest_file_path).unwrap();
@@ -76,9 +75,16 @@ impl Bundler for WindowsBundler {
         );
     }
 
-    fn bundle(&self, configuration: &FinalOptions) {
-        let bundle_location = configuration.bundle_location();
-        let app_name = configuration.app_name();
+    fn post_compile(&self, _options: &ExecutableOptions) {
+        let temp_dir = self.temporary_directory();
+        if temp_dir.exists() {
+            fs::remove_dir_all(&temp_dir).unwrap();
+        }
+    }
+
+    fn bundle(&self, options: &BundleOptions) {
+        let bundle_location = options.bundle_location();
+        let app_name = options.app_name();
 
         let app_dir = bundle_location.join(&app_name);
         let binary_dir = app_dir.join("bin");
@@ -89,36 +95,29 @@ impl Bundler for WindowsBundler {
         fs::create_dir_all(&app_dir).unwrap();
         fs::create_dir(&binary_dir).unwrap();
 
-        let target_executable_path = binary_dir.join(&self.executable_name(configuration));
-
-        match fs::copy(
-            self.compiled_executable_path(configuration),
-            &target_executable_path,
-        ) {
-            Ok(_) => {}
-            Err(error) => {
-                panic!(
-                    "Could not copy {} to {} due to {}",
-                    self.compiled_executable_path(configuration).display(),
-                    &target_executable_path.display(),
-                    error
-                );
-            }
-        };
+        options.executables().iter().for_each(|executable| {
+            let compiled_executable_path = options.compiled_executable_path(executable);
+            let bundled_executable_path =
+                binary_dir.join(options.bundled_executable_name(executable));
+            match fs::copy(&compiled_executable_path, &bundled_executable_path) {
+                Ok(_) => {}
+                Err(error) => {
+                    panic!(
+                        "Could not copy {} to {} due to {}",
+                        &compiled_executable_path.display(),
+                        &bundled_executable_path.display(),
+                        error
+                    );
+                }
+            };
+        });
 
         fs_extra::copy_items(
-            &self.compiled_libraries(configuration),
+            &self.compiled_libraries(options),
             binary_dir,
             &fs_extra::dir::CopyOptions::new(),
         )
         .unwrap();
-    }
-
-    fn post_compile(&self, _configuration: &FinalOptions) {
-        let temp_dir = self.temporary_directory();
-        if temp_dir.exists() {
-            fs::remove_dir_all(&temp_dir).unwrap();
-        }
     }
 }
 
@@ -127,9 +126,9 @@ struct Info {
     bundle_name: String,
     bundle_identifier: String,
     bundle_author: String,
-    bundle_major_version: usize,
-    bundle_minor_version: usize,
-    bundle_patch_version: usize,
+    bundle_major_version: u64,
+    bundle_minor_version: u64,
+    bundle_patch_version: u64,
     bundle_icon: String,
     executable_name: String,
 }

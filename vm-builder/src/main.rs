@@ -3,6 +3,7 @@ extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 extern crate cmake;
+extern crate feenk_releaser;
 extern crate mustache;
 extern crate url;
 extern crate user_error;
@@ -13,66 +14,40 @@ mod libraries;
 mod options;
 
 pub use libraries::*;
+pub use options::*;
 
 use clap::Clap;
-
-use std::process::Command;
 
 use crate::bundlers::linux::LinuxBundler;
 use crate::bundlers::mac::MacBundler;
 use crate::bundlers::windows::WindowsBundler;
 use crate::bundlers::Bundler;
-use crate::options::{BuildOptions, FinalOptions, Target};
+use crate::options::{BuildOptions, BundleOptions, Executable, Target};
 
 fn main() {
     let build_config: BuildOptions = BuildOptions::parse();
-    let final_config = FinalOptions::new(build_config);
 
-    let bundler = bundler(&final_config);
-    bundler.ensure_third_party_requirements(&final_config);
-    bundler.pre_compile(&final_config);
-    compile_binary(&final_config);
-    bundler.post_compile(&final_config);
-    bundler.compile_third_party_libraries(&final_config);
-    bundler.bundle(&final_config);
+    let resolved_options = ResolvedOptions::new(build_config);
+    let bundler = bundler(&resolved_options);
+
+    let bundle_options =
+        BundleOptions::new(resolved_options, vec![Executable::App, Executable::Cli]);
+
+    bundler.ensure_third_party_requirements(&bundle_options);
+
+    bundle_options.executables().iter().for_each(|executable| {
+        let executable_options = ExecutableOptions::new(&bundle_options, executable.clone());
+        bundler.pre_compile(&executable_options);
+        bundler.compile_binary(&executable_options);
+        bundler.post_compile(&executable_options)
+    });
+
+    bundler.compile_third_party_libraries(&bundle_options);
+    bundler.bundle(&bundle_options);
 }
 
-fn compile_binary(opts: &FinalOptions) {
-    std::env::set_var("CARGO_TARGET_DIR", opts.target_dir());
-
-    if let Some(vmmaker_vm) = opts.vmmaker_vm() {
-        std::env::set_var("VM_CLIENT_VMMAKER", vmmaker_vm);
-    }
-
-    let mut command = Command::new("cargo");
-    command
-        .arg("build")
-        .arg("--package")
-        .arg("vm-client")
-        .arg("--target")
-        .arg(opts.target().to_string());
-
-    match opts.verbose() {
-        0 => {}
-        1 => {
-            command.arg("-v");
-        }
-        _ => {
-            command.arg("-vv");
-        }
-    }
-
-    if opts.release() {
-        command.arg("--release");
-    }
-
-    if !command.status().unwrap().success() {
-        panic!("Failed to compile a vm-client")
-    }
-}
-
-fn bundler(final_config: &FinalOptions) -> Box<dyn Bundler> {
-    match final_config.target() {
+fn bundler(options: &ResolvedOptions) -> Box<dyn Bundler> {
+    match options.target() {
         Target::X8664appleDarwin => Box::new(MacBundler::new()),
         Target::AArch64appleDarwin => Box::new(MacBundler::new()),
         Target::X8664pcWindowsMsvc => Box::new(WindowsBundler::new()),

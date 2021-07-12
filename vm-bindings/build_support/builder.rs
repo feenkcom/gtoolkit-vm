@@ -1,7 +1,6 @@
 use regex::Regex;
 use std::fmt::Debug;
 use std::path::{Path, PathBuf};
-use std::process::Command;
 use std::{env, fmt, fs};
 
 pub(crate) enum Name<'a> {

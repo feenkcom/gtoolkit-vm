@@ -1,4 +1,4 @@
-use crate::options::FinalOptions;
+use crate::options::BundleOptions;
 use crate::{Library, LibraryLocation};
 use std::path::PathBuf;
 use std::process::Command;
@@ -39,7 +39,7 @@ impl RustLibrary {
         library
     }
 
-    fn crate_source_directory(&self, options: &FinalOptions) -> PathBuf {
+    fn crate_source_directory(&self, options: &BundleOptions) -> PathBuf {
         options.third_party_libraries_directory().join(&self.name)
     }
 }
@@ -53,7 +53,7 @@ impl Library for RustLibrary {
         &self.name
     }
 
-    fn force_compile(&self, options: &FinalOptions) {
+    fn force_compile(&self, options: &BundleOptions) {
         let mut command = Command::new("cargo");
         command
             .arg("build")
@@ -74,7 +74,7 @@ impl Library for RustLibrary {
         }
     }
 
-    fn compiled_library_directories(&self, options: &FinalOptions) -> Vec<PathBuf> {
+    fn compiled_library_directories(&self, options: &BundleOptions) -> Vec<PathBuf> {
         let path = options
             .target_dir()
             .join(options.target().to_string())

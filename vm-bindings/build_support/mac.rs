@@ -120,7 +120,7 @@ impl Builder for MacBuilder {
                     rename.map(|name| name.to_string()),
                 )
             })
-            .filter(|(library, rename)| library.is_some())
+            .filter(|(library, _)| library.is_some())
             .map(|(library, rename)| (library.unwrap(), rename))
             .collect()
     }

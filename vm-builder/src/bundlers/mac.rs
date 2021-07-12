@@ -1,5 +1,6 @@
 use crate::bundlers::Bundler;
-use crate::options::FinalOptions;
+use crate::options::BundleOptions;
+use crate::Executable;
 use std::fs;
 use std::fs::File;
 use std::path::{Path, PathBuf};
@@ -11,7 +12,7 @@ impl MacBundler {
         Self {}
     }
 
-    pub fn create_icns(&self, configuration: &FinalOptions) -> Option<PathBuf> {
+    pub fn create_icns(&self, configuration: &BundleOptions) -> Option<PathBuf> {
         for icon in configuration.icons() {
             let icon_path = Path::new(&icon);
             if icon_path.exists() {
@@ -27,9 +28,9 @@ impl MacBundler {
 }
 
 impl Bundler for MacBundler {
-    fn bundle(&self, configuration: &FinalOptions) {
-        let bundle_location = configuration.bundle_location();
-        let app_name = configuration.app_name();
+    fn bundle(&self, options: &BundleOptions) {
+        let bundle_location = options.bundle_location();
+        let app_name = options.app_name();
 
         let app_dir = bundle_location.join(format!("{}.app", &app_name));
         let contents_dir = app_dir.join("Contents");
@@ -46,28 +47,33 @@ impl Bundler for MacBundler {
         fs::create_dir(&macos_dir).unwrap();
         fs::create_dir(&plugins_dir).unwrap();
 
-        fs::copy(
-            self.compiled_executable_path(configuration),
-            macos_dir.join(configuration.executable_name()),
-        )
-        .unwrap();
-
-        fs::copy(
-            self.compiled_cli_executable_path(configuration),
-            macos_dir.join(configuration.cli_executable_name()),
-        )
-        .unwrap();
+        options.executables().iter().for_each(|executable| {
+            let compiled_executable_path = options.compiled_executable_path(executable);
+            let bundled_executable_path =
+                macos_dir.join(options.bundled_executable_name(executable));
+            match fs::copy(&compiled_executable_path, &bundled_executable_path) {
+                Ok(_) => {}
+                Err(error) => {
+                    panic!(
+                        "Could not copy {} to {} due to {}",
+                        &compiled_executable_path.display(),
+                        &bundled_executable_path.display(),
+                        error
+                    );
+                }
+            };
+        });
 
         fs_extra::copy_items(
-            &self.compiled_libraries(configuration),
+            &self.compiled_libraries(options),
             plugins_dir,
             &fs_extra::dir::CopyOptions::new(),
         )
         .unwrap();
 
-        let icon = if let Some(icon) = self.create_icns(configuration) {
+        let icon = if let Some(icon) = self.create_icns(options) {
             let resource_icon_name = resources_dir
-                .join(configuration.app_name())
+                .join(options.app_name())
                 .with_extension("icns");
             fs::copy(icon, resource_icon_name.clone()).unwrap();
             Some(resource_icon_name.clone())
@@ -77,11 +83,11 @@ impl Bundler for MacBundler {
 
         let info_plist_template = mustache::compile_str(INFO_PLIST).unwrap();
         let info = Info {
-            bundle_name: configuration.app_name(),
-            bundle_display_name: configuration.app_name(),
-            executable_name: self.executable_name(configuration),
-            bundle_identifier: self.bundle_identifier(configuration),
-            bundle_version: self.bundle_version(configuration),
+            bundle_name: options.app_name().to_owned(),
+            bundle_display_name: options.app_name().to_owned(),
+            executable_name: options.bundled_executable_name(&Executable::App),
+            bundle_identifier: options.identifier().to_owned(),
+            bundle_version: options.version().to_string(),
             bundle_icon: icon.as_ref().map_or("".to_string(), |icon| {
                 icon.file_name().unwrap().to_str().unwrap().to_string()
             }),
