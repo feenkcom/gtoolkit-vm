@@ -51,6 +51,12 @@ impl Builder for MacBuilder {
             .define("FEATURE_LIB_GIT2", "OFF")
             .define("FEATURE_LIB_SDL2", "OFF");
 
+        if cfg!(target_arch = "x86_64") {
+            config.define("CMAKE_OSX_ARCHITECTURES", "x86_64");
+        } else if cfg!(target_arch = "aarch64") {
+            config.define("CMAKE_OSX_ARCHITECTURES", "arm64");
+        }
+
         if let Some(vm_maker) = self.vm_maker() {
             config.define("GENERATE_PHARO_VM", vm_maker);
         }

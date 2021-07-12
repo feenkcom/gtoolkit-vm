@@ -9,11 +9,17 @@ pub enum Executable {
 }
 
 impl Executable {
-    pub fn cargo_bin_name(&self) -> &str {
-        match self {
+    pub fn compiled_name(&self, options: &ResolvedOptions) -> String {
+        let mut executable_name = (match self {
             Executable::App => "vm_client",
             Executable::Cli => "vm_client-cli",
-        }
+        })
+        .to_owned();
+
+        if let Some(extension) = options.executable_extension() {
+            executable_name = format!("{}.{}", &executable_name, &extension);
+        };
+        executable_name
     }
 
     pub fn bundled_name(&self, options: &ResolvedOptions) -> String {
@@ -116,11 +122,16 @@ impl BundleOptions {
         executable.bundled_name(&self.options)
     }
 
+    /// A name of the corresponding executable as compiled by cargo. The name either depends on the Cargo.toml of the vm-client
+    pub fn compiled_executable_name(&self, executable: &Executable) -> String {
+        executable.compiled_name(&self.options)
+    }
+
     /// A path to the compiled binary after running cargo command.
     /// It is the same as defined in the [[bin]] section of the Cargo.toml
     pub fn compiled_executable_path(&self, executable: &Executable) -> PathBuf {
         self.compilation_location()
-            .join(executable.cargo_bin_name())
+            .join(executable.compiled_name(&self.options))
     }
 
     pub fn default_bundle_location(&self) -> PathBuf {

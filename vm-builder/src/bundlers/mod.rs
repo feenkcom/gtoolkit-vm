@@ -6,7 +6,7 @@ pub mod mac;
 pub mod windows;
 
 pub use crate::libraries::Library;
-use crate::{Executable, ExecutableOptions};
+use crate::ExecutableOptions;
 use std::process::Command;
 
 pub trait Bundler {
@@ -26,7 +26,7 @@ pub trait Bundler {
             .arg("--package")
             .arg("vm-client")
             .arg("--bin")
-            .arg(options.cargo_bin_name())
+            .arg(options.compiled_executable_name())
             .arg("--target")
             .arg(options.target().to_string());
 
@@ -102,15 +102,6 @@ pub trait Bundler {
 
     fn default_bundle_location(&self, configuration: &BundleOptions) -> PathBuf {
         configuration.default_bundle_location()
-    }
-
-    fn compiled_executable_path(
-        &self,
-        configuration: &BundleOptions,
-        executable: &Executable,
-    ) -> PathBuf {
-        self.compilation_location(configuration)
-            .join(executable.cargo_bin_name())
     }
 
     fn compiled_libraries_directory(&self, configuration: &BundleOptions) -> PathBuf {

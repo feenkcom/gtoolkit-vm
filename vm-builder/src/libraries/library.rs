@@ -1,10 +1,10 @@
 use crate::options::BundleOptions;
 use std::error::Error;
+use std::fmt::Debug;
 use std::path::PathBuf;
 use std::process::Command;
 use url::Url;
 use user_error::UserFacingError;
-use std::fmt::Debug;
 
 pub trait Library: Debug {
     fn location(&self) -> &LibraryLocation;
