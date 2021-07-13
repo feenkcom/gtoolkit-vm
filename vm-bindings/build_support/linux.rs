@@ -88,6 +88,8 @@ impl Builder for LinuxBuilder {
             (Name::Exact("libUUIDPlugin.so"), None),
             // testing
             (Name::Exact("libTestLibrary.so"), None),
+            // third party
+            (Name::Exact("libffi.so"), None),
         ];
 
         libs.iter()
