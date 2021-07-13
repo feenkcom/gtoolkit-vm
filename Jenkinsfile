@@ -50,6 +50,7 @@ pipeline {
                     }
 
                     steps {
+                        sh 'if [ -d target ]; then rm -Rf target; fi'
                         sh 'git clean -fdx'
                         sh 'git submodule update --init --recursive'
 
@@ -79,6 +80,7 @@ pipeline {
                     }
 
                     steps {
+                        sh 'if [ -d target ]; then rm -Rf target; fi'
                         sh 'git clean -fdx'
                         sh 'git submodule update --init --recursive'
 
@@ -107,6 +109,7 @@ pipeline {
                     }
 
                     steps {
+                        sh 'if [ -d target ]; then rm -Rf target; fi'
                         sh 'git clean -fdx'
                         sh 'git submodule update --init --recursive'
 
@@ -149,6 +152,7 @@ pipeline {
                     }
                 
                     steps {
+                        powershell 'Remove-Item -Force -Recurse -Path target -ErrorAction Ignore'
                         powershell 'git clean -fdx'
                         powershell 'git submodule update --init --recursive'
                 
