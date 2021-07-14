@@ -48,7 +48,6 @@ pub trait Library: Debug {
                     .collect::<Vec<PathBuf>>();
 
                 if libraries.len() > 0 {
-                    println!("Found library {}", libraries.get(0).unwrap().display());
                     return libraries.get(0).unwrap().clone();
                 }
             }

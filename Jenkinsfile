@@ -142,8 +142,8 @@ pipeline {
                                 --release """
 
                         sh """
-                            cd target/${TARGET}/release/bundle/
-                            zip -r ${APP_NAME}${TARGET}.zip ./${APP_NAME}/
+                            cd target/${TARGET}/release/bundle/${APP_NAME}/
+                            zip -r ${APP_NAME}${TARGET}.zip .
                             """
 
                         sh 'mv target/${TARGET}/release/bundle/${APP_NAME}${TARGET}.zip ./${APP_NAME}-${TARGET}.zip'
@@ -185,7 +185,7 @@ pipeline {
                                 --icons icons/GlamorousToolkit.ico `
                                 --release """
                 
-                        powershell "Compress-Archive -Path target/${TARGET}/release/bundle/${APP_NAME} -DestinationPath ${APP_NAME}-${TARGET}.zip"
+                        powershell "Compress-Archive -Path target/${TARGET}/release/bundle/${APP_NAME}/* -DestinationPath ${APP_NAME}-${TARGET}.zip"
                         stash includes: "${APP_NAME}-${TARGET}.zip", name: "${TARGET}"
                     }
                  }
