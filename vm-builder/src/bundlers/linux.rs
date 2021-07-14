@@ -58,7 +58,7 @@ impl Bundler for LinuxBundler {
                 binary_dir.join(options.bundled_executable_name(executable));
             match fs::copy(&compiled_executable_path, &bundled_executable_path) {
                 Ok(_) => {
-                    self.set_rpath(&compiled_executable_path).unwrap();
+                    self.set_rpath(&bundled_executable_path).unwrap();
                 }
                 Err(error) => {
                     panic!(
