@@ -47,6 +47,8 @@ pipeline {
                     environment {
                         TARGET = "${MACOS_INTEL_TARGET}"
                         PATH = "$HOME/.cargo/bin:/usr/local/bin/:$PATH"
+                        CERT = credentials('devcertificate')
+                        APPLEPASSWORD = credentials('notarizepassword')
                     }
 
                     steps {
@@ -64,8 +66,15 @@ pipeline {
                                 --libraries ${APP_LIBRARIES} \
                                 --release """
 
-                        sh "ditto -c -k --sequesterRsrc --keepParent target/${TARGET}/release/bundle/${APP_NAME}.app ${APP_NAME}-${TARGET}.app.zip"
+                        sh "curl -o feenk-signer -LsS  https://github.com/feenkcom/feenk-signer/releases/latest/download/feenk-signer-${TARGET}"
+                        sh "chmod +x feenk-signer"
 
+                        sh "./feenk-signer target/${TARGET}/release/bundle/${APP_NAME}.app"
+
+                        sh "ditto -c -k --sequesterRsrc --keepParent target/${TARGET}/release/bundle/${APP_NAME}.app ${APP_NAME}-${TARGET}.app.zip"
+                        sh """
+                           xcrun altool -t osx -f ${APP_NAME}-${TARGET}.app.zip -itc_provider "77664ZXL29" --primary-bundle-id "com.feenk.gtoolkit-vm-x86_64" --notarize-app --verbose  --username "george.ganea@feenk.com" --password "${APPLEPASSWORD}"
+                           """
                         stash includes: "${APP_NAME}-${TARGET}.app.zip", name: "${TARGET}"
                     }
                 }
@@ -77,6 +86,8 @@ pipeline {
                     environment {
                         TARGET = "${MACOS_M1_TARGET}"
                         PATH = "$HOME/.cargo/bin:/opt/homebrew/bin:$PATH"
+                        CERT = credentials('devcertificate')
+                        APPLEPASSWORD = credentials('notarizepassword')
                     }
 
                     steps {
@@ -94,8 +105,16 @@ pipeline {
                                 --libraries ${APP_LIBRARIES} \
                                 --release """
 
+                        sh "curl -o feenk-signer -LsS  https://github.com/feenkcom/feenk-signer/releases/latest/download/feenk-signer-${TARGET}"
+                        sh "chmod +x feenk-signer"
+
+                        sh "./feenk-signer target/${TARGET}/release/bundle/${APP_NAME}.app"
+
                         sh "ditto -c -k --sequesterRsrc --keepParent target/${TARGET}/release/bundle/${APP_NAME}.app ${APP_NAME}-${TARGET}.app.zip"
 
+                        sh """
+                           xcrun altool -t osx -f ${APP_NAME}-${TARGET}.app.zip -itc_provider "77664ZXL29" --primary-bundle-id "com.feenk.gtoolkit-vm-aarch64" --notarize-app --verbose  --username "george.ganea@feenk.com" --password "${APPLEPASSWORD}"
+                           """
                         stash includes: "${APP_NAME}-${TARGET}.app.zip", name: "${TARGET}"
                     }
                 }
