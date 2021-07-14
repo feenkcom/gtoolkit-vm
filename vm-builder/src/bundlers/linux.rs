@@ -28,6 +28,7 @@ impl Bundler for LinuxBundler {
         }
         fs::create_dir_all(&app_dir).unwrap();
         fs::create_dir(&binary_dir).unwrap();
+        fs::create_dir(&library_dir).unwrap();
 
         options.executables().iter().for_each(|executable| {
             let compiled_executable_path = options.compiled_executable_path(executable);
