@@ -73,7 +73,7 @@ pipeline {
 
                         sh "ditto -c -k --sequesterRsrc --keepParent target/${TARGET}/release/bundle/${APP_NAME}.app ${APP_NAME}-${TARGET}.app.zip"
                         sh """
-                           xcrun altool -t osx -f ${APP_NAME}-${TARGET}.app.zip -itc_provider "77664ZXL29" --primary-bundle-id "com.feenk.gtoolkit-vm-x86_64" --notarize-app --verbose  --username "george.ganea@feenk.com" --password "${APPLEPASSWORD}"
+                           xcrun altool -t osx -f ${APP_NAME}-${TARGET}.app.zip -itc_provider "77664ZXL29" --primary-bundle-id "com.feenk.gtoolkit-vm-x86-64" --notarize-app --verbose  --username "george.ganea@feenk.com" --password "${APPLEPASSWORD}"
                            """
                         stash includes: "${APP_NAME}-${TARGET}.app.zip", name: "${TARGET}"
                     }
