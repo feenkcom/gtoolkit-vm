@@ -19,6 +19,10 @@ impl Bundler for LinuxBundler {
         let app_dir = bundle_location.join(&app_name);
         let binary_dir = app_dir.join("bin");
 
+        let library_dir_name = "lib";
+
+        let library_dir = app_dir.join(library_dir_name);
+
         if app_dir.exists() {
             fs::remove_dir_all(&app_dir).unwrap();
         }
@@ -33,8 +37,7 @@ impl Bundler for LinuxBundler {
                 Ok(_) => {
                     Command::new("patchelf")
                         .arg("--set-rpath")
-                        .arg("$ORIGIN")
-                        .arg(&bundled_executable_path)
+                        .arg(format!("$ORIGIN/../{}", library_dir_name))
                         .status()
                         .unwrap();
                 }
@@ -51,7 +54,7 @@ impl Bundler for LinuxBundler {
 
         fs_extra::copy_items(
             &self.compiled_libraries(options),
-            &binary_dir,
+            &library_dir,
             &fs_extra::dir::CopyOptions::new(),
         )
         .unwrap();
