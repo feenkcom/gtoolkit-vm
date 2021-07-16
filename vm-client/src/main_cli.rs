@@ -42,14 +42,13 @@ fn main() {
     vm_args.push(std::env::args().collect::<Vec<String>>()[0].to_owned());
     vm_args.push(image_path.as_os_str().to_str().unwrap().to_owned());
 
-    match matches.subcommand() {
-        Some((external, sub_m)) => {
-            vm_args.push(external.to_owned());
-            for each in sub_m.values_of("").unwrap() {
+    if let Some((external, sub_m)) = matches.subcommand() {
+        vm_args.push(external.to_owned());
+        if let Some(values) = sub_m.values_of("") {
+            for each in values {
                 vm_args.push(each.to_owned());
             }
         }
-        _ => {}
     }
 
     let mut parameters = VMParameters::from_args(vm_args);
