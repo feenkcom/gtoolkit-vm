@@ -158,7 +158,10 @@ impl Library for CMakeLibrary {
         vec![lib_dir, bin_dir]
     }
 
-    fn ensure_requirements(&self) {}
+    fn ensure_requirements(&self) {
+        which::which("pkg-config")
+            .expect("CMake projects require pkg-config, make sure it is installed");
+    }
 }
 
 impl From<CMakeLibrary> for Box<dyn Library> {
