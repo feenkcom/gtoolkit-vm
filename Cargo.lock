@@ -333,6 +333,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "file-matcher"
+version = "0.2.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "43336d6760b963aab1f89755c24f8b916ba5b66f82e0f033bebba5df29f92312"
+dependencies = [
+ "regex",
+ "wildmatch",
+]
+
+[[package]]
 name = "fnv"
 version = "1.0.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1761,6 +1771,7 @@ version = "0.1.0"
 dependencies = [
  "bindgen",
  "cmake",
+ "file-matcher",
  "fs_extra",
  "ndk",
  "ndk-glue",
@@ -1929,6 +1940,12 @@ dependencies = [
  "either",
  "libc",
 ]
+
+[[package]]
+name = "wildmatch"
+version = "2.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d6c48bd20df7e4ced539c12f570f937c6b4884928a87fee70a479d72f031d4e0"
 
 [[package]]
 name = "winapi"

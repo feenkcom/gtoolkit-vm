@@ -1,5 +1,6 @@
 extern crate bindgen;
 extern crate cmake;
+extern crate file_matcher;
 extern crate fs_extra;
 extern crate regex;
 extern crate titlecase;
