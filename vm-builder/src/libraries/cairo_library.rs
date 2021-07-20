@@ -67,8 +67,7 @@ impl Library for CairoLibrary {
         );
 
         println!("PKG_CONFIG_PATH={:?}", std::env::var("PKG_CONFIG_PATH"));
-        println!("{:?}", pkg_config::probe_library("freetype2").unwrap());
-
+        
         let mut cpp_flags = std::env::var("CPPFLAGS").unwrap_or("".to_owned());
         cpp_flags = format!(
             "{} {}",
