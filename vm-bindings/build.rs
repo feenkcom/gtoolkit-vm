@@ -2,19 +2,25 @@ extern crate bindgen;
 extern crate cmake;
 extern crate file_matcher;
 extern crate fs_extra;
-extern crate regex;
 extern crate titlecase;
 extern crate which;
 
 mod build_support;
-
-use crate::build_support::{Builder, PlatformBuilder};
+use build_support::*;
 
 ///
 /// Possible parameters
 ///  - VM_CLIENT_VMMAKER to use a specific VM to run a VM Maker image
 fn main() {
-    let builder = Box::new(PlatformBuilder::default());
+    let builder = match std::env::consts::OS {
+        "linux" => LinuxBuilder::default().boxed(),
+        "macos" => MacBuilder::default().boxed(),
+        "windows" => WindowsBuilder::default().boxed(),
+        _ => {
+            panic!("The platform you're compiling for is not supported");
+        }
+    };
+
     println!("About to build a vm using {:?}", &builder);
     builder.ensure_build_tools();
 

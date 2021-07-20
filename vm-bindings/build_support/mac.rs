@@ -1,18 +1,12 @@
 use crate::build_support::Builder;
 
-use file_matcher::FileNamed;
+use file_matcher::{FileNamed, OneFile, OneFileNamed};
 use std::fmt;
 use std::fmt::{Debug, Formatter};
 use std::path::PathBuf;
 
 #[derive(Default, Clone)]
-pub struct MacBuilder {}
-
-impl MacBuilder {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
+pub struct MacBuilder;
 
 impl Debug for MacBuilder {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
@@ -79,45 +73,47 @@ impl Builder for MacBuilder {
         );
     }
 
-    fn shared_libraries_to_export(&self) -> Vec<(PathBuf, Option<String>)> {
+    fn shared_libraries_to_export(&self) -> Vec<OneFile> {
         assert!(
             self.compiled_libraries_directory().exists(),
             "Must exist: {:?}",
             self.compiled_libraries_directory().display()
         );
 
-        let libs = vec![
+        vec![
             // core
-            FileNamed::exact("libPharoVMCore.dylib"),
+            FileNamed::exact("libPharoVMCore.dylib").boxed(),
             // plugins
-            FileNamed::exact("libB2DPlugin.dylib"),
-            FileNamed::exact("libBitBltPlugin.dylib"),
-            FileNamed::exact("libDSAPrims.dylib"),
-            FileNamed::exact("libFileAttributesPlugin.dylib"),
-            FileNamed::exact("libFilePlugin.dylib"),
-            FileNamed::exact("libJPEGReaderPlugin.dylib"),
-            FileNamed::exact("libJPEGReadWriter2Plugin.dylib"),
-            FileNamed::exact("libLargeIntegers.dylib"),
-            FileNamed::exact("libLocalePlugin.dylib"),
-            FileNamed::exact("libMiscPrimitivePlugin.dylib"),
-            FileNamed::exact("libSocketPlugin.dylib"),
-            FileNamed::exact("libSqueakSSL.dylib"),
-            FileNamed::exact("libSurfacePlugin.dylib"),
-            FileNamed::exact("libUnixOSProcessPlugin.dylib"),
-            FileNamed::exact("libUUIDPlugin.dylib"),
+            FileNamed::exact("libB2DPlugin.dylib").boxed(),
+            FileNamed::exact("libBitBltPlugin.dylib").boxed(),
+            FileNamed::exact("libDSAPrims.dylib").boxed(),
+            FileNamed::exact("libFileAttributesPlugin.dylib").boxed(),
+            FileNamed::exact("libFilePlugin.dylib").boxed(),
+            FileNamed::exact("libJPEGReaderPlugin.dylib").boxed(),
+            FileNamed::exact("libJPEGReadWriter2Plugin.dylib").boxed(),
+            FileNamed::exact("libLargeIntegers.dylib").boxed(),
+            FileNamed::exact("libLocalePlugin.dylib").boxed(),
+            FileNamed::exact("libMiscPrimitivePlugin.dylib").boxed(),
+            FileNamed::exact("libSocketPlugin.dylib").boxed(),
+            FileNamed::exact("libSqueakSSL.dylib").boxed(),
+            FileNamed::exact("libSurfacePlugin.dylib").boxed(),
+            FileNamed::exact("libUnixOSProcessPlugin.dylib").boxed(),
+            FileNamed::exact("libUUIDPlugin.dylib").boxed(),
             // third party
-            FileNamed::wildmatch("libcairo*.dylib"),
+            FileNamed::exact("libcairo.2.dylib").boxed(),
             #[cfg(target_arch = "x86_64")]
-            FileNamed::wildmatch("libfreetype*.dylib"),
-            FileNamed::wildmatch("libpixman*.dylib"),
-            FileNamed::wildmatch("libpng*.dylib"),
+            FileNamed::wildmatch("libfreetype*.dylib").alias("libfreetype.6.dylib").boxed(),
+            FileNamed::exact("libpixman-1.0.dylib").boxed(),
+            FileNamed::any(vec!["libpng12.0.dylib", "libpng16.0.dylib"]).boxed(),
             // testing
-            FileNamed::exact("libTestLibrary.dylib"),
-        ];
+            FileNamed::exact("libTestLibrary.dylib").boxed(),
+        ]
+        .into_iter()
+        .map(|library| library.within_path_buf(self.compiled_libraries_directory()))
+        .collect()
+    }
 
-        libs.iter()
-            .map(|library| library.within(self.compiled_libraries_directory()))
-            .map(|library| (library.as_path_buf().unwrap(), None))
-            .collect()
+    fn boxed(self) -> Box<dyn Builder> {
+        Box::new(self)
     }
 }

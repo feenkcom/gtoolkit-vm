@@ -1,23 +1,10 @@
 mod builder;
 pub use builder::Builder;
 
-#[cfg(target_os = "linux")]
-pub mod linux;
-#[cfg(target_os = "macos")]
-pub mod mac;
-#[cfg(target_os = "windows")]
-pub mod windows;
+mod linux;
+mod mac;
+mod windows;
 
-#[cfg(target_os = "linux")]
-pub use linux::LinuxBuilder as PlatformBuilder;
-#[cfg(target_os = "macos")]
-pub use mac::MacBuilder as PlatformBuilder;
-#[cfg(target_os = "windows")]
-pub use windows::WindowsBuilder as PlatformBuilder;
-
-#[cfg(all(
-    not(target_os = "macos"),
-    not(target_os = "windows"),
-    not(target_os = "linux")
-))]
-compile_error!("The platform you're compiling for is not supported");
+pub use linux::LinuxBuilder;
+pub use mac::MacBuilder;
+pub use windows::WindowsBuilder;

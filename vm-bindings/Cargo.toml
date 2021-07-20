@@ -16,8 +16,7 @@ ndk-glue = "0.1.0"
 [build-dependencies]
 bindgen = "0.52.0"
 fs_extra = "1.1.0"
-regex = "1"
 cmake = { git = "https://github.com/syrel/cmake-rs", rev = "cce9d58d87bd5dd95afb9183fdbbf4cb5d4b2255" }
 which = "4.1.0"
 titlecase = "1.1.0"
-file-matcher = "0.2.4"
+file-matcher = "0.4.0"

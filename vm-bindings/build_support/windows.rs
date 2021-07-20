@@ -1,8 +1,9 @@
 use crate::build_support::Builder;
+use file_matcher::{FileNamed, OneFile};
 use std::fmt;
 use std::fmt::{Debug, Formatter};
 use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
+use std::process::Command;
 use titlecase::titlecase;
 
 #[derive(Default, Clone)]
@@ -63,33 +64,6 @@ impl WindowsBuilder {
             .join("lib")
             .join("x64")
             .join(self.profile())
-    }
-
-    fn export_dll_from_directory(
-        &self,
-        directory: &PathBuf,
-        libraries: &mut Vec<(PathBuf, Option<String>)>,
-    ) {
-        directory
-            .read_dir()
-            .unwrap()
-            .map(|each_entry| each_entry.unwrap())
-            .map(|each_entry| each_entry.path())
-            .filter(|each_path| each_path.is_file())
-            .filter(|each_file| each_file.extension().is_some())
-            .filter(|each_file| each_file.extension().unwrap().to_str().unwrap() == "dll")
-            .for_each(|each| {
-                if !self.includes_dll(&each, libraries) {
-                    libraries.push((each, None))
-                }
-            });
-    }
-
-    fn includes_dll(&self, file: &PathBuf, libraries: &mut Vec<(PathBuf, Option<String>)>) -> bool {
-        libraries
-            .iter()
-            .find(|each| each.0.file_name().unwrap() == file.file_name().unwrap())
-            .is_some()
     }
 }
 
@@ -186,26 +160,70 @@ impl Builder for WindowsBuilder {
         );
     }
 
-    fn shared_libraries_to_export(&self) -> Vec<(PathBuf, Option<String>)> {
+    fn shared_libraries_to_export(&self) -> Vec<OneFile> {
+        let vm_build = &self
+            .output_directory()
+            .join("build")
+            .join(titlecase(&self.profile()));
+
+        let ffi_test = &self
+            .output_directory()
+            .join("build")
+            .join("build")
+            .join("ffiTestLibrary")
+            .join(titlecase(&self.profile()));
+
+        let third_party_build = self
+            .output_directory()
+            .join("build")
+            .join("build")
+            .join("vm");
+
         let mut libraries = vec![];
 
-        self.export_dll_from_directory(
-            &self
-                .output_directory()
-                .join("build")
-                .join("build")
-                .join("vm"),
-            &mut libraries,
-        );
+        vec![
+            // core
+            FileNamed::exact("PharoVMCore.dll"),
+            // plugins
+            FileNamed::exact("B2DPlugin.dll"),
+            FileNamed::exact("BitBltPlugin.dll"),
+            FileNamed::exact("DSAPrims.dll"),
+            FileNamed::exact("FileAttributesPlugin.dll"),
+            FileNamed::exact("FilePlugin.dll"),
+            FileNamed::exact("JPEGReaderPlugin.dll"),
+            FileNamed::exact("JPEGReadWriter2Plugin.dll"),
+            FileNamed::exact("LargeIntegers.dll"),
+            FileNamed::exact("LocalePlugin.dll"),
+            FileNamed::exact("MiscPrimitivePlugin.dll"),
+            FileNamed::exact("SocketPlugin.dll"),
+            FileNamed::exact("SqueakSSL.dll"),
+            FileNamed::exact("SurfacePlugin.dll"),
+            FileNamed::exact("UUIDPlugin.dll"),
+        ]
+        .into_iter()
+        .map(|library| library.within(&vm_build))
+        .for_each(|each| libraries.push(each));
 
-        self.export_dll_from_directory(
-            &self
-                .output_directory()
-                .join("build")
-                .join(titlecase(&self.profile())),
-            &mut libraries,
-        );
+        vec![
+            // third party
+            FileNamed::exact("ffi.dll"),
+            FileNamed::exact("libbz2-1.dll"),
+            FileNamed::exact("libcairo-2.dll"),
+            FileNamed::exact("libexpat-1.dll"),
+            FileNamed::exact("libfontconfig-1.dll"),
+            FileNamed::exact("libpixman-1-0.dll"),
+            FileNamed::exact("libpng16-16.dll"),
+        ]
+        .into_iter()
+        .map(|library| library.within(&third_party_build))
+        .for_each(|each| libraries.push(each));
+
+        libraries.push(FileNamed::exact("TestLibrary.dll").within(&ffi_test));
 
         libraries
+    }
+
+    fn boxed(self) -> Box<dyn Builder> {
+        Box::new(self)
     }
 }

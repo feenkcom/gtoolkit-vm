@@ -1,19 +1,12 @@
-use crate::build_support::builder::Name;
 use crate::build_support::Builder;
 
+use file_matcher::{FileNamed, OneFile};
 use std::fmt;
 use std::fmt::{Debug, Formatter};
 use std::path::PathBuf;
-use std::process::Command;
 
 #[derive(Default, Clone)]
-pub struct LinuxBuilder {}
-
-impl LinuxBuilder {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
+pub struct LinuxBuilder;
 
 impl Debug for LinuxBuilder {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
@@ -60,47 +53,43 @@ impl Builder for LinuxBuilder {
         );
     }
 
-    fn shared_libraries_to_export(&self) -> Vec<(PathBuf, Option<String>)> {
+    fn shared_libraries_to_export(&self) -> Vec<OneFile> {
         assert!(
             self.compiled_libraries_directory().exists(),
             "Must exist: {:?}",
             self.compiled_libraries_directory().display()
         );
 
-        let libs: Vec<(Name, Option<&str>)> = vec![
+        vec![
             // core
-            (Name::Exact("libPharoVMCore.so"), None),
+            FileNamed::exact("libPharoVMCore.so"),
             // plugins
-            (Name::Exact("libB2DPlugin.so"), None),
-            (Name::Exact("libBitBltPlugin.so"), None),
-            (Name::Exact("libDSAPrims.so"), None),
-            (Name::Exact("libFileAttributesPlugin.so"), None),
-            (Name::Exact("libFilePlugin.so"), None),
-            (Name::Exact("libJPEGReaderPlugin.so"), None),
-            (Name::Exact("libJPEGReadWriter2Plugin.so"), None),
-            (Name::Exact("libLargeIntegers.so"), None),
-            (Name::Exact("libLocalePlugin.so"), None),
-            (Name::Exact("libMiscPrimitivePlugin.so"), None),
-            (Name::Exact("libSocketPlugin.so"), None),
-            (Name::Exact("libSqueakSSL.so"), None),
-            (Name::Exact("libSurfacePlugin.so"), None),
-            (Name::Exact("libUnixOSProcessPlugin.so"), None),
-            (Name::Exact("libUUIDPlugin.so"), None),
+            FileNamed::exact("libB2DPlugin.so"),
+            FileNamed::exact("libBitBltPlugin.so"),
+            FileNamed::exact("libDSAPrims.so"),
+            FileNamed::exact("libFileAttributesPlugin.so"),
+            FileNamed::exact("libFilePlugin.so"),
+            FileNamed::exact("libJPEGReaderPlugin.so"),
+            FileNamed::exact("libJPEGReadWriter2Plugin.so"),
+            FileNamed::exact("libLargeIntegers.so"),
+            FileNamed::exact("libLocalePlugin.so"),
+            FileNamed::exact("libMiscPrimitivePlugin.so"),
+            FileNamed::exact("libSocketPlugin.so"),
+            FileNamed::exact("libSqueakSSL.so"),
+            FileNamed::exact("libSurfacePlugin.so"),
+            FileNamed::exact("libUnixOSProcessPlugin.so"),
+            FileNamed::exact("libUUIDPlugin.so"),
             // testing
-            (Name::Exact("libTestLibrary.so"), None),
+            FileNamed::exact("libTestLibrary.so"),
             // third party
-            (Name::Exact("libffi.so"), None),
-        ];
+            FileNamed::exact("libffi.so"),
+        ]
+        .into_iter()
+        .map(|each| each.within(self.compiled_libraries_directory()))
+        .collect()
+    }
 
-        libs.iter()
-            .map(|(library, rename)| {
-                (
-                    library.find_file(&self.compiled_libraries_directory()),
-                    rename.map(|name| name.to_string()),
-                )
-            })
-            .filter(|(library, rename)| library.is_some())
-            .map(|(library, rename)| (library.unwrap(), rename))
-            .collect()
+    fn boxed(self) -> Box<dyn Builder> {
+        Box::new(self)
     }
 }

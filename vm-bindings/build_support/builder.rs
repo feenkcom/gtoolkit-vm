@@ -1,76 +1,7 @@
-use regex::Regex;
+use file_matcher::{OneFile, OneFileCopier};
 use std::fmt::Debug;
 use std::path::{Path, PathBuf};
 use std::{env, fmt, fs};
-
-pub(crate) enum Name<'a> {
-    Exact(&'a str),
-    Any(Vec<&'a str>),
-    Regex(&'a str),
-    Optional(&'a str),
-}
-
-impl<'a> Name<'a> {
-    pub(crate) fn find_file(&self, directory: &PathBuf) -> Option<PathBuf> {
-        match self {
-            Name::Exact(name) => {
-                let file = directory.join(name);
-                assert!(file.exists(), "File named {} must exist!", name);
-                Some(file)
-            }
-            Name::Any(names) => {
-                let files = names
-                    .iter()
-                    .map(|each| directory.join(each))
-                    .filter(|each| each.exists())
-                    .collect::<Vec<PathBuf>>();
-                assert!(
-                    files.len() > 0,
-                    "At least one file out of {:?} must exist",
-                    names
-                );
-                Some(files.first().unwrap().clone())
-            }
-            Name::Regex(regex) => {
-                let file = self.find_file_in_directory_matching(regex, directory);
-                assert!(file.is_some(), "At least one file must match {}", regex);
-                file
-            }
-            Name::Optional(name) => {
-                let file = directory.join(name);
-                if file.exists() {
-                    Some(file)
-                } else {
-                    None
-                }
-            }
-        }
-    }
-
-    fn find_file_in_directory_matching(
-        &self,
-        file_name_regex: &str,
-        directory: &PathBuf,
-    ) -> Option<PathBuf> {
-        directory.read_dir().map_or(None, |dir| {
-            dir.filter(|each_entry| each_entry.is_ok())
-                .map(|each_entry| each_entry.unwrap())
-                .map(|each_entry| each_entry.path())
-                .filter(|each_path| each_path.is_file())
-                .filter(|each_path| {
-                    each_path.file_name().map_or(false, |file_name| {
-                        file_name.to_str().map_or(false, |file_name| {
-                            Regex::new(file_name_regex)
-                                .map_or(false, |regex| regex.is_match(file_name))
-                        })
-                    })
-                })
-                .collect::<Vec<PathBuf>>()
-                .first()
-                .map(|path| path.clone())
-        })
-    }
-}
 
 pub trait Builder: Debug {
     fn is_compiled(&self) -> bool {
@@ -214,20 +145,13 @@ pub trait Builder: Debug {
         }
 
         for shared_library in self.shared_libraries_to_export() {
-            let origin = shared_library.0.clone();
-
-            let target_file_name = shared_library.1.as_ref().map_or_else(
-                || origin.file_name().unwrap().to_str().unwrap().to_string(),
-                |name| name.to_string(),
-            );
-
-            let target = self.exported_libraries_directory().join(target_file_name);
-            match fs::copy(&origin, &target) {
+            let target = self.exported_libraries_directory();
+            match shared_library.copy(&target) {
                 Ok(_) => {}
                 Err(error) => {
                     panic!(
-                        "Could not copy {} to {} due to {}",
-                        &origin.display(),
+                        "Could not copy {:?} to {} due to {}",
+                        &shared_library,
                         &target.display(),
                         error
                     )
@@ -236,7 +160,7 @@ pub trait Builder: Debug {
         }
     }
 
-    fn shared_libraries_to_export(&self) -> Vec<(PathBuf, Option<String>)>;
+    fn shared_libraries_to_export(&self) -> Vec<OneFile>;
 
     fn print_directories(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_map()
@@ -260,4 +184,6 @@ pub trait Builder: Debug {
             )
             .finish()
     }
+
+    fn boxed(self) -> Box<dyn Builder>;
 }
