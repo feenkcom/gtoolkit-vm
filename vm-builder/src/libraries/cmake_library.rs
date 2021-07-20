@@ -67,6 +67,14 @@ impl NativeLibrary for CMakeLibrary {
     fn native_library_dependency_prefixes(&self, options: &BundleOptions) -> Vec<PathBuf> {
         self.dependencies.dependency_prefixes(options)
     }
+
+    fn pkg_config_directory(&self, options: &BundleOptions) -> Option<PathBuf> {
+        Some(
+            self.native_library_prefix(options)
+                .join("lib")
+                .join("pkgconfig"),
+        )
+    }
 }
 
 impl Library for CMakeLibrary {
@@ -165,6 +173,12 @@ impl Library for CMakeLibrary {
 }
 
 impl From<CMakeLibrary> for Box<dyn Library> {
+    fn from(library: CMakeLibrary) -> Self {
+        Box::new(library)
+    }
+}
+
+impl From<CMakeLibrary> for Box<dyn NativeLibrary> {
     fn from(library: CMakeLibrary) -> Self {
         Box::new(library)
     }

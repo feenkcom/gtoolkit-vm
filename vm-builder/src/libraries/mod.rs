@@ -1,10 +1,14 @@
+mod cairo_library;
 mod cmake_library;
 mod library;
 mod native_library;
 mod openssl_library;
+mod pixman_library;
 mod rust_library;
 mod system_library;
 
+use crate::libraries::cairo_library::CairoLibrary;
+use crate::libraries::pixman_library::PixmanLibrary;
 pub use cmake_library::CMakeLibrary;
 pub use library::{
     CompiledLibraryName, GitLocation as LibraryGitLocation, Library, LibraryLocation,
@@ -53,6 +57,41 @@ pub fn git() -> CMakeLibrary {
     .define("CMAKE_SHARED_LINKER_FLAGS:STRING", "-lssl -lcrypto")
     .define("BUILD_CLAR", "OFF")
     .depends(Box::new(libssh2))
+}
+
+pub fn freetype_static() -> CMakeLibrary {
+    CMakeLibrary::new(
+        "freetype",
+        LibraryLocation::Git(
+            LibraryGitLocation::new("https://github.com/freetype/freetype.git").tag("VER-2-11-0"),
+        ),
+    )
+    .compiled_name(CompiledLibraryName::Matching("freetype".to_string()))
+}
+
+pub fn png_static() -> CMakeLibrary {
+    CMakeLibrary::new(
+        "png",
+        LibraryLocation::Git(
+            LibraryGitLocation::new("https://github.com/glennrp/libpng.git").tag("v1.6.37"),
+        ),
+    )
+    .compiled_name(CompiledLibraryName::Matching("png".to_string()))
+    .define("PNG_SHARED", "OFF")
+}
+
+pub fn freetype() -> CMakeLibrary {
+    freetype_static()
+        .define("BUILD_SHARED_LIBS", "true")
+        .depends(png_static().into())
+}
+
+pub fn cairo() -> CairoLibrary {
+    CairoLibrary::new()
+}
+
+pub fn pixman() -> PixmanLibrary {
+    PixmanLibrary::new()
 }
 
 pub fn sdl2() -> CMakeLibrary {

@@ -63,7 +63,7 @@ pipeline {
                                 --identifier ${APP_IDENTIFIER} \
                                 --author ${APP_AUTHOR} \
                                 --icons icons/GlamorousToolkit.icns \
-                                --libraries ${APP_LIBRARIES} \
+                                --libraries cairo freetype ${APP_LIBRARIES} \
                                 --release """
 
                         sh "curl -o feenk-signer -LsS  https://github.com/feenkcom/feenk-signer/releases/latest/download/feenk-signer-${TARGET}"
@@ -102,7 +102,7 @@ pipeline {
                                 --identifier ${APP_IDENTIFIER} \
                                 --author ${APP_AUTHOR} \
                                 --icons icons/GlamorousToolkit.icns \
-                                --libraries ${APP_LIBRARIES} \
+                                --libraries cairo freetype ${APP_LIBRARIES} \
                                 --release """
 
                         sh "curl -o feenk-signer -LsS  https://github.com/feenkcom/feenk-signer/releases/latest/download/feenk-signer-${TARGET}"

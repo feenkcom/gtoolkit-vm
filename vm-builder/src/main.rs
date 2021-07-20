@@ -3,16 +3,24 @@ extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 extern crate cmake;
+extern crate downloader;
 extern crate feenk_releaser;
+extern crate file_matcher;
+extern crate flate2;
 extern crate mustache;
+extern crate pkg_config;
+extern crate tar;
 extern crate url;
 extern crate user_error;
 extern crate which;
+extern crate xz2;
 
 mod bundlers;
+mod error;
 mod libraries;
 mod options;
 
+pub use error::*;
 pub use libraries::*;
 pub use options::*;
 
@@ -24,7 +32,7 @@ use crate::bundlers::windows::WindowsBundler;
 use crate::bundlers::Bundler;
 use crate::options::{BuildOptions, BundleOptions, Executable, Target};
 
-fn main() {
+fn main() -> Result<()> {
     let build_config: BuildOptions = BuildOptions::parse();
 
     let resolved_options = ResolvedOptions::new(build_config);
@@ -42,8 +50,9 @@ fn main() {
         bundler.post_compile(&executable_options)
     });
 
-    bundler.compile_third_party_libraries(&bundle_options);
+    bundler.compile_third_party_libraries(&bundle_options)?;
     bundler.bundle(&bundle_options);
+    Ok(())
 }
 
 fn bundler(options: &ResolvedOptions) -> Box<dyn Bundler> {

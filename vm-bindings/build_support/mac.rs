@@ -41,9 +41,12 @@ impl Builder for MacBuilder {
 
         let mut config = cmake::Config::new(self.vm_sources_directory());
         config
+            .no_build_target(true)
             .define("COMPILE_EXECUTABLE", "OFF")
             .define("FEATURE_LIB_GIT2", "OFF")
-            .define("FEATURE_LIB_SDL2", "OFF");
+            .define("FEATURE_LIB_SDL2", "OFF")
+            .define("FEATURE_LIB_CAIRO", "OFF")
+            .define("FEATURE_LIB_FREETYPE2", "OFF");
 
         if cfg!(target_arch = "x86_64") {
             config.define("CMAKE_OSX_ARCHITECTURES", "x86_64");
@@ -82,34 +85,27 @@ impl Builder for MacBuilder {
 
         vec![
             // core
-            FileNamed::exact("libPharoVMCore.dylib").boxed(),
+            FileNamed::exact("libPharoVMCore.dylib"),
             // plugins
-            FileNamed::exact("libB2DPlugin.dylib").boxed(),
-            FileNamed::exact("libBitBltPlugin.dylib").boxed(),
-            FileNamed::exact("libDSAPrims.dylib").boxed(),
-            FileNamed::exact("libFileAttributesPlugin.dylib").boxed(),
-            FileNamed::exact("libFilePlugin.dylib").boxed(),
-            FileNamed::exact("libJPEGReaderPlugin.dylib").boxed(),
-            FileNamed::exact("libJPEGReadWriter2Plugin.dylib").boxed(),
-            FileNamed::exact("libLargeIntegers.dylib").boxed(),
-            FileNamed::exact("libLocalePlugin.dylib").boxed(),
-            FileNamed::exact("libMiscPrimitivePlugin.dylib").boxed(),
-            FileNamed::exact("libSocketPlugin.dylib").boxed(),
-            FileNamed::exact("libSqueakSSL.dylib").boxed(),
-            FileNamed::exact("libSurfacePlugin.dylib").boxed(),
-            FileNamed::exact("libUnixOSProcessPlugin.dylib").boxed(),
-            FileNamed::exact("libUUIDPlugin.dylib").boxed(),
-            // third party
-            FileNamed::exact("libcairo.2.dylib").boxed(),
-            #[cfg(target_arch = "x86_64")]
-            FileNamed::wildmatch("libfreetype*.dylib").alias("libfreetype.6.dylib").boxed(),
-            FileNamed::exact("libpixman-1.0.dylib").boxed(),
-            FileNamed::any(vec!["libpng12.0.dylib", "libpng16.0.dylib"]).boxed(),
-            // testing
-            FileNamed::exact("libTestLibrary.dylib").boxed(),
+            FileNamed::exact("libB2DPlugin.dylib"),
+            FileNamed::exact("libBitBltPlugin.dylib"),
+            FileNamed::exact("libDSAPrims.dylib"),
+            FileNamed::exact("libFileAttributesPlugin.dylib"),
+            FileNamed::exact("libFilePlugin.dylib"),
+            FileNamed::exact("libJPEGReaderPlugin.dylib"),
+            FileNamed::exact("libJPEGReadWriter2Plugin.dylib"),
+            FileNamed::exact("libLargeIntegers.dylib"),
+            FileNamed::exact("libLocalePlugin.dylib"),
+            FileNamed::exact("libMiscPrimitivePlugin.dylib"),
+            FileNamed::exact("libSocketPlugin.dylib"),
+            FileNamed::exact("libSqueakSSL.dylib"),
+            FileNamed::exact("libSurfacePlugin.dylib"),
+            FileNamed::exact("libUnixOSProcessPlugin.dylib"),
+            FileNamed::exact("libUUIDPlugin.dylib"),
+            FileNamed::exact("libTestLibrary.dylib"),
         ]
         .into_iter()
-        .map(|library| library.within_path_buf(self.compiled_libraries_directory()))
+        .map(|library| library.within(self.compiled_libraries_directory()))
         .collect()
     }
 

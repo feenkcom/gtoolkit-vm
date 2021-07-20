@@ -20,3 +20,9 @@ which = "4.1.0"
 user-error = "1.2.8"
 cmake = { git = "https://github.com/syrel/cmake-rs", rev = "cce9d58d87bd5dd95afb9183fdbbf4cb5d4b2255" }
 feenk-releaser = { git = "https://github.com/feenkcom/releaser-rs", rev = "f09581d4d691343f98757b58ca247884d931b321" }
+tar = "0.4"
+flate2 = "1.0"
+xz2 = "0.1"
+downloader = "0.2.6"
+file-matcher = "0.4.0"
+pkg-config = "0.3"

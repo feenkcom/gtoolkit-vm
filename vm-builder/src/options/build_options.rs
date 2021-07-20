@@ -1,4 +1,6 @@
-use crate::{boxer, clipboard, git, gleam, glutin, sdl2, skia, winit, Library};
+use crate::{
+    boxer, cairo, clipboard, freetype, git, gleam, glutin, pixman, sdl2, skia, winit, Library,
+};
 use clap::{AppSettings, ArgEnum, Clap};
 use rustc_version::version_meta;
 use std::path::{Path, PathBuf};
@@ -41,6 +43,12 @@ pub enum ThirdPartyLibrary {
     Sdl2,
     #[clap(name = "boxer")]
     Boxer,
+    #[clap(name = "pixman")]
+    Pixman,
+    #[clap(name = "freetype")]
+    Freetype,
+    #[clap(name = "cairo")]
+    Cairo,
     #[clap(name = "skia")]
     Skia,
     #[clap(name = "glutin")]
@@ -78,6 +86,9 @@ impl ThirdPartyLibrary {
             ThirdPartyLibrary::Clipboard => clipboard().into(),
             ThirdPartyLibrary::Git => git().into(),
             ThirdPartyLibrary::Sdl2 => sdl2().into(),
+            ThirdPartyLibrary::Freetype => freetype().into(),
+            ThirdPartyLibrary::Cairo => cairo().into(),
+            ThirdPartyLibrary::Pixman => pixman().into(),
         }
     }
 }

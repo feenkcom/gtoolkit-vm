@@ -6,7 +6,8 @@ pub mod mac;
 pub mod windows;
 
 pub use crate::libraries::Library;
-use crate::ExecutableOptions;
+use crate::{BoxError, ExecutableOptions};
+use crate::{Error, Result};
 use std::process::Command;
 
 pub trait Bundler {
@@ -58,38 +59,41 @@ pub trait Bundler {
             .for_each(|library| library.ensure_requirements());
     }
 
-    fn compile_third_party_libraries(&self, final_options: &BundleOptions) {
+    fn compile_third_party_libraries(&self, final_options: &BundleOptions) -> Result<()> {
         let compiled_libraries_directory = self.compiled_libraries_directory(&final_options);
 
         if !compiled_libraries_directory.exists() {
-            std::fs::create_dir_all(&compiled_libraries_directory).expect(&format!(
-                "Could not create {}",
-                compiled_libraries_directory.display()
-            ));
+            std::fs::create_dir_all(&compiled_libraries_directory).map_err(|error| {
+                Error::new(format!(
+                    "Could not create {}",
+                    compiled_libraries_directory.display()
+                ))
+                .from(error)
+            })?;
         }
 
-        final_options.libraries().iter().for_each(|library| {
-            library
-                .ensure_sources(&final_options)
-                .expect(&format!("Could not validate sources of {}", library.name()));
+        for library in final_options.libraries() {
+            library.ensure_sources(&final_options).map_err(|error| {
+                Error::new(format!("Could not validate sources of {}", library.name())).from(error)
+            })?;
             library.compile(&final_options);
-            assert!(
-                library.is_compiled(&final_options),
-                "Compiled library must exist at {:?}",
-                library.compiled_library(final_options).display()
-            );
 
             let library_path = compiled_libraries_directory
                 .join(library.compiled_library_name().file_name(library.name()));
 
-            std::fs::copy(library.compiled_library(&final_options), &library_path).expect(
-                &format!(
-                    "Could not copy {} to {}",
-                    library.compiled_library(&final_options).display(),
-                    &library_path.display(),
-                ),
-            );
-        })
+            std::fs::copy(library.compiled_library(&final_options), &library_path).map_err(
+                |error| {
+                    Error::new(format!(
+                        "Could not copy {} to {}",
+                        library.compiled_library(&final_options).display(),
+                        &library_path.display(),
+                    ))
+                    .from(error)
+                },
+            )?;
+        }
+
+        Ok(())
     }
 
     fn bundle_location(&self, configuration: &BundleOptions) -> PathBuf {
