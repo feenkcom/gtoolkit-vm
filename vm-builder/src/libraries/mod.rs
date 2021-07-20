@@ -78,6 +78,7 @@ pub fn png_static() -> CMakeLibrary {
     )
     .compiled_name(CompiledLibraryName::Matching("png".to_string()))
     .define("PNG_SHARED", "OFF")
+    .define("PNG_ARM_NEON", "off")
 }
 
 pub fn freetype() -> CMakeLibrary {
