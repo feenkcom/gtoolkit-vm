@@ -1,6 +1,6 @@
 use crate::build_support::Builder;
 
-use file_matcher::{FileNamed, OneFile, OneFileNamed};
+use file_matcher::{FileNamed, OneEntry};
 use std::fmt;
 use std::fmt::{Debug, Formatter};
 use std::path::PathBuf;
@@ -76,7 +76,7 @@ impl Builder for MacBuilder {
         );
     }
 
-    fn shared_libraries_to_export(&self) -> Vec<OneFile> {
+    fn shared_libraries_to_export(&self) -> Vec<OneEntry> {
         assert!(
             self.compiled_libraries_directory().exists(),
             "Must exist: {:?}",

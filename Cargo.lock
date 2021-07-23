@@ -365,6 +365,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "file-matcher"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c6cac60236127715c5d1d4a4c72c866fb125f3ec41f1c2b4f0567c82125e1db4"
+dependencies = [
+ "fs_extra",
+ "regex",
+ "wildmatch",
+]
+
+[[package]]
 name = "filetime"
 version = "0.2.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1859,7 +1870,7 @@ version = "0.1.0"
 dependencies = [
  "bindgen",
  "cmake",
- "file-matcher",
+ "file-matcher 0.5.0",
  "fs_extra",
  "ndk",
  "ndk-glue",
@@ -1876,7 +1887,7 @@ dependencies = [
  "cmake",
  "downloader",
  "feenk-releaser",
- "file-matcher",
+ "file-matcher 0.4.0",
  "flate2",
  "fs_extra",
  "mustache",

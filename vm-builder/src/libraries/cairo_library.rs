@@ -4,7 +4,6 @@ use crate::{
     freetype_static, pixman, png_static, Library, LibraryLocation, NativeLibrary,
     NativeLibraryDependencies,
 };
-use std::env::VarError;
 use std::error::Error;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -67,7 +66,7 @@ impl Library for CairoLibrary {
         );
 
         println!("PKG_CONFIG_PATH={:?}", std::env::var("PKG_CONFIG_PATH"));
-        
+
         let mut cpp_flags = std::env::var("CPPFLAGS").unwrap_or("".to_owned());
         cpp_flags = format!(
             "{} {}",

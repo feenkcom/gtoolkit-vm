@@ -1,5 +1,5 @@
 use crate::build_support::Builder;
-use file_matcher::{FileNamed, OneFile};
+use file_matcher::{FileNamed, OneEntry};
 use std::fmt;
 use std::fmt::{Debug, Formatter};
 use std::path::{Path, PathBuf};
@@ -160,7 +160,7 @@ impl Builder for WindowsBuilder {
         );
     }
 
-    fn shared_libraries_to_export(&self) -> Vec<OneFile> {
+    fn shared_libraries_to_export(&self) -> Vec<OneEntry> {
         let vm_build = &self
             .output_directory()
             .join("build")

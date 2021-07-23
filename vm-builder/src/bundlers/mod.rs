@@ -6,7 +6,7 @@ pub mod mac;
 pub mod windows;
 
 pub use crate::libraries::Library;
-use crate::{BoxError, ExecutableOptions};
+use crate::ExecutableOptions;
 use crate::{Error, Result};
 use std::process::Command;
 

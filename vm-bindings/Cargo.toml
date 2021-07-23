@@ -19,4 +19,4 @@ fs_extra = "1.1.0"
 cmake = { git = "https://github.com/syrel/cmake-rs", rev = "cce9d58d87bd5dd95afb9183fdbbf4cb5d4b2255" }
 which = "4.1.0"
 titlecase = "1.1.0"
-file-matcher = "0.4.0"
+file-matcher = "0.5.0"

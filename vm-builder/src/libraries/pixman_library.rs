@@ -1,7 +1,6 @@
 use crate::libraries::library::{TarArchive, TarUrlLocation};
-use crate::options::{BundleOptions, Target};
+use crate::options::BundleOptions;
 use crate::{Library, LibraryLocation, NativeLibrary};
-use file_matcher::{FileNamed, FilesNamed};
 use std::error::Error;
 use std::fs::{read_to_string, OpenOptions};
 use std::io::Write;

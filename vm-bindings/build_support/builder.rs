@@ -1,4 +1,4 @@
-use file_matcher::{OneFile, OneFileCopier};
+use file_matcher::{OneEntry, OneEntryCopier};
 use std::fmt::Debug;
 use std::path::{Path, PathBuf};
 use std::{env, fmt, fs};
@@ -160,7 +160,7 @@ pub trait Builder: Debug {
         }
     }
 
-    fn shared_libraries_to_export(&self) -> Vec<OneFile>;
+    fn shared_libraries_to_export(&self) -> Vec<OneEntry>;
 
     fn print_directories(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_map()

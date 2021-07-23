@@ -5,7 +5,7 @@ use fs_extra::dir::CopyOptions;
 use std::error::Error;
 use std::fmt::Debug;
 use std::fs::File;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::process::Command;
 use tar::Archive;
 use url::Url;
