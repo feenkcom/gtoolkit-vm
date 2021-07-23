@@ -103,6 +103,9 @@ impl Builder for MacBuilder {
             FileNamed::exact("libUnixOSProcessPlugin.dylib"),
             FileNamed::exact("libUUIDPlugin.dylib"),
             FileNamed::exact("libTestLibrary.dylib"),
+            // third party
+            #[cfg(target_arch = "x86_64")]
+            FileNamed::exact("libffi.dylib"),
         ]
         .into_iter()
         .map(|library| library.within(self.compiled_libraries_directory()))
