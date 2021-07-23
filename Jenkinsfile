@@ -21,7 +21,7 @@ pipeline {
         MACOS_INTEL_TARGET = 'x86_64-apple-darwin'
         MACOS_M1_TARGET = 'aarch64-apple-darwin'
         WINDOWS_AMD64_TARGET = 'x86_64-pc-windows-msvc'
-        LINUX_AMD64_TARGET = 'x86_64-ubuntu'
+        LINUX_AMD64_TARGET = 'x86_64-unknown-linux-gnu'
     }
 
     stages {
@@ -121,7 +121,7 @@ pipeline {
                 }
                 stage ('Linux x86_64') {
                     agent {
-                        label "${LINUX_AMD64_TARGET}"
+                        label "${LINUX_AMD64_TARGET}-2"
                     }
                     environment {
                         TARGET = "${LINUX_AMD64_TARGET}"
@@ -195,7 +195,7 @@ pipeline {
 
         stage ('Deployment') {
             agent {
-                label "${LINUX_AMD64_TARGET}"
+                label "${LINUX_AMD64_TARGET}-2"
             }
             environment {
                 TARGET = "${LINUX_AMD64_TARGET}"
