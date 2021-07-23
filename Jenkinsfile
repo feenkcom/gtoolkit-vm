@@ -21,7 +21,7 @@ pipeline {
         MACOS_INTEL_TARGET = 'x86_64-apple-darwin'
         MACOS_M1_TARGET = 'aarch64-apple-darwin'
         WINDOWS_AMD64_TARGET = 'x86_64-pc-windows-msvc'
-        LINUX_AMD64_TARGET = 'x86_64-unknown-linux-gnu'
+        LINUX_AMD64_TARGET = 'x86_64-ubuntu'
     }
 
     stages {
