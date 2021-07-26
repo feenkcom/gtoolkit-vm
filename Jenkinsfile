@@ -136,7 +136,7 @@ pipeline {
 
                         sh """
                             cargo run --package vm-builder --target ${TARGET} -- \
-                                --vmmaker-vm /data/jenkins/vmmaker/pharo \
+                                --vmmaker-vm /home/ubuntu/jenkins/vmmaker/pharo \
                                 --app-name ${APP_NAME} \
                                 --identifier ${APP_IDENTIFIER} \
                                 --author ${APP_AUTHOR} \
