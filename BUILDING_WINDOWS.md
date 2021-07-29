@@ -10,6 +10,11 @@ Follow instructions on [chocolatey.org](https://chocolatey.org/install).
 ### Microsoft C++ Build Tools 2019 + CLang
 Install [Microsoft C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) and choose Native Desktop Development workload. Then install `C++ Clang tools for Windows` in individual components. Do **not** select `C++ Clang-cl for v142 build tools` if you want Visual Studio to install LLVM + CLang.
 
+The following installs the `Microsoft C++ Build Tools` installer:
+```
+choco install visualstudio2019buildtools
+```
+
 Make sure the following environmental variables are set:
 ```
 LIBCLANG_PATH = C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\VC\Tools\Llvm\x64\bin
@@ -18,9 +23,11 @@ PATH = C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\MSBuild\Cu
 ```
 
 ### Rust
-The client side is written in Rust. It can be installed via `rustup`:
+The client side is written in Rust. It can be installed via [rustup for Windows](https://win.rustup.rs/x86_64)
+
+### Git
 ```
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+choco install -y git
 ```
 
 ### CMake
