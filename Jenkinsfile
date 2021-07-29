@@ -21,6 +21,8 @@ pipeline {
         LINUX_SERVER_NAME = 'mickey-mouse'
         MACOS_INTEL_TARGET = 'x86_64-apple-darwin'
         MACOS_M1_TARGET = 'aarch64-apple-darwin'
+
+        WINDOWS_SERVER_NAME = 'daffy-duck'
         WINDOWS_AMD64_TARGET = 'x86_64-pc-windows-msvc'
         LINUX_AMD64_TARGET = 'x86_64-unknown-linux-gnu'
     }
@@ -156,7 +158,7 @@ pipeline {
                  stage ('Windows x86_64') {
                     agent {
                         node {
-                          label "${WINDOWS_AMD64_TARGET}"
+                          label "${WINDOWS_AMD64_TARGET}-${WINDOWS_SERVER_NAME}"
                           customWorkspace 'C:\\j\\gtvm'
                         }
                     }
