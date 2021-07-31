@@ -155,7 +155,7 @@ pipeline {
                         stash includes: "${APP_NAME}-${TARGET}.zip", name: "${TARGET}"
                     }
                 }
-                 stage ('Windows x86_64') {
+                stage ('Windows x86_64') {
                     agent {
                         node {
                           label "${WINDOWS_AMD64_TARGET}-${WINDOWS_SERVER_NAME}"
@@ -173,12 +173,12 @@ pipeline {
                         CARGO_PATH = "${CARGO_HOME}\\bin"
                         PATH = "${CARGO_PATH};${LIBCLANG_PATH};${MSBUILD_PATH};${CMAKE_PATH};$PATH"
                     }
-                
+
                     steps {
                         powershell 'Remove-Item -Force -Recurse -Path target -ErrorAction Ignore'
                         powershell 'git clean -fdx'
                         powershell 'git submodule update --init --recursive'
-                
+
                         powershell """
                            cargo run --package vm-builder --target ${TARGET} -- `
                                 --vmmaker-vm C:/Users/jenkins/vmmaker/PharoConsole.exe `
@@ -188,11 +188,11 @@ pipeline {
                                 --libraries ${APP_LIBRARIES} `
                                 --icons icons/GlamorousToolkit.ico `
                                 --release """
-                
+
                         powershell "Compress-Archive -Path target/${TARGET}/release/bundle/${APP_NAME}/* -DestinationPath ${APP_NAME}-${TARGET}.zip"
                         stash includes: "${APP_NAME}-${TARGET}.zip", name: "${TARGET}"
                     }
-                 }
+                }
             }
         }
 

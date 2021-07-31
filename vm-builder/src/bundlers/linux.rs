@@ -18,6 +18,8 @@ impl LinuxBundler {
     }
 
     fn set_rpath(&self, binary: impl AsRef<Path>) -> Result<(), Box<dyn Error>> {
+        which::which("patchelf")?;
+
         let binary = binary.as_ref();
         if !Command::new("patchelf")
             .arg("--set-rpath")
@@ -58,7 +60,10 @@ impl Bundler for LinuxBundler {
                 binary_dir.join(options.bundled_executable_name(executable));
             match fs::copy(&compiled_executable_path, &bundled_executable_path) {
                 Ok(_) => {
-                    self.set_rpath(&bundled_executable_path).unwrap();
+                    self.set_rpath(&bundled_executable_path).expect(&format!(
+                        "Failed to set rpath of {}",
+                        bundled_executable_path.display()
+                    ));
                 }
                 Err(error) => {
                     panic!(
