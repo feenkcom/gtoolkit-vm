@@ -180,7 +180,7 @@ pipeline {
                         powershell 'git submodule update --init --recursive'
 
                         powershell """
-                           cargo run --package vm-builder --target ${TARGET} -- `
+                           cargo run --package vm-builder --target ${TARGET} --release -- `
                                 --vmmaker-vm C:/Users/jenkins/vmmaker/PharoConsole.exe `
                                 --app-name ${APP_NAME} `
                                 --identifier ${APP_IDENTIFIER} `
