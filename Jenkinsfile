@@ -61,7 +61,7 @@ pipeline {
                         sh 'git submodule update --init --recursive'
 
                         sh """
-                            cargo run --package vm-builder --target ${TARGET} -- \
+                            cargo run --package vm-builder --target ${TARGET} --release -- \
                                 --vmmaker-vm /Users/tudor/vmmaker/Pharo.app/Contents/MacOS/Pharo \
                                 --app-name ${APP_NAME} \
                                 --identifier ${APP_IDENTIFIER} \
@@ -100,7 +100,7 @@ pipeline {
                         sh 'git submodule update --init --recursive'
 
                         sh """
-                            cargo run --package vm-builder --target ${TARGET} -- \
+                            cargo run --package vm-builder --target ${TARGET} --release -- \
                                 --vmmaker-vm /Users/tudor/vmmaker/Pharo.app/Contents/MacOS/Pharo \
                                 --app-name ${APP_NAME} \
                                 --identifier ${APP_IDENTIFIER} \
@@ -137,7 +137,7 @@ pipeline {
                         sh 'git submodule update --init --recursive'
 
                         sh """
-                            cargo run --package vm-builder --target ${TARGET} -- \
+                            cargo run --package vm-builder --target ${TARGET} --release -- \
                                 --vmmaker-vm /home/ubuntu/jenkins/vmmaker/pharo \
                                 --app-name ${APP_NAME} \
                                 --identifier ${APP_IDENTIFIER} \
