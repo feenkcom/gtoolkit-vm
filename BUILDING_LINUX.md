@@ -16,6 +16,12 @@ Is required by the [nativefiledialog](https://github.com/saurvs/nfd-rs) to open 
 sudo apt install libgtk-3-dev
 ```
 
+### SSL
+Is required by multiple Rust crates
+```
+sudo apt install libssl-dev
+```
+
 ### LLVM / CLang
 The native libraries are such as Skia and Pharo are compiled using CLang. Install it according to the Linux distribution. In case of Ubuntu:
 ```
