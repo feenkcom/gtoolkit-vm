@@ -1,11 +1,16 @@
 use crate::bundlers::Bundler;
 use crate::options::BundleOptions;
-use crate::ExecutableOptions;
+use crate::{Executable, ExecutableOptions};
+use std::error::Error;
 use std::fs;
 use std::fs::File;
 use std::path::{Path, PathBuf};
+use std::process::Command;
+use user_error::UserFacingError;
 
 pub struct WindowsBundler {}
+
+const STACK_SIZE: usize = 16000000;
 
 impl WindowsBundler {
     pub fn new() -> Self {
@@ -26,6 +31,28 @@ impl WindowsBundler {
             }
         }
         None
+    }
+
+    fn set_stack_size(
+        &self,
+        binary: impl AsRef<Path>,
+        size_in_bytes: usize,
+    ) -> Result<(), Box<dyn Error>> {
+        which::which("editbin")?;
+
+        let binary = binary.as_ref();
+        if !Command::new("editbin")
+            .arg(format!("/STACK:{}", size_in_bytes))
+            .arg(binary)
+            .status()?
+            .success()
+        {
+            return Err(Box::new(UserFacingError::new(format!(
+                "Failed to set /STACK of {}",
+                binary.display(),
+            ))));
+        }
+        Ok(())
     }
 
     fn temporary_directory(&self) -> PathBuf {
@@ -75,11 +102,22 @@ impl Bundler for WindowsBundler {
         );
     }
 
-    fn post_compile(&self, _options: &ExecutableOptions) {
+    fn post_compile(
+        &self,
+        bundle_options: &BundleOptions,
+        executable: &Executable,
+        _executable_options: &ExecutableOptions,
+    ) {
         let temp_dir = self.temporary_directory();
         if temp_dir.exists() {
             fs::remove_dir_all(&temp_dir).unwrap();
         }
+
+        self.set_stack_size(
+            bundle_options.compiled_executable_path(executable),
+            STACK_SIZE,
+        )
+        .expect("Failed to set /STACK size");
     }
 
     fn bundle(&self, options: &BundleOptions) {

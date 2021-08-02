@@ -1,6 +1,6 @@
 use crate::options::BundleOptions;
 use downloader::{Download, Downloader};
-use flate2::read::{GzDecoder, ZlibDecoder};
+use flate2::read::GzDecoder;
 use fs_extra::dir::CopyOptions;
 use std::error::Error;
 use std::fmt::Debug;

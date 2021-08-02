@@ -47,7 +47,7 @@ fn main() -> Result<()> {
         let executable_options = ExecutableOptions::new(&bundle_options, executable.clone());
         bundler.pre_compile(&executable_options);
         bundler.compile_binary(&executable_options);
-        bundler.post_compile(&executable_options)
+        bundler.post_compile(&bundle_options, executable, &executable_options)
     });
 
     bundler.compile_third_party_libraries(&bundle_options)?;

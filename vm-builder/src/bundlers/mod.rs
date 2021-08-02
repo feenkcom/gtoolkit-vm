@@ -6,13 +6,19 @@ pub mod mac;
 pub mod windows;
 
 pub use crate::libraries::Library;
-use crate::ExecutableOptions;
 use crate::{Error, Result};
+use crate::{Executable, ExecutableOptions};
 use std::process::Command;
 
 pub trait Bundler {
     fn pre_compile(&self, _options: &ExecutableOptions) {}
-    fn post_compile(&self, _options: &ExecutableOptions) {}
+    fn post_compile(
+        &self,
+        _bundle_options: &BundleOptions,
+        _executable: &Executable,
+        _executable_options: &ExecutableOptions,
+    ) {
+    }
 
     fn compile_binary(&self, options: &ExecutableOptions) {
         std::env::set_var("CARGO_TARGET_DIR", options.target_dir());

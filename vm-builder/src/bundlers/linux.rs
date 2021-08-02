@@ -1,5 +1,6 @@
 use crate::bundlers::Bundler;
 use crate::options::BundleOptions;
+use crate::{Executable, ExecutableOptions};
 use std::error::Error;
 use std::fs;
 use std::path::Path;
@@ -58,22 +59,16 @@ impl Bundler for LinuxBundler {
             let compiled_executable_path = options.compiled_executable_path(executable);
             let bundled_executable_path =
                 binary_dir.join(options.bundled_executable_name(executable));
-            match fs::copy(&compiled_executable_path, &bundled_executable_path) {
-                Ok(_) => {
-                    self.set_rpath(&bundled_executable_path).expect(&format!(
-                        "Failed to set rpath of {}",
-                        bundled_executable_path.display()
-                    ));
-                }
-                Err(error) => {
-                    panic!(
+            fs::copy(&compiled_executable_path, &bundled_executable_path)
+                .map_err(|error| {
+                    UserFacingError::new(format!(
                         "Could not copy {} to {} due to {}",
                         &compiled_executable_path.display(),
                         &bundled_executable_path.display(),
                         error
-                    );
-                }
-            };
+                    ));
+                })
+                .expect("Failed to copy");
         });
 
         self.compiled_libraries(options)
@@ -96,5 +91,14 @@ impl Bundler for LinuxBundler {
                     }
                 };
             });
+    }
+    fn post_compile(
+        &self,
+        bundle_options: &BundleOptions,
+        executable: &Executable,
+        _executable_options: &ExecutableOptions,
+    ) {
+        self.set_rpath(bundle_options.compiled_executable_path(executable))
+            .expect("Failed to set rpath");
     }
 }

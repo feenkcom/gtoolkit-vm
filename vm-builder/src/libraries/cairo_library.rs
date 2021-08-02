@@ -1,5 +1,5 @@
 use crate::libraries::library::{TarArchive, TarUrlLocation};
-use crate::options::{BundleOptions, Target};
+use crate::options::BundleOptions;
 use crate::{
     freetype_static, pixman, png_static, Library, LibraryLocation, NativeLibrary,
     NativeLibraryDependencies,
@@ -75,14 +75,6 @@ impl Library for CairoLibrary {
         );
         std::env::set_var("CPPFLAGS", &cpp_flags);
         std::env::set_var("LIBS", "-lbz2");
-
-        let mut linker_flags = std::env::var("LDFLAGS").unwrap_or("".to_owned());
-        linker_flags = format!(
-            "{} {}",
-            linker_flags,
-            self.dependencies.linker_libraries_flags(options)
-        );
-        //std::env::set_var("LDFLAGS", &linker_flags);
 
         println!("PKG_CONFIG_PATH={:?}", std::env::var("PKG_CONFIG_PATH"));
         println!("CPPFLAGS={:?}", std::env::var("CPPFLAGS"));
