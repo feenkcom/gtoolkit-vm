@@ -173,7 +173,7 @@ pipeline {
                         MSBUILD_PATH = 'C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\BuildTools\\MSBuild\\Current\\Bin'
                         CARGO_HOME = "C:\\.cargo"
                         CARGO_PATH = "${CARGO_HOME}\\bin"
-                        PATH = "${CARGO_PATH};${LIBCLANG_PATH};${MSBUILD_PATH};${CMAKE_PATH};$PATH"
+                        PATH = "${CARGO_PATH};${LIBCLANG_PATH};${MSBUILD_PATH};${CMAKE_PATH};${MSVC_PATH};$PATH"
                     }
 
                     steps {
