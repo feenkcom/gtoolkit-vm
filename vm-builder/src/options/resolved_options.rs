@@ -139,3 +139,23 @@ impl ResolvedOptions {
         self.options.workspace_directory()
     }
 }
+
+impl Clone for ResolvedOptions {
+    fn clone(&self) -> Self {
+        Self {
+            options: self.options.clone(),
+            target_dir: self.target_dir.clone(),
+            target: self.target.clone(),
+            identifier: self.identifier.clone(),
+            app_name: self.app_name.clone(),
+            executable_name: self.executable_name.clone(),
+            version: self.version.clone(),
+            icons: self.icons.clone(),
+            libraries: self
+                .libraries
+                .iter()
+                .map(|library| library.clone_library())
+                .collect(),
+        }
+    }
+}

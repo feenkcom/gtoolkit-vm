@@ -3,6 +3,7 @@ extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 extern crate cmake;
+extern crate crossbeam;
 extern crate downloader;
 extern crate feenk_releaser;
 extern crate file_matcher;
@@ -42,15 +43,51 @@ fn main() -> Result<()> {
         BundleOptions::new(resolved_options, vec![Executable::App, Executable::Cli]);
 
     bundler.ensure_third_party_requirements(&bundle_options);
+    bundler.ensure_compiled_libraries_directory(&bundle_options)?;
 
-    bundle_options.executables().iter().for_each(|executable| {
-        let executable_options = ExecutableOptions::new(&bundle_options, executable.clone());
-        bundler.pre_compile(&executable_options);
-        bundler.compile_binary(&executable_options);
-        bundler.post_compile(&bundle_options, executable, &executable_options)
-    });
+    let _ = crossbeam::scope(|scope| {
+        let bundle_options = bundle_options.clone();
+        let bundler = bundler.clone_bundler();
 
-    bundler.compile_third_party_libraries(&bundle_options)?;
+        let bundle_options_clone = bundle_options.clone();
+        let bundler_clone = bundler.clone_bundler();
+        scope.spawn(move |_| {
+            let bundle_options = bundle_options_clone;
+            let bundler = bundler_clone;
+            bundle_options.executables().iter().for_each(|executable| {
+                let executable_options =
+                    ExecutableOptions::new(&bundle_options, executable.clone());
+                bundler.pre_compile(&executable_options);
+                bundler.compile_binary(&executable_options);
+                bundler.post_compile(&bundle_options, executable, &executable_options)
+            });
+        });
+
+        let libraries = bundle_options
+            .libraries()
+            .iter()
+            .filter(|each| !each.has_dependencies(&bundle_options))
+            .map(|each| each.clone_library())
+            .collect::<Vec<Box<dyn Library>>>();
+
+        for library in libraries {
+            let bundle_options_clone = bundle_options.clone();
+            let bundler = bundler.clone_bundler();
+            scope.spawn(move |_| {
+                let bundle_options = bundle_options_clone;
+                bundler.compile_library(&library, &bundle_options).expect("Failed to compile a library");
+            });
+        }
+    }).expect("Failed to build");
+
+    for library in bundle_options
+        .libraries()
+        .iter()
+        .filter(|each| each.has_dependencies(&bundle_options))
+    {
+        bundler.compile_library(library, &bundle_options)?;
+    }
+
     bundler.bundle(&bundle_options);
     Ok(())
 }

@@ -23,6 +23,8 @@ pub trait NativeLibrary: Library {
         None
     }
 
+    fn clone_native_library(&self) -> Box<dyn NativeLibrary>;
+
     fn msvc_include_directories(&self) -> Vec<PathBuf> {
         let msvc = PathBuf::from("C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\BuildTools\\VC\\Tools\\MSVC\\14.29.30037");
         let sdk = PathBuf::from("C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.19041.0");
@@ -129,6 +131,22 @@ impl NativeLibraryDependencies {
     pub fn compile(&self, options: &BundleOptions) {
         for dependency in &self.dependencies {
             dependency.compile(options);
+        }
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.dependencies.is_empty()
+    }
+}
+
+impl Clone for NativeLibraryDependencies {
+    fn clone(&self) -> Self {
+        Self {
+            dependencies: self
+                .dependencies
+                .iter()
+                .map(|library| library.clone_native_library())
+                .collect::<Vec<Box<dyn NativeLibrary>>>(),
         }
     }
 }

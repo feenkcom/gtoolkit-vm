@@ -191,6 +191,10 @@ impl Library for PixmanLibrary {
         Err(UserFacingError::new("Could not find compiled library").into())
     }
 
+    fn has_dependencies(&self, _options: &BundleOptions) -> bool {
+        false
+    }
+
     fn ensure_requirements(&self, options: &BundleOptions) {
         which::which("make").expect("Could not find `make`");
         which::which("autoreconf").expect("Could not find `make`");
@@ -209,6 +213,10 @@ impl Library for PixmanLibrary {
                 }
             }
         }
+    }
+
+    fn clone_library(&self) -> Box<dyn Library> {
+        Box::new(Clone::clone(self))
     }
 }
 
@@ -247,6 +255,10 @@ impl NativeLibrary for PixmanLibrary {
             return vec![library_prefix.join("pixman").join(options.profile())];
         }
         vec![]
+    }
+
+    fn clone_native_library(&self) -> Box<dyn NativeLibrary> {
+        Box::new(Clone::clone(self))
     }
 }
 

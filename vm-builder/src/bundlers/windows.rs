@@ -8,6 +8,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use user_error::UserFacingError;
 
+#[derive(Debug, Clone)]
 pub struct WindowsBundler {}
 
 const STACK_SIZE: usize = 16000000;
@@ -156,6 +157,10 @@ impl Bundler for WindowsBundler {
             &fs_extra::dir::CopyOptions::new(),
         )
         .unwrap();
+    }
+
+    fn clone_bundler(&self) -> Box<dyn Bundler> {
+        Box::new(Clone::clone(self))
     }
 }
 

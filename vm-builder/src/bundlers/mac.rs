@@ -5,6 +5,7 @@ use std::fs;
 use std::fs::File;
 use std::path::{Path, PathBuf};
 
+#[derive(Debug, Clone)]
 pub struct MacBundler {}
 
 impl MacBundler {
@@ -95,6 +96,10 @@ impl Bundler for MacBundler {
 
         let mut file = File::create(contents_dir.join(Path::new("Info.plist"))).unwrap();
         info_plist_template.render(&mut file, &info).unwrap();
+    }
+
+    fn clone_bundler(&self) -> Box<dyn Bundler> {
+        Box::new(Clone::clone(self))
     }
 }
 

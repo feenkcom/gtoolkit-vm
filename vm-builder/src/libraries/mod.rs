@@ -5,7 +5,6 @@ mod native_library;
 mod openssl_library;
 mod pixman_library;
 mod rust_library;
-mod system_library;
 
 use crate::libraries::cairo_library::CairoLibrary;
 pub use cmake_library::CMakeLibrary;
@@ -79,7 +78,11 @@ pub fn zlib_static() -> CMakeLibrary {
     )
     .compiled_name(CompiledLibraryName::Matching("zlib".to_string()))
     .define("BUILD_SHARED_LIBS", "OFF")
-    .delete(FileNamed::wildmatch("*zlib.*"))
+    .delete(FileNamed::any_named(vec![
+        FileNamed::wildmatch("*zlib.*"), // windows
+        FileNamed::wildmatch("*.dylib"), // mac
+        FileNamed::wildmatch("*.so"),    // linux
+    ]))
 }
 
 pub fn png_static() -> CMakeLibrary {

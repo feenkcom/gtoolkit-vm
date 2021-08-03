@@ -82,6 +82,10 @@ impl Library for RustLibrary {
         vec![path]
     }
 
+    fn has_dependencies(&self, _options: &BundleOptions) -> bool {
+        false
+    }
+
     fn ensure_requirements(&self, _options: &BundleOptions) {
         self.requires.iter().for_each(|each| {
             which::which(each).expect(&format!(
@@ -89,6 +93,10 @@ impl Library for RustLibrary {
                 each
             ));
         })
+    }
+
+    fn clone_library(&self) -> Box<dyn Library> {
+        Box::new(Clone::clone(self))
     }
 }
 

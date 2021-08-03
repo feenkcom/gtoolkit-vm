@@ -9,8 +9,9 @@ pub use crate::libraries::Library;
 use crate::{Error, Result};
 use crate::{Executable, ExecutableOptions};
 use std::process::Command;
+use std::fmt::Debug;
 
-pub trait Bundler {
+pub trait Bundler: Debug + Send + Sync {
     fn pre_compile(&self, _options: &ExecutableOptions) {}
     fn post_compile(
         &self,
@@ -65,8 +66,18 @@ pub trait Bundler {
             .for_each(|library| library.ensure_requirements(options));
     }
 
-    fn compile_third_party_libraries(&self, final_options: &BundleOptions) -> Result<()> {
-        let compiled_libraries_directory = self.compiled_libraries_directory(&final_options);
+    fn compile_third_party_libraries(&self, options: &BundleOptions) -> Result<()> {
+        self.ensure_compiled_libraries_directory(options)?;
+
+        for library in options.libraries() {
+            self.compile_library(library, options)?;
+        }
+
+        Ok(())
+    }
+
+    fn ensure_compiled_libraries_directory(&self, options: &BundleOptions) -> Result<()> {
+        let compiled_libraries_directory = self.compiled_libraries_directory(&options);
 
         if !compiled_libraries_directory.exists() {
             std::fs::create_dir_all(&compiled_libraries_directory).map_err(|error| {
@@ -77,27 +88,27 @@ pub trait Bundler {
                 .from(error)
             })?;
         }
+        Ok(())
+    }
 
-        for library in final_options.libraries() {
-            library.ensure_sources(&final_options).map_err(|error| {
-                Error::new(format!("Could not validate sources of {}", library.name())).from(error)
-            })?;
-            library.compile(&final_options);
+    fn compile_library(&self, library: &Box<dyn Library>, options: &BundleOptions) -> Result<()> {
+        library.ensure_sources(&options).map_err(|error| {
+            Error::new(format!("Could not validate sources of {}", library.name())).from(error)
+        })?;
+        library.compile(&options);
 
-            let library_path = compiled_libraries_directory
-                .join(library.compiled_library_name().file_name(library.name()));
+        let library_path = self
+            .compiled_libraries_directory(options)
+            .join(library.compiled_library_name().file_name(library.name()));
 
-            std::fs::copy(library.compiled_library(&final_options), &library_path).map_err(
-                |error| {
-                    Error::new(format!(
-                        "Could not copy {} to {}",
-                        library.compiled_library(&final_options).display(),
-                        &library_path.display(),
-                    ))
-                    .from(error)
-                },
-            )?;
-        }
+        std::fs::copy(library.compiled_library(&options), &library_path).map_err(|error| {
+            Error::new(format!(
+                "Could not copy {} to {}",
+                library.compiled_library(&options).display(),
+                &library_path.display(),
+            ))
+            .from(error)
+        })?;
 
         Ok(())
     }
@@ -126,4 +137,6 @@ pub trait Bundler {
             .map(|each| each.unwrap().path())
             .collect()
     }
+
+    fn clone_bundler(&self) -> Box<dyn Bundler>;
 }

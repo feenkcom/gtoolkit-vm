@@ -82,8 +82,16 @@ impl Library for OpenSSLLibrary {
         unimplemented!()
     }
 
+    fn has_dependencies(&self, _options: &BundleOptions) -> bool {
+        false
+    }
+
     fn ensure_requirements(&self, _options: &BundleOptions) {
         which::which("make").expect("Could not find `make`");
+    }
+
+    fn clone_library(&self) -> Box<dyn Library> {
+        Box::new(Clone::clone(self))
     }
 }
 
@@ -94,5 +102,9 @@ impl NativeLibrary for OpenSSLLibrary {
 
     fn native_library_dependency_prefixes(&self, _options: &BundleOptions) -> Vec<PathBuf> {
         vec![]
+    }
+
+    fn clone_native_library(&self) -> Box<dyn NativeLibrary> {
+        Box::new(Clone::clone(self))
     }
 }

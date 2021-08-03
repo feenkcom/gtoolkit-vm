@@ -7,6 +7,7 @@ use std::path::Path;
 use std::process::Command;
 use user_error::UserFacingError;
 
+#[derive(Debug, Clone)]
 pub struct LinuxBundler {}
 
 impl LinuxBundler {
@@ -100,5 +101,9 @@ impl Bundler for LinuxBundler {
     ) {
         self.set_rpath(bundle_options.compiled_executable_path(executable))
             .expect("Failed to set rpath");
+    }
+
+    fn clone_bundler(&self) -> Box<dyn Bundler> {
+        Box::new(Clone::clone(self))
     }
 }

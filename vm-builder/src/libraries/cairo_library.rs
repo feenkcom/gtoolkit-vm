@@ -10,7 +10,7 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct CairoLibrary {
     location: LibraryLocation,
     dependencies: NativeLibraryDependencies,
@@ -333,6 +333,10 @@ impl Library for CairoLibrary {
         vec![]
     }
 
+    fn has_dependencies(&self, _options: &BundleOptions) -> bool {
+        !self.dependencies.is_empty()
+    }
+
     fn ensure_requirements(&self, options: &BundleOptions) {
         which::which("make").expect("Could not find `make`");
         if options.target().is_windows() {
@@ -350,6 +354,10 @@ impl Library for CairoLibrary {
             }
         }
     }
+
+    fn clone_library(&self) -> Box<dyn Library> {
+        Box::new(Clone::clone(self))
+    }
 }
 
 impl NativeLibrary for CairoLibrary {
@@ -363,6 +371,10 @@ impl NativeLibrary for CairoLibrary {
 
     fn native_library_dependency_prefixes(&self, options: &BundleOptions) -> Vec<PathBuf> {
         self.dependencies.dependency_prefixes(options)
+    }
+
+    fn clone_native_library(&self) -> Box<dyn NativeLibrary> {
+        Box::new(Clone::clone(self))
     }
 }
 

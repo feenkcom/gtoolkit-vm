@@ -2,7 +2,7 @@ use crate::{Library, ResolvedOptions, Target};
 use feenk_releaser::Version;
 use std::path::{Path, PathBuf};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub enum Executable {
     App,
     Cli,
@@ -40,7 +40,7 @@ impl Executable {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct BundleOptions {
     options: ResolvedOptions,
     executables: Vec<Executable>,

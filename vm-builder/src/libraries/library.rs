@@ -12,7 +12,7 @@ use url::Url;
 use user_error::UserFacingError;
 use xz2::read::XzDecoder;
 
-pub trait Library: Debug {
+pub trait Library: Debug + Send + Sync {
     fn location(&self) -> &LibraryLocation;
     fn name(&self) -> &str;
     fn compiled_library_name(&self) -> &CompiledLibraryName {
@@ -66,7 +66,11 @@ pub trait Library: Debug {
         Err(UserFacingError::new("Could not find compiled library").into())
     }
 
+    fn has_dependencies(&self, _options: &BundleOptions) -> bool;
+
     fn ensure_requirements(&self, options: &BundleOptions);
+
+    fn clone_library(&self) -> Box<dyn Library>;
 }
 
 #[derive(Debug, Clone)]

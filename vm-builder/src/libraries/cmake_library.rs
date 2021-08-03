@@ -7,7 +7,7 @@ use rustc_version::version_meta;
 use std::error::Error;
 use std::path::{Path, PathBuf};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct CMakeLibrary {
     name: String,
     compiled_name: CompiledLibraryName,
@@ -89,11 +89,29 @@ impl NativeLibrary for CMakeLibrary {
     }
 
     fn pkg_config_directory(&self, options: &BundleOptions) -> Option<PathBuf> {
-        Some(
-            self.native_library_prefix(options)
-                .join("lib")
-                .join("pkgconfig"),
-        )
+        let directory = self
+            .native_library_prefix(options)
+            .join("lib")
+            .join("pkgconfig");
+
+        if directory.exists() {
+            return Some(directory);
+        }
+
+        let directory = self
+            .native_library_prefix(options)
+            .join("share")
+            .join("pkgconfig");
+
+        if directory.exists() {
+            return Some(directory);
+        }
+
+        None
+    }
+
+    fn clone_native_library(&self) -> Box<dyn NativeLibrary> {
+        Box::new(Clone::clone(self))
     }
 }
 
@@ -191,9 +209,17 @@ impl Library for CMakeLibrary {
         vec![lib_dir, bin_dir]
     }
 
+    fn has_dependencies(&self, _options: &BundleOptions) -> bool {
+        !self.dependencies.is_empty()
+    }
+
     fn ensure_requirements(&self, _options: &BundleOptions) {
         which::which("pkg-config")
             .expect("CMake projects require pkg-config, make sure it is installed");
+    }
+
+    fn clone_library(&self) -> Box<dyn Library> {
+        Box::new(Clone::clone(self))
     }
 }
 
