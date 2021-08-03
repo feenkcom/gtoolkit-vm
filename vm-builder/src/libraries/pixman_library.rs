@@ -86,6 +86,8 @@ impl PixmanLibrary {
     }
 
     fn compile_unix(&self, options: &BundleOptions) -> Result<(), Box<dyn Error>> {
+        self.patch_makefile(options)?;
+
         let out_dir = self.native_library_prefix(options);
         if !out_dir.exists() {
             std::fs::create_dir_all(&out_dir).expect(&format!("Could not create {:?}", &out_dir));
