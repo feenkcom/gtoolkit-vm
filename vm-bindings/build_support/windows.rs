@@ -209,12 +209,6 @@ impl Builder for WindowsBuilder {
         vec![
             // third party
             FileNamed::exact("ffi.dll"),
-            FileNamed::exact("libbz2-1.dll"),
-            FileNamed::exact("libcairo-2.dll"),
-            FileNamed::exact("libexpat-1.dll"),
-            FileNamed::exact("libfontconfig-1.dll"),
-            FileNamed::exact("libpixman-1-0.dll"),
-            FileNamed::exact("libpng16-16.dll"),
         ]
         .into_iter()
         .map(|library| library.within(&third_party_build))

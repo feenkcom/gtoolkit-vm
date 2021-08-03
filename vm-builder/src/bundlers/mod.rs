@@ -8,8 +8,8 @@ pub mod windows;
 pub use crate::libraries::Library;
 use crate::{Error, Result};
 use crate::{Executable, ExecutableOptions};
-use std::process::Command;
 use std::fmt::Debug;
+use std::process::Command;
 
 pub trait Bundler: Debug + Send + Sync {
     fn pre_compile(&self, _options: &ExecutableOptions) {}

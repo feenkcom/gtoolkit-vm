@@ -123,6 +123,9 @@ pub struct BuildOptions {
     /// To bundle a release build
     #[clap(long)]
     release: bool,
+    /// Split build load over multiple threads
+    #[clap(long)]
+    multi_threaded: bool,
     #[clap(long, possible_values = Target::VARIANTS, case_insensitive = true)]
     /// To cross-compile and bundle an application for another OS
     target: Option<Target>,
@@ -221,6 +224,10 @@ impl BuildOptions {
 
     pub fn release(&self) -> bool {
         self.release
+    }
+
+    pub fn multi_threaded(&self) -> bool {
+        self.multi_threaded
     }
 
     pub fn icons(&self) -> Option<&Vec<String>> {

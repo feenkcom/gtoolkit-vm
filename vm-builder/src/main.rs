@@ -33,10 +33,8 @@ use crate::bundlers::windows::WindowsBundler;
 use crate::bundlers::Bundler;
 use crate::options::{BuildOptions, BundleOptions, Executable, Target};
 
-fn main() -> Result<()> {
-    let build_config: BuildOptions = BuildOptions::parse();
-
-    let resolved_options = ResolvedOptions::new(build_config);
+fn build_multi_threaded(build_options: BuildOptions) -> Result<()> {
+    let resolved_options = ResolvedOptions::new(build_options);
     let bundler = bundler(&resolved_options);
 
     let bundle_options =
@@ -75,10 +73,13 @@ fn main() -> Result<()> {
             let bundler = bundler.clone_bundler();
             scope.spawn(move |_| {
                 let bundle_options = bundle_options_clone;
-                bundler.compile_library(&library, &bundle_options).expect("Failed to compile a library");
+                bundler
+                    .compile_library(&library, &bundle_options)
+                    .expect("Failed to compile a library");
             });
         }
-    }).expect("Failed to build");
+    })
+    .expect("Failed to build");
 
     for library in bundle_options
         .libraries()
@@ -89,6 +90,41 @@ fn main() -> Result<()> {
     }
 
     bundler.bundle(&bundle_options);
+    Ok(())
+}
+
+fn build_synchronously(build_options: BuildOptions) -> Result<()> {
+    let resolved_options = ResolvedOptions::new(build_options);
+    let bundler = bundler(&resolved_options);
+
+    let bundle_options =
+        BundleOptions::new(resolved_options, vec![Executable::App, Executable::Cli]);
+
+    bundler.ensure_third_party_requirements(&bundle_options);
+    bundler.ensure_compiled_libraries_directory(&bundle_options)?;
+
+    bundle_options.executables().iter().for_each(|executable| {
+        let executable_options = ExecutableOptions::new(&bundle_options, executable.clone());
+        bundler.pre_compile(&executable_options);
+        bundler.compile_binary(&executable_options);
+        bundler.post_compile(&bundle_options, executable, &executable_options)
+    });
+
+    bundler.compile_third_party_libraries(&bundle_options);
+    bundler.bundle(&bundle_options);
+
+    Ok(())
+}
+
+fn main() -> Result<()> {
+    let build_options: BuildOptions = BuildOptions::parse();
+
+    if build_options.multi_threaded() {
+        build_multi_threaded(build_options)?;
+    } else {
+        build_synchronously(build_options)?;
+    }
+
     Ok(())
 }
 
