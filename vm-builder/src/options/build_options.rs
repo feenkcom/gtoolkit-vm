@@ -20,6 +20,26 @@ pub enum Target {
     X8664UnknownlinuxGNU,
 }
 
+impl Target {
+    pub fn is_unix(&self) -> bool {
+        match self {
+            Target::X8664appleDarwin => true,
+            Target::AArch64appleDarwin => true,
+            Target::X8664pcWindowsMsvc => false,
+            Target::X8664UnknownlinuxGNU => true,
+        }
+    }
+
+    pub fn is_windows(&self) -> bool {
+        match self {
+            Target::X8664appleDarwin => false,
+            Target::AArch64appleDarwin => false,
+            Target::X8664pcWindowsMsvc => true,
+            Target::X8664UnknownlinuxGNU => false,
+        }
+    }
+}
+
 impl FromStr for Target {
     type Err = String;
 

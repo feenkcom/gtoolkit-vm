@@ -115,6 +115,8 @@ impl Builder for WindowsBuilder {
             .define("PTHREADW32_DIR", self.pthreads_library_directory())
             .define("FEATURE_LIB_GIT2", "OFF")
             .define("FEATURE_LIB_SDL2", "OFF")
+            .define("FEATURE_LIB_CAIRO", "OFF")
+            .define("FEATURE_LIB_FREETYPE2", "OFF")
             .generator("Visual Studio 16 2019")
             .generator_toolset("ClangCL");
 

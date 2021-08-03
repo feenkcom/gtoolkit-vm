@@ -2,6 +2,7 @@ use crate::options::{BundleOptions, Target};
 use crate::{
     CompiledLibraryName, Library, LibraryLocation, NativeLibrary, NativeLibraryDependencies,
 };
+use file_matcher::FileNamed;
 use rustc_version::version_meta;
 use std::error::Error;
 use std::path::{Path, PathBuf};
@@ -13,6 +14,7 @@ pub struct CMakeLibrary {
     location: LibraryLocation,
     defines: Vec<(String, String)>,
     dependencies: NativeLibraryDependencies,
+    files_to_delete: Vec<FileNamed>,
 }
 
 impl CMakeLibrary {
@@ -23,6 +25,7 @@ impl CMakeLibrary {
             location,
             defines: vec![],
             dependencies: NativeLibraryDependencies::new(),
+            files_to_delete: vec![],
         }
     }
 
@@ -35,6 +38,7 @@ impl CMakeLibrary {
             location: self.location,
             defines,
             dependencies: self.dependencies,
+            files_to_delete: self.files_to_delete,
         }
     }
 
@@ -45,6 +49,7 @@ impl CMakeLibrary {
             location: self.location,
             defines: self.defines,
             dependencies: self.dependencies.add(library),
+            files_to_delete: self.files_to_delete,
         }
     }
 
@@ -55,6 +60,21 @@ impl CMakeLibrary {
             location: self.location,
             defines: self.defines,
             dependencies: self.dependencies,
+            files_to_delete: self.files_to_delete,
+        }
+    }
+
+    pub fn delete(self, entry_to_delete: impl Into<FileNamed>) -> Self {
+        let mut entries = self.files_to_delete;
+        entries.push(entry_to_delete.into());
+
+        Self {
+            name: self.name,
+            compiled_name: self.compiled_name,
+            location: self.location,
+            defines: self.defines,
+            dependencies: self.dependencies,
+            files_to_delete: entries,
         }
     }
 }
@@ -158,6 +178,11 @@ impl Library for CMakeLibrary {
         }
 
         config.build();
+
+        for entry_to_delete in &self.files_to_delete {
+            let lib = entry_to_delete.within(out_dir.join("lib"));
+            std::fs::remove_file(lib.as_path_buf().unwrap()).unwrap();
+        }
     }
 
     fn compiled_library_directories(&self, options: &BundleOptions) -> Vec<PathBuf> {
@@ -166,7 +191,7 @@ impl Library for CMakeLibrary {
         vec![lib_dir, bin_dir]
     }
 
-    fn ensure_requirements(&self) {
+    fn ensure_requirements(&self, _options: &BundleOptions) {
         which::which("pkg-config")
             .expect("CMake projects require pkg-config, make sure it is installed");
     }

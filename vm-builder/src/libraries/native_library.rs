@@ -4,16 +4,43 @@ use std::error::Error;
 use std::path::PathBuf;
 
 pub trait NativeLibrary: Library {
+    /// Return the root build directory of the library.
     fn native_library_prefix(&self, options: &BundleOptions) -> PathBuf;
+
     fn native_library_dependency_prefixes(&self, options: &BundleOptions) -> Vec<PathBuf>;
+    /// Returns a collection of include directories exported by the native library.
+    /// Dependent libraries will search headers within these directories
     fn native_library_include_headers(&self, _options: &BundleOptions) -> Vec<PathBuf> {
         vec![]
     }
+    /// Returns a collection of directories that contain the compiled libraries.
+    /// Dependent libraries will search libraries to link within these directories.
     fn native_library_linker_libraries(&self, _options: &BundleOptions) -> Vec<PathBuf> {
         vec![]
     }
+    /// If a native library creates a pkg-config .pc file, return a directory that contains it
     fn pkg_config_directory(&self, _options: &BundleOptions) -> Option<PathBuf> {
         None
+    }
+
+    fn msvc_include_directories(&self) -> Vec<PathBuf> {
+        let msvc = PathBuf::from("C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\BuildTools\\VC\\Tools\\MSVC\\14.29.30037");
+        let sdk = PathBuf::from("C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.19041.0");
+
+        vec![
+            msvc.join("include"),
+            sdk.join("ucrt"),
+            sdk.join("shared"),
+            sdk.join("um"),
+        ]
+    }
+
+    fn msvc_lib_directories(&self) -> Vec<PathBuf> {
+        vec![
+            PathBuf::from("C:\\Program Files (x86)\\Windows Kits\\10\\Lib\\10.0.19041.0\\um\\x64"),
+            PathBuf::from("C:\\Program Files (x86)\\Windows Kits\\10\\Lib\\10.0.19041.0\\ucrt\\x64"),
+            PathBuf::from("C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\BuildTools\\VC\\Tools\\MSVC\\14.29.30037\\lib\\x64")
+        ]
     }
 }
 

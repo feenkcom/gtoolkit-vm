@@ -8,14 +8,15 @@ mod rust_library;
 mod system_library;
 
 use crate::libraries::cairo_library::CairoLibrary;
-use crate::libraries::pixman_library::PixmanLibrary;
 pub use cmake_library::CMakeLibrary;
+use file_matcher::FileNamed;
 pub use library::{
     CompiledLibraryName, GitLocation as LibraryGitLocation, Library, LibraryLocation,
     PathLocation as LibraryPathLocation,
 };
 pub use native_library::{NativeLibrary, NativeLibraryDependencies};
 pub use openssl_library::OpenSSLLibrary;
+pub use pixman_library::PixmanLibrary;
 pub use rust_library::RustLibrary;
 
 #[cfg(target_os = "windows")]
@@ -69,6 +70,18 @@ pub fn freetype_static() -> CMakeLibrary {
     .compiled_name(CompiledLibraryName::Matching("freetype".to_string()))
 }
 
+pub fn zlib_static() -> CMakeLibrary {
+    CMakeLibrary::new(
+        "zlib",
+        LibraryLocation::Git(
+            LibraryGitLocation::new("https://github.com/madler/zlib.git").tag("v1.2.11"),
+        ),
+    )
+    .compiled_name(CompiledLibraryName::Matching("zlib".to_string()))
+    .define("BUILD_SHARED_LIBS", "OFF")
+    .delete(FileNamed::wildmatch("*zlib.*"))
+}
+
 pub fn png_static() -> CMakeLibrary {
     CMakeLibrary::new(
         "png",
@@ -76,6 +89,7 @@ pub fn png_static() -> CMakeLibrary {
             LibraryGitLocation::new("https://github.com/glennrp/libpng.git").tag("v1.6.37"),
         ),
     )
+    .depends(zlib_static().into())
     .compiled_name(CompiledLibraryName::Matching("png".to_string()))
     .define("PNG_SHARED", "OFF")
     .define("PNG_ARM_NEON", "off")

@@ -1,10 +1,12 @@
 use crate::libraries::library::{TarArchive, TarUrlLocation};
 use crate::options::BundleOptions;
 use crate::{
-    freetype_static, pixman, png_static, Library, LibraryLocation, NativeLibrary,
-    NativeLibraryDependencies,
+    freetype_static, pixman, png_static, zlib_static, CMakeLibrary, Library, LibraryLocation,
+    NativeLibrary, NativeLibraryDependencies, PixmanLibrary,
 };
 use std::error::Error;
+use std::fs::{read_to_string, OpenOptions};
+use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -12,6 +14,9 @@ use std::process::Command;
 pub struct CairoLibrary {
     location: LibraryLocation,
     dependencies: NativeLibraryDependencies,
+    pixman: PixmanLibrary,
+    zlib: CMakeLibrary,
+    png: CMakeLibrary,
 }
 
 impl CairoLibrary {
@@ -26,27 +31,13 @@ impl CairoLibrary {
                 .add(pixman().into())
                 .add(freetype_static().into())
                 .add(png_static().into()),
+            pixman: pixman(),
+            zlib: zlib_static(),
+            png: png_static(),
         }
     }
-}
 
-impl Library for CairoLibrary {
-    fn location(&self) -> &LibraryLocation {
-        &self.location
-    }
-
-    fn name(&self) -> &str {
-        "cairo"
-    }
-
-    fn ensure_sources(&self, options: &BundleOptions) -> Result<(), Box<dyn Error>> {
-        self.location()
-            .ensure_sources(&self.source_directory(options), options)?;
-        self.dependencies.ensure_sources(options)?;
-        Ok(())
-    }
-
-    fn force_compile(&self, options: &BundleOptions) {
+    fn compile_unix(&self, options: &BundleOptions) -> Result<(), Box<dyn Error>> {
         self.dependencies.compile(options);
 
         let out_dir = self.native_library_prefix(options);
@@ -113,20 +104,260 @@ impl Library for CairoLibrary {
         if !make.success() {
             panic!("Could not compile {}", self.name());
         }
+
+        Ok(())
+    }
+
+    fn compile_windows(&self, options: &BundleOptions) -> Result<(), Box<dyn Error>> {
+        self.patch_windows_common_makefile(options)?;
+        self.patch_windows_features_makefile(options)?;
+        self.patch_windows_makefile(options)?;
+
+        let makefile = self.source_directory(options).join("Makefile.win32");
+
+        let mut command = Command::new("make");
+        command
+            .current_dir(self.source_directory(options))
+            .arg("cairo")
+            .arg("-f")
+            .arg(&makefile)
+            .arg("CFG=release")
+            .arg(format!(
+                "PIXMAN_PATH={}",
+                self.pixman.native_library_prefix(options).display()
+            ))
+            .arg(format!(
+                "ZLIB_PATH={}",
+                self.zlib.native_library_prefix(options).display()
+            ))
+            .arg(format!(
+                "LIBPNG_PATH={}",
+                self.png.native_library_prefix(options).display()
+            ));
+
+        println!("{:?}", &command);
+
+        let configure = command.status().unwrap();
+
+        if !configure.success() {
+            panic!("Could not configure {}", self.name());
+        }
+        Ok(())
+    }
+
+    fn patch_windows_common_makefile(&self, options: &BundleOptions) -> Result<(), Box<dyn Error>> {
+        let makefile_directory = self.source_directory(options).join("build");
+
+        if makefile_directory
+            .join("Makefile.win32.common.fixed")
+            .exists()
+        {
+            return Ok(());
+        }
+
+        let makefile = makefile_directory.join("Makefile.win32.common");
+
+        std::fs::copy(
+            &makefile,
+            makefile_directory.join("Makefile.win32.common.bak"),
+        )?;
+
+        let mut contents = read_to_string(&makefile)?;
+        contents = contents.replace("-MD", "-MT");
+        contents = contents.replace(
+            "CAIRO_LIBS += $(ZLIB_PATH)/zdll.lib",
+            "CAIRO_LIBS += $(ZLIB_PATH)/lib/zlibstatic.lib",
+        );
+        contents = contents.replace(
+            "ZLIB_CFLAGS += -I$(ZLIB_PATH)",
+            "ZLIB_CFLAGS += -I$(ZLIB_PATH)/include",
+        );
+        contents = contents.replace(
+            "CAIRO_LIBS +=  $(LIBPNG_PATH)/libpng.lib",
+            "CAIRO_LIBS +=  $(LIBPNG_PATH)/lib/libpng16_static.lib",
+        );
+        contents = contents.replace(
+            "LIBPNG_CFLAGS += -I$(LIBPNG_PATH)/",
+            "LIBPNG_CFLAGS += -I$(LIBPNG_PATH)/include",
+        );
+
+        contents = contents.replace("@mkdir", "@coreutils mkdir");
+        contents = contents.replace("`dirname $<`", "\"$(shell coreutils dirname $<)\"");
+
+        let include_flags_to_replace = "DEFAULT_CFLAGS += -I. -I$(top_srcdir) -I$(top_srcdir)/src";
+        let new_include_flags = self
+            .msvc_include_directories()
+            .into_iter()
+            .map(|path| format!("DEFAULT_CFLAGS += -I\"{}\"", path.display()))
+            .collect::<Vec<String>>()
+            .join("\n");
+
+        contents = contents.replace(
+            include_flags_to_replace,
+            &format!("{}\n{}", include_flags_to_replace, new_include_flags),
+        );
+
+        let ld_flags_to_replace = "DEFAULT_LDFLAGS = -nologo $(CFG_LDFLAGS)";
+        let new_ld_flags = self
+            .msvc_lib_directories()
+            .into_iter()
+            .map(|path| format!("DEFAULT_LDFLAGS += -LIBPATH:\"{}\"", path.display()))
+            .collect::<Vec<String>>()
+            .join("\n");
+
+        contents = contents.replace(
+            ld_flags_to_replace,
+            &format!("{}\n{}", ld_flags_to_replace, new_ld_flags),
+        );
+
+        let mut file = OpenOptions::new()
+            .write(true)
+            .truncate(true)
+            .open(&makefile)?;
+        file.write(contents.as_bytes())?;
+
+        std::fs::copy(
+            &makefile,
+            makefile_directory.join("Makefile.win32.common.fixed"),
+        )?;
+
+        Ok(())
+    }
+
+    fn patch_windows_features_makefile(
+        &self,
+        options: &BundleOptions,
+    ) -> Result<(), Box<dyn Error>> {
+        let makefile_directory = self.source_directory(options).join("build");
+
+        if makefile_directory
+            .join("Makefile.win32.features-h.fixed")
+            .exists()
+        {
+            return Ok(());
+        }
+
+        let makefile = makefile_directory.join("Makefile.win32.features-h");
+
+        std::fs::copy(
+            &makefile,
+            makefile_directory.join("Makefile.win32.features-h.bak"),
+        )?;
+
+        let mut contents = read_to_string(&makefile)?;
+        contents = contents.replace("@echo", "@coreutils echo");
+
+        let mut file = OpenOptions::new()
+            .write(true)
+            .truncate(true)
+            .open(&makefile)?;
+        file.write(contents.as_bytes())?;
+
+        std::fs::copy(
+            &makefile,
+            makefile_directory.join("Makefile.win32.features-h.fixed"),
+        )?;
+
+        Ok(())
+    }
+
+    fn patch_windows_makefile(&self, options: &BundleOptions) -> Result<(), Box<dyn Error>> {
+        let makefile_directory = self.source_directory(options).join("src");
+
+        if makefile_directory.join("Makefile.win32.fixed").exists() {
+            return Ok(());
+        }
+
+        let makefile = makefile_directory.join("Makefile.win32");
+
+        std::fs::copy(&makefile, makefile_directory.join("Makefile.win32.bak"))?;
+
+        let mut contents = read_to_string(&makefile)?;
+        contents = contents.replace(
+            "@for x in $(enabled_cairo_headers); do echo \"	src/$$x\"; done",
+            "",
+        );
+
+        let mut file = OpenOptions::new()
+            .write(true)
+            .truncate(true)
+            .open(&makefile)?;
+        file.write(contents.as_bytes())?;
+
+        std::fs::copy(&makefile, makefile_directory.join("Makefile.win32.fixed"))?;
+
+        Ok(())
+    }
+}
+
+impl Library for CairoLibrary {
+    fn location(&self) -> &LibraryLocation {
+        &self.location
+    }
+
+    fn name(&self) -> &str {
+        "cairo"
+    }
+
+    fn ensure_sources(&self, options: &BundleOptions) -> Result<(), Box<dyn Error>> {
+        self.location()
+            .ensure_sources(&self.source_directory(options), options)?;
+        self.dependencies.ensure_sources(options)?;
+        Ok(())
+    }
+
+    fn force_compile(&self, options: &BundleOptions) {
+        self.dependencies.compile(options);
+
+        if options.target().is_unix() {
+            self.compile_unix(options).expect("Failed to compile cairo")
+        }
+        if options.target().is_windows() {
+            self.compile_windows(options)
+                .expect("Failed to compile cairo")
+        }
     }
 
     fn compiled_library_directories(&self, options: &BundleOptions) -> Vec<PathBuf> {
-        let lib = self.native_library_prefix(options).join("lib");
-        vec![lib]
+        if options.target().is_unix() {
+            let lib = self.native_library_prefix(options).join("lib");
+            return vec![lib];
+        }
+        if options.target().is_windows() {
+            let lib = self
+                .native_library_prefix(options)
+                .join("src")
+                .join(options.profile());
+            return vec![lib];
+        }
+        vec![]
     }
 
-    fn ensure_requirements(&self) {
+    fn ensure_requirements(&self, options: &BundleOptions) {
         which::which("make").expect("Could not find `make`");
+        if options.target().is_windows() {
+            which::which("coreutils").expect("Could not find `coreutils`");
+
+            for path in self.msvc_lib_directories() {
+                if !path.exists() {
+                    panic!("Lib folder does not exist: {}", &path.display())
+                }
+            }
+            for path in self.msvc_include_directories() {
+                if !path.exists() {
+                    panic!("Include folder does not exist: {}", &path.display())
+                }
+            }
+        }
     }
 }
 
 impl NativeLibrary for CairoLibrary {
     fn native_library_prefix(&self, options: &BundleOptions) -> PathBuf {
+        if options.target().is_windows() {
+            return self.source_directory(options);
+        }
+
         options.target_dir().join(self.name())
     }
 

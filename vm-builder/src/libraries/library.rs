@@ -62,7 +62,11 @@ pub trait Library: Debug {
         panic!("Could not find a compiled library for {}", self.name())
     }
 
-    fn ensure_requirements(&self);
+    fn compiled_library_binary(&self, _options: &BundleOptions) -> Result<PathBuf, Box<dyn Error>> {
+        Err(UserFacingError::new("Could not find compiled library").into())
+    }
+
+    fn ensure_requirements(&self, options: &BundleOptions);
 }
 
 #[derive(Debug, Clone)]

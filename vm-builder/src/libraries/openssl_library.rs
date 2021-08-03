@@ -82,7 +82,7 @@ impl Library for OpenSSLLibrary {
         unimplemented!()
     }
 
-    fn ensure_requirements(&self) {
+    fn ensure_requirements(&self, _options: &BundleOptions) {
         which::which("make").expect("Could not find `make`");
     }
 }

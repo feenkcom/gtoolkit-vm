@@ -62,7 +62,7 @@ pub trait Bundler {
         options
             .libraries()
             .iter()
-            .for_each(|library| library.ensure_requirements());
+            .for_each(|library| library.ensure_requirements(options));
     }
 
     fn compile_third_party_libraries(&self, final_options: &BundleOptions) -> Result<()> {

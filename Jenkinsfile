@@ -187,7 +187,7 @@ pipeline {
                                 --app-name ${APP_NAME} `
                                 --identifier ${APP_IDENTIFIER} `
                                 --author ${APP_AUTHOR} `
-                                --libraries ${APP_LIBRARIES} `
+                                --libraries cairo freetype ${APP_LIBRARIES} `
                                 --icons icons/GlamorousToolkit.ico `
                                 --release """
 

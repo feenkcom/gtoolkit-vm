@@ -82,7 +82,7 @@ impl Library for RustLibrary {
         vec![path]
     }
 
-    fn ensure_requirements(&self) {
+    fn ensure_requirements(&self, _options: &BundleOptions) {
         self.requires.iter().for_each(|each| {
             which::which(each).expect(&format!(
                 "{} must exist in the system. Make sure it is in the PATH",

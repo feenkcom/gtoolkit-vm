@@ -6,6 +6,7 @@ use std::fs::{read_to_string, OpenOptions};
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::Command;
+use user_error::UserFacingError;
 
 #[derive(Debug, Clone)]
 pub struct PixmanLibrary {
@@ -35,21 +36,56 @@ impl PixmanLibrary {
         file.write(new.as_bytes())?;
         Ok(())
     }
-}
 
-impl Library for PixmanLibrary {
-    fn location(&self) -> &LibraryLocation {
-        &self.location
+    fn patch_windows_makefile(&self, options: &BundleOptions) -> Result<(), Box<dyn Error>> {
+        if self
+            .source_directory(options)
+            .join("Makefile.win32.common.fixed")
+            .exists()
+        {
+            return Ok(());
+        }
+
+        let makefile = self.source_directory(options).join("Makefile.win32.common");
+        std::fs::copy(
+            &makefile,
+            self.source_directory(options)
+                .join("Makefile.win32.common.bak"),
+        )?;
+
+        let mut contents = read_to_string(&makefile)?;
+        contents = contents.replace("-MD", "-MT");
+
+        let include_flags_to_replace =
+            "BASE_CFLAGS = -nologo -I. -I$(top_srcdir) -I$(top_srcdir)/pixman";
+        let new_include_flags = self
+            .msvc_include_directories()
+            .into_iter()
+            .map(|path| format!("BASE_CFLAGS += -I\"{}\"", path.display()))
+            .collect::<Vec<String>>()
+            .join("\n");
+
+        contents = contents.replace(
+            include_flags_to_replace,
+            &format!("{}\n{}", include_flags_to_replace, new_include_flags),
+        );
+
+        let mut file = OpenOptions::new()
+            .write(true)
+            .truncate(true)
+            .open(&makefile)?;
+        file.write(contents.as_bytes())?;
+
+        std::fs::copy(
+            &makefile,
+            self.source_directory(options)
+                .join("Makefile.win32.common.fixed"),
+        )?;
+
+        Ok(())
     }
 
-    fn name(&self) -> &str {
-        "pixman"
-    }
-
-    fn force_compile(&self, options: &BundleOptions) {
-        self.patch_makefile(options)
-            .expect("Failed to patch a Makefile");
-
+    fn compile_unix(&self, options: &BundleOptions) -> Result<(), Box<dyn Error>> {
         let out_dir = self.native_library_prefix(options);
         if !out_dir.exists() {
             std::fs::create_dir_all(&out_dir).expect(&format!("Could not create {:?}", &out_dir));
@@ -72,7 +108,7 @@ impl Library for PixmanLibrary {
 
         println!("{:?}", &command);
 
-        let configure = command.status().unwrap();
+        let configure = command.status()?;
 
         if !configure.success() {
             panic!("Could not configure {}", self.name());
@@ -81,11 +117,60 @@ impl Library for PixmanLibrary {
         let make = Command::new("make")
             .current_dir(&makefile_dir)
             .arg("install")
-            .status()
-            .unwrap();
+            .status()?;
 
         if !make.success() {
             panic!("Could not compile {}", self.name());
+        }
+        Ok(())
+    }
+
+    fn compile_windows(&self, options: &BundleOptions) -> Result<(), Box<dyn Error>> {
+        self.patch_makefile(options)
+            .expect("Failed to patch a Makefile");
+
+        self.patch_windows_makefile(options)
+            .expect("Failed to patch a Windows specific Makefile");
+
+        let makefile = self.source_directory(options).join("Makefile.win32");
+
+        let mut command = Command::new("make");
+        command
+            .current_dir(self.source_directory(options))
+            .arg("pixman")
+            .arg("-f")
+            .arg(&makefile)
+            .arg("CFG=release")
+            .arg("MMX=off");
+
+        println!("{:?}", &command);
+
+        let configure = command.status().unwrap();
+
+        if !configure.success() {
+            panic!("Could not configure {}", self.name());
+        }
+        Ok(())
+    }
+}
+
+impl Library for PixmanLibrary {
+    fn location(&self) -> &LibraryLocation {
+        &self.location
+    }
+
+    fn name(&self) -> &str {
+        "pixman"
+    }
+
+    fn force_compile(&self, options: &BundleOptions) {
+        if options.target().is_unix() {
+            self.compile_unix(options)
+                .expect("Failed to compile pixman")
+        }
+        if options.target().is_windows() {
+            self.compile_windows(options)
+                .expect("Failed to compile pixman")
         }
     }
 
@@ -93,15 +178,47 @@ impl Library for PixmanLibrary {
         unimplemented!()
     }
 
-    fn ensure_requirements(&self) {
+    fn compiled_library_binary(&self, options: &BundleOptions) -> Result<PathBuf, Box<dyn Error>> {
+        if options.target().is_windows() {
+            return Ok(self
+                .source_directory(options)
+                .join("pixman")
+                .join(options.profile())
+                .join("pixman-1.lib"));
+        }
+        Err(UserFacingError::new("Could not find compiled library").into())
+    }
+
+    fn ensure_requirements(&self, options: &BundleOptions) {
         which::which("make").expect("Could not find `make`");
         which::which("autoreconf").expect("Could not find `make`");
+
+        if options.target().is_windows() {
+            which::which("coreutils").expect("Could not find `coreutils`");
+
+            for path in self.msvc_lib_directories() {
+                if !path.exists() {
+                    panic!("Lib folder does not exist: {}", &path.display())
+                }
+            }
+            for path in self.msvc_include_directories() {
+                if !path.exists() {
+                    panic!("Include folder does not exist: {}", &path.display())
+                }
+            }
+        }
     }
 }
 
 impl NativeLibrary for PixmanLibrary {
     fn native_library_prefix(&self, options: &BundleOptions) -> PathBuf {
-        options.target_dir().join(self.name())
+        if options.target().is_unix() {
+            return options.target_dir().join(self.name());
+        }
+        if options.target().is_windows() {
+            return self.source_directory(options);
+        }
+        panic!("Unknown platform!")
     }
 
     fn native_library_dependency_prefixes(&self, _options: &BundleOptions) -> Vec<PathBuf> {
@@ -109,16 +226,25 @@ impl NativeLibrary for PixmanLibrary {
     }
 
     fn native_library_include_headers(&self, options: &BundleOptions) -> Vec<PathBuf> {
-        let include_dir = self
-            .native_library_prefix(options)
-            .join("include")
-            .join("pixman-1");
-        vec![include_dir]
+        let library_prefix = self.native_library_prefix(options);
+        if options.target().is_unix() {
+            return vec![library_prefix.join("include").join("pixman-1")];
+        }
+        if options.target().is_windows() {
+            return vec![library_prefix];
+        }
+        vec![]
     }
 
     fn native_library_linker_libraries(&self, options: &BundleOptions) -> Vec<PathBuf> {
-        let libs_dir = self.native_library_prefix(options).join("lib");
-        vec![libs_dir]
+        let library_prefix = self.native_library_prefix(options);
+        if options.target().is_unix() {
+            return vec![library_prefix.join("lib")];
+        }
+        if options.target().is_windows() {
+            return vec![library_prefix.join("pixman").join(options.profile())];
+        }
+        vec![]
     }
 }
 
