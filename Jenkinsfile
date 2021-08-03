@@ -183,7 +183,7 @@ pipeline {
 
                         powershell """
                            cargo run --package vm-builder --target ${TARGET} --release -- `
-                                --vmmaker-vm C:/Users/jenkins/vmmaker/PharoConsole.exe `
+                                --vmmaker-vm C:/j/vmmaker/PharoConsole.exe `
                                 --app-name ${APP_NAME} `
                                 --identifier ${APP_IDENTIFIER} `
                                 --author ${APP_AUTHOR} `
