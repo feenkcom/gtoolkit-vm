@@ -24,9 +24,7 @@ fn main() {
     println!("About to build a vm using {:?}", &builder);
     builder.ensure_build_tools();
 
-    if !builder.is_compiled() {
-        builder.compile_sources();
-    }
+    builder.compile_sources();
 
     if !builder.is_compiled() {
         panic!("Failed to compile {:?}", builder.vm_binary().display())

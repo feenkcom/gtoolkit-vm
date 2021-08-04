@@ -48,6 +48,12 @@ impl Builder for MacBuilder {
             .define("FEATURE_LIB_CAIRO", "OFF")
             .define("FEATURE_LIB_FREETYPE2", "OFF");
 
+        config
+            .cflag("-Wno-shift-negative-value")
+            .cflag("-Wno-int-conversion")
+            .cflag("-Wno-unused-function")
+            .cflag("-Wno-unused-variable");
+
         if cfg!(target_arch = "x86_64") {
             config.define("CMAKE_OSX_ARCHITECTURES", "x86_64");
         } else if cfg!(target_arch = "aarch64") {

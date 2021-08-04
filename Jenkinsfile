@@ -55,6 +55,7 @@ pipeline {
                         sh """
                             ./gtoolkit-vm-builder \
                                 --vmmaker-vm /Users/tudor/vmmaker/Pharo.app/Contents/MacOS/Pharo \
+                                --vmmaker-image /Users/tudor/vmmaker/Pharo9.0-SNAPSHOT-64bit-ac4bf08.image \
                                 --app-name ${APP_NAME} \
                                 --identifier ${APP_IDENTIFIER} \
                                 --author ${APP_AUTHOR} \
@@ -97,6 +98,7 @@ pipeline {
                         sh """
                             ./gtoolkit-vm-builder \
                                 --vmmaker-vm /Users/tudor/vmmaker/Pharo.app/Contents/MacOS/Pharo \
+                                --vmmaker-image /Users/tudor/vmmaker/Pharo9.0-SNAPSHOT-64bit-ac4bf08.image \
                                 --app-name ${APP_NAME} \
                                 --identifier ${APP_IDENTIFIER} \
                                 --author ${APP_AUTHOR} \
@@ -137,6 +139,7 @@ pipeline {
                         sh """
                             ./gtoolkit-vm-builder \
                                 --vmmaker-vm /home/ubuntu/jenkins/vmmaker/pharo \
+                                --vmmaker-image /home/ubuntu/jenkins/vmmaker/Pharo9.0-SNAPSHOT-64bit-ac4bf08.image \
                                 --app-name ${APP_NAME} \
                                 --identifier ${APP_IDENTIFIER} \
                                 --author ${APP_AUTHOR} \
@@ -184,6 +187,7 @@ pipeline {
                         powershell """
                            ./gtoolkit-vm-builder.exe `
                                 --vmmaker-vm C:/j/vmmaker/PharoConsole.exe `
+                                --vmmaker-image C:/j/vmmaker/Pharo9.0-SNAPSHOT-64bit-ac4bf08.image `
                                 --app-name ${APP_NAME} `
                                 --identifier ${APP_IDENTIFIER} `
                                 --author ${APP_AUTHOR} `
