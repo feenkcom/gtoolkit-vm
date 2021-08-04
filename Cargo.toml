@@ -3,7 +3,6 @@
 members = [
     "vm-bindings",
     "vm-client",
-    "vm-builder",
 ]
 
 exclude = ["target", "third_party"]

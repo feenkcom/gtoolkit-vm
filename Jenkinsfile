@@ -18,12 +18,13 @@ pipeline {
         APP_LIBRARIES = 'git sdl2 boxer clipboard gleam glutin skia'
         APP_AUTHOR = '"feenk gmbh <contact@feenk.com>"'
 
-        LINUX_SERVER_NAME = 'mickey-mouse'
         MACOS_INTEL_TARGET = 'x86_64-apple-darwin'
         MACOS_M1_TARGET = 'aarch64-apple-darwin'
 
         WINDOWS_SERVER_NAME = 'daffy-duck'
         WINDOWS_AMD64_TARGET = 'x86_64-pc-windows-msvc'
+
+        LINUX_SERVER_NAME = 'mickey-mouse'
         LINUX_AMD64_TARGET = 'x86_64-unknown-linux-gnu'
     }
 
@@ -48,8 +49,11 @@ pipeline {
                         sh 'git clean -fdx'
                         sh 'git submodule update --init --recursive'
 
+                        sh "curl -o gtoolkit-vm-builder -LsS https://github.com/feenkcom/gtoolkit-vm-builder/releases/latest/download/gtoolkit-vm-builder-${TARGET}"
+                        sh 'chmod +x gtoolkit-vm-builder'
+
                         sh """
-                            cargo run --package vm-builder --target ${TARGET} --release -- \
+                            ./gtoolkit-vm-builder \
                                 --vmmaker-vm /Users/tudor/vmmaker/Pharo.app/Contents/MacOS/Pharo \
                                 --app-name ${APP_NAME} \
                                 --identifier ${APP_IDENTIFIER} \
@@ -87,8 +91,11 @@ pipeline {
                         sh 'git clean -fdx'
                         sh 'git submodule update --init --recursive'
 
+                        sh "curl -o gtoolkit-vm-builder -LsS https://github.com/feenkcom/gtoolkit-vm-builder/releases/latest/download/gtoolkit-vm-builder-${TARGET}"
+                        sh 'chmod +x gtoolkit-vm-builder'
+
                         sh """
-                            cargo run --package vm-builder --target ${TARGET} --release -- \
+                            ./gtoolkit-vm-builder \
                                 --vmmaker-vm /Users/tudor/vmmaker/Pharo.app/Contents/MacOS/Pharo \
                                 --app-name ${APP_NAME} \
                                 --identifier ${APP_IDENTIFIER} \
@@ -124,8 +131,11 @@ pipeline {
                         sh 'git clean -fdx'
                         sh 'git submodule update --init --recursive'
 
+                        sh "curl -o gtoolkit-vm-builder -LsS https://github.com/feenkcom/gtoolkit-vm-builder/releases/latest/download/gtoolkit-vm-builder-${TARGET}"
+                        sh 'chmod +x gtoolkit-vm-builder'
+
                         sh """
-                            cargo run --package vm-builder --target ${TARGET} --release -- \
+                            ./gtoolkit-vm-builder \
                                 --vmmaker-vm /home/ubuntu/jenkins/vmmaker/pharo \
                                 --app-name ${APP_NAME} \
                                 --identifier ${APP_IDENTIFIER} \
@@ -169,8 +179,10 @@ pipeline {
                         powershell 'git clean -fdx'
                         powershell 'git submodule update --init --recursive'
 
+                        powershell "curl -o gtoolkit-vm-builder.exe https://github.com/feenkcom/gtoolkit-vm-builder/releases/latest/download/gtoolkit-vm-builder-${TARGET}.exe"
+
                         powershell """
-                           cargo run --package vm-builder --target ${TARGET} --release -- `
+                           ./gtoolkit-vm-builder.exe `
                                 --vmmaker-vm C:/j/vmmaker/PharoConsole.exe `
                                 --app-name ${APP_NAME} `
                                 --identifier ${APP_IDENTIFIER} `
