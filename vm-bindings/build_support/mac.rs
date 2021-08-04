@@ -54,8 +54,11 @@ impl Builder for MacBuilder {
             config.define("CMAKE_OSX_ARCHITECTURES", "arm64");
         }
 
-        if let Some(vm_maker) = self.vm_maker() {
-            config.define("GENERATE_PHARO_VM", vm_maker);
+        if let Some(vmmaker_vm) = self.vmmaker_vm() {
+            config.define("GENERATE_PHARO_VM", vmmaker_vm);
+        }
+        if let Some(vmmaker_image) = self.vmmaker_image() {
+            config.define("GENERATE_PHARO_IMAGE", vmmaker_image);
         }
 
         config.build();

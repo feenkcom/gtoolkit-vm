@@ -65,6 +65,34 @@ impl WindowsBuilder {
             .join("x64")
             .join(self.profile())
     }
+
+    fn escape_windows_path(&self, path: impl AsRef<Path>) -> PathBuf {
+        #[cfg(windows)]
+        {
+            // CMake doesn't like unescaped `\`s paths
+            use std::ffi::OsString;
+            use std::os::windows::ffi::{OsStrExt, OsStringExt};
+
+            let mut path = path.as_ref().into_os_string();
+
+            let wchars = path
+                .encode_wide()
+                .map(|wchar| {
+                    if wchar == b'\\' as u16 {
+                        '/' as u16
+                    } else {
+                        wchar
+                    }
+                })
+                .collect::<Vec<_>>();
+            path = OsString::from_wide(&wchars);
+            PathBuf::from(path)
+        }
+        #[cfg(not(windows))]
+        {
+            path.as_ref().to_path_buf()
+        }
+    }
 }
 
 impl Builder for WindowsBuilder {
@@ -121,27 +149,14 @@ impl Builder for WindowsBuilder {
             .generator("Visual Studio 16 2019")
             .generator_toolset("ClangCL");
 
-        if let Some(vm_maker) = self.vm_maker() {
-            let path: PathBuf = vm_maker;
-            let mut path = path.into_os_string();
-            #[cfg(windows)]
-            {
-                // CMake doesn't like unescaped `\`s paths
-                use std::ffi::OsString;
-                use std::os::windows::ffi::{OsStrExt, OsStringExt};
-                let wchars = path
-                    .encode_wide()
-                    .map(|wchar| {
-                        if wchar == b'\\' as u16 {
-                            '/' as u16
-                        } else {
-                            wchar
-                        }
-                    })
-                    .collect::<Vec<_>>();
-                path = OsString::from_wide(&wchars);
-            }
-            config.define("GENERATE_PHARO_VM", path);
+        if let Some(vmmaker_vm) = self.vmmaker_vm() {
+            config.define("GENERATE_PHARO_VM", self.escape_windows_path(vmmaker_vm));
+        }
+        if let Some(vmmaker_image) = self.vmmaker_image() {
+            config.define(
+                "GENERATE_PHARO_IMAGE",
+                self.escape_windows_path(vmmaker_image),
+            );
         }
 
         config.build();

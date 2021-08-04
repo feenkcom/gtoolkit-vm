@@ -3,6 +3,9 @@ use std::fmt::Debug;
 use std::path::{Path, PathBuf};
 use std::{env, fmt, fs};
 
+const VM_CLIENT_VMMAKER_VM_VAR: &str = "VM_CLIENT_VMMAKER";
+const VM_CLIENT_VMMAKER_IMAGE_VAR: &str = "VM_CLIENT_VMMAKER_IMAGE";
+
 pub trait Builder: Debug {
     fn is_compiled(&self) -> bool {
         self.vm_binary().exists()
@@ -18,13 +21,32 @@ pub trait Builder: Debug {
 
     fn ensure_build_tools(&self) {}
 
-    fn vm_maker(&self) -> Option<PathBuf> {
-        std::env::var("VM_CLIENT_VMMAKER").map_or(None, |path| {
+    fn vmmaker_vm(&self) -> Option<PathBuf> {
+        std::env::var(VM_CLIENT_VMMAKER_VM_VAR).map_or(None, |path| {
             let path = Path::new(&path);
             if path.exists() {
                 Some(path.to_path_buf())
             } else {
-                None
+                panic!(
+                    "Specified {} does not exist: {}",
+                    VM_CLIENT_VMMAKER_VM_VAR,
+                    path.display()
+                );
+            }
+        })
+    }
+
+    fn vmmaker_image(&self) -> Option<PathBuf> {
+        std::env::var(VM_CLIENT_VMMAKER_IMAGE_VAR).map_or(None, |path| {
+            let path = Path::new(&path);
+            if path.exists() {
+                Some(path.to_path_buf())
+            } else {
+                panic!(
+                    "Specified {} does not exist: {}",
+                    VM_CLIENT_VMMAKER_IMAGE_VAR,
+                    path.display()
+                );
             }
         })
     }
