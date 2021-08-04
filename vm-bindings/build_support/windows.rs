@@ -73,7 +73,7 @@ impl WindowsBuilder {
             use std::ffi::OsString;
             use std::os::windows::ffi::{OsStrExt, OsStringExt};
 
-            let mut path = path.as_ref().into_os_string();
+            let mut path = path.as_ref().to_path_buf().into_os_string();
 
             let wchars = path
                 .encode_wide()
