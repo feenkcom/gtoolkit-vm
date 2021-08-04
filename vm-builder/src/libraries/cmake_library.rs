@@ -146,6 +146,7 @@ impl Library for CMakeLibrary {
         }
 
         config
+            .static_crt(true)
             .target(&options.target().to_string())
             .host(&version_meta().unwrap().host)
             .out_dir(&out_dir)
