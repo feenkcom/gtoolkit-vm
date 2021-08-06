@@ -31,7 +31,10 @@ pipeline {
         stage ('Read VM builder version') {
             steps {
                 script {
-                    VM_BUILDER_VERSION = readFile(file: 'vm-builder.version')
+                    VM_BUILDER_VERSION = sh (
+                        script: "cat vm-builder.version",
+                        returnStdout: true
+                    ).trim()
                 }
                 echo "Building using VM builder ${VM_BUILDER_VERSION}"
             }
