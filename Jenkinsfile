@@ -16,7 +16,6 @@ pipeline {
         APP_LIBRARIES = 'git sdl2 boxer clipboard gleam glutin skia'
         APP_AUTHOR = '"feenk gmbh <contact@feenk.com>"'
 
-
         MACOS_INTEL_TARGET = 'x86_64-apple-darwin'
         MACOS_M1_TARGET = 'aarch64-apple-darwin'
 
@@ -29,6 +28,9 @@ pipeline {
 
     stages {
         stage ('Read VM builder version') {
+            agent {
+                label "${MACOS_M1_TARGET}"
+            }
             steps {
                 script {
                     VM_BUILDER_VERSION = sh (
