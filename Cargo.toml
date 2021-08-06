@@ -5,4 +5,4 @@ members = [
     "vm-client",
 ]
 
-exclude = ["target", "third_party"]
+exclude = ["target", "third_party", "libs"]

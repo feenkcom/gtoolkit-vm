@@ -4,19 +4,20 @@ import hudson.tasks.junit.CaseResult
 
 pipeline {
     agent none
-    parameters { string(name: 'FORCED_TAG_NAME', defaultValue: '', description: 'Environment variable used for increasing the minor or major version of Glamorous Toolkit. Example input `v0.8.0`. Can be left blank, in that case, the patch will be incremented.') }
     options {
         buildDiscarder(logRotator(numToKeepStr: '50'))
         disableConcurrentBuilds()
     }
     environment {
         GITHUB_TOKEN = credentials('githubrelease')
-        AWSIP = 'ec2-18-197-145-81.eu-central-1.compute.amazonaws.com'
-        MASTER_WORKSPACE = ""
+
+        VM_BUILDER_VERSION = readFile(file: 'vm-builder.version')
+
         APP_NAME = 'GlamorousToolkit'
         APP_IDENTIFIER = 'com.gtoolkit'
         APP_LIBRARIES = 'git sdl2 boxer clipboard gleam glutin skia'
         APP_AUTHOR = '"feenk gmbh <contact@feenk.com>"'
+
 
         MACOS_INTEL_TARGET = 'x86_64-apple-darwin'
         MACOS_M1_TARGET = 'aarch64-apple-darwin'
@@ -52,7 +53,7 @@ pipeline {
                         sh 'git clean -fdx'
                         sh 'git submodule update --init --recursive'
 
-                        sh "curl -o gtoolkit-vm-builder -LsS https://github.com/feenkcom/gtoolkit-vm-builder/releases/latest/download/gtoolkit-vm-builder-${TARGET}"
+                        sh "curl -o gtoolkit-vm-builder -LsS https://github.com/feenkcom/gtoolkit-vm-builder/releases/download/${VM_BUILDER_VERSION}/gtoolkit-vm-builder-${TARGET}"
                         sh 'chmod +x gtoolkit-vm-builder'
 
                         sh """
@@ -97,7 +98,7 @@ pipeline {
                         sh 'git clean -fdx'
                         sh 'git submodule update --init --recursive'
 
-                        sh "curl -o gtoolkit-vm-builder -LsS https://github.com/feenkcom/gtoolkit-vm-builder/releases/latest/download/gtoolkit-vm-builder-${TARGET}"
+                        sh "curl -o gtoolkit-vm-builder -LsS https://github.com/feenkcom/gtoolkit-vm-builder/releases/download/${VM_BUILDER_VERSION}/gtoolkit-vm-builder-${TARGET}"
                         sh 'chmod +x gtoolkit-vm-builder'
 
                         sh """
@@ -140,7 +141,7 @@ pipeline {
                         sh 'git clean -fdx'
                         sh 'git submodule update --init --recursive'
 
-                        sh "curl -o gtoolkit-vm-builder -LsS https://github.com/feenkcom/gtoolkit-vm-builder/releases/latest/download/gtoolkit-vm-builder-${TARGET}"
+                        sh "curl -o gtoolkit-vm-builder -LsS https://github.com/feenkcom/gtoolkit-vm-builder/releases/download/${VM_BUILDER_VERSION}/gtoolkit-vm-builder-${TARGET}"
                         sh 'chmod +x gtoolkit-vm-builder'
 
                         sh """
@@ -191,7 +192,7 @@ pipeline {
                         powershell 'git clean -fdx'
                         powershell 'git submodule update --init --recursive'
 
-                        powershell "curl -o gtoolkit-vm-builder.exe https://github.com/feenkcom/gtoolkit-vm-builder/releases/latest/download/gtoolkit-vm-builder-${TARGET}.exe"
+                        powershell "curl -o gtoolkit-vm-builder.exe https://github.com/feenkcom/gtoolkit-vm-builder/releases/download/${VM_BUILDER_VERSION}/gtoolkit-vm-builder-${TARGET}.exe"
 
                         powershell """
                            ./gtoolkit-vm-builder.exe `
