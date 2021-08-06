@@ -11,8 +11,6 @@ pipeline {
     environment {
         GITHUB_TOKEN = credentials('githubrelease')
 
-        VM_BUILDER_VERSION = readFile(file: 'vm-builder.version')
-
         APP_NAME = 'GlamorousToolkit'
         APP_IDENTIFIER = 'com.gtoolkit'
         APP_LIBRARIES = 'git sdl2 boxer clipboard gleam glutin skia'
@@ -30,6 +28,14 @@ pipeline {
     }
 
     stages {
+        stage ('Read VM builder version') {
+            steps {
+                script {
+                    VM_BUILDER_VERSION = readFile(file: 'vm-builder.version')
+                }
+                echo "Building using VM builder ${VM_BUILDER_VERSION}"
+            }
+        }
         stage ('Parallel build') {
             parallel {
                 stage ('MacOS x86_64') {
