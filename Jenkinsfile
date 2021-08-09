@@ -4,12 +4,17 @@ import hudson.tasks.junit.CaseResult
 
 pipeline {
     agent none
+    parameters {
+        choice(name: 'BUMP', choices: ['patch', 'minor', 'major'], description: 'What to bump when releasing') }
     options {
         buildDiscarder(logRotator(numToKeepStr: '50'))
         disableConcurrentBuilds()
     }
     environment {
         GITHUB_TOKEN = credentials('githubrelease')
+
+        REPOSITORY_OWNER = 'feenkcom'
+        REPOSITORY_NAME = 'gtoolkit-vm'
 
         APP_NAME = 'GlamorousToolkit'
         APP_IDENTIFIER = 'com.gtoolkit'
@@ -27,7 +32,7 @@ pipeline {
     }
 
     stages {
-        stage ('Read VM builder version') {
+        stage ('Read tool versions') {
             agent {
                 label "${MACOS_M1_TARGET}"
             }
@@ -37,8 +42,18 @@ pipeline {
                         script: "cat vm-builder.version",
                         returnStdout: true
                     ).trim()
+                    FEENK_RELEASER_VERSION = sh (
+                        script: "cat feenk-releaser.version",
+                        returnStdout: true
+                    ).trim()
+                    FEENK_SIGNER_VERSION = sh (
+                        script: "cat feenk-signer.version",
+                        returnStdout: true
+                    ).trim()
                 }
-                echo "Building using VM builder ${VM_BUILDER_VERSION}"
+                echo "Will build using gtoolkit-vm-builder ${VM_BUILDER_VERSION}"
+                echo "Will release using feenk-releaser ${FEENK_RELEASER_VERSION}"
+                echo "Will sign using feenk-releaser ${FEENK_SIGNER_VERSION}"
             }
         }
         stage ('Parallel build') {
@@ -78,7 +93,7 @@ pipeline {
                                 --libraries cairo freetype ${APP_LIBRARIES} \
                                 --release """
 
-                        sh "curl -o feenk-signer -LsS  https://github.com/feenkcom/feenk-signer/releases/latest/download/feenk-signer-${TARGET}"
+                        sh "curl -o feenk-signer -LsS https://github.com/feenkcom/feenk-signer/releases/download/${FEENK_SIGNER_VERSION}/feenk-signer-${TARGET}"
                         sh "chmod +x feenk-signer"
 
                         sh "./feenk-signer target/${TARGET}/release/bundle/${APP_NAME}.app"
@@ -123,7 +138,7 @@ pipeline {
                                 --libraries cairo freetype ${APP_LIBRARIES} \
                                 --release """
 
-                        sh "curl -o feenk-signer -LsS  https://github.com/feenkcom/feenk-signer/releases/latest/download/feenk-signer-${TARGET}"
+                        sh "curl -o feenk-signer -LsS  https://github.com/feenkcom/feenk-signer/releases/download/${FEENK_SIGNER_VERSION}/feenk-signer-${TARGET}"
                         sh "chmod +x feenk-signer"
 
                         sh "./feenk-signer target/${TARGET}/release/bundle/${APP_NAME}.app"
@@ -241,15 +256,15 @@ pipeline {
                 unstash "${MACOS_M1_TARGET}"
                 unstash "${WINDOWS_AMD64_TARGET}"
 
-                sh "wget -O feenk-releaser https://github.com/feenkcom/releaser-rs/releases/latest/download/feenk-releaser-${TARGET}"
+                sh "wget -O feenk-releaser https://github.com/feenkcom/releaser-rs/releases/download/${FEENK_RELEASER_VERSION}/feenk-releaser-${TARGET}"
                 sh "chmod +x feenk-releaser"
 
                 sh """
                 ./feenk-releaser \
-                    --owner feenkcom \
-                    --repo gtoolkit-vm \
+                    --owner ${REPOSITORY_OWNER} \
+                    --repo ${REPOSITORY_NAME} \
                     --token GITHUB_TOKEN \
-                    --bump-patch \
+                    --bump ${params.BUMP} \
                     --auto-accept \
                     --assets \
                         ${APP_NAME}-${LINUX_AMD64_TARGET}.zip \
