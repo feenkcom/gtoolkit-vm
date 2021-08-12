@@ -3,10 +3,8 @@ extern crate vm_bindings;
 
 mod image_finder;
 
-use clap::{App, AppSettings, Arg, ArgMatches};
-use image_finder::{search_image_file_nearby, validate_user_image_file};
-use std::fs;
-use std::path::PathBuf;
+use clap::{App, AppSettings, Arg};
+use image_finder::validate_user_image_file;
 use vm_bindings::{VMParameters, VM};
 
 fn main() {
@@ -14,7 +12,6 @@ fn main() {
         .version("1.0")
         .author("feenk gmbh. <contact@feenk.com>")
         .setting(AppSettings::AllowExternalSubcommands)
-        .setting(AppSettings::SubcommandRequiredElseHelp)
         .setting(AppSettings::ColoredHelp)
         .arg(
             Arg::new("image")

@@ -17,6 +17,16 @@ path = "src/main_cli.rs"
 vm-bindings = { path = "../vm-bindings" }
 nfd2 = "0.3.0"
 clap = "3.0.0-beta.2"
+thiserror = "1.0.26"
+dirs = "3.0"
+log = "0.4"
+user-error = "1.2.8"
+to_absolute = "0.1.0"
+
+[target.'cfg(target_os="macos")'.dependencies]
+core-foundation = "0.9.1"
+libloading = "0.7"
+libc = "0.2"
 
 [build-dependencies]
 embed-resource = "1.6"

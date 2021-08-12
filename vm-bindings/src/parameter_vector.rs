@@ -1,5 +1,5 @@
-use crate::bindings::{vm_parameter_vector_destroy, VMParameterVector as NativeVMParameterVector};
-use crate::prelude::{transmute_ref, transmute_ref_mut, Handle, NativeAccess, NativeDrop};
+use crate::bindings::VMParameterVector as NativeVMParameterVector;
+use crate::prelude::{transmute_ref, NativeAccess};
 use std::ffi::CStr;
 
 #[repr(transparent)]
@@ -34,10 +34,6 @@ impl VirtualMachineParameters {
     pub(crate) fn borrow_from_native(native: &NativeVMParameterVector) -> &Self {
         unsafe { transmute_ref(native) }
     }
-
-    pub(crate) fn borrow_from_native_mut(native: &mut NativeVMParameterVector) -> &mut Self {
-        unsafe { transmute_ref_mut(native) }
-    }
 }
 
 #[repr(transparent)]
@@ -71,10 +67,6 @@ impl ImageParameters {
 
     pub(crate) fn borrow_from_native(native: &NativeVMParameterVector) -> &Self {
         unsafe { transmute_ref(native) }
-    }
-
-    pub(crate) fn borrow_from_native_mut(native: &mut NativeVMParameterVector) -> &mut Self {
-        unsafe { transmute_ref_mut(native) }
     }
 }
 

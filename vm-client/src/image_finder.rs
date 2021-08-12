@@ -22,22 +22,24 @@ pub fn try_find_image_file_in_directory(path: PathBuf) -> Option<PathBuf> {
     }
 }
 
-pub fn search_image_file_nearby() -> Option<PathBuf> {
-    let image_file = std::env::current_exe().map_or(None, |path| {
-        path.parent().map_or(None, |exe_path| {
-            try_find_image_file_in_directory(exe_path.to_path_buf())
-        })
-    });
-
-    if image_file.is_some() {
-        return image_file;
+pub fn search_image_file_within_directories(directories: Vec<PathBuf>) -> Option<PathBuf> {
+    for directory in directories {
+        if let Some(image) = try_find_image_file_in_directory(directory) {
+            return Some(image);
+        }
     }
-
-    std::env::current_dir().map_or(None, |path| try_find_image_file_in_directory(path))
+    None
 }
 
-pub fn pick_image_with_dialog() -> Option<PathBuf> {
-    let result = dialog().filter("image").open().unwrap_or_else(|e| {
+pub fn pick_image_with_dialog(default_path: Option<PathBuf>) -> Option<PathBuf> {
+    let mut dialog = dialog();
+    let mut dialog_ref = &mut dialog;
+    if let Some(ref default_path) = default_path {
+        dialog_ref = dialog_ref.default_path(default_path);
+    }
+    dialog_ref = dialog_ref.filter("image");
+
+    let result = dialog_ref.open().unwrap_or_else(|e| {
         panic!("{}", e);
     });
 
