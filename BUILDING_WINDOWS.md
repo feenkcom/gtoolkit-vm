@@ -61,3 +61,9 @@ Make is required to drive the `cairo` build.
 ```
 choco install -y make
 ```
+
+### Perl
+Perl is used to configure the build of openssl
+```
+choco install strawberryperl
+```
