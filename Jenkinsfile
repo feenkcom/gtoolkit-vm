@@ -74,7 +74,7 @@ pipeline {
                     steps {
                         sh 'if [ -d target ]; then rm -Rf target; fi'
                         sh 'if [ -d third_party ]; then rm -Rf third_party; fi'
-                        sh 'if [ -d libs ]; then rm -Rf third_party; fi'
+                        sh 'if [ -d libs ]; then rm -Rf libs; fi'
 
                         sh 'git clean -fdx'
                         sh 'git submodule update --init --recursive'
@@ -120,7 +120,7 @@ pipeline {
                     steps {
                         sh 'if [ -d target ]; then rm -Rf target; fi'
                         sh 'if [ -d third_party ]; then rm -Rf third_party; fi'
-                        sh 'if [ -d libs ]; then rm -Rf third_party; fi'
+                        sh 'if [ -d libs ]; then rm -Rf libs; fi'
                         sh 'git clean -fdx'
                         sh 'git submodule update --init --recursive'
 
@@ -163,7 +163,7 @@ pipeline {
                     steps {
                         sh 'if [ -d target ]; then rm -Rf target; fi'
                         sh 'if [ -d third_party ]; then rm -Rf third_party; fi'
-                        sh 'if [ -d libs ]; then rm -Rf third_party; fi'
+                        sh 'if [ -d libs ]; then rm -Rf libs; fi'
                         sh 'git clean -fdx'
                         sh 'git submodule update --init --recursive'
 
