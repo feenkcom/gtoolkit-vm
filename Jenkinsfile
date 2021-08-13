@@ -209,7 +209,8 @@ pipeline {
                         CARGO_HOME = "C:\\.cargo"
                         CARGO_PATH = "${CARGO_HOME}\\bin"
                         PERL_PATH = 'C:\\Strawberry\\perl\\site\\bin;C:\\Strawberry\\perl\\bin'
-                        PATH = "${CARGO_PATH};${LIBCLANG_PATH};${MSBUILD_PATH};${CMAKE_PATH};${MSVC_PATH};${PERL_PATH};$PATH"
+                        NASM_PATH  = 'C:\\Program Files\\NASM'
+                        PATH = "${CARGO_PATH};${LIBCLANG_PATH};${MSBUILD_PATH};${CMAKE_PATH};${MSVC_PATH};${PERL_PATH};${NASM_PATH};$PATH"
                     }
 
                     steps {
