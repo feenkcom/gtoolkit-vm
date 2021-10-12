@@ -178,7 +178,8 @@ pipeline {
                                 --identifier ${APP_IDENTIFIER} \
                                 --author ${APP_AUTHOR} \
                                 --libraries ${APP_LIBRARIES} \
-                                --release """
+                                --release \
+                                -vvvv """
 
                         sh """
                             cd target/${TARGET}/release/bundle/${APP_NAME}/
