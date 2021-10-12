@@ -18,7 +18,7 @@ pipeline {
 
         APP_NAME = 'GlamorousToolkit'
         APP_IDENTIFIER = 'com.gtoolkit'
-        APP_LIBRARIES = 'git ssl crypto sdl2 boxer clipboard gleam glutin process skia'
+        APP_LIBRARIES = 'git crypto sdl2 boxer clipboard gleam glutin process skia'
         APP_AUTHOR = '"feenk gmbh <contact@feenk.com>"'
 
         MACOS_INTEL_TARGET = 'x86_64-apple-darwin'
