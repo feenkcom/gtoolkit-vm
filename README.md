@@ -22,24 +22,9 @@ git submodule update --remote --recursive
 ```
 
 ## Building
+The building of the vm happens with the help of `gtoolkit-vm-builder`.
 
-First build a `vm-builder`:
-```
-cargo build --bin vm-builder --release
-```
-Then build an app:
-```
-./target/release/vm-builder --release --app-name GlamorousToolkit --identifier com.gtoolkit -vv
-```
-The bundled app will be placed in the following folder within `gtoolkit-vm`:
-```
-target/{architecture}/release/bundle/
-```
-
-To see all possible options of the `vm-builder`:
-```
-./target/release/vm-builder --help
-```
+Follow the README.md of [github.com/feenkcom/gtoolkit-vm-builder](https://github.com/feenkcom/gtoolkit-vm-builder).
 
 ### Building
 Please see a corresponding how-to guide based on the target platform:
