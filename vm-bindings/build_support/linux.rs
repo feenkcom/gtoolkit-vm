@@ -35,7 +35,8 @@ impl Builder for LinuxBuilder {
             .define("FEATURE_LIB_GIT2", "OFF")
             .define("FEATURE_LIB_SDL2", "OFF")
             .define("FEATURE_LIB_CAIRO", "OFF")
-            .define("FEATURE_LIB_FREETYPE2", "OFF");
+            .define("FEATURE_LIB_FREETYPE2", "OFF")
+            .define("PHARO_VM_IN_WORKER_THREAD", "OFF");
 
         if let Some(vmmaker_vm) = self.vmmaker_vm() {
             config.define("GENERATE_PHARO_VM", vmmaker_vm);

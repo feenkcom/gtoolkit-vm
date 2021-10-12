@@ -146,6 +146,7 @@ impl Builder for WindowsBuilder {
             .define("FEATURE_LIB_SDL2", "OFF")
             .define("FEATURE_LIB_CAIRO", "OFF")
             .define("FEATURE_LIB_FREETYPE2", "OFF")
+            .define("PHARO_VM_IN_WORKER_THREAD", "OFF")
             .generator("Visual Studio 16 2019")
             .generator_toolset("ClangCL");
 

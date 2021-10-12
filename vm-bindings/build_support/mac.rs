@@ -46,7 +46,8 @@ impl Builder for MacBuilder {
             .define("FEATURE_LIB_GIT2", "OFF")
             .define("FEATURE_LIB_SDL2", "OFF")
             .define("FEATURE_LIB_CAIRO", "OFF")
-            .define("FEATURE_LIB_FREETYPE2", "OFF");
+            .define("FEATURE_LIB_FREETYPE2", "OFF")
+            .define("PHARO_VM_IN_WORKER_THREAD", "OFF");
 
         config
             .cflag("-Wno-shift-negative-value")
