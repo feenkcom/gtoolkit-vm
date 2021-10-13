@@ -71,12 +71,16 @@ pub trait Builder: Debug {
     fn compiled_libraries_directory(&self) -> PathBuf;
 
     fn exported_libraries_directory(&self) -> PathBuf {
-        PathBuf::new()
+        let target = std::env::var("CARGO_TARGET");
+        let mut path = PathBuf::new()
             .join("..")
-            .join(std::env::var("CARGO_TARGET_DIR").unwrap_or("target".to_string()))
-            .join(std::env::var("TARGET").unwrap())
-            .join(self.profile())
-            .join("shared_libraries")
+            .join(std::env::var("CARGO_TARGET_DIR").unwrap_or("target".to_string()));
+
+        if let Ok(target) = target {
+            path = path.join(target);
+        }
+
+        path.join(self.profile()).join("shared_libraries")
     }
 
     fn compile_sources(&self);
