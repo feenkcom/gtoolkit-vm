@@ -18,7 +18,8 @@ pipeline {
 
         APP_NAME = 'GlamorousToolkit'
         APP_IDENTIFIER = 'com.gtoolkit'
-        APP_LIBRARIES = 'git crypto sdl2 boxer clipboard gleam glutin process skia'
+        APP_LIBRARIES = 'boxer cairo clipboard crypto freetype git gleam glutin process sdl2 skia'
+        APP_LIBRARIES_VERSIONS = 'libraries.version'
         APP_AUTHOR = '"feenk gmbh <contact@feenk.com>"'
 
         MACOS_INTEL_TARGET = 'x86_64-apple-darwin'
@@ -90,7 +91,8 @@ pipeline {
                                 --identifier ${APP_IDENTIFIER} \
                                 --author ${APP_AUTHOR} \
                                 --icons icons/GlamorousToolkit.icns \
-                                --libraries cairo freetype ${APP_LIBRARIES} \
+                                --libraries ${APP_LIBRARIES} \
+                                --libraries-versions ${APP_LIBRARIES_VERSIONS} \
                                 --release """
 
                         sh "curl -o feenk-signer -LsS https://github.com/feenkcom/feenk-signer/releases/download/${FEENK_SIGNER_VERSION}/feenk-signer-${TARGET}"
@@ -135,7 +137,8 @@ pipeline {
                                 --identifier ${APP_IDENTIFIER} \
                                 --author ${APP_AUTHOR} \
                                 --icons icons/GlamorousToolkit.icns \
-                                --libraries cairo freetype ${APP_LIBRARIES} \
+                                --libraries ${APP_LIBRARIES} \
+                                --libraries-versions ${APP_LIBRARIES_VERSIONS} \
                                 --release """
 
                         sh "curl -o feenk-signer -LsS  https://github.com/feenkcom/feenk-signer/releases/download/${FEENK_SIGNER_VERSION}/feenk-signer-${TARGET}"
@@ -178,6 +181,7 @@ pipeline {
                                 --identifier ${APP_IDENTIFIER} \
                                 --author ${APP_AUTHOR} \
                                 --libraries ${APP_LIBRARIES} \
+                                --libraries-versions ${APP_LIBRARIES_VERSIONS} \
                                 --release \
                                 -vvvv """
 
@@ -230,7 +234,8 @@ pipeline {
                                 --app-name ${APP_NAME} `
                                 --identifier ${APP_IDENTIFIER} `
                                 --author ${APP_AUTHOR} `
-                                --libraries cairo freetype ${APP_LIBRARIES} `
+                                --libraries ${APP_LIBRARIES} `
+                                --libraries-versions ${APP_LIBRARIES_VERSIONS} `
                                 --icons icons/GlamorousToolkit.ico `
                                 --release """
 
