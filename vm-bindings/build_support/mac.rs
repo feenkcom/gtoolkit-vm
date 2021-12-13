@@ -1,6 +1,6 @@
 use crate::build_support::Builder;
 
-use file_matcher::{FileNamed, OneEntry};
+use file_matcher::OneEntry;
 use std::fmt;
 use std::fmt::{Debug, Formatter};
 use std::path::PathBuf;
@@ -92,34 +92,32 @@ impl Builder for MacBuilder {
             "Must exist: {:?}",
             self.compiled_libraries_directory().display()
         );
-
-        vec![
-            // core
-            FileNamed::exact("libPharoVMCore.dylib"),
-            // plugins
-            FileNamed::exact("libB2DPlugin.dylib"),
-            FileNamed::exact("libBitBltPlugin.dylib"),
-            FileNamed::exact("libDSAPrims.dylib"),
-            FileNamed::exact("libFileAttributesPlugin.dylib"),
-            FileNamed::exact("libFilePlugin.dylib"),
-            FileNamed::exact("libJPEGReaderPlugin.dylib"),
-            FileNamed::exact("libJPEGReadWriter2Plugin.dylib"),
-            FileNamed::exact("libLargeIntegers.dylib"),
-            FileNamed::exact("libLocalePlugin.dylib"),
-            FileNamed::exact("libMiscPrimitivePlugin.dylib"),
-            FileNamed::exact("libSocketPlugin.dylib"),
-            FileNamed::exact("libSqueakSSL.dylib"),
-            FileNamed::exact("libSurfacePlugin.dylib"),
-            FileNamed::exact("libUnixOSProcessPlugin.dylib"),
-            FileNamed::exact("libUUIDPlugin.dylib"),
-            FileNamed::exact("libTestLibrary.dylib"),
-            // third party
-            #[cfg(target_arch = "x86_64")]
-            FileNamed::exact("libffi.dylib"),
-        ]
-        .into_iter()
-        .map(|library| library.within(self.compiled_libraries_directory()))
-        .collect()
+        self.filenames_from_libdir(
+            vec![
+                // core
+                "libPharoVMCore.dylib",
+                // plugins
+                "libB2DPlugin.dylib",
+                "libBitBltPlugin.dylib",
+                "libDSAPrims.dylib",
+                "libFileAttributesPlugin.dylib",
+                "libFilePlugin.dylib",
+                "libJPEGReaderPlugin.dylib",
+                "libJPEGReadWriter2Plugin.dylib",
+                "libLargeIntegers.dylib",
+                "libLocalePlugin.dylib",
+                "libMiscPrimitivePlugin.dylib",
+                "libSocketPlugin.dylib",
+                "libSqueakSSL.dylib",
+                "libSurfacePlugin.dylib",
+                "libUnixOSProcessPlugin.dylib",
+                "libUUIDPlugin.dylib",
+                "libTestLibrary.dylib",
+                // third party
+                #[cfg(target_arch = "x86_64")]
+                "libffi.dylib",
+            ], 
+            self.compiled_libraries_directory())
     }
 
     fn boxed(self) -> Box<dyn Builder> {

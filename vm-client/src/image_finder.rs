@@ -22,6 +22,7 @@ pub fn try_find_image_file_in_directory(path: PathBuf) -> Option<PathBuf> {
     }
 }
 
+#[allow(dead_code)]
 pub fn search_image_file_within_directories(directories: Vec<PathBuf>) -> Option<PathBuf> {
     for directory in directories {
         if let Some(image) = try_find_image_file_in_directory(directory) {
@@ -31,6 +32,7 @@ pub fn search_image_file_within_directories(directories: Vec<PathBuf>) -> Option
     None
 }
 
+#[allow(dead_code)]
 pub fn pick_image_with_dialog(default_path: Option<PathBuf>) -> Option<PathBuf> {
     let mut dialog = dialog();
     let mut dialog_ref = &mut dialog;
@@ -56,6 +58,7 @@ pub fn pick_image_with_dialog(default_path: Option<PathBuf>) -> Option<PathBuf> 
     }
 }
 
+#[allow(dead_code)]
 pub fn validate_user_image_file(image_name: Option<&str>) -> Option<PathBuf> {
     if let Some(image_file_name) = image_name {
         let image_path = PathBuf::new().join(image_file_name);
