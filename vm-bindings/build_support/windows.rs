@@ -31,6 +31,14 @@ impl WindowsBuilder {
             .arg("https://github.com/BrianGladman/pthreads.git")
             .status()
             .unwrap();
+
+            // checkout the version of pthreads that works
+        Command::new("git")
+            .current_dir(self.output_directory())
+            .arg("checkout")
+            .arg("c49d9e1bce919638f46c82655a2117e9ccda4bb9")
+            .status()
+            .unwrap();
     }
 
     fn compile_pthread(&self) {
