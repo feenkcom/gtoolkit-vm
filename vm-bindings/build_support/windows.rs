@@ -34,7 +34,7 @@ impl WindowsBuilder {
 
             // checkout the version of pthreads that works
         Command::new("git")
-            .current_dir(self.output_directory())
+            .current_dir(self.pthreads_directory())
             .arg("checkout")
             .arg("c49d9e1bce919638f46c82655a2117e9ccda4bb9")
             .status()
