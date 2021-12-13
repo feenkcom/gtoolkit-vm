@@ -1,6 +1,6 @@
 use crate::build_support::Builder;
 
-use file_matcher::{FileNamed, OneEntry};
+use file_matcher::OneEntry;
 use std::fmt;
 use std::fmt::{Debug, Formatter};
 use std::path::PathBuf;
@@ -65,34 +65,32 @@ impl Builder for LinuxBuilder {
             "Must exist: {:?}",
             self.compiled_libraries_directory().display()
         );
-
-        vec![
-            // core
-            FileNamed::exact("libPharoVMCore.so"),
-            // plugins
-            FileNamed::exact("libB2DPlugin.so"),
-            FileNamed::exact("libBitBltPlugin.so"),
-            FileNamed::exact("libDSAPrims.so"),
-            FileNamed::exact("libFileAttributesPlugin.so"),
-            FileNamed::exact("libFilePlugin.so"),
-            FileNamed::exact("libJPEGReaderPlugin.so"),
-            FileNamed::exact("libJPEGReadWriter2Plugin.so"),
-            FileNamed::exact("libLargeIntegers.so"),
-            FileNamed::exact("libLocalePlugin.so"),
-            FileNamed::exact("libMiscPrimitivePlugin.so"),
-            FileNamed::exact("libSocketPlugin.so"),
-            FileNamed::exact("libSqueakSSL.so"),
-            FileNamed::exact("libSurfacePlugin.so"),
-            FileNamed::exact("libUnixOSProcessPlugin.so"),
-            FileNamed::exact("libUUIDPlugin.so"),
-            // testing
-            FileNamed::exact("libTestLibrary.so"),
-            // third party
-            FileNamed::exact("libffi.so"),
-        ]
-        .into_iter()
-        .map(|each| each.within(self.compiled_libraries_directory()))
-        .collect()
+        self.filenames_from_libdir(
+            vec![
+                // core
+                "libPharoVMCore.so",
+                // plugins
+                "libB2DPlugin.so",
+                "libBitBltPlugin.so",
+                "libDSAPrims.so",
+                "libFileAttributesPlugin.so",
+                "libFilePlugin.so",
+                "libJPEGReaderPlugin.so",
+                "libJPEGReadWriter2Plugin.so",
+                "libLargeIntegers.so",
+                "libLocalePlugin.so",
+                "libMiscPrimitivePlugin.so",
+                "libSocketPlugin.so",
+                "libSqueakSSL.so",
+                "libSurfacePlugin.so",
+                "libUnixOSProcessPlugin.so",
+                "libUUIDPlugin.so",
+                // testing
+                "libTestLibrary.so",
+                // third party
+                "libffi.so",
+            ],
+            self.compiled_libraries_directory())
     }
 
     fn boxed(self) -> Box<dyn Builder> {

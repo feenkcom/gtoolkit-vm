@@ -1,4 +1,4 @@
-use file_matcher::{OneEntry, OneEntryCopier};
+use file_matcher::{FileNamed, OneEntry, OneEntryCopier};
 use std::fmt::Debug;
 use std::path::{Path, PathBuf};
 use std::{env, fmt, fs};
@@ -212,4 +212,12 @@ pub trait Builder: Debug {
     }
 
     fn boxed(self) -> Box<dyn Builder>;
+
+    fn filenames_from_libdir(&self, filenames: Vec<&str>, libdir: PathBuf) -> Vec<OneEntry> {
+        filenames
+        .into_iter()
+        .map(FileNamed::exact)
+        .map(|each| each.within(&libdir))
+        .collect()
+    }
 }

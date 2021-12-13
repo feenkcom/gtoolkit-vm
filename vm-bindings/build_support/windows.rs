@@ -180,12 +180,12 @@ impl Builder for WindowsBuilder {
     }
 
     fn shared_libraries_to_export(&self) -> Vec<OneEntry> {
-        let vm_build = &self
+        let vm_build = self
             .output_directory()
             .join("build")
             .join(titlecase(&self.profile()));
 
-        let ffi_test = &self
+        let ffi_test = self
             .output_directory()
             .join("build")
             .join("build")
@@ -199,37 +199,36 @@ impl Builder for WindowsBuilder {
             .join("vm");
 
         let mut libraries = vec![];
+        libraries.append(
+            self.filenames_from_libdir(
+                vec![
+                    // core
+                    "PharoVMCore.dll",
+                    // plugins
+                    "B2DPlugin.dll",
+                    "BitBltPlugin.dll",
+                    "DSAPrims.dll",
+                    "FileAttributesPlugin.dll",
+                    "FilePlugin.dll",
+                    "JPEGReaderPlugin.dll",
+                    "JPEGReadWriter2Plugin.dll",
+                    "LargeIntegers.dll",
+                    "LocalePlugin.dll",
+                    "MiscPrimitivePlugin.dll",
+                    "SocketPlugin.dll",
+                    "SqueakSSL.dll",
+                    "SurfacePlugin.dll",
+                    "UUIDPlugin.dll",
+                ],
+                vm_build).as_mut());
 
-        vec![
-            // core
-            FileNamed::exact("PharoVMCore.dll"),
-            // plugins
-            FileNamed::exact("B2DPlugin.dll"),
-            FileNamed::exact("BitBltPlugin.dll"),
-            FileNamed::exact("DSAPrims.dll"),
-            FileNamed::exact("FileAttributesPlugin.dll"),
-            FileNamed::exact("FilePlugin.dll"),
-            FileNamed::exact("JPEGReaderPlugin.dll"),
-            FileNamed::exact("JPEGReadWriter2Plugin.dll"),
-            FileNamed::exact("LargeIntegers.dll"),
-            FileNamed::exact("LocalePlugin.dll"),
-            FileNamed::exact("MiscPrimitivePlugin.dll"),
-            FileNamed::exact("SocketPlugin.dll"),
-            FileNamed::exact("SqueakSSL.dll"),
-            FileNamed::exact("SurfacePlugin.dll"),
-            FileNamed::exact("UUIDPlugin.dll"),
-        ]
-        .into_iter()
-        .map(|library| library.within(&vm_build))
-        .for_each(|each| libraries.push(each));
-
-        vec![
-            // third party
-            FileNamed::exact("ffi.dll"),
-        ]
-        .into_iter()
-        .map(|library| library.within(&third_party_build))
-        .for_each(|each| libraries.push(each));
+        libraries.append(
+            self.filenames_from_libdir(
+                vec![
+                    // third party
+                    "ffi.dll",
+                ],
+                third_party_build).as_mut());
 
         libraries.push(FileNamed::exact("TestLibrary.dll").within(&ffi_test));
 
