@@ -124,6 +124,10 @@ impl Builder for WindowsBuilder {
         }
     }
 
+    fn platform_extracted_sources(&self) -> Vec<PathBuf> {
+        Vec::new()
+    }
+
     fn vm_binary(&self) -> PathBuf {
         self.output_directory()
             .join("build")
@@ -158,15 +162,15 @@ impl Builder for WindowsBuilder {
             .generator("Visual Studio 16 2019")
             .generator_toolset("ClangCL");
 
-        if let Some(vmmaker_vm) = self.vmmaker_vm() {
-            config.define("GENERATE_PHARO_VM", self.escape_windows_path(vmmaker_vm));
-        }
-        if let Some(vmmaker_image) = self.vmmaker_image() {
-            config.define(
-                "GENERATE_PHARO_IMAGE",
-                self.escape_windows_path(vmmaker_image),
-            );
-        }
+        // if let Some(vmmaker_vm) = self.vmmaker_vm() {
+        //     config.define("GENERATE_PHARO_VM", self.escape_windows_path(vmmaker_vm));
+        // }
+        // if let Some(vmmaker_image) = self.vmmaker_image() {
+        //     config.define(
+        //         "GENERATE_PHARO_IMAGE",
+        //         self.escape_windows_path(vmmaker_image),
+        //     );
+        // }
 
         config.build();
     }

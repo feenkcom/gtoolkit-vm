@@ -8,6 +8,12 @@ edition = "2018"
 
 [dependencies]
 
+[features]
+default = ["ffi", "threaded_ffi"]
+gnuisation = []
+ffi = []
+threaded_ffi = ["ffi"]
+
 [target.'cfg(target_os = "android")'.dependencies]
 ndk = "0.1.0"
 ndk-sys = "0.1.0"
@@ -20,3 +26,7 @@ cmake = { git = "https://github.com/syrel/cmake-rs", rev = "cce9d58d87bd5dd95afb
 which = "4.1.0"
 titlecase = "1.1.0"
 file-matcher = "0.5.0"
+cc = "1.0.46"
+new_string_template = "1.0"
+regex = "1.5.4"
+pkg-config = "0.3.24"

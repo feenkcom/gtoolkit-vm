@@ -15,6 +15,10 @@ impl Debug for LinuxBuilder {
 }
 
 impl Builder for LinuxBuilder {
+    fn platform_extracted_sources(&self) -> Vec<PathBuf> {
+        Vec::new()
+    }
+
     fn vm_binary(&self) -> PathBuf {
         self.compiled_libraries_directory()
             .join("libPharoVMCore.so")
@@ -28,23 +32,7 @@ impl Builder for LinuxBuilder {
     }
 
     fn compile_sources(&self) {
-        let mut config = cmake::Config::new(self.vm_sources_directory());
-        config
-            .no_build_target(true)
-            .define("COMPILE_EXECUTABLE", "OFF")
-            .define("FEATURE_LIB_GIT2", "OFF")
-            .define("FEATURE_LIB_SDL2", "OFF")
-            .define("FEATURE_LIB_CAIRO", "OFF")
-            .define("FEATURE_LIB_FREETYPE2", "OFF")
-            .define("PHARO_VM_IN_WORKER_THREAD", "OFF");
 
-        if let Some(vmmaker_vm) = self.vmmaker_vm() {
-            config.define("GENERATE_PHARO_VM", vmmaker_vm);
-        }
-        if let Some(vmmaker_image) = self.vmmaker_image() {
-            config.define("GENERATE_PHARO_IMAGE", vmmaker_image);
-        }
-        config.build();
     }
 
     fn platform_include_directory(&self) -> PathBuf {

@@ -15,6 +15,28 @@ impl Debug for MacBuilder {
 }
 
 impl Builder for MacBuilder {
+    fn platform_extracted_sources(&self) -> Vec<PathBuf> {
+        let root = self.vm_sources_directory();
+
+        [
+            // Common sources
+            root.join("extracted/vm/src/common/sqHeapMap.c"),
+            root.join("extracted/vm/src/common/sqVirtualMachine.c"),
+            root.join("extracted/vm/src/common/sqNamedPrims.c"),
+            root.join("extracted/vm/src/common/sqExternalSemaphores.c"),
+            root.join("extracted/vm/src/common/sqTicker.c"),
+            // Platform sources
+            root.join("extracted/vm/src/osx/aioOSX.c"),
+            root.join("src/debugUnix.c"),
+            root.join("src/utilsMac.mm"),
+            // Support sources
+            root.join("src/fileDialogMac.m"),
+            // Virtual Memory functions
+            root.join("src/memoryUnix.c"),
+        ]
+        .to_vec()
+    }
+
     fn vm_binary(&self) -> PathBuf {
         self.compiled_libraries_directory()
             .join("libPharoVMCore.dylib")
@@ -22,9 +44,6 @@ impl Builder for MacBuilder {
 
     fn compiled_libraries_directory(&self) -> PathBuf {
         self.output_directory()
-            .join("build")
-            .join("build")
-            .join("vm")
     }
 
     fn compile_sources(&self) {
@@ -61,13 +80,6 @@ impl Builder for MacBuilder {
             config.define("CMAKE_OSX_ARCHITECTURES", "arm64");
         }
 
-        if let Some(vmmaker_vm) = self.vmmaker_vm() {
-            config.define("GENERATE_PHARO_VM", vmmaker_vm);
-        }
-        if let Some(vmmaker_image) = self.vmmaker_image() {
-            config.define("GENERATE_PHARO_IMAGE", vmmaker_image);
-        }
-
         config.build();
     }
 
@@ -76,7 +88,6 @@ impl Builder for MacBuilder {
     }
 
     fn link_libraries(&self) {
-        println!("cargo:rustc-link-lib=PharoVMCore");
         println!("cargo:rustc-link-lib=framework=AppKit");
         println!("cargo:rustc-link-lib=framework=CoreGraphics");
 
@@ -116,8 +127,9 @@ impl Builder for MacBuilder {
                 // third party
                 #[cfg(target_arch = "x86_64")]
                 "libffi.dylib",
-            ], 
-            self.compiled_libraries_directory())
+            ],
+            self.compiled_libraries_directory(),
+        )
     }
 
     fn boxed(self) -> Box<dyn Builder> {

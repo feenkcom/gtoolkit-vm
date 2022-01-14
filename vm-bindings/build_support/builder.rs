@@ -21,34 +21,134 @@ pub trait Builder: Debug {
 
     fn ensure_build_tools(&self) {}
 
-    fn vmmaker_vm(&self) -> Option<PathBuf> {
-        std::env::var(VM_CLIENT_VMMAKER_VM_VAR).map_or(None, |path| {
-            let path = Path::new(&path);
-            if path.exists() {
-                Some(path.to_path_buf())
-            } else {
-                panic!(
-                    "Specified {} does not exist: {}",
-                    VM_CLIENT_VMMAKER_VM_VAR,
-                    path.display()
-                );
-            }
-        })
+    /// Return a list of all generated sources
+    fn generated_sources(&self) -> Vec<PathBuf> {
+        let root = self
+            .output_directory()
+            .join("generated")
+            .join("64")
+            .join("vm")
+            .join("src");
+
+        let plugins = self
+            .output_directory()
+            .join("generated")
+            .join("64")
+            .join("plugins")
+            .join("src");
+
+        [
+            root.join("cogit.c"),
+            #[cfg(not(feature = "gnuisation"))]
+            root.join("cointerp.c"),
+            #[cfg(feature = "gnuisation")]
+            root.join("gcc3x-cointerp.c"),
+            // Plugin files
+            plugins.join("FilePlugin/FilePlugin.c"),
+            plugins.join("SurfacePlugin/SurfacePlugin.c"),
+        ]
+        .to_vec()
     }
 
-    fn vmmaker_image(&self) -> Option<PathBuf> {
-        std::env::var(VM_CLIENT_VMMAKER_IMAGE_VAR).map_or(None, |path| {
-            let path = Path::new(&path);
-            if path.exists() {
-                Some(path.to_path_buf())
-            } else {
-                panic!(
-                    "Specified {} does not exist: {}",
-                    VM_CLIENT_VMMAKER_IMAGE_VAR,
-                    path.display()
-                );
-            }
-        })
+    /// Return a list of extracted sources shared among all platforms
+    fn common_extracted_sources(&self) -> Vec<PathBuf> {
+        Vec::new()
+    }
+
+    /// Return a list of platform specific extracted sources specific for this platform
+    fn platform_extracted_sources(&self) -> Vec<PathBuf>;
+
+    /// Return a list of all extracted sources including common ones and platform specific
+    fn extracted_sources(&self) -> Vec<PathBuf> {
+        let mut sources = Vec::new();
+        sources.append(&mut self.common_extracted_sources());
+        sources.append(&mut self.platform_extracted_sources());
+        sources
+    }
+
+    /// Return a list of support sources
+    fn support_sources(&self) -> Vec<PathBuf> {
+        let root = self.vm_sources_directory();
+        [
+            root.join("src/debug.c"),
+            root.join("src/utils.c"),
+            root.join("src/errorCode.c"),
+            root.join("src/nullDisplay.c"),
+            root.join("src/externalPrimitives.c"),
+            root.join("src/client.c"),
+            root.join("src/pathUtilities.c"),
+            root.join("src/parameterVector.c"),
+            root.join("src/parameters.c"),
+            root.join("src/fileDialogCommon.c"),
+            root.join("src/stringUtilities.c"),
+            root.join("src/imageAccess.c"),
+            root.join("src/semaphores/platformSemaphore.c"),
+            root.join("extracted/vm/src/common/heartbeat.c"),
+        ]
+        .to_vec()
+    }
+
+    #[cfg(feature = "ffi")]
+    fn ffi_sources(&self) -> Vec<PathBuf> {
+        let root = self.vm_sources_directory();
+        [
+            root.join("ffi/src/functionDefinitionPrimitives.c"),
+            root.join("ffi/src/primitiveCalls.c"),
+            root.join("ffi/src/primitiveUtils.c"),
+            root.join("ffi/src/types.c"),
+            root.join("ffi/src/typesPrimitives.c"),
+            root.join("ffi/src/utils.c"),
+            // Single-threaded callout support
+            root.join("ffi/src/sameThread/sameThread.c"),
+            // Callback support
+            root.join("ffi/src/callbacks/callbackPrimitives.c"),
+            root.join("ffi/src/callbacks/callbacks.c"),
+            // Required by callbacks
+            root.join("src/semaphores/pharoSemaphore.c"),
+            root.join("src/threadSafeQueue/threadSafeQueue.c"),
+        ]
+        .to_vec()
+    }
+
+    #[cfg(feature = "ffi")]
+    fn ffi_includes(&self) -> Vec<PathBuf> {
+        let root = self.vm_sources_directory();
+
+        [root.join("ffi/include")].to_vec()
+    }
+
+    #[cfg(feature = "threaded_ffi")]
+    fn threaded_ffi_sources(&self) -> Vec<PathBuf> {
+        let root = self.vm_sources_directory();
+        [
+            root.join("ffi/src/pThreadedFFI.c"),
+            root.join("ffi/src/worker/worker.c"),
+            root.join("ffi/src/worker/workerPrimitives.c"),
+            root.join("ffi/src/worker/workerTask.c"),
+        ]
+        .to_vec()
+    }
+
+    /// Return a list of all sources to compile
+    fn sources(&self) -> Vec<PathBuf> {
+        let mut sources = Vec::new();
+        sources.append(&mut self.support_sources());
+        sources.append(&mut self.generated_sources());
+        sources.append(&mut self.extracted_sources());
+        #[cfg(feature = "ffi")]
+        sources.append(&mut self.ffi_sources());
+        #[cfg(feature = "threaded_ffi")]
+        sources.append(&mut self.threaded_ffi_sources());
+        sources
+    }
+
+    fn includes(&self) -> Vec<PathBuf> {
+        let mut includes = Vec::new();
+        #[cfg(feature = "ffi")]
+        includes.append(&mut self.ffi_includes());
+        includes.push(self.vm_sources_directory().join("extracted/plugins/FilePlugin/include/common"));
+        includes.push(self.vm_sources_directory().join("extracted/plugins/SurfacePlugin/include/common"));
+        includes
     }
 
     fn output_directory(&self) -> PathBuf {
@@ -99,16 +199,11 @@ pub trait Builder: Debug {
     fn platform_include_directory(&self) -> PathBuf;
 
     fn generated_config_directory(&self) -> PathBuf {
-        self.output_directory()
-            .join("build")
-            .join("build")
-            .join("include")
-            .join("pharovm")
+        self.generated_include_directory()
     }
 
     fn generated_include_directory(&self) -> PathBuf {
         self.output_directory()
-            .join("build")
             .join("generated")
             .join("64")
             .join("vm")
@@ -116,6 +211,12 @@ pub trait Builder: Debug {
     }
 
     fn generate_bindings(&self) {
+        // Rerun the build script of CMakeLists file changes
+        println!(
+            "cargo:rerun-if-changed={:?}",
+            self.vm_sources_directory().join("CMakeLists.txt").display()
+        );
+
         let include_dir = self.vm_sources_directory().join("include");
 
         let generated_vm_include_dir = self.generated_include_directory();
@@ -215,9 +316,9 @@ pub trait Builder: Debug {
 
     fn filenames_from_libdir(&self, filenames: Vec<&str>, libdir: PathBuf) -> Vec<OneEntry> {
         filenames
-        .into_iter()
-        .map(FileNamed::exact)
-        .map(|each| each.within(&libdir))
-        .collect()
+            .into_iter()
+            .map(FileNamed::exact)
+            .map(|each| each.within(&libdir))
+            .collect()
     }
 }

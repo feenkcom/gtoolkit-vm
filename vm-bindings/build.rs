@@ -6,7 +6,13 @@ extern crate titlecase;
 extern crate which;
 
 mod build_support;
+
 use build_support::*;
+use file_matcher::FilesNamed;
+use std::env::join_paths;
+use std::ffi::c_void;
+use std::mem;
+use std::os::raw::{c_int, c_long, c_longlong};
 
 ///
 /// Possible parameters
@@ -21,16 +27,124 @@ fn main() {
         }
     };
 
-    println!("About to build a vm using {:?}", &builder);
-    builder.ensure_build_tools();
+    let vmmaker = VMMaker::prepare(&builder);
+    vmmaker.generate_sources(&builder);
 
-    builder.compile_sources();
+    let mut config = ConfigTemplate::new(
+        builder
+            .vm_sources_directory()
+            .join("include")
+            .join("pharovm")
+            .join("config.h.in"),
+        builder
+            .output_directory()
+            .join("generated")
+            .join("64")
+            .join("vm")
+            .join("include")
+            .join("config.h"),
+    );
+    config
+        .var("VM_NAME", "Pharo")
+        .var("DEFAULT_IMAGE_NAME", "Pharo.image")
+        .var("OS_TYPE", "")
+        .var("VM_TARGET", "")
+        .var("VM_TARGET_OS", "")
+        .var("VM_TARGET_CPU", "")
+        .var("SIZEOF_INT", mem::size_of::<c_int>().to_string())
+        .var("SIZEOF_LONG", mem::size_of::<c_long>().to_string())
+        .var("SIZEOF_LONG_LONG", mem::size_of::<c_longlong>().to_string())
+        .var("SIZEOF_VOID_P", mem::size_of::<*const c_void>().to_string())
+        .var("SQUEAK_INT64_TYPEDEF", "long long")
+        .var("VERSION_MAJOR", "0")
+        .var("VERSION_MINOR", "0")
+        .var("VERSION_PATCH", "1")
+        .var("BUILT_FROM", "")
+        .var("ALWAYS_INTERACTIVE", "0");
+    config.render();
 
-    if !builder.is_compiled() {
-        panic!("Failed to compile {:?}", builder.vm_binary().display())
+    let generated = builder
+        .output_directory()
+        .join("generated")
+        .join("64")
+        .join("vm");
+    let generated_include = generated.join("include");
+
+    let extracted_includes = builder
+        .vm_sources_directory()
+        .join("extracted")
+        .join("vm")
+        .join("include");
+    let common_include = extracted_includes.join("common");
+    let platform_include = extracted_includes.join("osx");
+    let include = builder.vm_sources_directory().join("include");
+    let pharo_include = include.join("pharovm");
+
+    let original_sources = builder.sources();
+    let mut sources = Vec::new();
+    let dst = builder.output_directory();
+    for file in original_sources.iter() {
+        let obj = dst.join(file);
+        let obj = if !obj.starts_with(&dst) {
+            let source = obj.strip_prefix(builder.vm_sources_directory()).unwrap();
+            let dst_source = dst.join(source);
+            std::fs::create_dir_all(dst_source.parent().unwrap()).unwrap();
+            std::fs::copy(file, &dst_source).unwrap();
+            dst_source
+        } else {
+            obj
+        };
+        sources.push(obj);
     }
 
+    let mut build = cc::Build::new();
+    build
+        .static_crt(true)
+        .static_flag(true)
+        .shared_flag(true)
+        .files(sources)
+        .include(generated_include)
+        .include(common_include)
+        .include(platform_include)
+        .include(include)
+        .include(pharo_include)
+        .includes(builder.includes())
+        .warnings(false)
+        .extra_warnings(false);
+
+    build.define("IMMUTABILITY", "1");
+    build.define("COGMTVM", "0");
+    build.define("PharoVM", "1");
+    build.define("USE_INLINE_MEMORY_ACCESSORS", "1");
+    build.define("ASYNC_FFI_QUEUE", "1");
+
+    // unix
+    build.define("LSB_FIRST", "1");
+    build.define("OSX", "1");
+
+    #[cfg(feature = "ffi")]
+    build.define("FEATURE_FFI", "1");
+    #[cfg(feature = "threaded_ffi")]
+    build.define("FEATURE_THREADED_FFI", "1");
+
+    #[cfg(feature = "ffi")]
+    {
+        let ffi_lib = pkg_config::probe_library("libffi").unwrap();
+        build.includes(ffi_lib.include_paths);
+    }
+
+    build.compile("PharoVMCore");
+
+    // println!("About to build a vm using {:?}", &builder);
+    // builder.ensure_build_tools();
+    //
+    // builder.compile_sources();
+    //
+    // if !builder.is_compiled() {
+    //     panic!("Failed to compile {:?}", builder.vm_binary().display())
+    // }
+    //
     builder.link_libraries();
     builder.generate_bindings();
-    builder.export_shared_libraries();
+    // builder.export_shared_libraries();
 }
