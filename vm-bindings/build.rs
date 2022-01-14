@@ -47,20 +47,20 @@ fn main() {
     config
         .var("VM_NAME", "Pharo")
         .var("DEFAULT_IMAGE_NAME", "Pharo.image")
-        .var("OS_TYPE", "")
-        .var("VM_TARGET", "")
-        .var("VM_TARGET_OS", "")
-        .var("VM_TARGET_CPU", "")
+        .var("OS_TYPE", "Mac OS")
+        .var("VM_TARGET", "Darwin-19.4.0")
+        .var("VM_TARGET_OS", "1000")
+        .var("VM_TARGET_CPU", "x86_64")
         .var("SIZEOF_INT", mem::size_of::<c_int>().to_string())
         .var("SIZEOF_LONG", mem::size_of::<c_long>().to_string())
         .var("SIZEOF_LONG_LONG", mem::size_of::<c_longlong>().to_string())
         .var("SIZEOF_VOID_P", mem::size_of::<*const c_void>().to_string())
-        .var("SQUEAK_INT64_TYPEDEF", "long long")
+        .var("SQUEAK_INT64_TYPEDEF", "long")
         .var("VERSION_MAJOR", "0")
         .var("VERSION_MINOR", "0")
         .var("VERSION_PATCH", "1")
-        .var("BUILT_FROM", "")
-        .var("ALWAYS_INTERACTIVE", "0");
+        .var("BUILT_FROM", "v8.6.1-134-g80f73e80e - Commit: 80f73e80e - Date: 2021-08-15 11:16:21 +0200")
+        .var("ALWAYS_INTERACTIVE", "OFF");
     config.render();
 
     let generated = builder
@@ -101,7 +101,7 @@ fn main() {
     build
         .static_crt(true)
         .static_flag(true)
-        .shared_flag(true)
+        .shared_flag(false)
         .files(sources)
         .include(generated_include)
         .include(common_include)
@@ -112,11 +112,27 @@ fn main() {
         .warnings(false)
         .extra_warnings(false);
 
+    build.flag("-Wno-int-conversion");
+    build.flag("-Wno-macro-redefined");
+    build.flag("-Wno-unused-value");
+    build.flag("-Wno-pointer-to-int-cast");
+    build.flag("-Wno-non-literal-null-conversion");
+    build.flag("-Wno-conditional-type-mismatch");
+    build.flag("-Wno-compare-distinct-pointer-types");
+    build.flag("-Wno-incompatible-function-pointer-types");
+    build.flag("-Wno-pointer-sign");
+
     build.define("IMMUTABILITY", "1");
     build.define("COGMTVM", "0");
+    build.define("STACKVM", "0");
     build.define("PharoVM", "1");
     build.define("USE_INLINE_MEMORY_ACCESSORS", "1");
-    build.define("ASYNC_FFI_QUEUE", "1");
+    //build.define("ASYNC_FFI_QUEUE", "1");
+    build.define("ARCH", "64");
+    build.define("VM_LABEL(foo)", "0");
+    build.define("SOURCE_PATH_SIZE", "80");
+    //build.define("NDEBUG", None);
+    //build.define("DEBUGVM", "0");
 
     // unix
     build.define("LSB_FIRST", "1");
