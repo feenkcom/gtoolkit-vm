@@ -1,9 +1,11 @@
 use crate::build_support::Builder;
 
+use crate::build_support::builder::BuilderTarget;
 use file_matcher::OneEntry;
 use std::fmt;
 use std::fmt::{Debug, Formatter};
 use std::path::PathBuf;
+use std::rc::Rc;
 
 #[derive(Default, Clone)]
 pub struct LinuxBuilder;
@@ -15,8 +17,16 @@ impl Debug for LinuxBuilder {
 }
 
 impl Builder for LinuxBuilder {
+    fn target(&self) -> BuilderTarget {
+        BuilderTarget::Linux
+    }
+
     fn platform_extracted_sources(&self) -> Vec<PathBuf> {
         Vec::new()
+    }
+
+    fn platform_includes(&self) -> Vec<PathBuf> {
+        todo!()
     }
 
     fn vm_binary(&self) -> PathBuf {
@@ -31,9 +41,7 @@ impl Builder for LinuxBuilder {
             .join("vm")
     }
 
-    fn compile_sources(&self) {
-
-    }
+    fn compile_sources(&self) {}
 
     fn platform_include_directory(&self) -> PathBuf {
         self.squeak_include_directory().join("unix")
@@ -78,10 +86,11 @@ impl Builder for LinuxBuilder {
                 // third party
                 "libffi.so",
             ],
-            self.compiled_libraries_directory())
+            self.compiled_libraries_directory(),
+        )
     }
 
-    fn boxed(self) -> Box<dyn Builder> {
-        Box::new(self)
+    fn boxed(self) -> Rc<dyn Builder> {
+        Rc::new(self)
     }
 }

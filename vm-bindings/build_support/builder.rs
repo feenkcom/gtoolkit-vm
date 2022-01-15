@@ -1,12 +1,22 @@
-use file_matcher::{FileNamed, OneEntry, OneEntryCopier};
+use file_matcher::{FileNamed, FilesNamed, OneEntry, OneEntryCopier};
 use std::fmt::Debug;
 use std::path::{Path, PathBuf};
 use std::{env, fmt, fs};
+use std::rc::Rc;
 
 const VM_CLIENT_VMMAKER_VM_VAR: &str = "VM_CLIENT_VMMAKER";
 const VM_CLIENT_VMMAKER_IMAGE_VAR: &str = "VM_CLIENT_VMMAKER_IMAGE";
 
+#[derive(Debug, Clone)]
+pub enum BuilderTarget {
+    MacOS,
+    Linux,
+    Windows,
+}
+
 pub trait Builder: Debug {
+    fn target(&self) -> BuilderTarget;
+
     fn is_compiled(&self) -> bool {
         self.vm_binary().exists()
     }
@@ -30,22 +40,12 @@ pub trait Builder: Debug {
             .join("vm")
             .join("src");
 
-        let plugins = self
-            .output_directory()
-            .join("generated")
-            .join("64")
-            .join("plugins")
-            .join("src");
-
         [
             root.join("cogit.c"),
             #[cfg(not(feature = "gnuisation"))]
             root.join("cointerp.c"),
             #[cfg(feature = "gnuisation")]
             root.join("gcc3x-cointerp.c"),
-            // Plugin files
-            plugins.join("FilePlugin/FilePlugin.c"),
-            plugins.join("SurfacePlugin/SurfacePlugin.c"),
         ]
         .to_vec()
     }
@@ -142,17 +142,31 @@ pub trait Builder: Debug {
         sources
     }
 
+    fn platform_includes(&self) -> Vec<PathBuf>;
+
     fn includes(&self) -> Vec<PathBuf> {
         let mut includes = Vec::new();
+        includes.append(&mut self.platform_includes());
+        includes.push(self.vm_sources_directory().join("include"));
+        includes.push(self.output_directory().join("generated/64/vm/include"));
         #[cfg(feature = "ffi")]
         includes.append(&mut self.ffi_includes());
-        includes.push(self.vm_sources_directory().join("extracted/plugins/FilePlugin/include/common"));
-        includes.push(self.vm_sources_directory().join("extracted/plugins/SurfacePlugin/include/common"));
         includes
     }
 
     fn output_directory(&self) -> PathBuf {
         Path::new(env::var("OUT_DIR").unwrap().as_str()).to_path_buf()
+    }
+
+    fn artefact_directory(&self) -> PathBuf {
+        let mut dir = self.output_directory();
+        dir.parent()
+            .unwrap()
+            .parent()
+            .unwrap()
+            .parent()
+            .unwrap()
+            .to_path_buf()
     }
 
     /// Return a path to the compiled vm binary.
@@ -312,7 +326,7 @@ pub trait Builder: Debug {
             .finish()
     }
 
-    fn boxed(self) -> Box<dyn Builder>;
+    fn boxed(self) -> Rc<dyn Builder>;
 
     fn filenames_from_libdir(&self, filenames: Vec<&str>, libdir: PathBuf) -> Vec<OneEntry> {
         filenames
@@ -320,5 +334,20 @@ pub trait Builder: Debug {
             .map(FileNamed::exact)
             .map(|each| each.within(&libdir))
             .collect()
+    }
+
+    fn source_files(&self, dir: &str) -> Vec<PathBuf> {
+        FilesNamed::wildmatch("*.c")
+            .within(self.vm_sources_directory().join(dir))
+            .find()
+            .unwrap()
+    }
+
+    fn source_file(&self, file: &str) -> PathBuf {
+        self.vm_sources_directory().join(file)
+    }
+
+    fn generated_source(&self, file: &str) -> PathBuf {
+        self.output_directory().join(file)
     }
 }

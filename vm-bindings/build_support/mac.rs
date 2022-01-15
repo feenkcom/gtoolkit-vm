@@ -1,9 +1,11 @@
 use crate::build_support::Builder;
 
+use crate::BuilderTarget;
 use file_matcher::OneEntry;
 use std::fmt;
 use std::fmt::{Debug, Formatter};
 use std::path::PathBuf;
+use std::rc::Rc;
 
 #[derive(Default, Clone)]
 pub struct MacBuilder;
@@ -15,6 +17,10 @@ impl Debug for MacBuilder {
 }
 
 impl Builder for MacBuilder {
+    fn target(&self) -> BuilderTarget {
+        BuilderTarget::MacOS
+    }
+
     fn platform_extracted_sources(&self) -> Vec<PathBuf> {
         let root = self.vm_sources_directory();
 
@@ -35,6 +41,10 @@ impl Builder for MacBuilder {
             root.join("src/memoryUnix.c"),
         ]
         .to_vec()
+    }
+
+    fn platform_includes(&self) -> Vec<PathBuf> {
+        vec![]
     }
 
     fn vm_binary(&self) -> PathBuf {
@@ -132,7 +142,7 @@ impl Builder for MacBuilder {
         )
     }
 
-    fn boxed(self) -> Box<dyn Builder> {
-        Box::new(self)
+    fn boxed(self) -> Rc<dyn Builder> {
+        Rc::new(self)
     }
 }

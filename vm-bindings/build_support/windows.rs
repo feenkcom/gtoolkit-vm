@@ -1,9 +1,11 @@
 use crate::build_support::Builder;
+use crate::BuilderTarget;
 use file_matcher::{FileNamed, OneEntry};
 use std::fmt;
 use std::fmt::{Debug, Formatter};
 use std::path::{Path, PathBuf};
 use std::process::Command;
+use std::rc::Rc;
 use titlecase::titlecase;
 
 #[derive(Default, Clone)]
@@ -32,7 +34,7 @@ impl WindowsBuilder {
             .status()
             .unwrap();
 
-            // checkout the version of pthreads that works
+        // checkout the version of pthreads that works
         Command::new("git")
             .current_dir(self.pthreads_directory())
             .arg("checkout")
@@ -104,6 +106,10 @@ impl WindowsBuilder {
 }
 
 impl Builder for WindowsBuilder {
+    fn target(&self) -> BuilderTarget {
+        BuilderTarget::Windows
+    }
+
     fn ensure_build_tools(&self) {
         which::which("pkg-config").expect("Could not find pkg-config. Please add it to PATH");
         which::which("cmake").expect("Could not find cmake. Please add it to PATH");
@@ -126,6 +132,10 @@ impl Builder for WindowsBuilder {
 
     fn platform_extracted_sources(&self) -> Vec<PathBuf> {
         Vec::new()
+    }
+
+    fn platform_includes(&self) -> Vec<PathBuf> {
+        todo!()
     }
 
     fn vm_binary(&self) -> PathBuf {
@@ -232,7 +242,10 @@ impl Builder for WindowsBuilder {
                     "SurfacePlugin.dll",
                     "UUIDPlugin.dll",
                 ],
-                vm_build).as_mut());
+                vm_build,
+            )
+            .as_mut(),
+        );
 
         libraries.append(
             self.filenames_from_libdir(
@@ -240,14 +253,17 @@ impl Builder for WindowsBuilder {
                     // third party
                     "ffi.dll",
                 ],
-                third_party_build).as_mut());
+                third_party_build,
+            )
+            .as_mut(),
+        );
 
         libraries.push(FileNamed::exact("TestLibrary.dll").within(&ffi_test));
 
         libraries
     }
 
-    fn boxed(self) -> Box<dyn Builder> {
-        Box::new(self)
+    fn boxed(self) -> Rc<dyn Builder> {
+        Rc::new(self)
     }
 }

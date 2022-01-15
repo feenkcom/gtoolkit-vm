@@ -1,9 +1,9 @@
 use crate::Builder;
-use bindgen::builder;
 use file_matcher::{FileNamed, OneEntryCopier};
 use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
+use std::rc::Rc;
 
 const VM_CLIENT_VMMAKER_VM_VAR: &str = "VM_CLIENT_VMMAKER";
 const VM_CLIENT_VMMAKER_IMAGE_VAR: &str = "VM_CLIENT_VMMAKER_IMAGE";
@@ -14,15 +14,13 @@ const VMMAKER_DARWIN_VM_URL: &str = "https://files.pharo.org/vm/pharo-spur64-hea
 const VMMAKER_IMAGE_URL: &str =
     "https://files.pharo.org/image/100/Pharo10-SNAPSHOT.build.349.sha.3e26baf.arch.64bit.zip";
 
-enum VMMakerVM {}
-
 pub struct VMMaker {
     vm: PathBuf,
     image: PathBuf,
 }
 
 impl VMMaker {
-    pub fn prepare(builder: &Box<dyn Builder>) -> Self {
+    pub fn prepare(builder: Rc<dyn Builder>) -> Self {
         let vm = Self::vmmaker_vm().unwrap();
         let source_image = Self::vmmaker_image().unwrap();
 
@@ -93,7 +91,7 @@ impl VMMaker {
         vmmaker
     }
 
-    pub fn generate_sources(&self, builder: &Box<dyn Builder>) {
+    pub fn generate_sources(&self, builder: Rc<dyn Builder>) {
         if builder.output_directory().join("generated").exists() {
             return;
         }

@@ -8,8 +8,7 @@ extern crate which;
 mod build_support;
 
 use build_support::*;
-use file_matcher::FilesNamed;
-use std::env::join_paths;
+use file_matcher::{FileNamed, FilesNamed};
 use std::ffi::c_void;
 use std::mem;
 use std::os::raw::{c_int, c_long, c_longlong};
@@ -18,6 +17,10 @@ use std::os::raw::{c_int, c_long, c_longlong};
 /// Possible parameters
 ///  - VM_CLIENT_VMMAKER to use a specific VM to run a VM Maker image
 fn main() {
+    for var in std::env::vars() {
+        println!("{} = {}", var.0, var.1);
+    }
+
     let builder = match std::env::consts::OS {
         "linux" => LinuxBuilder::default().boxed(),
         "macos" => MacBuilder::default().boxed(),
@@ -27,8 +30,8 @@ fn main() {
         }
     };
 
-    let vmmaker = VMMaker::prepare(&builder);
-    vmmaker.generate_sources(&builder);
+    let vmmaker = VMMaker::prepare(builder.clone());
+    vmmaker.generate_sources(builder.clone());
 
     let mut config = ConfigTemplate::new(
         builder
@@ -44,6 +47,7 @@ fn main() {
             .join("include")
             .join("config.h"),
     );
+
     config
         .var("VM_NAME", "Pharo")
         .var("DEFAULT_IMAGE_NAME", "Pharo.image")
@@ -59,16 +63,12 @@ fn main() {
         .var("VERSION_MAJOR", "0")
         .var("VERSION_MINOR", "0")
         .var("VERSION_PATCH", "1")
-        .var("BUILT_FROM", "v8.6.1-134-g80f73e80e - Commit: 80f73e80e - Date: 2021-08-15 11:16:21 +0200")
+        .var(
+            "BUILT_FROM",
+            "v8.6.1-134-g80f73e80e - Commit: 80f73e80e - Date: 2021-08-15 11:16:21 +0200",
+        )
         .var("ALWAYS_INTERACTIVE", "OFF");
     config.render();
-
-    let generated = builder
-        .output_directory()
-        .join("generated")
-        .join("64")
-        .join("vm");
-    let generated_include = generated.join("include");
 
     let extracted_includes = builder
         .vm_sources_directory()
@@ -80,86 +80,72 @@ fn main() {
     let include = builder.vm_sources_directory().join("include");
     let pharo_include = include.join("pharovm");
 
-    let original_sources = builder.sources();
-    let mut sources = Vec::new();
-    let dst = builder.output_directory();
-    for file in original_sources.iter() {
-        let obj = dst.join(file);
-        let obj = if !obj.starts_with(&dst) {
-            let source = obj.strip_prefix(builder.vm_sources_directory()).unwrap();
-            let dst_source = dst.join(source);
-            std::fs::create_dir_all(dst_source.parent().unwrap()).unwrap();
-            std::fs::copy(file, &dst_source).unwrap();
-            dst_source
-        } else {
-            obj
-        };
-        sources.push(obj);
-    }
-
-    let mut build = cc::Build::new();
-    build
-        .static_crt(true)
-        .static_flag(true)
-        .shared_flag(false)
-        .files(sources)
-        .include(generated_include)
+    let mut core = Core::new("PharoVMCore", builder.clone());
+    core.files(builder.sources())
         .include(common_include)
         .include(platform_include)
+        .include(extracted_includes.join("unix"))
         .include(include)
         .include(pharo_include)
-        .includes(builder.includes())
-        .warnings(false)
-        .extra_warnings(false);
+        .includes(builder.includes());
 
-    build.flag("-Wno-int-conversion");
-    build.flag("-Wno-macro-redefined");
-    build.flag("-Wno-unused-value");
-    build.flag("-Wno-pointer-to-int-cast");
-    build.flag("-Wno-non-literal-null-conversion");
-    build.flag("-Wno-conditional-type-mismatch");
-    build.flag("-Wno-compare-distinct-pointer-types");
-    build.flag("-Wno-incompatible-function-pointer-types");
-    build.flag("-Wno-pointer-sign");
+    core.check_include_files("dirent.h", "HAVE_DIRENT_H");
+    core.check_include_files("features.h", "HAVE_FEATURES_H");
+    core.check_include_files("unistd.h", "HAVE_UNISTD_H");
+    core.check_include_files("ndir.h", "HAVE_NDIR_H");
+    core.check_include_files("sys/ndir.h", "HAVE_SYS_NDIR_H");
+    core.check_include_files("sys/dir.h", "HAVE_SYS_DIR_H");
+    core.check_include_files("sys/filio.h", "HAVE_SYS_FILIO_H");
+    core.check_include_files("sys/time.h", "HAVE_SYS_TIME_H");
+    core.check_include_files("execinfo.h", "HAVE_EXECINFO_H");
+    core.check_include_files("dlfcn.h", "HAVE_DLFCN_H");
 
-    build.define("IMMUTABILITY", "1");
-    build.define("COGMTVM", "0");
-    build.define("STACKVM", "0");
-    build.define("PharoVM", "1");
-    build.define("USE_INLINE_MEMORY_ACCESSORS", "1");
-    //build.define("ASYNC_FFI_QUEUE", "1");
-    build.define("ARCH", "64");
-    build.define("VM_LABEL(foo)", "0");
-    build.define("SOURCE_PATH_SIZE", "80");
-    //build.define("NDEBUG", None);
-    //build.define("DEBUGVM", "0");
+    core.flag("-Wno-int-conversion");
+    core.flag("-Wno-macro-redefined");
+    core.flag("-Wno-unused-value");
+    core.flag("-Wno-pointer-to-int-cast");
+    core.flag("-Wno-non-literal-null-conversion");
+    core.flag("-Wno-conditional-type-mismatch");
+    core.flag("-Wno-compare-distinct-pointer-types");
+    core.flag("-Wno-incompatible-function-pointer-types");
+    core.flag("-Wno-pointer-sign");
+    core.flag("-Wno-unused-command-line-argument");
+    core.flag("-Wno-undef-prefix");
+
+    core.define("IMMUTABILITY", "1");
+    core.define("COGMTVM", "0");
+    core.define("STACKVM", "0");
+    core.define("PharoVM", "1");
+    core.define("USE_INLINE_MEMORY_ACCESSORS", "1");
+    core.define("ASYNC_FFI_QUEUE", "1");
+    core.define("ARCH", "64");
+    core.define("VM_LABEL(foo)", "0");
+    core.define("SOURCE_PATH_SIZE", "80");
+    //core.define("NDEBUG", None);
+    //core.define("DEBUGVM", "0");
 
     // unix
-    build.define("LSB_FIRST", "1");
-    build.define("OSX", "1");
+    core.define("LSB_FIRST", "1");
+    core.define("OSX", "1");
+    core.define("HAVE_TM_GMTOFF", None);
 
     #[cfg(feature = "ffi")]
-    build.define("FEATURE_FFI", "1");
+    core.define("FEATURE_FFI", "1");
     #[cfg(feature = "threaded_ffi")]
-    build.define("FEATURE_THREADED_FFI", "1");
+    core.define("FEATURE_THREADED_FFI", "1");
 
     #[cfg(feature = "ffi")]
     {
         let ffi_lib = pkg_config::probe_library("libffi").unwrap();
-        build.includes(ffi_lib.include_paths);
+        core.includes(ffi_lib.include_paths);
     }
 
-    build.compile("PharoVMCore");
+    core.compile();
 
-    // println!("About to build a vm using {:?}", &builder);
-    // builder.ensure_build_tools();
-    //
-    // builder.compile_sources();
-    //
-    // if !builder.is_compiled() {
-    //     panic!("Failed to compile {:?}", builder.vm_binary().display())
-    // }
-    //
+    file_plugin(core.clone()).compile();
+    file_attributes_plugin(core.clone()).compile();
+    misc_primitive_plugin(core.clone()).compile();
+
     builder.link_libraries();
     builder.generate_bindings();
     // builder.export_shared_libraries();
