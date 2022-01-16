@@ -1,6 +1,4 @@
-use crate::build_support::Builder;
-use crate::BuilderTarget;
-use file_matcher::{FileNamed, OneEntry};
+use crate::{Builder, BuilderTarget};
 use std::fmt;
 use std::fmt::{Debug, Formatter};
 use std::path::{Path, PathBuf};
@@ -138,13 +136,6 @@ impl Builder for WindowsBuilder {
         todo!()
     }
 
-    fn vm_binary(&self) -> PathBuf {
-        self.output_directory()
-            .join("build")
-            .join(titlecase(&self.profile()))
-            .join("PharoVMCore.dll")
-    }
-
     fn compiled_libraries_directory(&self) -> PathBuf {
         self.output_directory()
             .join("build")
@@ -199,68 +190,6 @@ impl Builder for WindowsBuilder {
                 .join(titlecase(&self.profile()))
                 .display()
         );
-    }
-
-    fn shared_libraries_to_export(&self) -> Vec<OneEntry> {
-        let vm_build = self
-            .output_directory()
-            .join("build")
-            .join(titlecase(&self.profile()));
-
-        let ffi_test = self
-            .output_directory()
-            .join("build")
-            .join("build")
-            .join("ffiTestLibrary")
-            .join(titlecase(&self.profile()));
-
-        let third_party_build = self
-            .output_directory()
-            .join("build")
-            .join("build")
-            .join("vm");
-
-        let mut libraries = vec![];
-        libraries.append(
-            self.filenames_from_libdir(
-                vec![
-                    // core
-                    "PharoVMCore.dll",
-                    // plugins
-                    "B2DPlugin.dll",
-                    "BitBltPlugin.dll",
-                    "DSAPrims.dll",
-                    "FileAttributesPlugin.dll",
-                    "FilePlugin.dll",
-                    "JPEGReaderPlugin.dll",
-                    "JPEGReadWriter2Plugin.dll",
-                    "LargeIntegers.dll",
-                    "LocalePlugin.dll",
-                    "MiscPrimitivePlugin.dll",
-                    "SocketPlugin.dll",
-                    "SqueakSSL.dll",
-                    "SurfacePlugin.dll",
-                    "UUIDPlugin.dll",
-                ],
-                vm_build,
-            )
-            .as_mut(),
-        );
-
-        libraries.append(
-            self.filenames_from_libdir(
-                vec![
-                    // third party
-                    "ffi.dll",
-                ],
-                third_party_build,
-            )
-            .as_mut(),
-        );
-
-        libraries.push(FileNamed::exact("TestLibrary.dll").within(&ffi_test));
-
-        libraries
     }
 
     fn boxed(self) -> Rc<dyn Builder> {

@@ -1,7 +1,4 @@
-use crate::build_support::Builder;
-
-use crate::build_support::builder::BuilderTarget;
-use file_matcher::OneEntry;
+use crate::{Builder, BuilderTarget};
 use std::fmt;
 use std::fmt::{Debug, Formatter};
 use std::path::PathBuf;
@@ -29,11 +26,6 @@ impl Builder for LinuxBuilder {
         todo!()
     }
 
-    fn vm_binary(&self) -> PathBuf {
-        self.compiled_libraries_directory()
-            .join("libPharoVMCore.so")
-    }
-
     fn compiled_libraries_directory(&self) -> PathBuf {
         self.output_directory()
             .join("build")
@@ -53,41 +45,6 @@ impl Builder for LinuxBuilder {
             "cargo:rustc-link-search={}",
             self.compiled_libraries_directory().display()
         );
-    }
-
-    fn shared_libraries_to_export(&self) -> Vec<OneEntry> {
-        assert!(
-            self.compiled_libraries_directory().exists(),
-            "Must exist: {:?}",
-            self.compiled_libraries_directory().display()
-        );
-        self.filenames_from_libdir(
-            vec![
-                // core
-                "libPharoVMCore.so",
-                // plugins
-                "libB2DPlugin.so",
-                "libBitBltPlugin.so",
-                "libDSAPrims.so",
-                "libFileAttributesPlugin.so",
-                "libFilePlugin.so",
-                "libJPEGReaderPlugin.so",
-                "libJPEGReadWriter2Plugin.so",
-                "libLargeIntegers.so",
-                "libLocalePlugin.so",
-                "libMiscPrimitivePlugin.so",
-                "libSocketPlugin.so",
-                "libSqueakSSL.so",
-                "libSurfacePlugin.so",
-                "libUnixOSProcessPlugin.so",
-                "libUUIDPlugin.so",
-                // testing
-                "libTestLibrary.so",
-                // third party
-                "libffi.so",
-            ],
-            self.compiled_libraries_directory(),
-        )
     }
 
     fn boxed(self) -> Rc<dyn Builder> {

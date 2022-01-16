@@ -1,9 +1,6 @@
-use crate::build_support::vm_unit::CompilationUnit;
-use crate::{Builder, BuilderTarget, Core, Unit};
+use crate::{Builder, BuilderTarget, CompilationUnit, Core, Unit};
 use cc::Build;
 use file_matcher::FilesNamed;
-use new_string_template::template::Template;
-use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
@@ -12,6 +9,7 @@ pub enum Dependency {
     Core(Core),
     Plugin(Plugin),
     Framework(String),
+    Library(String),
 }
 
 #[derive(Debug, Clone)]
@@ -22,20 +20,20 @@ pub struct Plugin {
 }
 
 impl Plugin {
-    pub fn new(name: impl Into<String>, core: Core) -> Self {
+    pub fn new(name: impl Into<String>, core: &Core) -> Self {
         let mut dependencies = Vec::new();
         dependencies.push(Dependency::Core(core.clone()));
 
         Self {
             plugin: Unit::new(name, core.builder()),
-            core,
+            core: core.clone(),
             dependencies,
         }
     }
 
-    pub fn extracted(name: impl Into<String>, core: Core) -> Self {
+    pub fn extracted(name: impl Into<String>, core: &Core) -> Self {
         let name = name.into();
-        let mut plugin = Self::new(name.clone(), core.clone());
+        let mut plugin = Self::new(name.clone(), core);
 
         let extracted_dir = core
             .builder()
@@ -59,12 +57,16 @@ impl Plugin {
                         .find()
                         .unwrap(),
                 );
-                plugin.add_sources(
-                    FilesNamed::wildmatch("*.c")
-                        .within(extracted_dir.join("src/unix"))
-                        .find()
-                        .unwrap(),
-                );
+
+                // If MacOS specific version does not exist we add unix for MacOS
+                if !extracted_dir.join("src/osx").exists() {
+                    plugin.add_sources(
+                        FilesNamed::wildmatch("*.c")
+                            .within(extracted_dir.join("src/unix"))
+                            .find()
+                            .unwrap(),
+                    );
+                }
             }
             BuilderTarget::Linux => {
                 plugin.add_sources(
@@ -84,12 +86,16 @@ impl Plugin {
             }
         }
 
-        plugin.add_includes();
+        plugin.with_default_includes();
 
         plugin
     }
 
-    pub fn add_includes(&mut self) {
+    pub fn get_includes(&self) -> &Vec<PathBuf> {
+        self.plugin.get_includes()
+    }
+
+    pub fn with_default_includes(&mut self) {
         let extracted_dir = self
             .core
             .builder()
@@ -97,18 +103,28 @@ impl Plugin {
             .join("extracted")
             .join("plugins")
             .join(self.plugin.name());
+
         self.add_include(extracted_dir.join("include/common"));
+        self.add_include(extracted_dir.join("src/common"));
 
         match self.builder().target() {
             BuilderTarget::MacOS => {
                 self.add_include(extracted_dir.join("include/osx"));
-                self.add_include(extracted_dir.join("include/unix"));
+                self.add_include(extracted_dir.join("src/osx"));
+                if !extracted_dir.join("include/osx").exists() {
+                    self.add_include(extracted_dir.join("include/unix"));
+                }
+                if !extracted_dir.join("src/osx").exists() {
+                    self.add_include(extracted_dir.join("src/unix"));
+                }
             }
             BuilderTarget::Linux => {
                 self.add_include(extracted_dir.join("include/unix"));
+                self.add_include(extracted_dir.join("src/unix"));
             }
             BuilderTarget::Windows => {
                 self.add_include(extracted_dir.join("include/win"));
+                self.add_include(extracted_dir.join("src/win"));
             }
         }
     }
@@ -147,6 +163,9 @@ impl Plugin {
                 }
                 Dependency::Framework(framework) => {
                     command.arg("-framework").arg(framework);
+                }
+                Dependency::Library(library) => {
+                    command.arg("-l").arg(library);
                 }
             }
         }

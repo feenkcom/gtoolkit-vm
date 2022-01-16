@@ -8,7 +8,6 @@ extern crate which;
 mod build_support;
 
 use build_support::*;
-use file_matcher::{FileNamed, FilesNamed};
 use std::ffi::c_void;
 use std::mem;
 use std::os::raw::{c_int, c_long, c_longlong};
@@ -17,10 +16,6 @@ use std::os::raw::{c_int, c_long, c_longlong};
 /// Possible parameters
 ///  - VM_CLIENT_VMMAKER to use a specific VM to run a VM Maker image
 fn main() {
-    for var in std::env::vars() {
-        println!("{} = {}", var.0, var.1);
-    }
-
     let builder = match std::env::consts::OS {
         "linux" => LinuxBuilder::default().boxed(),
         "macos" => MacBuilder::default().boxed(),
@@ -79,16 +74,16 @@ fn main() {
         .include("{sources}/include/pharovm")
         .add_includes(builder.includes());
 
-    core.check_include_files("dirent.h", "HAVE_DIRENT_H");
-    core.check_include_files("features.h", "HAVE_FEATURES_H");
-    core.check_include_files("unistd.h", "HAVE_UNISTD_H");
-    core.check_include_files("ndir.h", "HAVE_NDIR_H");
-    core.check_include_files("sys/ndir.h", "HAVE_SYS_NDIR_H");
-    core.check_include_files("sys/dir.h", "HAVE_SYS_DIR_H");
-    core.check_include_files("sys/filio.h", "HAVE_SYS_FILIO_H");
-    core.check_include_files("sys/time.h", "HAVE_SYS_TIME_H");
-    core.check_include_files("execinfo.h", "HAVE_EXECINFO_H");
-    core.check_include_files("dlfcn.h", "HAVE_DLFCN_H");
+    core.define_for_header("dirent.h", "HAVE_DIRENT_H");
+    core.define_for_header("features.h", "HAVE_FEATURES_H");
+    core.define_for_header("unistd.h", "HAVE_UNISTD_H");
+    core.define_for_header("ndir.h", "HAVE_NDIR_H");
+    core.define_for_header("sys/ndir.h", "HAVE_SYS_NDIR_H");
+    core.define_for_header("sys/dir.h", "HAVE_SYS_DIR_H");
+    core.define_for_header("sys/filio.h", "HAVE_SYS_FILIO_H");
+    core.define_for_header("sys/time.h", "HAVE_SYS_TIME_H");
+    core.define_for_header("execinfo.h", "HAVE_EXECINFO_H");
+    core.define_for_header("dlfcn.h", "HAVE_DLFCN_H");
 
     core.flag("-Wno-int-conversion");
     core.flag("-Wno-macro-redefined");
@@ -120,26 +115,43 @@ fn main() {
     core.define("HAVE_TM_GMTOFF", None);
 
     #[cfg(feature = "ffi")]
-    core.define("FEATURE_FFI", "1");
+    core.add_feature(ffi_feature(&core));
     #[cfg(feature = "threaded_ffi")]
-    core.define("FEATURE_THREADED_FFI", "1");
-
-    #[cfg(feature = "ffi")]
-    {
-        let ffi_lib = pkg_config::probe_library("libffi").unwrap();
-        core.add_includes(ffi_lib.include_paths);
-    }
+    core.add_feature(threaded_ffi_feature(&core));
 
     core.compile();
 
+    #[cfg(feature = "b2d_plugin")]
+    b2d_plugin(&core).compile();
+    #[cfg(feature = "bit_blt_plugin")]
+    bit_blt_plugin(&core).compile();
+    #[cfg(feature = "dsa_primitives_plugin")]
+    dsa_primitives_plugin(&core).compile();
     #[cfg(feature = "file_plugin")]
-    file_plugin(core.clone()).compile();
+    file_plugin(&core).compile();
     #[cfg(feature = "file_attributes_plugin")]
-    file_attributes_plugin(core.clone()).compile();
+    file_attributes_plugin(&core).compile();
+    #[cfg(feature = "jpeg_read_writer2_plugin")]
+    jpeg_read_writer2_plugin(&core).compile();
+    #[cfg(feature = "jpeg_reader_plugin")]
+    jpeg_reader_plugin(&core).compile();
+    #[cfg(feature = "large_integers_plugin")]
+    large_integers_plugin(&core).compile();
+    #[cfg(feature = "locale_plugin")]
+    locale_plugin(&core).compile();
     #[cfg(feature = "misc_primitive_plugin")]
-    misc_primitive_plugin(core.clone()).compile();
+    misc_primitive_plugin(&core).compile();
+    #[cfg(feature = "socket_plugin")]
+    socket_plugin(&core).compile();
+    #[cfg(feature = "squeak_ssl_plugin")]
+    squeak_ssl_plugin(&core).compile();
+    #[cfg(feature = "surface_plugin")]
+    surface_plugin(&core).compile();
+    #[cfg(all(feature = "unix_os_process_plugin", target_family = "unix"))]
+    unix_os_process_plugin(&core).compile();
+    #[cfg(feature = "uuid_plugin")]
+    uuid_plugin(&core).compile();
 
     builder.link_libraries();
     builder.generate_bindings();
-    // builder.export_shared_libraries();
 }

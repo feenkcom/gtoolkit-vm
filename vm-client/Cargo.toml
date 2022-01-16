@@ -14,7 +14,7 @@ name = "vm_client-cli"
 path = "src/main_cli.rs"
 
 [dependencies]
-vm-bindings = { path = "../vm-bindings" }
+vm-bindings = { path = "../vm-bindings", default-features = false }
 nfd2 = "0.3.0"
 clap = "3.0.0-beta.2"
 thiserror = "1.0.26"
@@ -22,6 +22,11 @@ dirs = "3.0"
 log = "0.4"
 user-error = "1.2.8"
 to_absolute = "0.1.0"
+
+[features]
+default = ["full"]
+minimal = ["vm-bindings/minimal"]
+full = ["vm-bindings/full"]
 
 [target.'cfg(target_os="macos")'.dependencies]
 core-foundation = "0.9.1"

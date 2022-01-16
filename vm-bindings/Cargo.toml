@@ -4,18 +4,50 @@ version = "0.1.0"
 authors = ["Aliaksei Syrel <alex.syrel@gmail.com>"]
 edition = "2018"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 
 [features]
-default = ["ffi", "threaded_ffi", "file_plugin", "file_attributes_plugin", "misc_primitive_plugin"]
+default = ["full"]
+# The minimally working VM without ffi and most plugins
+minimal = ["file_plugin", "file_attributes_plugin", "misc_primitive_plugin"]
+# Enables all plugins
+all_plugins = [
+    "b2d_plugin",
+    "bit_blt_plugin",
+    "dsa_primitives_plugin",
+    "file_plugin",
+    "file_attributes_plugin",
+    "jpeg_read_writer2_plugin",
+    "jpeg_reader_plugin",
+    "large_integers_plugin",
+    "locale_plugin",
+    "misc_primitive_plugin",
+    "socket_plugin",
+    "squeak_ssl_plugin",
+    "surface_plugin",
+    "unix_os_process_plugin",
+    "uuid_plugin" ]
+# Enables all features, such as ffi and all plugins
+full = ["ffi", "threaded_ffi", "all_plugins"]
 gnuisation = []
 ffi = []
 threaded_ffi = ["ffi"]
+# VM Plugins
+b2d_plugin = []
+bit_blt_plugin = []
+dsa_primitives_plugin = []
 file_plugin = []
 file_attributes_plugin = ["file_plugin"]
+jpeg_read_writer2_plugin = []
+jpeg_reader_plugin = []
+large_integers_plugin = []
+locale_plugin = []
 misc_primitive_plugin = []
+socket_plugin = []
+squeak_ssl_plugin = []
+surface_plugin = []
+unix_os_process_plugin = ["file_plugin", "socket_plugin"]
+uuid_plugin = []
 
 [target.'cfg(target_os = "android")'.dependencies]
 ndk = "0.1.0"

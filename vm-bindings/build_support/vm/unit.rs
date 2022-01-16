@@ -1,6 +1,6 @@
 use crate::{Builder, BuilderTarget};
 use cc::Build;
-use file_matcher::{FilesNamed, ManyEntries, OneEntry};
+use file_matcher::FilesNamed;
 use new_string_template::template::Template;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -84,6 +84,30 @@ pub trait CompilationUnit {
     }
 
     fn define<'a, V: Into<Option<&'a str>>>(&mut self, var: &str, val: V) -> &mut Self;
+
+    /// Checks if a provided header exists, and if it does define a symbol
+    fn define_for_header(
+        &mut self,
+        header_name: impl AsRef<str>,
+        define: impl AsRef<str>,
+    ) -> &mut Self {
+        let has_header = bindgen::Builder::default()
+            .header_contents(
+                header_name.as_ref(),
+                &format!("#include <{}>", header_name.as_ref()),
+            )
+            .generate()
+            .is_ok();
+
+        if has_header {
+            self.define(define.as_ref(), None);
+            println!("{} - found", header_name.as_ref());
+        } else {
+            println!("{} - not found", header_name.as_ref());
+        }
+        self
+    }
+
     fn flag(&mut self, flag: &str) -> &mut Self;
     fn flags<P>(&mut self, flags: P) -> &mut Self
     where
@@ -202,12 +226,18 @@ impl CompilationUnit for Unit {
     }
 
     fn add_include<P: AsRef<Path>>(&mut self, dir: P) -> &mut Self {
-        self.includes.push(dir.as_ref().to_path_buf());
+        let path = dir.as_ref().to_path_buf();
+        if path.exists() {
+            self.includes.push(dir.as_ref().to_path_buf());
+        }
         self
     }
 
-    fn add_source<P: AsRef<Path>>(&mut self, dir: P) -> &mut Self {
-        self.sources.push(dir.as_ref().to_path_buf());
+    fn add_source<P: AsRef<Path>>(&mut self, file: P) -> &mut Self {
+        let path = file.as_ref().to_path_buf();
+        if path.exists() {
+            self.sources.push(path);
+        }
         self
     }
 
@@ -231,6 +261,7 @@ fn template_string_to_path(template_path: &str, builder: Rc<dyn Builder>) -> Pat
         builder
             .output_directory()
             .join("generated")
+            .join("64")
             .display()
             .to_string(),
     );

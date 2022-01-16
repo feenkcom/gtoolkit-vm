@@ -8,7 +8,12 @@ pub fn ffi_feature(core: &Core) -> Feature {
     feature.define("FEATURE_FFI", "1");
     feature.include("{sources}/ffi/include");
 
-    feature.sources("{sources}/ffi/src/*.c");
+    feature.sources("{sources}/ffi/src/functionDefinitionPrimitives.c");
+    feature.sources("{sources}/ffi/src/primitiveCalls.c");
+    feature.sources("{sources}/ffi/src/primitiveUtils.c");
+    feature.sources("{sources}/ffi/src/types.c");
+    feature.sources("{sources}/ffi/src/typesPrimitives.c");
+    feature.sources("{sources}/ffi/src/utils.c");
     // Single-threaded callout support
     feature.sources("{sources}/ffi/src/sameThread/*.c");
     // Callback support

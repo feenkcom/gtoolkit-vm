@@ -1,5 +1,4 @@
-use crate::build_support::vm_unit::CompilationUnit;
-use crate::{Builder, Feature, Unit};
+use crate::{Builder, CompilationUnit, Feature, Unit};
 use cc::Build;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
@@ -7,14 +6,14 @@ use std::rc::Rc;
 #[derive(Debug, Clone)]
 pub struct Core {
     core: Unit,
-    features: Vec<Feature>
+    features: Vec<Feature>,
 }
 
 impl Core {
     pub fn new(name: impl Into<String>, builder: Rc<dyn Builder>) -> Self {
         Self {
             core: Unit::new(name, builder),
-            features: vec![]
+            features: vec![],
         }
     }
 
@@ -30,32 +29,15 @@ impl Core {
         self.core.get_flags()
     }
 
-    pub fn check_include_files(
-        &mut self,
-        header_name: impl AsRef<str>,
-        define: impl AsRef<str>,
-    ) -> &mut Self {
-        let has_header = bindgen::Builder::default()
-            .header_contents(
-                header_name.as_ref(),
-                &format!("#include <{}>", header_name.as_ref()),
-            )
-            .generate()
-            .is_ok();
-
-        if has_header {
-            self.define(define.as_ref(), None);
-            println!("{} - found", header_name.as_ref());
-        } else {
-            println!("{} - not found", header_name.as_ref());
-        }
+    pub fn add_feature(&mut self, feature: Feature) -> &mut Self {
+        self.features.push(feature);
         self
     }
 
     pub fn compile(&self) -> Build {
         let mut core_with_features = self.core.clone();
         for feature in &self.features {
-            core_with_features.merge(feature.get_unit());
+            core_with_features = core_with_features.merge(feature.get_unit());
         }
         let build = core_with_features.compile();
 

@@ -1,7 +1,4 @@
-use crate::build_support::Builder;
-
-use crate::BuilderTarget;
-use file_matcher::OneEntry;
+use crate::{Builder, BuilderTarget};
 use std::fmt;
 use std::fmt::{Debug, Formatter};
 use std::path::PathBuf;
@@ -45,11 +42,6 @@ impl Builder for MacBuilder {
 
     fn platform_includes(&self) -> Vec<PathBuf> {
         vec![]
-    }
-
-    fn vm_binary(&self) -> PathBuf {
-        self.compiled_libraries_directory()
-            .join("libPharoVMCore.dylib")
     }
 
     fn compiled_libraries_directory(&self) -> PathBuf {
@@ -98,48 +90,13 @@ impl Builder for MacBuilder {
     }
 
     fn link_libraries(&self) {
-        println!("cargo:rustc-link-lib=framework=AppKit");
-        println!("cargo:rustc-link-lib=framework=CoreGraphics");
-
+        println!("cargo:rustc-link-lib=PharoVMCore");
         println!(
             "cargo:rustc-link-search={}",
-            self.compiled_libraries_directory().display()
+            self.artefact_directory().display()
         );
-    }
-
-    fn shared_libraries_to_export(&self) -> Vec<OneEntry> {
-        assert!(
-            self.compiled_libraries_directory().exists(),
-            "Must exist: {:?}",
-            self.compiled_libraries_directory().display()
-        );
-        self.filenames_from_libdir(
-            vec![
-                // core
-                "libPharoVMCore.dylib",
-                // plugins
-                "libB2DPlugin.dylib",
-                "libBitBltPlugin.dylib",
-                "libDSAPrims.dylib",
-                "libFileAttributesPlugin.dylib",
-                "libFilePlugin.dylib",
-                "libJPEGReaderPlugin.dylib",
-                "libJPEGReadWriter2Plugin.dylib",
-                "libLargeIntegers.dylib",
-                "libLocalePlugin.dylib",
-                "libMiscPrimitivePlugin.dylib",
-                "libSocketPlugin.dylib",
-                "libSqueakSSL.dylib",
-                "libSurfacePlugin.dylib",
-                "libUnixOSProcessPlugin.dylib",
-                "libUUIDPlugin.dylib",
-                "libTestLibrary.dylib",
-                // third party
-                #[cfg(target_arch = "x86_64")]
-                "libffi.dylib",
-            ],
-            self.compiled_libraries_directory(),
-        )
+        println!("cargo:rustc-link-lib=framework=AppKit");
+        println!("cargo:rustc-link-lib=framework=CoreGraphics");
     }
 
     fn boxed(self) -> Rc<dyn Builder> {
