@@ -1,5 +1,5 @@
 use crate::build_support::vm_unit::CompilationUnit;
-use crate::{Builder, Unit};
+use crate::{Builder, Feature, Unit};
 use cc::Build;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
@@ -7,12 +7,14 @@ use std::rc::Rc;
 #[derive(Debug, Clone)]
 pub struct Core {
     core: Unit,
+    features: Vec<Feature>
 }
 
 impl Core {
     pub fn new(name: impl Into<String>, builder: Rc<dyn Builder>) -> Self {
         Self {
             core: Unit::new(name, builder),
+            features: vec![]
         }
     }
 
@@ -51,11 +53,15 @@ impl Core {
     }
 
     pub fn compile(&self) -> Build {
-        let build = self.core.compile();
+        let mut core_with_features = self.core.clone();
+        for feature in &self.features {
+            core_with_features.merge(feature.get_unit());
+        }
+        let build = core_with_features.compile();
 
         let compiler = build.get_compiler();
         let mut command = compiler.to_command();
-        command.current_dir(self.core.output_directory());
+        command.current_dir(self.output_directory());
         command
             .arg("-Wl,-all_load")
             .arg(format!("lib{}.a", self.name()))
@@ -73,8 +79,8 @@ impl Core {
         };
 
         std::fs::copy(
-            self.core.output_directory().join(self.binary_name()),
-            self.core.artefact_directory().join(self.binary_name()),
+            self.output_directory().join(self.binary_name()),
+            self.artefact_directory().join(self.binary_name()),
         )
         .unwrap();
 
@@ -91,18 +97,13 @@ impl CompilationUnit for Core {
         self.core.builder()
     }
 
-    fn include<P: AsRef<Path>>(&mut self, dir: P) -> &mut Self {
-        self.core.include(dir);
+    fn add_include<P: AsRef<Path>>(&mut self, dir: P) -> &mut Self {
+        self.core.add_include(dir);
         self
     }
 
-    fn file<P: AsRef<Path>>(&mut self, dir: P) -> &mut Self {
-        self.core.file(dir);
-        self
-    }
-
-    fn remove_file<P: AsRef<Path>>(&mut self, dir: P) -> &mut Self {
-        self.core.remove_file(dir);
+    fn add_source<P: AsRef<Path>>(&mut self, dir: P) -> &mut Self {
+        self.core.add_source(dir);
         self
     }
 

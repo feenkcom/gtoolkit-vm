@@ -1,6 +1,8 @@
 use crate::{Builder, BuilderTarget};
 use cc::Build;
-use file_matcher::{ManyEntries, OneEntry};
+use file_matcher::{FilesNamed, ManyEntries, OneEntry};
+use new_string_template::template::Template;
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
@@ -8,11 +10,14 @@ pub trait CompilationUnit {
     fn name(&self) -> &str;
     fn builder(&self) -> Rc<dyn Builder>;
     fn binary_name(&self) -> String {
-        match self.builder().target() {
+        match self.target() {
             BuilderTarget::Linux => format!("lib{}.so", self.name()),
             BuilderTarget::MacOS => format!("lib{}.dylib", self.name()),
             BuilderTarget::Windows => format!("{}.dll", self.name()),
         }
+    }
+    fn target(&self) -> BuilderTarget {
+        self.builder().target()
     }
 
     fn output_directory(&self) -> PathBuf {
@@ -23,36 +28,60 @@ pub trait CompilationUnit {
         self.builder().artefact_directory()
     }
 
-    fn include<P: AsRef<Path>>(&mut self, dir: P) -> &mut Self;
-    fn includes<P>(&mut self, dirs: P) -> &mut Self
+    fn add_include<P: AsRef<Path>>(&mut self, dir: P) -> &mut Self;
+    fn add_includes<P>(&mut self, dirs: P) -> &mut Self
     where
         P: IntoIterator,
         P::Item: AsRef<Path>,
     {
         for dir in dirs {
-            self.include(dir);
+            self.add_include(dir);
         }
         self
     }
 
-    fn file<P: AsRef<Path>>(&mut self, dir: P) -> &mut Self;
-    fn files<P>(&mut self, dirs: P) -> &mut Self
+    fn include(&mut self, include: impl AsRef<str>) -> &mut Self {
+        let path = template_string_to_path(include.as_ref(), self.builder());
+        self.add_include(path);
+        self
+    }
+
+    fn includes<P>(&mut self, includes: P) -> &mut Self
+    where
+        P: IntoIterator,
+        P::Item: AsRef<str>,
+    {
+        for include in includes {
+            self.include(include);
+        }
+        self
+    }
+
+    fn add_source<P: AsRef<Path>>(&mut self, dir: P) -> &mut Self;
+    fn add_sources<P>(&mut self, files: P) -> &mut Self
     where
         P: IntoIterator,
         P::Item: AsRef<Path>,
     {
-        for dir in dirs {
-            self.file(dir);
+        for file in files {
+            self.add_source(file);
         }
         self
     }
-    fn files_named(&mut self, files: ManyEntries) -> &mut Self {
-        self.files(files.find().unwrap())
+
+    /// Add all source files matching a wildmatch template path
+    fn sources(&mut self, sources: impl AsRef<str>) -> &mut Self {
+        let path = template_string_to_path(sources.as_ref(), self.builder());
+        let file_name = path.file_name().unwrap().to_str().unwrap().to_string();
+        let directory = path.parent().unwrap().to_path_buf();
+
+        let files = FilesNamed::wildmatch(file_name)
+            .within(directory)
+            .find()
+            .unwrap();
+        self.add_sources(files);
+        self
     }
-    fn file_named(&mut self, file: OneEntry) -> &mut Self {
-        self.file(file.find().unwrap())
-    }
-    fn remove_file<P: AsRef<Path>>(&mut self, dir: P) -> &mut Self;
 
     fn define<'a, V: Into<Option<&'a str>>>(&mut self, var: &str, val: V) -> &mut Self;
     fn flag(&mut self, flag: &str) -> &mut Self;
@@ -132,6 +161,10 @@ impl Unit {
         build
     }
 
+    pub fn get_sources(&self) -> &Vec<PathBuf> {
+        &self.sources
+    }
+
     pub fn get_includes(&self) -> &Vec<PathBuf> {
         &self.includes
     }
@@ -142,6 +175,20 @@ impl Unit {
 
     pub fn get_flags(&self) -> &Vec<String> {
         &self.flags
+    }
+
+    pub fn merge(&self, unit: &Unit) -> Unit {
+        let mut combined = self.clone();
+        combined.add_sources(unit.get_sources());
+        combined.add_includes(unit.get_includes());
+        for define in unit.get_defines() {
+            combined.define(
+                define.0.as_str(),
+                define.1.as_ref().map(|value| value.as_str()),
+            );
+        }
+        combined.flags(unit.get_flags());
+        combined
     }
 }
 
@@ -154,19 +201,13 @@ impl CompilationUnit for Unit {
         self.builder.clone()
     }
 
-    fn include<P: AsRef<Path>>(&mut self, dir: P) -> &mut Self {
+    fn add_include<P: AsRef<Path>>(&mut self, dir: P) -> &mut Self {
         self.includes.push(dir.as_ref().to_path_buf());
         self
     }
 
-    fn file<P: AsRef<Path>>(&mut self, dir: P) -> &mut Self {
+    fn add_source<P: AsRef<Path>>(&mut self, dir: P) -> &mut Self {
         self.sources.push(dir.as_ref().to_path_buf());
-        self
-    }
-
-    fn remove_file<P: AsRef<Path>>(&mut self, dir: P) -> &mut Self {
-        let path_to_remove = dir.as_ref().to_path_buf();
-        self.sources.retain(|each| each != &path_to_remove);
         self
     }
 
@@ -180,4 +221,23 @@ impl CompilationUnit for Unit {
         self.flags.push(flag.to_string());
         self
     }
+}
+
+fn template_string_to_path(template_path: &str, builder: Rc<dyn Builder>) -> PathBuf {
+    let template = Template::new(template_path);
+    let mut data = HashMap::<String, String>::new();
+    data.insert(
+        "generated".to_string(),
+        builder
+            .output_directory()
+            .join("generated")
+            .display()
+            .to_string(),
+    );
+    data.insert(
+        "sources".to_string(),
+        builder.vm_sources_directory().display().to_string(),
+    );
+    let rendered = template.render_string(&data).unwrap();
+    PathBuf::from(rendered)
 }

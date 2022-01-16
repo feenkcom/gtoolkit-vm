@@ -1,8 +1,8 @@
 use file_matcher::{FileNamed, FilesNamed, OneEntry, OneEntryCopier};
 use std::fmt::Debug;
 use std::path::{Path, PathBuf};
-use std::{env, fmt, fs};
 use std::rc::Rc;
+use std::{env, fmt, fs};
 
 const VM_CLIENT_VMMAKER_VM_VAR: &str = "VM_CLIENT_VMMAKER";
 const VM_CLIENT_VMMAKER_IMAGE_VAR: &str = "VM_CLIENT_VMMAKER_IMAGE";

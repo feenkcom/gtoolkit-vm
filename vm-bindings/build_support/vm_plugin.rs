@@ -37,13 +37,14 @@ impl Plugin {
         let name = name.into();
         let mut plugin = Self::new(name.clone(), core.clone());
 
-        let extracted_dir = core.builder()
+        let extracted_dir = core
+            .builder()
             .vm_sources_directory()
             .join("extracted")
             .join("plugins")
             .join(name.clone());
 
-        plugin.files(
+        plugin.add_sources(
             FilesNamed::wildmatch("*.c")
                 .within(extracted_dir.join("src/common"))
                 .find()
@@ -52,13 +53,13 @@ impl Plugin {
 
         match core.builder().target() {
             BuilderTarget::MacOS => {
-                plugin.files(
+                plugin.add_sources(
                     FilesNamed::wildmatch("*.c")
                         .within(extracted_dir.join("src/osx"))
                         .find()
                         .unwrap(),
                 );
-                plugin.files(
+                plugin.add_sources(
                     FilesNamed::wildmatch("*.c")
                         .within(extracted_dir.join("src/unix"))
                         .find()
@@ -66,7 +67,7 @@ impl Plugin {
                 );
             }
             BuilderTarget::Linux => {
-                plugin.files(
+                plugin.add_sources(
                     FilesNamed::wildmatch("*.c")
                         .within(extracted_dir.join("src/unix"))
                         .find()
@@ -74,7 +75,7 @@ impl Plugin {
                 );
             }
             BuilderTarget::Windows => {
-                plugin.files(
+                plugin.add_sources(
                     FilesNamed::wildmatch("*.c")
                         .within(extracted_dir.join("src/win"))
                         .find()
@@ -88,36 +89,6 @@ impl Plugin {
         plugin
     }
 
-    pub fn sources(&mut self, sources: impl AsRef<str>) -> &mut Self {
-        let sources = sources.as_ref();
-
-        let template = Template::new(sources);
-        let mut data = HashMap::<String, String>::new();
-        data.insert(
-            "generated".to_string(),
-            self.builder()
-                .output_directory()
-                .join("generated")
-                .display()
-                .to_string(),
-        );
-        data.insert(
-            "sources".to_string(),
-            self.builder().vm_sources_directory().display().to_string(),
-        );
-        let rendered = template.render_string(&data).unwrap();
-        let path = PathBuf::from(rendered);
-        let file_name = path.file_name().unwrap().to_str().unwrap().to_string();
-        let directory = path.parent().unwrap().to_path_buf();
-
-        let files = FilesNamed::wildmatch(file_name)
-            .within(directory)
-            .find()
-            .unwrap();
-        self.files(files);
-        self
-    }
-
     pub fn add_includes(&mut self) {
         let extracted_dir = self
             .core
@@ -126,18 +97,18 @@ impl Plugin {
             .join("extracted")
             .join("plugins")
             .join(self.plugin.name());
-        self.include(extracted_dir.join("include/common"));
+        self.add_include(extracted_dir.join("include/common"));
 
         match self.builder().target() {
             BuilderTarget::MacOS => {
-                self.include(extracted_dir.join("include/osx"));
-                self.include(extracted_dir.join("include/unix"));
+                self.add_include(extracted_dir.join("include/osx"));
+                self.add_include(extracted_dir.join("include/unix"));
             }
             BuilderTarget::Linux => {
-                self.include(extracted_dir.join("include/unix"));
+                self.add_include(extracted_dir.join("include/unix"));
             }
             BuilderTarget::Windows => {
-                self.include(extracted_dir.join("include/win"));
+                self.add_include(extracted_dir.join("include/win"));
             }
         }
     }
@@ -149,7 +120,7 @@ impl Plugin {
 
     pub fn compile(&self) -> Build {
         let mut compilation_unit = self.plugin.clone();
-        compilation_unit.includes(self.core.get_includes());
+        compilation_unit.add_includes(self.core.get_includes());
 
         for define in self.core.get_defines() {
             compilation_unit.define(&define.0, define.1.as_ref().map(|value| value.as_str()));
@@ -205,18 +176,13 @@ impl CompilationUnit for Plugin {
         self.plugin.builder()
     }
 
-    fn include<P: AsRef<Path>>(&mut self, dir: P) -> &mut Self {
-        self.plugin.include(dir);
+    fn add_include<P: AsRef<Path>>(&mut self, dir: P) -> &mut Self {
+        self.plugin.add_include(dir);
         self
     }
 
-    fn file<P: AsRef<Path>>(&mut self, dir: P) -> &mut Self {
-        self.plugin.file(dir);
-        self
-    }
-
-    fn remove_file<P: AsRef<Path>>(&mut self, dir: P) -> &mut Self {
-        self.plugin.remove_file(dir);
+    fn add_source<P: AsRef<Path>>(&mut self, dir: P) -> &mut Self {
+        self.plugin.add_source(dir);
         self
     }
 

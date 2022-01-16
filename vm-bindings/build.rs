@@ -70,24 +70,14 @@ fn main() {
         .var("ALWAYS_INTERACTIVE", "OFF");
     config.render();
 
-    let extracted_includes = builder
-        .vm_sources_directory()
-        .join("extracted")
-        .join("vm")
-        .join("include");
-    let common_include = extracted_includes.join("common");
-    let platform_include = extracted_includes.join("osx");
-    let include = builder.vm_sources_directory().join("include");
-    let pharo_include = include.join("pharovm");
-
     let mut core = Core::new("PharoVMCore", builder.clone());
-    core.files(builder.sources())
-        .include(common_include)
-        .include(platform_include)
-        .include(extracted_includes.join("unix"))
-        .include(include)
-        .include(pharo_include)
-        .includes(builder.includes());
+    core.add_sources(builder.sources())
+        .include("{sources}/extracted/vm/include/common")
+        .include("{sources}/extracted/vm/include/osx")
+        .include("{sources}/extracted/vm/include/unix")
+        .include("{sources}/include")
+        .include("{sources}/include/pharovm")
+        .add_includes(builder.includes());
 
     core.check_include_files("dirent.h", "HAVE_DIRENT_H");
     core.check_include_files("features.h", "HAVE_FEATURES_H");
@@ -137,13 +127,16 @@ fn main() {
     #[cfg(feature = "ffi")]
     {
         let ffi_lib = pkg_config::probe_library("libffi").unwrap();
-        core.includes(ffi_lib.include_paths);
+        core.add_includes(ffi_lib.include_paths);
     }
 
     core.compile();
 
+    #[cfg(feature = "file_plugin")]
     file_plugin(core.clone()).compile();
+    #[cfg(feature = "file_attributes_plugin")]
     file_attributes_plugin(core.clone()).compile();
+    #[cfg(feature = "misc_primitive_plugin")]
     misc_primitive_plugin(core.clone()).compile();
 
     builder.link_libraries();

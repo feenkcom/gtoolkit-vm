@@ -1,3 +1,6 @@
+#[cfg(not(feature = "file_plugin"))]
+compile_error!("file_plugin must be enabled for this crate.");
+
 use crate::{Builder, BuilderTarget, CompilationUnit, Core, Dependency, Plugin};
 use file_matcher::{FileNamed, FilesNamed};
 

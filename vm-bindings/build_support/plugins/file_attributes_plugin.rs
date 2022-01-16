@@ -1,3 +1,6 @@
+#[cfg(not(feature = "file_attributes_plugin"))]
+compile_error!("file_attributes_plugin must be enabled for this crate.");
+
 use crate::{file_plugin, Builder, Core, Dependency, Plugin};
 
 pub fn file_attributes_plugin(core: Core) -> Plugin {

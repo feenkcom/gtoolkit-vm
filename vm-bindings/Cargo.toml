@@ -9,10 +9,13 @@ edition = "2018"
 [dependencies]
 
 [features]
-default = ["ffi", "threaded_ffi"]
+default = ["ffi", "threaded_ffi", "file_plugin", "file_attributes_plugin", "misc_primitive_plugin"]
 gnuisation = []
 ffi = []
 threaded_ffi = ["ffi"]
+file_plugin = []
+file_attributes_plugin = ["file_plugin"]
+misc_primitive_plugin = []
 
 [target.'cfg(target_os = "android")'.dependencies]
 ndk = "0.1.0"
