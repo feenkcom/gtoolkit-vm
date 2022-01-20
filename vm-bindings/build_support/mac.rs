@@ -18,36 +18,6 @@ impl Builder for MacBuilder {
         BuilderTarget::MacOS
     }
 
-    fn platform_extracted_sources(&self) -> Vec<PathBuf> {
-        let root = self.vm_sources_directory();
-
-        [
-            // Common sources
-            root.join("extracted/vm/src/common/sqHeapMap.c"),
-            root.join("extracted/vm/src/common/sqVirtualMachine.c"),
-            root.join("extracted/vm/src/common/sqNamedPrims.c"),
-            root.join("extracted/vm/src/common/sqExternalSemaphores.c"),
-            root.join("extracted/vm/src/common/sqTicker.c"),
-            // Platform sources
-            root.join("extracted/vm/src/osx/aioOSX.c"),
-            root.join("src/debugUnix.c"),
-            root.join("src/utilsMac.mm"),
-            // Support sources
-            root.join("src/fileDialogMac.m"),
-            // Virtual Memory functions
-            root.join("src/memoryUnix.c"),
-        ]
-        .to_vec()
-    }
-
-    fn platform_includes(&self) -> Vec<PathBuf> {
-        vec![]
-    }
-
-    fn compiled_libraries_directory(&self) -> PathBuf {
-        self.output_directory()
-    }
-
     fn compile_sources(&self) {
         assert!(
             self.vm_sources_directory().exists(),

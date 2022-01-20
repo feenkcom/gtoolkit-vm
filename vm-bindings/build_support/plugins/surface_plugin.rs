@@ -5,6 +5,6 @@ use crate::{CompilationUnit, Core, Plugin};
 
 pub fn surface_plugin(core: &Core) -> Plugin {
     let mut plugin = Plugin::extracted("SurfacePlugin", core);
-    plugin.sources("{generated}/plugins/src/SurfacePlugin/SurfacePlugin.c");
+    plugin.source("{generated}/plugins/src/SurfacePlugin/SurfacePlugin.c");
     plugin
 }

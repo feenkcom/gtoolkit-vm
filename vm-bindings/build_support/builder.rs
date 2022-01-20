@@ -26,82 +26,6 @@ pub trait Builder: Debug {
 
     fn ensure_build_tools(&self) {}
 
-    /// Return a list of all generated sources
-    fn generated_sources(&self) -> Vec<PathBuf> {
-        let root = self
-            .output_directory()
-            .join("generated")
-            .join("64")
-            .join("vm")
-            .join("src");
-
-        [
-            root.join("cogit.c"),
-            #[cfg(not(feature = "gnuisation"))]
-            root.join("cointerp.c"),
-            #[cfg(feature = "gnuisation")]
-            root.join("gcc3x-cointerp.c"),
-        ]
-        .to_vec()
-    }
-
-    /// Return a list of extracted sources shared among all platforms
-    fn common_extracted_sources(&self) -> Vec<PathBuf> {
-        Vec::new()
-    }
-
-    /// Return a list of platform specific extracted sources specific for this platform
-    fn platform_extracted_sources(&self) -> Vec<PathBuf>;
-
-    /// Return a list of all extracted sources including common ones and platform specific
-    fn extracted_sources(&self) -> Vec<PathBuf> {
-        let mut sources = Vec::new();
-        sources.append(&mut self.common_extracted_sources());
-        sources.append(&mut self.platform_extracted_sources());
-        sources
-    }
-
-    /// Return a list of support sources
-    fn support_sources(&self) -> Vec<PathBuf> {
-        let root = self.vm_sources_directory();
-        [
-            root.join("src/debug.c"),
-            root.join("src/utils.c"),
-            root.join("src/errorCode.c"),
-            root.join("src/nullDisplay.c"),
-            root.join("src/externalPrimitives.c"),
-            root.join("src/client.c"),
-            root.join("src/pathUtilities.c"),
-            root.join("src/parameterVector.c"),
-            root.join("src/parameters.c"),
-            root.join("src/fileDialogCommon.c"),
-            root.join("src/stringUtilities.c"),
-            root.join("src/imageAccess.c"),
-            root.join("src/semaphores/platformSemaphore.c"),
-            root.join("extracted/vm/src/common/heartbeat.c"),
-        ]
-        .to_vec()
-    }
-
-    /// Return a list of all sources to compile
-    fn sources(&self) -> Vec<PathBuf> {
-        let mut sources = Vec::new();
-        sources.append(&mut self.support_sources());
-        sources.append(&mut self.generated_sources());
-        sources.append(&mut self.extracted_sources());
-        sources
-    }
-
-    fn platform_includes(&self) -> Vec<PathBuf>;
-
-    fn includes(&self) -> Vec<PathBuf> {
-        let mut includes = Vec::new();
-        includes.append(&mut self.platform_includes());
-        includes.push(self.vm_sources_directory().join("include"));
-        includes.push(self.output_directory().join("generated/64/vm/include"));
-        includes
-    }
-
     fn output_directory(&self) -> PathBuf {
         Path::new(env::var("OUT_DIR").unwrap().as_str()).to_path_buf()
     }
@@ -124,21 +48,6 @@ pub trait Builder: Debug {
             .unwrap()
             .to_path_buf()
             .join("opensmalltalk-vm")
-    }
-
-    fn compiled_libraries_directory(&self) -> PathBuf;
-
-    fn exported_libraries_directory(&self) -> PathBuf {
-        let target = std::env::var("CARGO_TARGET");
-        let mut path = PathBuf::new()
-            .join("..")
-            .join(std::env::var("CARGO_TARGET_DIR").unwrap_or("target".to_string()));
-
-        if let Ok(target) = target {
-            path = path.join(target);
-        }
-
-        path.join(self.profile()).join("shared_libraries")
     }
 
     fn compile_sources(&self);
@@ -233,14 +142,6 @@ pub trait Builder: Debug {
             .entry(
                 &"vm_sources_directory".to_string(),
                 &self.vm_sources_directory().display(),
-            )
-            .entry(
-                &"compiled_libraries_directory".to_string(),
-                &self.compiled_libraries_directory().display(),
-            )
-            .entry(
-                &"exported_libraries_directory".to_string(),
-                &self.exported_libraries_directory().display(),
             )
             .finish()
     }

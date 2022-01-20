@@ -10,10 +10,10 @@ pub fn threaded_ffi_feature(core: &Core) -> Feature {
     let mut feature = Feature::new("THREADED_FFI", core);
     feature.define("FEATURE_THREADED_FFI", "1");
 
-    feature.sources("{sources}/ffi/src/pThreadedFFI.c");
-    feature.sources("{sources}/ffi/src/worker/worker.c");
-    feature.sources("{sources}/ffi/src/worker/workerPrimitives.c");
-    feature.sources("{sources}/ffi/src/worker/workerTask.c");
+    feature.source("{sources}/ffi/src/pThreadedFFI.c");
+    feature.source("{sources}/ffi/src/worker/worker.c");
+    feature.source("{sources}/ffi/src/worker/workerPrimitives.c");
+    feature.source("{sources}/ffi/src/worker/workerTask.c");
 
     feature
 }

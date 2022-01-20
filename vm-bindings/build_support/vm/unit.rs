@@ -70,7 +70,7 @@ pub trait CompilationUnit {
     }
 
     /// Add all source files matching a wildmatch template path
-    fn sources(&mut self, sources: impl AsRef<str>) -> &mut Self {
+    fn source(&mut self, sources: impl AsRef<str>) -> &mut Self {
         let path = template_string_to_path(sources.as_ref(), self.builder());
         let file_name = path.file_name().unwrap().to_str().unwrap().to_string();
         let directory = path.parent().unwrap().to_path_buf();
@@ -80,6 +80,17 @@ pub trait CompilationUnit {
             .find()
             .unwrap();
         self.add_sources(files);
+        self
+    }
+
+    fn sources<S>(&mut self, sources: S) -> &mut Self
+    where
+        S: IntoIterator,
+        S::Item: AsRef<str>,
+    {
+        for source in sources {
+            self.source(source);
+        }
         self
     }
 
@@ -165,6 +176,7 @@ impl Unit {
 
         let mut build = cc::Build::new();
         build
+            .cargo_metadata(false)
             .static_crt(true)
             .shared_flag(true)
             .pic(true)

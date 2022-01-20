@@ -10,7 +10,7 @@ pub fn uuid_plugin(core: &Core) -> Plugin {
     plugin.define_for_header("uuid/uuid.h", "HAVE_UUID_UUID_H");
     plugin.define_for_header("uuid.h", "HAVE_UUID_H");
 
-    plugin.sources("{sources}/plugins/UUIDPlugin/common/UUIDPlugin.c");
+    plugin.source("{sources}/plugins/UUIDPlugin/common/UUIDPlugin.c");
     match plugin.builder().target() {
         BuilderTarget::MacOS => {}
         BuilderTarget::Linux => {

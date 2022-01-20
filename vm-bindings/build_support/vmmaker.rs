@@ -4,6 +4,7 @@ use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::rc::Rc;
+use anyhow::{anyhow, Result};
 
 const VM_CLIENT_VMMAKER_VM_VAR: &str = "VM_CLIENT_VMMAKER";
 const VM_CLIENT_VMMAKER_IMAGE_VAR: &str = "VM_CLIENT_VMMAKER_IMAGE";
@@ -14,19 +15,25 @@ const VMMAKER_DARWIN_VM_URL: &str = "https://files.pharo.org/vm/pharo-spur64-hea
 const VMMAKER_IMAGE_URL: &str =
     "https://files.pharo.org/image/100/Pharo10-SNAPSHOT.build.349.sha.3e26baf.arch.64bit.zip";
 
+#[derive(Debug, Clone)]
 pub struct VMMaker {
     vm: PathBuf,
     image: PathBuf,
+    builder: Rc<dyn Builder>
 }
 
 impl VMMaker {
-    pub fn prepare(builder: Rc<dyn Builder>) -> Self {
+    pub fn prepare(builder: Rc<dyn Builder>) -> Result<Self> {
+        for var in std::env::vars() {
+            println!("{}={}", var.0, var.1);
+        }
+
         let vm = Self::vmmaker_vm().unwrap();
         let source_image = Self::vmmaker_image().unwrap();
 
         let vmmaker_dir = builder.output_directory().join("vmmaker");
         if !vmmaker_dir.exists() {
-            std::fs::create_dir_all(&vmmaker_dir).unwrap();
+            std::fs::create_dir_all(&vmmaker_dir)?;
         };
 
         let vmmaker_image = vmmaker_dir.join("VMMaker.image");
@@ -34,10 +41,11 @@ impl VMMaker {
         let vmmaker = VMMaker {
             vm: vm.clone(),
             image: vmmaker_image.clone(),
+            builder: builder.clone()
         };
 
         if vmmaker_image.exists() {
-            return vmmaker;
+            return Ok(vmmaker);
         }
 
         let status = Command::new(&vm)
@@ -45,17 +53,15 @@ impl VMMaker {
             .arg(&source_image)
             .arg("save")
             .arg(vmmaker_dir.join("VMMaker"))
-            .status()
-            .unwrap();
+            .status()?;
 
         if !status.success() {
-            panic!("Failed to create VMMaker image");
+            anyhow!("Failed to create VMMaker image");
         }
 
         FileNamed::wildmatch("*.sources")
             .within(source_image.parent().unwrap())
-            .copy(&vmmaker_dir)
-            .expect("Copy the .sources");
+            .copy(&vmmaker_dir)?;
 
         println!("Loading VMMaker...");
         let mut child = Command::new(&vm)
@@ -73,10 +79,9 @@ impl VMMaker {
             )
             .arg(builder.vm_sources_directory())
             .arg("scpUrl")
-            .spawn()
-            .unwrap();
+            .spawn()?;
 
-        let stdout = (&mut child).stdout.take().unwrap();
+        let stdout = (&mut child).stdout.take().ok_or(anyhow!("Can not take stdout"))?;
 
         let reader = BufReader::new(stdout);
         reader
@@ -85,14 +90,14 @@ impl VMMaker {
             .for_each(|line| println!("{}", line));
 
         if !child.wait().unwrap().success() {
-            panic!("Failed to install VMMaker");
+            anyhow!("Failed to install VMMaker");
         }
 
-        vmmaker
+        Ok(vmmaker)
     }
 
-    pub fn generate_sources(&self, builder: Rc<dyn Builder>) {
-        if builder.output_directory().join("generated").exists() {
+    pub fn generate_sources(&self) {
+        if self.builder.output_directory().join("generated").exists() {
             return;
         }
 
@@ -107,7 +112,7 @@ impl VMMaker {
             .arg(format!(
                 "PharoVMMaker generate: #'{}' outputDirectory: '{}'",
                 "CoInterpreter",
-                builder.output_directory().display()
+                self.builder.output_directory().display()
             ));
         println!("{:?}", &command);
         let mut child = command.spawn().unwrap();

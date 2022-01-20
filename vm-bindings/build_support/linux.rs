@@ -18,21 +18,6 @@ impl Builder for LinuxBuilder {
         BuilderTarget::Linux
     }
 
-    fn platform_extracted_sources(&self) -> Vec<PathBuf> {
-        Vec::new()
-    }
-
-    fn platform_includes(&self) -> Vec<PathBuf> {
-        todo!()
-    }
-
-    fn compiled_libraries_directory(&self) -> PathBuf {
-        self.output_directory()
-            .join("build")
-            .join("build")
-            .join("vm")
-    }
-
     fn compile_sources(&self) {}
 
     fn platform_include_directory(&self) -> PathBuf {
@@ -41,10 +26,6 @@ impl Builder for LinuxBuilder {
 
     fn link_libraries(&self) {
         println!("cargo:rustc-link-lib=PharoVMCore");
-        println!(
-            "cargo:rustc-link-search={}",
-            self.compiled_libraries_directory().display()
-        );
     }
 
     fn boxed(self) -> Rc<dyn Builder> {

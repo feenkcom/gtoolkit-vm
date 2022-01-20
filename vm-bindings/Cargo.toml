@@ -28,8 +28,12 @@ all_plugins = [
     "unix_os_process_plugin",
     "uuid_plugin" ]
 # Enables all features, such as ffi and all plugins
-full = ["ffi", "threaded_ffi", "all_plugins"]
+full = ["immutability", "inline_memory_accessors", "ffi", "threaded_ffi", "all_plugins"]
 gnuisation = []
+# Include primitives to make objects readonly
+immutability = []
+# Use static inline functions when the compiler produces efficient code for small accessors.
+inline_memory_accessors = []
 ffi = []
 threaded_ffi = ["ffi"]
 # VM Plugins
@@ -61,7 +65,13 @@ cmake = { git = "https://github.com/syrel/cmake-rs", rev = "cce9d58d87bd5dd95afb
 which = "4.1.0"
 titlecase = "1.1.0"
 file-matcher = "0.5.0"
-cc = "1.0.46"
+cc = "1.0"
 new_string_template = "1.0"
 regex = "1.5.4"
 pkg-config = "0.3.24"
+strum = { version = "0.23", features = ["derive"] }
+git2 = "0.13"
+anyhow = "1.0"
+chrono = "0.4"
+semver = "1"
+user-error = "1.2"

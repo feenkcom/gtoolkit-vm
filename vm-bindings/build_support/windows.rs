@@ -128,26 +128,9 @@ impl Builder for WindowsBuilder {
         }
     }
 
-    fn platform_extracted_sources(&self) -> Vec<PathBuf> {
-        Vec::new()
-    }
-
-    fn platform_includes(&self) -> Vec<PathBuf> {
-        todo!()
-    }
-
-    fn compiled_libraries_directory(&self) -> PathBuf {
-        self.output_directory()
-            .join("build")
-            .join("build")
-            .join("vm")
-    }
-
     fn compile_sources(&self) {
         self.clone_pthread();
         self.compile_pthread();
-
-        std::fs::create_dir_all(self.compiled_libraries_directory()).unwrap();
 
         let mut config = cmake::Config::new(self.vm_sources_directory());
         config
