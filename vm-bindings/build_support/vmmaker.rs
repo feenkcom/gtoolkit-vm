@@ -75,7 +75,10 @@ impl VMMaker {
             image: Self::custom_source_image(),
         };
 
-        Self::download_vmmaker(&mut source, builder.clone())?;
+        // if we have both source vm and the image there is nothing to download
+        if source.vm.is_none() || source.image.is_none() {
+            Self::download_vmmaker(&mut source, builder.clone())?;
+        }
 
         let vmmaker_vm = source.vm.unwrap();
         let source_image = source.image.unwrap();
@@ -183,6 +186,7 @@ impl VMMaker {
             .build()
             .unwrap();
 
+        println!("{:?}", &download);
         println!("{}Downloading VMMaker", DOWNLOADING);
         rt.block_on(download.download())?;
 
@@ -249,7 +253,7 @@ impl VMMaker {
                 .join("MacOS")
                 .join("Pharo"),
             BuilderTarget::Linux => vm_folder.join("pharo"),
-            BuilderTarget::Windows => vm_folder.join("bin").join("PharoConsole.exe"),
+            BuilderTarget::Windows => vm_folder.join("PharoConsole.exe"),
         }
     }
 }

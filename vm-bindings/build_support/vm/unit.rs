@@ -5,6 +5,7 @@ use new_string_template::template::Template;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
+use to_absolute::canonicalize;
 
 pub trait CompilationUnit {
     fn name(&self) -> &str;
@@ -186,7 +187,7 @@ impl Unit {
             .extra_warnings(false);
 
         for flag in &self.flags {
-            build.flag(flag);
+            build.flag_if_supported(flag);
         }
 
         for define in &self.defines {
@@ -240,7 +241,8 @@ impl CompilationUnit for Unit {
     fn add_include<P: AsRef<Path>>(&mut self, dir: P) -> &mut Self {
         let path = dir.as_ref().to_path_buf();
         if path.exists() {
-            self.includes.push(dir.as_ref().to_path_buf());
+            let path = canonicalize(path).unwrap();
+            self.includes.push(path);
         }
         self
     }

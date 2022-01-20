@@ -22,7 +22,7 @@ pub fn ffi_feature(core: &Core) -> Feature {
     feature.source("{sources}/src/semaphores/pharoSemaphore.c");
     feature.source("{sources}/src/threadSafeQueue/threadSafeQueue.c");
 
-    let ffi_lib = pkg_config::probe_library("libffi").unwrap();
+    let ffi_lib = pkg_config::Config::new().statik(true).probe("libffi").unwrap();
     feature.add_includes(ffi_lib.include_paths);
 
     feature
