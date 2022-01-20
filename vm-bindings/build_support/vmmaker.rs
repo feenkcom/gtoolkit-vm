@@ -186,7 +186,6 @@ impl VMMaker {
             .build()
             .unwrap();
 
-        println!("{:?}", &download);
         println!("{}Downloading VMMaker", DOWNLOADING);
         rt.block_on(download.download())?;
 
