@@ -1,18 +1,18 @@
 mod builder;
 mod vmmaker;
 
+mod config;
 mod features;
 mod linux;
 mod mac;
 mod plugins;
 mod vm;
 mod windows;
-mod config;
 
+pub use config::*;
 pub use features::*;
 pub use plugins::*;
 pub use vm::*;
-pub use config::*;
 
 pub use builder::{Builder, BuilderTarget};
 pub use linux::LinuxBuilder;

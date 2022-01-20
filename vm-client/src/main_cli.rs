@@ -12,18 +12,17 @@ fn main() {
         .version("1.0")
         .author("feenk gmbh. <contact@feenk.com>")
         .setting(AppSettings::AllowExternalSubcommands)
-        .setting(AppSettings::ColoredHelp)
         .arg(
             Arg::new("image")
                 .value_name("image")
                 .index(1)
                 .required(true)
-                .about("A path to an image file to run"),
+                .help("A path to an image file to run"),
         )
         .arg(
             Arg::new("interactive")
                 .long("interactive")
-                .about("Start image in the interactive (UI) mode"),
+                .help("Start image in the interactive (UI) mode"),
         )
         .get_matches();
 

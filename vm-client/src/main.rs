@@ -15,7 +15,7 @@ mod application_options;
 mod platform;
 mod working_directory;
 
-use clap::Clap;
+use clap::Parser;
 
 use user_error::{UserFacingError, UFE};
 

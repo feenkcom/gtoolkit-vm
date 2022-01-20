@@ -75,3 +75,8 @@ anyhow = "1.0"
 chrono = "0.4"
 semver = "1"
 user-error = "1.2"
+console = { version = ">=0.9.1, <1.0.0", default-features = false }
+tokio = { version = "1.0", features = ["full"] }
+downloader = { git = "https://github.com/feenkcom/build-helpers-rs" }
+unzipper = { git = "https://github.com/feenkcom/build-helpers-rs" }
+commander = { path = "../../build-helpers-rs/commander" }

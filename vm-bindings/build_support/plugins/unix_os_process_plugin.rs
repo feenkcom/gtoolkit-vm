@@ -7,7 +7,7 @@ compile_error!("socket_plugin must be enabled for this crate.");
 #[cfg(not(feature = "file_plugin"))]
 compile_error!("file_plugin must be enabled for this crate.");
 
-use crate::{file_plugin, CompilationUnit, Core, Dependency, Plugin, socket_plugin};
+use crate::{file_plugin, socket_plugin, CompilationUnit, Core, Dependency, Plugin};
 
 pub fn unix_os_process_plugin(core: &Core) -> Plugin {
     let file_plugin = file_plugin(core);

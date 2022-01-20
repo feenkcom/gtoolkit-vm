@@ -15,13 +15,13 @@ path = "src/main_cli.rs"
 
 [dependencies]
 vm-bindings = { path = "../vm-bindings", default-features = false }
-nfd2 = "0.3.0"
-clap = "3.0.0-beta.2"
-thiserror = "1.0.26"
+nfd2 = "0.3"
+clap = { version = "3.0", features = [ "derive"] }
+thiserror = "1.0"
 dirs = "3.0"
 log = "0.4"
-user-error = "1.2.8"
-to_absolute = "0.1.0"
+user-error = "1.2"
+to_absolute = "0.1"
 
 [features]
 default = ["full"]

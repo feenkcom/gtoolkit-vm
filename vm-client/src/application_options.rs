@@ -1,10 +1,9 @@
 use crate::{ApplicationError, Result};
-use clap::{AppSettings, Clap};
+use clap::{AppSettings, Parser};
 use std::path::{Path, PathBuf};
 
-#[derive(Clap, Clone, Debug)]
+#[derive(Parser, Clone, Debug)]
 #[clap(version = "1.0", author = "feenk gmbh <contact@feenk.com>")]
-#[clap(setting = AppSettings::ColoredHelp)]
 pub struct AppOptions {
     /// A path to a custom Pharo .image to use instead of automatically detecting one
     #[clap(long, parse(from_os_str))]

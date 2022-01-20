@@ -90,7 +90,11 @@ impl ConfigTemplate {
     }
 
     pub fn render(&self) {
-        let keys: Vec<String> = Config::VARIANTS.iter().map(|each | each.to_string()).filter(|each| !self.data.contains_key(each)).collect::<Vec<String>>();
+        let keys: Vec<String> = Config::VARIANTS
+            .iter()
+            .map(|each| each.to_string())
+            .filter(|each| !self.data.contains_key(each))
+            .collect::<Vec<String>>();
         if !keys.is_empty() {
             panic!("Some config values are not defined: {:?}", keys);
         }
