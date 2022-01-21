@@ -1,6 +1,7 @@
 use crate::{Builder, CompilationUnit, Core, Unit};
 use std::path::Path;
 use std::rc::Rc;
+use crate::build_support::Dependency;
 
 #[derive(Debug, Clone)]
 pub struct Feature {
@@ -45,6 +46,11 @@ impl CompilationUnit for Feature {
 
     fn flag(&mut self, flag: &str) -> &mut Self {
         self.feature.flag(flag);
+        self
+    }
+
+    fn dependency(&mut self, dependency: Dependency) -> &mut Self {
+        self.feature.dependency(dependency);
         self
     }
 }

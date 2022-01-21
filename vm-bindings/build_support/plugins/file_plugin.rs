@@ -14,7 +14,7 @@ pub fn file_plugin(core: &Core) -> Plugin {
             file_plugin.source("{sources}/extracted/plugins/FilePlugin/src/osx/*.c");
             file_plugin.source("{sources}/extracted/vm/src/unix/sqUnixCharConv.c");
             file_plugin.source("{sources}/src/fileUtils.c");
-            file_plugin.add_dependency(Dependency::Framework("AppKit".to_string()));
+            file_plugin.dependency(Dependency::SystemLibrary("AppKit".to_string()));
         }
         BuilderTarget::Linux => {
             file_plugin.source("{sources}/extracted/plugins/FilePlugin/src/common/*.c");
@@ -24,8 +24,9 @@ pub fn file_plugin(core: &Core) -> Plugin {
         }
         BuilderTarget::Windows => {
             file_plugin.source("{sources}/extracted/plugins/FilePlugin/src/win/*.c");
-            file_plugin.source("{sources}/extracted/vm/src/sqWin32Directory.c");
+            file_plugin.source("{sources}/extracted/vm/src/win/sqWin32Directory.c");
             file_plugin.source("{sources}/src/fileUtilsWin.c");
+            file_plugin.define("WIN32_FILE_SUPPORT", None);
         }
     }
 

@@ -14,7 +14,7 @@ pub use features::*;
 pub use plugins::*;
 pub use vm::*;
 
-pub use builder::{Builder, BuilderTarget};
+pub use builder::{Builder, BuilderTarget, compile_ffi};
 pub use linux::LinuxBuilder;
 pub use mac::MacBuilder;
 pub use vmmaker::VMMaker;

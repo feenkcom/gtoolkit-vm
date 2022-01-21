@@ -6,6 +6,6 @@ mod vm;
 
 pub use self::core::Core;
 pub use feature::Feature;
-pub use plugin::{Dependency, Plugin};
-pub use unit::{CompilationUnit, Unit};
+pub use plugin::Plugin;
+pub use unit::{CompilationUnit, Unit, Dependency};
 pub use vm::VirtualMachine;

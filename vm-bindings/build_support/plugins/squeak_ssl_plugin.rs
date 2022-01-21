@@ -7,18 +7,18 @@ pub fn squeak_ssl_plugin(core: &Core) -> Plugin {
     let mut plugin = Plugin::extracted("SqueakSSL", core);
     match plugin.target() {
         BuilderTarget::MacOS => {
-            plugin.add_dependency(Dependency::Framework("CoreFoundation".to_string()));
-            plugin.add_dependency(Dependency::Framework("Security".to_string()));
+            plugin.dependency(Dependency::SystemLibrary("CoreFoundation".to_string()));
+            plugin.dependency(Dependency::SystemLibrary("Security".to_string()));
         }
         BuilderTarget::Linux => {
             let openssl = pkg_config::probe_library("OpenSSL").unwrap();
             for lib in &openssl.libs {
-                plugin.add_dependency(Dependency::Library(lib.to_string()));
+                plugin.dependency(Dependency::Library(lib.to_string(), vec![]));
             }
         }
         BuilderTarget::Windows => {
-            plugin.add_dependency(Dependency::Library("Crypt32".to_string()));
-            plugin.add_dependency(Dependency::Library("Secur32".to_string()));
+            plugin.dependency(Dependency::SystemLibrary("Crypt32".to_string()));
+            plugin.dependency(Dependency::SystemLibrary("Secur32".to_string()));
         }
     }
     plugin

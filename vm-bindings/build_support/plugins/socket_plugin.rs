@@ -9,7 +9,7 @@ pub fn socket_plugin(core: &Core) -> Plugin {
         BuilderTarget::MacOS => {}
         BuilderTarget::Linux => {}
         BuilderTarget::Windows => {
-            plugin.add_dependency(Dependency::Library("Ws2_32".to_string()));
+            plugin.dependency(Dependency::SystemLibrary("Ws2_32".to_string()));
         }
     }
     plugin

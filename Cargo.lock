@@ -125,7 +125,7 @@ version = "0.1.11+1.0.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "736a955f3fa7875102d57c82b8cac37ec45224a07fd32d58f9f7a186b6cd4cdc"
 dependencies = [
- "cc",
+ "cc 1.0.72 (registry+https://github.com/rust-lang/crates.io-index)",
  "libc",
  "pkg-config",
 ]
@@ -138,6 +138,11 @@ checksum = "22a9137b95ea06864e018375b72adfb7db6e6f68cfc8df5a04d00288050485ee"
 dependencies = [
  "jobserver",
 ]
+
+[[package]]
+name = "cc"
+version = "1.0.72"
+source = "git+https://github.com/syrel/cc-rs?rev=2794bd456cd7ecf75e5bc79c2499a8eb9920f0a2#2794bd456cd7ecf75e5bc79c2499a8eb9920f0a2"
 
 [[package]]
 name = "cexpr"
@@ -234,7 +239,7 @@ name = "cmake"
 version = "0.1.45"
 source = "git+https://github.com/syrel/cmake-rs?rev=cce9d58d87bd5dd95afb9183fdbbf4cb5d4b2255#cce9d58d87bd5dd95afb9183fdbbf4cb5d4b2255"
 dependencies = [
- "cc",
+ "cc 1.0.72 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -340,7 +345,7 @@ version = "1.6.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "85505eb239fc952b300f29f0556d2d884082a83566768d980278d8faf38c780d"
 dependencies = [
- "cc",
+ "cc 1.0.72 (registry+https://github.com/rust-lang/crates.io-index)",
  "vswhom",
  "winreg 0.10.1",
 ]
@@ -800,7 +805,7 @@ version = "0.12.26+1.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "19e1c899248e606fbfe68dcb31d8b0176ebab833b103824af31bddf4b7457494"
 dependencies = [
- "cc",
+ "cc 1.0.72 (registry+https://github.com/rust-lang/crates.io-index)",
  "libc",
  "libssh2-sys",
  "libz-sys",
@@ -814,7 +819,7 @@ version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f2b111a074963af1d37a139918ac6d49ad1d0d5e47f72fd55388619691a7d753"
 dependencies = [
- "cc",
+ "cc 1.0.72 (registry+https://github.com/rust-lang/crates.io-index)",
  "winapi",
 ]
 
@@ -834,7 +839,7 @@ version = "0.2.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b094a36eb4b8b8c8a7b4b8ae43b2944502be3e59cd87687595cf6b0a71b3f4ca"
 dependencies = [
- "cc",
+ "cc 1.0.72 (registry+https://github.com/rust-lang/crates.io-index)",
  "libc",
  "libz-sys",
  "openssl-sys",
@@ -848,7 +853,7 @@ version = "1.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "de5435b8549c16d423ed0c03dbaafe57cf6c3344744f1242520d59c9d8ecec66"
 dependencies = [
- "cc",
+ "cc 1.0.72 (registry+https://github.com/rust-lang/crates.io-index)",
  "libc",
  "pkg-config",
  "vcpkg",
@@ -987,7 +992,7 @@ version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "306127f5ff8cb7c8cd3a8cf0fc162f4dc76ed589efa01ee84eb5593e7be97f75"
 dependencies = [
- "cc",
+ "cc 1.0.72 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -1099,7 +1104,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7e46109c383602735fa0a2e48dd2b7c892b048e1bf69e5c3b1d804b7d9c203cb"
 dependencies = [
  "autocfg",
- "cc",
+ "cc 1.0.72 (registry+https://github.com/rust-lang/crates.io-index)",
  "libc",
  "pkg-config",
  "vcpkg",
@@ -1778,7 +1783,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "bindgen",
- "cc",
+ "cc 1.0.72 (git+https://github.com/syrel/cc-rs?rev=2794bd456cd7ecf75e5bc79c2499a8eb9920f0a2)",
  "chrono",
  "cmake",
  "commander",
@@ -1837,7 +1842,7 @@ version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fc2f5402d3d0e79a069714f7b48e3ecc60be7775a2c049cb839457457a239532"
 dependencies = [
- "cc",
+ "cc 1.0.72 (registry+https://github.com/rust-lang/crates.io-index)",
  "libc",
 ]
 

@@ -16,10 +16,10 @@ pub fn uuid_plugin(core: &Core) -> Plugin {
         BuilderTarget::Linux => {
             let uuid_lib = pkg_config::probe_library("uuid").unwrap();
             plugin.add_includes(uuid_lib.include_paths);
-            plugin.add_dependency(Dependency::Library("uuid".to_string()));
+            plugin.dependency(Dependency::Library("uuid".to_string(), vec![]));
         }
         BuilderTarget::Windows => {
-            plugin.add_dependency(Dependency::Library("ole32".to_string()));
+            plugin.dependency(Dependency::SystemLibrary("ole32".to_string()));
         }
     }
 

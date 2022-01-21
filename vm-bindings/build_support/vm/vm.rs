@@ -113,18 +113,18 @@ impl VirtualMachine {
             "{sources}/src/imageAccess.c",
             "{sources}/src/semaphores/platformSemaphore.c",
             "{sources}/extracted/vm/src/common/heartbeat.c",
+            // Common sources
+            "{sources}/extracted/vm/src/common/sqHeapMap.c",
+            "{sources}/extracted/vm/src/common/sqVirtualMachine.c",
+            "{sources}/extracted/vm/src/common/sqNamedPrims.c",
+            "{sources}/extracted/vm/src/common/sqExternalSemaphores.c",
+            "{sources}/extracted/vm/src/common/sqTicker.c",
         ]
         .to_vec();
 
         match target {
             BuilderTarget::MacOS => {
                 sources.extend([
-                    // Common sources
-                    "{sources}/extracted/vm/src/common/sqHeapMap.c",
-                    "{sources}/extracted/vm/src/common/sqVirtualMachine.c",
-                    "{sources}/extracted/vm/src/common/sqNamedPrims.c",
-                    "{sources}/extracted/vm/src/common/sqExternalSemaphores.c",
-                    "{sources}/extracted/vm/src/common/sqTicker.c",
                     // Platform sources
                     "{sources}/extracted/vm/src/osx/aioOSX.c",
                     "{sources}/src/debugUnix.c",
@@ -136,7 +136,17 @@ impl VirtualMachine {
                 ])
             }
             BuilderTarget::Linux => {}
-            BuilderTarget::Windows => {}
+            BuilderTarget::Windows => {
+                sources.extend([
+                    // Platform sources
+                    "{sources}/extracted/vm/src/win/sqWin32SpurAlloc.c",
+                    "{sources}/extracted/vm/src/win/aioWin.c",
+                    "{sources}/src/debugWin.c",
+                    // Support sources
+                    "{sources}/src/fileDialogWin32.c",
+                    "{sources}/src/utils/setjmp-Windows-wrapper-X64.asm",
+                ])
+            }
         }
 
         sources
@@ -162,6 +172,7 @@ impl VirtualMachine {
             }
             BuilderTarget::Windows => {
                 includes.push("{sources}/extracted/vm/include/win");
+                includes.push("{ output }/pthreads/lib/x64/{ profile }");
             }
         }
         includes
@@ -214,10 +225,22 @@ impl VirtualMachine {
             core.define("DEBUGVM", "0");
         }
 
-        // unix
-        core.define("LSB_FIRST", "1");
-        core.define("OSX", "1");
-        core.define("HAVE_TM_GMTOFF", None);
+        if core.target().is_unix() {
+            core.define("LSB_FIRST", "1");
+            core.define("OSX", "1");
+            core.define("HAVE_TM_GMTOFF", None);
+        }
+
+        if core.target().is_windows() {
+            core.dependency(Dependency::SystemLibrary("User32".to_string()));
+            core.dependency(Dependency::SystemLibrary("Ws2_32".to_string()));
+            core.dependency(Dependency::SystemLibrary("DbgHelp".to_string()));
+            core.dependency(Dependency::SystemLibrary("Ole32".to_string()));
+            core.dependency(Dependency::Library(
+                "pthreads".to_string(),
+                vec![core.output_directory().join("pthreads\\lib\\x64").join(core.builder().profile())],
+            ));
+        }
 
         #[cfg(feature = "ffi")]
         core.add_feature(ffi_feature(&core));
@@ -264,6 +287,8 @@ impl VirtualMachine {
 
     pub fn new() -> Result<Self> {
         let builder = Self::builder()?;
+        compile_ffi(builder.clone());
+        builder.prepare_environment();
         let build_info = Self::build_info(builder.clone())?;
         let config = Self::config(builder.clone(), &build_info)?;
         let vmmaker = Self::vmmaker(builder.clone())?;

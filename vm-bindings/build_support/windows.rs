@@ -5,6 +5,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::rc::Rc;
 use titlecase::titlecase;
+use crate::build_support::compile_ffi;
 
 #[derive(Default, Clone)]
 pub struct WindowsBuilder {}
@@ -128,51 +129,13 @@ impl Builder for WindowsBuilder {
         }
     }
 
-    fn compile_sources(&self) {
+    fn prepare_environment(&self) {
         self.clone_pthread();
         self.compile_pthread();
-
-        let mut config = cmake::Config::new(self.vm_sources_directory());
-        config
-            .static_crt(true)
-            .define("COMPILE_EXECUTABLE", "OFF")
-            .define("FEATURE_LIB_PTHREADW32", "ON")
-            .define("PTHREADW32_DIR", self.pthreads_library_directory())
-            .define("FEATURE_LIB_GIT2", "OFF")
-            .define("FEATURE_LIB_SDL2", "OFF")
-            .define("FEATURE_LIB_CAIRO", "OFF")
-            .define("FEATURE_LIB_FREETYPE2", "OFF")
-            .define("PHARO_VM_IN_WORKER_THREAD", "OFF")
-            .generator("Visual Studio 16 2019")
-            .generator_toolset("ClangCL");
-
-        // if let Some(vmmaker_vm) = self.vmmaker_vm() {
-        //     config.define("GENERATE_PHARO_VM", self.escape_windows_path(vmmaker_vm));
-        // }
-        // if let Some(vmmaker_image) = self.vmmaker_image() {
-        //     config.define(
-        //         "GENERATE_PHARO_IMAGE",
-        //         self.escape_windows_path(vmmaker_image),
-        //     );
-        // }
-
-        config.build();
     }
 
     fn platform_include_directory(&self) -> PathBuf {
         self.squeak_include_directory().join("win")
-    }
-
-    fn link_libraries(&self) {
-        println!("cargo:rustc-link-lib=PharoVMCore");
-
-        println!(
-            "cargo:rustc-link-search={}",
-            self.output_directory()
-                .join("build")
-                .join(titlecase(&self.profile()))
-                .display()
-        );
     }
 
     fn boxed(self) -> Rc<dyn Builder> {

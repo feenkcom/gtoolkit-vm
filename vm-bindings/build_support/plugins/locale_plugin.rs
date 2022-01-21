@@ -7,7 +7,7 @@ pub fn locale_plugin(core: &Core) -> Plugin {
     let mut plugin = Plugin::extracted("LocalePlugin", core);
     match plugin.target() {
         BuilderTarget::MacOS => {
-            plugin.add_dependency(Dependency::Framework("CoreFoundation".to_string()));
+            plugin.dependency(Dependency::SystemLibrary("CoreFoundation".to_string()));
         }
         BuilderTarget::Linux => {}
         BuilderTarget::Windows => {}

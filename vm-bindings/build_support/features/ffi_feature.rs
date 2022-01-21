@@ -1,7 +1,7 @@
 #[cfg(not(feature = "ffi"))]
 compile_error!("ffi must be enabled for this crate.");
 
-use crate::{CompilationUnit, Core, Feature};
+use crate::{CompilationUnit, Core, Feature, Dependency};
 
 pub fn ffi_feature(core: &Core) -> Feature {
     let mut feature = Feature::new("FFI", core);
@@ -22,8 +22,10 @@ pub fn ffi_feature(core: &Core) -> Feature {
     feature.source("{sources}/src/semaphores/pharoSemaphore.c");
     feature.source("{sources}/src/threadSafeQueue/threadSafeQueue.c");
 
-    let ffi_lib = pkg_config::Config::new().statik(true).probe("libffi").unwrap();
-    feature.add_includes(ffi_lib.include_paths);
+    let lib_ffi_include = feature.builder().output_directory().join("libffi-build").join("include");
+    let lib_ffi = feature.builder().output_directory().join("libffi-build").join("lib");
+    feature.add_include(&lib_ffi_include);
+    feature.dependency(Dependency::Library("ffi".to_string(), vec![lib_ffi]));
 
     feature
 }

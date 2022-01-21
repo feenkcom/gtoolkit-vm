@@ -18,14 +18,10 @@ impl Builder for LinuxBuilder {
         BuilderTarget::Linux
     }
 
-    fn compile_sources(&self) {}
+    fn prepare_environment(&self) {}
 
     fn platform_include_directory(&self) -> PathBuf {
         self.squeak_include_directory().join("unix")
-    }
-
-    fn link_libraries(&self) {
-        println!("cargo:rustc-link-lib=PharoVMCore");
     }
 
     fn boxed(self) -> Rc<dyn Builder> {

@@ -1,8 +1,10 @@
+use crate::build_support::{Core, Plugin};
 use crate::{Builder, BuilderTarget};
 use cc::Build;
 use file_matcher::FilesNamed;
 use new_string_template::template::Template;
 use std::collections::HashMap;
+use std::ffi::{OsStr, OsString};
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use to_absolute::canonicalize;
@@ -76,10 +78,17 @@ pub trait CompilationUnit {
         let file_name = path.file_name().unwrap().to_str().unwrap().to_string();
         let directory = path.parent().unwrap().to_path_buf();
 
-        let files = FilesNamed::wildmatch(file_name)
-            .within(directory)
+        let files = FilesNamed::wildmatch(&file_name)
+            .within(&directory)
             .find()
             .unwrap();
+        if files.is_empty() {
+            panic!(
+                "Could not find files matching {} in {}",
+                &file_name,
+                directory.display()
+            );
+        }
         self.add_sources(files);
         self
     }
@@ -131,6 +140,25 @@ pub trait CompilationUnit {
         }
         self
     }
+
+    fn dependency(&mut self, dependency: Dependency) -> &mut Self;
+    fn dependencies<D>(&mut self, dependencies: D) -> &mut Self
+    where
+        D: IntoIterator<Item = Dependency>,
+    {
+        for dependency in dependencies {
+            self.dependency(dependency);
+        }
+        self
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum Dependency {
+    Core(Core),
+    Plugin(Plugin),
+    SystemLibrary(String),
+    Library(String, Vec<PathBuf>),
 }
 
 #[derive(Debug, Clone)]
@@ -141,6 +169,7 @@ pub struct Unit {
     sources: Vec<PathBuf>,
     defines: Vec<(String, Option<String>)>,
     flags: Vec<String>,
+    dependencies: Vec<Dependency>,
 }
 
 impl Unit {
@@ -152,6 +181,7 @@ impl Unit {
             sources: vec![],
             defines: Vec::new(),
             flags: vec![],
+            dependencies: vec![],
         }
     }
 
@@ -194,7 +224,127 @@ impl Unit {
             build.define(&define.0, define.1.as_ref().map(|value| value.as_str()));
         }
 
-        build.compile(&self.name);
+        let compiler = build.get_compiler();
+        // the `cc` crate create a static library by default. In case of msvc we should override the used archiver from lib.exe to link.exe and
+        // correctly provide the linking libraries from the dependencies
+        if compiler.is_like_msvc() {
+            build.archiver("link.exe");
+            build.ar_flag("-DLL");
+            let libs = compiler
+                .env()
+                .iter()
+                .find(|var| var.0 == OsStr::new("LIB"))
+                .expect("MSVC toolchain is not detected");
+            for path in std::env::split_paths(&libs.1) {
+                if let Ok(path) = to_absolute::canonicalize(path) {
+                    build.ar_flag(&format!("-LIBPATH:{}\\", path.display()));
+                }
+            }
+            for dependency in &self.dependencies {
+                match dependency {
+                    Dependency::Core(core) => {
+                        build.ar_flag(&format!("{}.lib", core.name()));
+                        build.ar_flag(&format!(
+                            "-LIBPATH:{}\\",
+                            to_absolute::canonicalize(core.artefact_directory())
+                                .unwrap()
+                                .display()
+                        ));
+                    }
+                    Dependency::Plugin(plugin) => {
+                        build.ar_flag(&format!("{}.lib", plugin.name()));
+                        build.ar_flag(&format!(
+                            "-LIBPATH:{}\\",
+                            to_absolute::canonicalize(plugin.artefact_directory())
+                                .unwrap()
+                                .display()
+                        ));
+                    }
+                    Dependency::SystemLibrary(framework) => {
+                        build.ar_flag(&format!("{}.lib", framework));
+                    }
+                    Dependency::Library(library, link_path) => {
+                        for path in link_path {
+                            build.ar_flag(&format!(
+                                "-LIBPATH:{}\\",
+                                to_absolute::canonicalize(path).unwrap().display()
+                            ));
+                        }
+                        build.ar_flag(&format!("{}.lib", library));
+                    }
+                }
+            }
+        }
+
+        if compiler.is_like_msvc() {
+            build.try_compile_binary(self.name(), self.binary_name().as_str()).unwrap();
+        } else {
+            build.compile(self.name());
+        }
+
+        if !compiler.is_like_msvc() {
+            let mut command = compiler.to_command();
+            command.current_dir(self.output_directory());
+            command
+                .arg("-Wl,-all_load")
+                .arg(format!("lib{}.a", self.name()));
+
+            for dependency in &self.dependencies {
+                match dependency {
+                    Dependency::Core(unit) => {
+                        command
+                            .arg("-L")
+                            .arg(self.artefact_directory())
+                            .arg("-l")
+                            .arg(unit.name());
+                    }
+                    Dependency::Plugin(unit) => {
+                        command
+                            .arg("-L")
+                            .arg(self.artefact_directory())
+                            .arg("-l")
+                            .arg(unit.name());
+                    }
+                    Dependency::SystemLibrary(framework) => {
+                        command.arg("-framework").arg(framework);
+                    }
+                    Dependency::Library(library, link_path) => {
+                        for path in link_path {
+                            command.arg("-L").arg(path);
+                        }
+                        command.arg("-l").arg(library);
+                    }
+                }
+            }
+
+            command.arg("-o").arg(self.binary_name());
+
+            if !command.status().unwrap().success() {
+                panic!("Failed to create {}", self.binary_name());
+            }
+        }
+
+        std::fs::copy(
+            self.output_directory().join(self.binary_name()),
+            self.artefact_directory().join(self.binary_name()),
+        )
+        .unwrap();
+
+        if compiler.is_like_msvc() {
+            std::fs::copy(
+                self.output_directory().join(format!("{}.lib", self.name())),
+                self.artefact_directory()
+                    .join(format!("{}.lib", self.name())),
+            )
+            .unwrap();
+            std::fs::copy(
+                self.output_directory().join(format!("{}.exp", self.name())),
+                self.artefact_directory()
+                    .join(format!("{}.exp", self.name())),
+            )
+            .unwrap();
+        }
+
         build
     }
 
@@ -214,6 +364,10 @@ impl Unit {
         &self.flags
     }
 
+    pub fn get_dependencies(&self) -> &Vec<Dependency> {
+        &self.dependencies
+    }
+
     pub fn merge(&self, unit: &Unit) -> Unit {
         let mut combined = self.clone();
         combined.add_sources(unit.get_sources());
@@ -225,6 +379,7 @@ impl Unit {
             );
         }
         combined.flags(unit.get_flags());
+        combined.dependencies(unit.get_dependencies().clone());
         combined
     }
 }
@@ -243,6 +398,8 @@ impl CompilationUnit for Unit {
         if path.exists() {
             let path = canonicalize(path).unwrap();
             self.includes.push(path);
+        } else {
+            eprintln!("Include path does not exist: {}", &path.display());
         }
         self
     }
@@ -265,6 +422,11 @@ impl CompilationUnit for Unit {
         self.flags.push(flag.to_string());
         self
     }
+
+    fn dependency(&mut self, dependency: Dependency) -> &mut Self {
+        self.dependencies.push(dependency);
+        self
+    }
 }
 
 fn template_string_to_path(template_path: &str, builder: Rc<dyn Builder>) -> PathBuf {
@@ -280,9 +442,14 @@ fn template_string_to_path(template_path: &str, builder: Rc<dyn Builder>) -> Pat
             .to_string(),
     );
     data.insert(
+        "output".to_string(),
+        builder.output_directory().display().to_string(),
+    );
+    data.insert(
         "sources".to_string(),
         builder.vm_sources_directory().display().to_string(),
     );
+    data.insert("profile".to_string(), builder.profile());
     let rendered = template.render_string(&data).unwrap();
     PathBuf::from(rendered)
 }

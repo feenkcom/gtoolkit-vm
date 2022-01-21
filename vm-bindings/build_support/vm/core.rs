@@ -2,6 +2,7 @@ use crate::{Builder, CompilationUnit, Feature, Unit};
 use cc::Build;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
+use crate::build_support::Dependency;
 
 #[derive(Debug, Clone)]
 pub struct Core {
@@ -40,32 +41,6 @@ impl Core {
             core_with_features = core_with_features.merge(feature.get_unit());
         }
         let build = core_with_features.compile();
-
-        let compiler = build.get_compiler();
-        let mut command = compiler.to_command();
-        command.current_dir(self.output_directory());
-        command
-            .arg("-Wl,-all_load")
-            .arg(format!("lib{}.a", self.name()))
-            .arg("-l")
-            .arg("ffi")
-            .arg("-framework")
-            .arg("AppKit")
-            .arg("-o")
-            .arg(format!("lib{}.dylib", self.name()));
-
-        println!("{:?}", &command);
-
-        if !command.status().unwrap().success() {
-            panic!("Failed to create a dylib");
-        };
-
-        std::fs::copy(
-            self.output_directory().join(self.binary_name()),
-            self.artefact_directory().join(self.binary_name()),
-        )
-        .unwrap();
-
         build
     }
 }
@@ -96,6 +71,11 @@ impl CompilationUnit for Core {
 
     fn flag(&mut self, flag: &str) -> &mut Self {
         self.core.flag(flag);
+        self
+    }
+
+    fn dependency(&mut self, dependency: Dependency) -> &mut Self {
+        self.core.dependency(dependency);
         self
     }
 }
