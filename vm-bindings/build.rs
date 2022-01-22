@@ -15,6 +15,9 @@ pub static DOWNLOADING: Emoji<'_, '_> = Emoji("📥 ", "");
 pub static EXTRACTING: Emoji<'_, '_> = Emoji("📦 ", "");
 pub static CREATING: Emoji<'_, '_> = Emoji("📝 ", "");
 pub static BUILDING: Emoji<'_, '_> = Emoji("🔨 ", "");
+#[cfg(target_arch = "aarch64")]
+pub static MACOSX_DEPLOYMENT_TARGET: &str = "11.0";
+#[cfg(not(target_arch = "aarch64"))]
 pub static MACOSX_DEPLOYMENT_TARGET: &str = "10.8";
 
 ///

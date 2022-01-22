@@ -6,3 +6,15 @@ members = [
 ]
 
 exclude = ["target", "third_party", "libs"]
+
+[profile.release]
+rpath = false
+
+[profile.dev]
+rpath = false
+
+[profile.test]
+rpath = false
+
+[profile.bench]
+rpath = false
