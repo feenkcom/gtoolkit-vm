@@ -16,7 +16,7 @@ pub fn unix_os_process_plugin(core: &Core) -> Plugin {
     let mut plugin = Plugin::extracted("UnixOSProcessPlugin", core);
     plugin.add_includes(file_plugin.get_includes());
     plugin.add_includes(socket_plugin.get_includes());
-    plugin.add_dependency(Dependency::Plugin(file_plugin));
-    plugin.add_dependency(Dependency::Plugin(socket_plugin));
+    plugin.dependency(Dependency::Plugin(file_plugin));
+    plugin.dependency(Dependency::Plugin(socket_plugin));
     plugin
 }

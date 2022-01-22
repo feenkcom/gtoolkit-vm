@@ -4,8 +4,6 @@ use std::fmt::{Debug, Formatter};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::rc::Rc;
-use titlecase::titlecase;
-use crate::build_support::compile_ffi;
 
 #[derive(Default, Clone)]
 pub struct WindowsBuilder {}

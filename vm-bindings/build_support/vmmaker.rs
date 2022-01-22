@@ -3,9 +3,8 @@ use anyhow::{anyhow, Result};
 use commander::{CommandToExecute, CommandsToExecute};
 use downloader::{FileToDownload, FilesToDownload};
 use file_matcher::{FileNamed, OneEntryCopier};
-use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
+use std::process::Command;
 use std::rc::Rc;
 use unzipper::{FileToUnzip, FilesToUnzip};
 

@@ -238,7 +238,10 @@ impl VirtualMachine {
             core.dependency(Dependency::SystemLibrary("Ole32".to_string()));
             core.dependency(Dependency::Library(
                 "pthreads".to_string(),
-                vec![core.output_directory().join("pthreads\\lib\\x64").join(core.builder().profile())],
+                vec![core
+                    .output_directory()
+                    .join("pthreads\\lib\\x64")
+                    .join(core.builder().profile())],
             ));
         }
 
@@ -287,7 +290,6 @@ impl VirtualMachine {
 
     pub fn new() -> Result<Self> {
         let builder = Self::builder()?;
-        compile_ffi(builder.clone());
         builder.prepare_environment();
         let build_info = Self::build_info(builder.clone())?;
         let config = Self::config(builder.clone(), &build_info)?;

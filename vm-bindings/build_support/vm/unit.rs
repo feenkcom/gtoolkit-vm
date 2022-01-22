@@ -4,7 +4,7 @@ use cc::Build;
 use file_matcher::FilesNamed;
 use new_string_template::template::Template;
 use std::collections::HashMap;
-use std::ffi::{OsStr, OsString};
+use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use to_absolute::canonicalize;
@@ -277,7 +277,9 @@ impl Unit {
         }
 
         if compiler.is_like_msvc() {
-            build.try_compile_binary(self.name(), self.binary_name().as_str()).unwrap();
+            build
+                .try_compile_binary(self.name(), self.binary_name().as_str())
+                .unwrap();
         } else {
             build.compile(self.name());
         }

@@ -1,4 +1,4 @@
-use crate::{Builder, BuilderTarget, CompilationUnit, Core, Unit, Dependency};
+use crate::{Builder, BuilderTarget, CompilationUnit, Core, Dependency, Unit};
 use cc::Build;
 use file_matcher::FilesNamed;
 use std::path::{Path, PathBuf};
@@ -17,7 +17,7 @@ impl Plugin {
 
         Self {
             plugin: unit,
-            core: core.clone()
+            core: core.clone(),
         }
     }
 

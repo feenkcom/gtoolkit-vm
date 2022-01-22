@@ -1,7 +1,7 @@
+use crate::build_support::Dependency;
 use crate::{Builder, CompilationUnit, Core, Unit};
 use std::path::Path;
 use std::rc::Rc;
-use crate::build_support::Dependency;
 
 #[derive(Debug, Clone)]
 pub struct Feature {

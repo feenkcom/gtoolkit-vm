@@ -1,6 +1,5 @@
 use std::fmt::Debug;
 use std::path::{Path, PathBuf};
-use std::process::Command;
 use std::rc::Rc;
 use std::{env, fmt};
 
@@ -28,49 +27,6 @@ impl BuilderTarget {
             BuilderTarget::Windows => true,
         }
     }
-}
-
-pub fn compile_ffi(builder: Rc<dyn Builder>) -> anyhow::Result<()> {
-    let ffi_sources = builder.output_directory().join("libffi");
-
-    if !ffi_sources.exists() {
-        Command::new("git")
-            .current_dir(builder.output_directory())
-            .arg("clone")
-            .arg("https://github.com/syrel/libffi.git")
-            .status()
-            .unwrap();
-
-        // checkout the version of libffi that works
-        Command::new("git")
-            .current_dir(&ffi_sources)
-            .arg("checkout")
-            .arg("af975d04e64dfc2116078160b3b75524eb6bf241")
-            .status()
-            .unwrap();
-    }
-
-    let ffi_build = builder.output_directory().join("libffi-build");
-    if !ffi_build.exists() {
-        std::fs::create_dir_all(&ffi_build)?;
-    }
-    cmake::Config::new(ffi_sources)
-        .static_crt(true)
-        .out_dir(&ffi_build)
-        .build();
-
-    let ffi_binary_name = match builder.target() {
-        BuilderTarget::MacOS => "libffi.dylib",
-        BuilderTarget::Linux => "libffi.so",
-        BuilderTarget::Windows => "ffi.dll",
-    };
-
-    std::fs::copy(
-        ffi_build.join("bin").join(ffi_binary_name),
-        builder.artefact_directory().join(ffi_binary_name),
-    )?;
-
-    Ok(())
 }
 
 pub trait Builder: Debug {

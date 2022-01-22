@@ -1,8 +1,8 @@
+use crate::build_support::Dependency;
 use crate::{Builder, CompilationUnit, Feature, Unit};
 use cc::Build;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
-use crate::build_support::Dependency;
 
 #[derive(Debug, Clone)]
 pub struct Core {
