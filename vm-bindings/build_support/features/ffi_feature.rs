@@ -69,20 +69,31 @@ pub fn ffi_feature(core: &Core) -> Feature {
     feature.source("{sources}/src/semaphores/pharoSemaphore.c");
     feature.source("{sources}/src/threadSafeQueue/threadSafeQueue.c");
 
-    compile_ffi(core).expect("Failed to compile ffi");
-
-    let lib_ffi_include = feature
-        .builder()
-        .output_directory()
-        .join("libffi-build")
-        .join("include");
-    let lib_ffi = feature
-        .builder()
-        .output_directory()
-        .join("libffi-build")
-        .join("lib");
-    feature.add_include(&lib_ffi_include);
-    feature.dependency(Dependency::Library("ffi".to_string(), vec![lib_ffi]));
+    if cfg!(target_arch = "x86_64") {
+        compile_ffi(core).expect("Failed to compile ffi");
+        let lib_ffi_include = feature
+            .builder()
+            .output_directory()
+            .join("libffi-build")
+            .join("include");
+        let lib_ffi = feature
+            .builder()
+            .output_directory()
+            .join("libffi-build")
+            .join("lib");
+        feature.add_include(&lib_ffi_include);
+        feature.dependency(Dependency::Library("ffi".to_string(), vec![lib_ffi]));
+    } else if cfg!(target_arch = "aarch64") {
+        let libffi = pkg_config::Config::new()
+            .cargo_metadata(false)
+            .probe("ffi")
+            .unwrap();
+        feature.add_includes(&libffi.include_paths);
+        feature.dependency(Dependency::Library(
+            "ffi".to_string(),
+            libffi.link_paths.clone(),
+        ));
+    }
 
     feature
 }

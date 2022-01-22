@@ -225,7 +225,10 @@ impl Unit {
             .extra_warnings(false);
 
         if self.target().is_macos() {
-            build.flag(&format!("-mmacosx-version-min={}", MACOSX_DEPLOYMENT_TARGET));
+            build.flag(&format!(
+                "-mmacosx-version-min={}",
+                MACOSX_DEPLOYMENT_TARGET
+            ));
             build.flag("-stdlib=libc++");
         }
 
