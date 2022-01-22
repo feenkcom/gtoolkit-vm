@@ -227,8 +227,12 @@ impl VirtualMachine {
 
         if core.target().is_unix() {
             core.define("LSB_FIRST", "1");
-            core.define("OSX", "1");
             core.define("HAVE_TM_GMTOFF", None);
+        }
+
+        if core.target().is_macos() {
+            core.define("OSX", "1");
+            core.dependency(Dependency::SystemLibrary("AppKit".to_string()));
         }
 
         if core.target().is_windows() {

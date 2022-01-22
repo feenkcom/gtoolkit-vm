@@ -6,7 +6,7 @@ use std::{env, fmt};
 const VM_CLIENT_VMMAKER_VM_VAR: &str = "VM_CLIENT_VMMAKER";
 const VM_CLIENT_VMMAKER_IMAGE_VAR: &str = "VM_CLIENT_VMMAKER_IMAGE";
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum BuilderTarget {
     MacOS,
     Linux,
@@ -22,10 +22,10 @@ impl BuilderTarget {
     }
 
     pub fn is_windows(&self) -> bool {
-        match self {
-            BuilderTarget::MacOS | BuilderTarget::Linux => false,
-            BuilderTarget::Windows => true,
-        }
+        self == &BuilderTarget::Windows
+    }
+    pub fn is_macos(&self) -> bool {
+        self == &BuilderTarget::MacOS
     }
 }
 
