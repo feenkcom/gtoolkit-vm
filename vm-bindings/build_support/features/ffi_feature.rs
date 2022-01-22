@@ -31,15 +31,16 @@ fn compile_ffi(core: &Core) -> anyhow::Result<()> {
         .out_dir(&ffi_build)
         .build();
 
-    let ffi_binary_name = match core.target() {
-        BuilderTarget::MacOS => "libffi.dylib",
-        BuilderTarget::Linux => "libffi.so",
-        BuilderTarget::Windows => "ffi.dll",
+    let ffi_binary = match core.target() {
+        BuilderTarget::MacOS => ffi_build.join("lib").join("libffi.dylib"),
+        BuilderTarget::Linux => ffi_build.join("lib").join("libffi.so"),
+        BuilderTarget::Windows => ffi_build.join("bin").join("ffi.dll"),
     };
 
     std::fs::copy(
-        ffi_build.join("bin").join(ffi_binary_name),
-        core.artefact_directory().join(ffi_binary_name),
+        &ffi_binary,
+        core.artefact_directory()
+            .join(ffi_binary.file_name().unwrap()),
     )?;
 
     Ok(())
@@ -63,6 +64,8 @@ pub fn ffi_feature(core: &Core) -> Feature {
     // Required by callbacks
     feature.source("{sources}/src/semaphores/pharoSemaphore.c");
     feature.source("{sources}/src/threadSafeQueue/threadSafeQueue.c");
+
+    compile_ffi(core).expect("Failed to compile ffi");
 
     let lib_ffi_include = feature
         .builder()

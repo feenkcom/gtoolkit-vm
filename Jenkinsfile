@@ -240,7 +240,7 @@ pipeline {
                                 --libraries-versions ${APP_LIBRARIES_VERSIONS} `
                                 --icons icons/GlamorousToolkit.ico `
                                 --release `
-                                -- verbose """
+                                --verbose """
 
                         powershell "Compress-Archive -Path target/${TARGET}/release/bundle/${APP_NAME}/* -DestinationPath ${APP_NAME}-${TARGET}.zip"
                         stash includes: "${APP_NAME}-${TARGET}.zip", name: "${TARGET}"
