@@ -135,7 +135,17 @@ impl VirtualMachine {
                     "{sources}/src/memoryUnix.c",
                 ])
             }
-            BuilderTarget::Linux => {}
+            BuilderTarget::Linux => {
+                sources.extend([
+                    // Platform sources
+                    "{sources}/extracted/vm/src/unix/aio.c",
+                    "{sources}/src/debugUnix.c",
+                    // Support sources
+                    "{sources}/src/fileDialogUnix.c",
+                    // Virtual Memory functions
+                    "{sources}/src/memoryUnix.c",
+                ])
+            }
             BuilderTarget::Windows => {
                 sources.extend([
                     // Platform sources
@@ -227,6 +237,7 @@ impl VirtualMachine {
 
         if core.target().is_unix() {
             core.define("LSB_FIRST", "1");
+            core.define("UNIX", "1");
             core.define("HAVE_TM_GMTOFF", None);
         }
 
@@ -236,6 +247,7 @@ impl VirtualMachine {
         }
 
         if core.target().is_windows() {
+            core.define("WIN", "1");
             core.dependency(Dependency::SystemLibrary("User32".to_string()));
             core.dependency(Dependency::SystemLibrary("Ws2_32".to_string()));
             core.dependency(Dependency::SystemLibrary("DbgHelp".to_string()));

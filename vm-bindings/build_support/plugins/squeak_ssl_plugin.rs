@@ -11,10 +11,11 @@ pub fn squeak_ssl_plugin(core: &Core) -> Plugin {
             plugin.dependency(Dependency::SystemLibrary("Security".to_string()));
         }
         BuilderTarget::Linux => {
-            let openssl = pkg_config::probe_library("OpenSSL").unwrap();
+            let openssl = pkg_config::Config::new().cargo_metadata(false).probe("openssl").unwrap();
             for lib in &openssl.libs {
-                plugin.dependency(Dependency::Library(lib.to_string(), vec![]));
+                plugin.dependency(Dependency::Library(lib.to_string(), openssl.link_paths.clone()));
             }
+            plugin.add_includes(&openssl.include_paths);
         }
         BuilderTarget::Windows => {
             plugin.dependency(Dependency::SystemLibrary("Crypt32".to_string()));
