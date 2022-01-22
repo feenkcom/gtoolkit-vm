@@ -93,7 +93,8 @@ pipeline {
                                 --icons icons/GlamorousToolkit.icns \
                                 --libraries ${APP_LIBRARIES} \
                                 --libraries-versions ${APP_LIBRARIES_VERSIONS} \
-                                --release """
+                                --release \
+                                --verbose """
 
                         sh "curl -o feenk-signer -LsS https://github.com/feenkcom/feenk-signer/releases/download/${FEENK_SIGNER_VERSION}/feenk-signer-${TARGET}"
                         sh "chmod +x feenk-signer"
@@ -139,7 +140,8 @@ pipeline {
                                 --icons icons/GlamorousToolkit.icns \
                                 --libraries ${APP_LIBRARIES} \
                                 --libraries-versions ${APP_LIBRARIES_VERSIONS} \
-                                --release """
+                                --release \
+                                --verbose """
 
                         sh "curl -o feenk-signer -LsS  https://github.com/feenkcom/feenk-signer/releases/download/${FEENK_SIGNER_VERSION}/feenk-signer-${TARGET}"
                         sh "chmod +x feenk-signer"
@@ -183,7 +185,7 @@ pipeline {
                                 --libraries ${APP_LIBRARIES} \
                                 --libraries-versions ${APP_LIBRARIES_VERSIONS} \
                                 --release \
-                                -vvvv """
+                                --verbose """
 
                         sh """
                             cd target/${TARGET}/release/bundle/${APP_NAME}/
@@ -237,7 +239,8 @@ pipeline {
                                 --libraries ${APP_LIBRARIES} `
                                 --libraries-versions ${APP_LIBRARIES_VERSIONS} `
                                 --icons icons/GlamorousToolkit.ico `
-                                --release """
+                                --release `
+                                -- verbose """
 
                         powershell "Compress-Archive -Path target/${TARGET}/release/bundle/${APP_NAME}/* -DestinationPath ${APP_NAME}-${TARGET}.zip"
                         stash includes: "${APP_NAME}-${TARGET}.zip", name: "${TARGET}"
