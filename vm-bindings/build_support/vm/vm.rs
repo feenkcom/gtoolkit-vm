@@ -204,6 +204,10 @@ impl VirtualMachine {
         core.define_for_header("execinfo.h", "HAVE_EXECINFO_H");
         core.define_for_header("dlfcn.h", "HAVE_DLFCN_H");
 
+        core.flag("-Wno-error=implicit-function-declaration");
+        core.flag("-Wno-implicit-function-declaration");
+        core.flag("-Wno-absolute-value");
+        core.flag("-Wno-shift-count-overflow");
         core.flag("-Wno-int-conversion");
         core.flag("-Wno-macro-redefined");
         core.flag("-Wno-unused-value");
@@ -243,6 +247,9 @@ impl VirtualMachine {
 
         if core.target().is_macos() {
             core.define("OSX", "1");
+            // In Apple Silicon machines the code zone is read-only, and requires special operations
+            #[cfg(target_arch = "aarch64")]
+            core.define("READ_ONLY_CODE_ZONE", "1");
             core.dependency(Dependency::SystemLibrary("AppKit".to_string()));
         }
 
