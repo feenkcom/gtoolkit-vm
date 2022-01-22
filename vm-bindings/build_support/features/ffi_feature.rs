@@ -1,7 +1,7 @@
 #[cfg(not(feature = "ffi"))]
 compile_error!("ffi must be enabled for this crate.");
 
-use crate::{BuilderTarget, CompilationUnit, Core, Dependency, Feature};
+use crate::{BuilderTarget, CompilationUnit, Core, Dependency, Feature, MACOSX_DEPLOYMENT_TARGET};
 use std::process::Command;
 
 fn compile_ffi(core: &Core) -> anyhow::Result<()> {
@@ -37,6 +37,7 @@ fn compile_ffi(core: &Core) -> anyhow::Result<()> {
         cmake::Config::new(ffi_sources)
             .static_crt(true)
             .out_dir(&ffi_build)
+            .define("CMAKE_OSX_DEPLOYMENT_TARGET", MACOSX_DEPLOYMENT_TARGET)
             .build();
     }
 

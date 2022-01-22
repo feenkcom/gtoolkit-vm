@@ -1,5 +1,5 @@
 use crate::build_support::{Core, Plugin};
-use crate::{Builder, BuilderTarget};
+use crate::{Builder, BuilderTarget, MACOSX_DEPLOYMENT_TARGET};
 use cc::Build;
 use file_matcher::FilesNamed;
 use new_string_template::template::Template;
@@ -223,6 +223,11 @@ impl Unit {
             .includes(&self.includes)
             .warnings(false)
             .extra_warnings(false);
+
+        if self.target().is_macos() {
+            build.flag(&format!("-mmacosx-version-min={}", MACOSX_DEPLOYMENT_TARGET));
+            build.flag("-stdlib=libc++");
+        }
 
         for flag in &self.flags {
             build.flag_if_supported(flag);
