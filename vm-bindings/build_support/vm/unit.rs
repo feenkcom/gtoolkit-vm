@@ -304,6 +304,11 @@ impl Unit {
             let is_gcc = compiler.is_like_gnu() && !self.target().is_macos();
             let is_clang = compiler.is_like_clang() || self.target().is_macos();
 
+            if self.target().is_macos() {
+                // allows the header to be changed later on during packaging
+                command.arg("-headerpad_max_install_names");
+            }
+
             // there is a difference in how clang and gnu
             if is_gcc {
                 command.arg("-Wl,--whole-archive");
