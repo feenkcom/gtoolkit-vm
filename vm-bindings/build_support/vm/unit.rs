@@ -192,9 +192,17 @@ impl Unit {
         for file in original_sources.iter() {
             let obj = dst.join(file);
             let obj = if !obj.starts_with(&dst) {
-                let source = obj
+                let mut source = obj
                     .strip_prefix(self.builder.vm_sources_directory())
-                    .unwrap();
+                    .unwrap()
+                    .to_path_buf();
+
+                if let Some(extension) = source.extension() {
+                    if extension == OsStr::new("S") {
+                        source = source.with_extension("asm");
+                    }
+                }
+
                 let dst_source = dst.join(source);
                 std::fs::create_dir_all(dst_source.parent().unwrap()).unwrap();
                 std::fs::copy(file, &dst_source).unwrap();

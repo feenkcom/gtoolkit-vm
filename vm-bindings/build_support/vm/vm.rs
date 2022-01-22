@@ -144,7 +144,7 @@ impl VirtualMachine {
                     "{sources}/src/debugWin.c",
                     // Support sources
                     "{sources}/src/fileDialogWin32.c",
-                    "{sources}/src/utils/setjmp-Windows-wrapper-X64.asm",
+                    "{sources}/src/utils/setjmp-Windows-wrapper-X64.S",
                 ])
             }
         }
