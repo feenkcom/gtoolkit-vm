@@ -2,6 +2,7 @@
 compile_error!("ffi must be enabled for this crate.");
 
 use crate::{BuilderTarget, CompilationUnit, Core, Dependency, Feature, MACOSX_DEPLOYMENT_TARGET};
+use clang_sys::support::Clang;
 use std::process::Command;
 
 fn compile_ffi(core: &Core) -> anyhow::Result<()> {
@@ -84,15 +85,18 @@ pub fn ffi_feature(core: &Core) -> Feature {
         feature.add_include(&lib_ffi_include);
         feature.dependency(Dependency::Library("ffi".to_string(), vec![lib_ffi]));
     } else if cfg!(target_arch = "aarch64") {
-        let libffi = pkg_config::Config::new()
-            .cargo_metadata(false)
-            .probe("ffi")
-            .unwrap();
-        feature.add_includes(&libffi.include_paths);
-        feature.dependency(Dependency::Library(
-            "ffi".to_string(),
-            libffi.link_paths.clone(),
-        ));
+        let clang = Clang::find(None, &[]).unwrap();
+        let mut ffi_includes = vec![];
+        if let Some(c_search_paths) = clang.c_search_paths {
+            for search_path in &c_search_paths {
+                if search_path.join("ffi").join("ffi.h").exists() {
+                    ffi_includes.push(search_path.clone());
+                    ffi_includes.push(search_path.join("ffi"));
+                }
+            }
+        }
+        feature.add_includes(ffi_includes);
+        feature.dependency(Dependency::Library("ffi".to_string(), vec![]));
     }
 
     feature
