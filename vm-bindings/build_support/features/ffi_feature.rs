@@ -23,19 +23,22 @@ fn compile_ffi(core: &Core) -> anyhow::Result<()> {
     }
 
     let ffi_build = core.output_directory().join("libffi-build");
-    if !ffi_build.exists() {
-        std::fs::create_dir_all(&ffi_build)?;
-    }
-    cmake::Config::new(ffi_sources)
-        .static_crt(true)
-        .out_dir(&ffi_build)
-        .build();
-
     let ffi_binary = match core.target() {
         BuilderTarget::MacOS => ffi_build.join("lib").join("libffi.dylib"),
         BuilderTarget::Linux => ffi_build.join("lib").join("libffi.so"),
         BuilderTarget::Windows => ffi_build.join("bin").join("ffi.dll"),
     };
+
+    if !ffi_build.exists() {
+        std::fs::create_dir_all(&ffi_build)?;
+    }
+
+    if !ffi_binary.exists() {
+        cmake::Config::new(ffi_sources)
+            .static_crt(true)
+            .out_dir(&ffi_build)
+            .build();
+    }
 
     std::fs::copy(
         &ffi_binary,

@@ -295,9 +295,22 @@ impl Unit {
         if !compiler.is_like_msvc() {
             let mut command = compiler.to_command();
             command.current_dir(self.output_directory());
-            command
-                .arg("-Wl,-all_load")
-                .arg(format!("lib{}.a", self.name()));
+
+            let is_gcc = compiler.is_like_gnu() && !self.target().is_macos();
+            let is_clang = compiler.is_like_clang() || self.target().is_macos();
+
+            // there is a difference in how clang and gnu
+            if is_gcc {
+                command.arg("-Wl,--whole-archive");
+            }
+            if is_clang {
+                command.arg("-Wl,-all_load");
+            }
+            command.arg(format!("lib{}.a", self.name()));
+
+            if is_gcc {
+                command.arg("-Wl,--no-whole-archive");
+            }
 
             for dependency in &self.dependencies {
                 match dependency {
