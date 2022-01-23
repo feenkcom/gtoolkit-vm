@@ -3,7 +3,7 @@ compile_error!("squeak_ssl_plugin must be enabled for this crate.");
 
 use crate::{BuilderTarget, CompilationUnit, Core, Dependency, Plugin};
 
-pub fn squeak_ssl_plugin(core: &Core) -> Plugin {
+pub fn squeak_ssl_plugin(core: &Core) -> Option<Plugin> {
     let mut plugin = Plugin::extracted("SqueakSSL", core);
     match plugin.target() {
         BuilderTarget::MacOS => {
@@ -28,5 +28,5 @@ pub fn squeak_ssl_plugin(core: &Core) -> Plugin {
             plugin.dependency(Dependency::SystemLibrary("Secur32".to_string()));
         }
     }
-    plugin
+    plugin.into()
 }

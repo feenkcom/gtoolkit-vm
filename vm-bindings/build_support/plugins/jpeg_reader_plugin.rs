@@ -3,6 +3,6 @@ compile_error!("jpeg_reader_plugin must be enabled for this crate.");
 
 use crate::{Core, Plugin};
 
-pub fn jpeg_reader_plugin(core: &Core) -> Plugin {
-    Plugin::extracted("JPEGReaderPlugin", core)
+pub fn jpeg_reader_plugin(core: &Core) -> Option<Plugin> {
+    Plugin::extracted("JPEGReaderPlugin", core).into()
 }

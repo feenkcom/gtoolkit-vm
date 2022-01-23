@@ -3,7 +3,7 @@ compile_error!("uuid_plugin must be enabled for this crate.");
 
 use crate::{BuilderTarget, CompilationUnit, Core, Dependency, Plugin};
 
-pub fn uuid_plugin(core: &Core) -> Plugin {
+pub fn uuid_plugin(core: &Core) -> Option<Plugin> {
     let mut plugin = Plugin::new("UUIDPlugin", core);
 
     plugin.define_for_header("sys/uuid.h", "HAVE_SYS_UUID_H");
@@ -23,5 +23,5 @@ pub fn uuid_plugin(core: &Core) -> Plugin {
         }
     }
 
-    plugin
+    plugin.into()
 }

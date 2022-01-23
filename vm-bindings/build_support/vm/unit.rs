@@ -27,6 +27,13 @@ pub trait CompilationUnit {
         self.builder().output_directory()
     }
 
+    fn generated_directory(&self) -> PathBuf {
+        self.builder()
+            .output_directory()
+            .join("generated")
+            .join("64")
+    }
+
     fn artefact_directory(&self) -> PathBuf {
         self.builder().artefact_directory()
     }

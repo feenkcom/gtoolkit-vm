@@ -313,6 +313,9 @@ impl VirtualMachine {
             uuid_plugin(&core),
         ]
         .to_vec()
+        .into_iter()
+        .filter_map(|each| each)
+        .collect()
     }
 
     pub fn new() -> Result<Self> {

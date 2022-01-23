@@ -3,6 +3,6 @@ compile_error!("jpeg_read_writer2_plugin must be enabled for this crate.");
 
 use crate::{Core, Plugin};
 
-pub fn jpeg_read_writer2_plugin(core: &Core) -> Plugin {
-    Plugin::extracted("JPEGReadWriter2Plugin", core)
+pub fn jpeg_read_writer2_plugin(core: &Core) -> Option<Plugin> {
+    Plugin::extracted("JPEGReadWriter2Plugin", core).into()
 }

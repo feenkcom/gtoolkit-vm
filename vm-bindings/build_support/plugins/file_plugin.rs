@@ -3,7 +3,7 @@ compile_error!("file_plugin must be enabled for this crate.");
 
 use crate::{BuilderTarget, CompilationUnit, Core, Dependency, Plugin};
 
-pub fn file_plugin(core: &Core) -> Plugin {
+pub fn file_plugin(core: &Core) -> Option<Plugin> {
     let mut file_plugin = Plugin::new("FilePlugin", core);
     file_plugin.with_default_includes();
 
@@ -30,5 +30,5 @@ pub fn file_plugin(core: &Core) -> Plugin {
         }
     }
 
-    file_plugin
+    file_plugin.into()
 }
