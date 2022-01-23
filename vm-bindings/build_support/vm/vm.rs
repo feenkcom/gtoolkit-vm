@@ -257,6 +257,7 @@ impl VirtualMachine {
 
         if core.target().is_windows() {
             core.define("WIN", "1");
+            core.flag("-Ob0"); // disable inlining (otherwise worker.c does not link properly, see 
             core.dependency(Dependency::SystemLibrary("User32".to_string()));
             core.dependency(Dependency::SystemLibrary("Ws2_32".to_string()));
             core.dependency(Dependency::SystemLibrary("DbgHelp".to_string()));
