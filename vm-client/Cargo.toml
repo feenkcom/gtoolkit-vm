@@ -1,8 +1,8 @@
 [package]
 name = "vm-client"
 version = "0.1.0"
-authors = ["Aliaksei Syrel <alex.syrel@gmail.com>"]
-edition = "2018"
+authors = ["feenk gmbh. contact@feenk.com>"]
+edition = "2021"
 description = "GToolkit VM"
 
 [[bin]]

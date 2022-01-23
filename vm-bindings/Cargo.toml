@@ -1,8 +1,8 @@
 [package]
 name = "vm-bindings"
 version = "0.1.0"
-authors = ["Aliaksei Syrel <alex.syrel@gmail.com>"]
-edition = "2018"
+authors = ["feenk gmbh. <contact@feenk.com>"]
+edition = "2021"
 
 [dependencies]
 
@@ -17,6 +17,7 @@ all_plugins = [
     "dsa_primitives_plugin",
     "file_plugin",
     "file_attributes_plugin",
+    "float_array_plugin",
     "jpeg_read_writer2_plugin",
     "jpeg_reader_plugin",
     "large_integers_plugin",
@@ -42,6 +43,7 @@ bit_blt_plugin = []
 dsa_primitives_plugin = []
 file_plugin = []
 file_attributes_plugin = ["file_plugin"]
+float_array_plugin = []
 jpeg_read_writer2_plugin = []
 jpeg_reader_plugin = []
 large_integers_plugin = []

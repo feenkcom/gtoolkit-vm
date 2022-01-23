@@ -13,9 +13,10 @@ const VM_CLIENT_VMMAKER_IMAGE_VAR: &str = "VM_CLIENT_VMMAKER_IMAGE";
 
 const VMMAKER_WINDOWS_VM_URL: &str = "https://files.pharo.org/vm/pharo-spur64-headless/Windows-x86_64/PharoVM-9.0.11-9e688828-Windows-x86_64-bin.zip";
 const VMMAKER_LINUX_VM_URL: &str = "https://files.pharo.org/vm/pharo-spur64-headless/Linux-x86_64/PharoVM-9.0.11-9e68882-Linux-x86_64-bin.zip";
-const VMMAKER_DARWIN_VM_URL: &str = "https://files.pharo.org/vm/pharo-spur64-headless/Darwin-x86_64/PharoVM-9.0.11-9e688828-Darwin-x86_64-bin.zip";
+const VMMAKER_DARWIN_INTEL_VM_URL: &str = "https://files.pharo.org/vm/pharo-spur64-headless/Darwin-x86_64/PharoVM-9.0.11-9e688828-Darwin-x86_64-bin.zip";
+const VMMAKER_DARWIN_M1_VM_URL: &str = "https://files.pharo.org/vm/pharo-spur64-headless/Darwin-arm64/PharoVM-9.0.11-9e688828-Darwin-arm64-bin.zip";
 const VMMAKER_IMAGE_URL: &str =
-    "https://files.pharo.org/image/90/Pharo9.0-SNAPSHOT.build.1574.sha.6f28d0a.arch.64bit.zip";
+    "https://files.pharo.org/image/100/Pharo10-SNAPSHOT.build.349.sha.3e26baf.arch.64bit.zip";
 
 /// a folder within $OUT_DIR in which the vm is extracted
 const VMMAKER_VM_FOLDER: &str = "vmmaker-vm";
@@ -159,7 +160,13 @@ impl VMMaker {
 
     fn download_vmmaker(source: &mut VMMakerSource, builder: Rc<dyn Builder>) -> Result<()> {
         let url = match builder.target() {
-            BuilderTarget::MacOS => VMMAKER_DARWIN_VM_URL,
+            BuilderTarget::MacOS => {
+                if cfg!(target_arch = "aarch64") {
+                    VMMAKER_DARWIN_M1_VM_URL
+                } else {
+                    VMMAKER_DARWIN_INTEL_VM_URL
+                }
+            }
             BuilderTarget::Linux => VMMAKER_LINUX_VM_URL,
             BuilderTarget::Windows => VMMAKER_WINDOWS_VM_URL,
         };

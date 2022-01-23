@@ -151,7 +151,9 @@ impl VirtualMachine {
                     // Platform sources
                     "{sources}/extracted/vm/src/win/sqWin32SpurAlloc.c",
                     "{sources}/extracted/vm/src/win/aioWin.c",
-                    "{sources}/src/debugWin.c",
+                    "{sources}/src/win/winDebug.c",
+                    "{sources}/src/win/winDebugMenu.c",
+                    "{sources}/src/win/winDebugWindow.c",
                     // Support sources
                     "{sources}/src/fileDialogWin32.c",
                     "{sources}/src/utils/setjmp-Windows-wrapper-X64.S",
@@ -287,6 +289,8 @@ impl VirtualMachine {
             file_plugin(&core),
             #[cfg(feature = "file_attributes_plugin")]
             file_attributes_plugin(&core),
+            #[cfg(feature = "float_array_plugin")]
+            float_array_plugin(&core),
             #[cfg(feature = "jpeg_read_writer2_plugin")]
             jpeg_read_writer2_plugin(&core),
             #[cfg(feature = "jpeg_reader_plugin")]

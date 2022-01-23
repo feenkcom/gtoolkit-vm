@@ -8,6 +8,8 @@ mod dsa_primitives_plugin;
 mod file_attributes_plugin;
 #[cfg(feature = "file_plugin")]
 mod file_plugin;
+#[cfg(feature = "float_array_plugin")]
+mod float_array_plugin;
 #[cfg(feature = "jpeg_read_writer2_plugin")]
 mod jpeg_read_writer2_plugin;
 #[cfg(feature = "jpeg_reader_plugin")]
@@ -39,6 +41,8 @@ pub use dsa_primitives_plugin::dsa_primitives_plugin;
 pub use file_attributes_plugin::file_attributes_plugin;
 #[cfg(feature = "file_plugin")]
 pub use file_plugin::file_plugin;
+#[cfg(feature = "float_array_plugin")]
+pub use float_array_plugin::float_array_plugin;
 #[cfg(feature = "jpeg_read_writer2_plugin")]
 pub use jpeg_read_writer2_plugin::jpeg_read_writer2_plugin;
 #[cfg(feature = "jpeg_reader_plugin")]

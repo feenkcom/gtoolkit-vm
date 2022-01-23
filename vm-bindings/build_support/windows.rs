@@ -65,41 +65,6 @@ impl WindowsBuilder {
             .status()
             .unwrap();
     }
-
-    fn pthreads_library_directory(&self) -> PathBuf {
-        self.pthreads_directory()
-            .join("lib")
-            .join("x64")
-            .join(self.profile())
-    }
-
-    fn escape_windows_path(&self, path: impl AsRef<Path>) -> PathBuf {
-        #[cfg(windows)]
-        {
-            // CMake doesn't like unescaped `\`s paths
-            use std::ffi::OsString;
-            use std::os::windows::ffi::{OsStrExt, OsStringExt};
-
-            let mut path = path.as_ref().to_path_buf().into_os_string();
-
-            let wchars = path
-                .encode_wide()
-                .map(|wchar| {
-                    if wchar == b'\\' as u16 {
-                        '/' as u16
-                    } else {
-                        wchar
-                    }
-                })
-                .collect::<Vec<_>>();
-            path = OsString::from_wide(&wchars);
-            PathBuf::from(path)
-        }
-        #[cfg(not(windows))]
-        {
-            path.as_ref().to_path_buf()
-        }
-    }
 }
 
 impl Builder for WindowsBuilder {

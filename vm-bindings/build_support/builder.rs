@@ -3,9 +3,6 @@ use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use std::{env, fmt};
 
-const VM_CLIENT_VMMAKER_VM_VAR: &str = "VM_CLIENT_VMMAKER";
-const VM_CLIENT_VMMAKER_IMAGE_VAR: &str = "VM_CLIENT_VMMAKER_IMAGE";
-
 #[derive(Debug, Clone, PartialEq)]
 pub enum BuilderTarget {
     MacOS,
@@ -117,8 +114,8 @@ pub trait Builder: Debug {
         );
 
         let bindings = bindgen::Builder::default()
-            .whitelist_function("vm_.*")
-            .whitelist_function("free")
+            .allowlist_function("vm_.*")
+            .allowlist_function("free")
             .header(
                 include_dir
                     .join("pharovm")

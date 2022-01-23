@@ -63,9 +63,10 @@ pub fn ffi_feature(core: &Core) -> Feature {
     feature.source("{sources}/ffi/src/typesPrimitives.c");
     feature.source("{sources}/ffi/src/utils.c");
     // Single-threaded callout support
-    feature.source("{sources}/ffi/src/sameThread/*.c");
+    feature.source("{sources}/ffi/src/sameThread/sameThread.c");
     // Callback support
-    feature.source("{sources}/ffi/src/callbacks/*.c");
+    feature.source("{sources}/ffi/src/callbacks/callbackPrimitives.c");
+    feature.source("{sources}/ffi/src/callbacks/callbacks.c");
     // Required by callbacks
     feature.source("{sources}/src/semaphores/pharoSemaphore.c");
     feature.source("{sources}/src/threadSafeQueue/threadSafeQueue.c");
