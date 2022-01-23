@@ -1,8 +1,10 @@
 use crate::build_support::{Core, Plugin};
 use crate::{Builder, BuilderTarget, MACOSX_DEPLOYMENT_TARGET};
+use anyhow::{bail, Result};
 use cc::Build;
 use file_matcher::FilesNamed;
 use new_string_template::template::Template;
+use serde::{Serialize, Serializer};
 use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
@@ -67,11 +69,11 @@ pub trait CompilationUnit {
         self
     }
 
-    fn add_source<P: AsRef<Path>>(&mut self, dir: P) -> &mut Self;
+    fn add_source(&mut self, dir: impl AsRef<str>) -> &mut Self;
     fn add_sources<P>(&mut self, files: P) -> &mut Self
     where
         P: IntoIterator,
-        P::Item: AsRef<Path>,
+        P::Item: AsRef<str>,
     {
         for file in files {
             self.add_source(file);
@@ -81,22 +83,7 @@ pub trait CompilationUnit {
 
     /// Add all source files matching a wildmatch template path
     fn source(&mut self, sources: impl AsRef<str>) -> &mut Self {
-        let path = template_string_to_path(sources.as_ref(), self.builder());
-        let file_name = path.file_name().unwrap().to_str().unwrap().to_string();
-        let directory = path.parent().unwrap().to_path_buf();
-
-        let files = FilesNamed::wildmatch(&file_name)
-            .within(&directory)
-            .find()
-            .unwrap();
-        if files.is_empty() {
-            panic!(
-                "Could not find files matching {} in {}",
-                &file_name,
-                directory.display()
-            );
-        }
-        self.add_sources(files);
+        self.add_source(sources);
         self
     }
 
@@ -160,20 +147,23 @@ pub trait CompilationUnit {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub enum Dependency {
+    #[serde(serialize_with = "core_dependency")]
     Core(Core),
+    #[serde(serialize_with = "plugin_dependency")]
     Plugin(Plugin),
     SystemLibrary(String),
     Library(String, Vec<PathBuf>),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct Unit {
+    #[serde(skip)]
     builder: Rc<dyn Builder>,
     name: String,
     includes: Vec<PathBuf>,
-    sources: Vec<PathBuf>,
+    sources: Vec<String>,
     defines: Vec<(String, Option<String>)>,
     flags: Vec<String>,
     dependencies: Vec<Dependency>,
@@ -193,7 +183,7 @@ impl Unit {
     }
 
     pub fn compile(&self) -> Build {
-        let original_sources = &self.sources;
+        let original_sources = find_all_sources(&self.sources, self.builder.clone()).unwrap();
         let mut sources = Vec::new();
         let dst = self.output_directory();
         for file in original_sources.iter() {
@@ -391,7 +381,7 @@ impl Unit {
         build
     }
 
-    pub fn get_sources(&self) -> &Vec<PathBuf> {
+    pub fn get_sources(&self) -> &Vec<String> {
         &self.sources
     }
 
@@ -447,11 +437,8 @@ impl CompilationUnit for Unit {
         self
     }
 
-    fn add_source<P: AsRef<Path>>(&mut self, file: P) -> &mut Self {
-        let path = file.as_ref().to_path_buf();
-        if path.exists() {
-            self.sources.push(path);
-        }
+    fn add_source(&mut self, dir: impl AsRef<str>) -> &mut Self {
+        self.sources.push(dir.as_ref().to_string());
         self
     }
 
@@ -470,6 +457,36 @@ impl CompilationUnit for Unit {
         self.dependencies.push(dependency);
         self
     }
+}
+
+fn find_all_sources(
+    sources_wildmatch: &Vec<String>,
+    builder: Rc<dyn Builder>,
+) -> Result<Vec<PathBuf>> {
+    let mut sources = vec![];
+    for wildmatch in sources_wildmatch {
+        sources.extend(find_sources(wildmatch, builder.clone())?);
+    }
+    Ok(sources)
+}
+
+fn find_sources(sources_wildmatch: &str, builder: Rc<dyn Builder>) -> Result<Vec<PathBuf>> {
+    let path = template_string_to_path(sources_wildmatch, builder);
+    let file_name = path.file_name().unwrap().to_str().unwrap().to_string();
+    let directory = path.parent().unwrap().to_path_buf();
+
+    let files = FilesNamed::wildmatch(&file_name)
+        .within(&directory)
+        .find()
+        .unwrap();
+    if files.is_empty() {
+        return bail!(
+            "Could not find files matching {} in {}",
+            &file_name,
+            directory.display()
+        );
+    }
+    Ok(files)
 }
 
 fn template_string_to_path(template_path: &str, builder: Rc<dyn Builder>) -> PathBuf {
@@ -499,4 +516,12 @@ fn template_string_to_path(template_path: &str, builder: Rc<dyn Builder>) -> Pat
     );
     let rendered = template.render_string(&data).unwrap();
     PathBuf::from(rendered)
+}
+
+fn core_dependency<S>(core: &Core, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
+    serializer.serialize_str(core.name())
+}
+
+fn plugin_dependency<S>(plugin: &Plugin, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
+    serializer.serialize_str(plugin.name())
 }

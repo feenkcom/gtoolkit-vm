@@ -1,12 +1,14 @@
 use crate::{Builder, BuilderTarget, CompilationUnit, Core, Dependency, Unit};
 use cc::Build;
-use file_matcher::FilesNamed;
+use serde::Serialize;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct Plugin {
+    #[serde(flatten)]
     plugin: Unit,
+    #[serde(skip)]
     core: Core,
 }
 
@@ -31,48 +33,39 @@ impl Plugin {
             .join("extracted")
             .join("plugins")
             .join(name.clone());
+        let common_dir = extracted_dir.join("src").join("common");
+        let osx_dir = extracted_dir.join("src").join("osx");
+        let unix_dir = extracted_dir.join("src").join("unix");
+        let win_dir = extracted_dir.join("src").join("win");
 
-        plugin.add_sources(
-            FilesNamed::wildmatch("*.c")
-                .within(extracted_dir.join("src/common"))
-                .find()
-                .unwrap(),
-        );
+        let extracted_dir_name = format!("{{sources}}/extracted/plugins/{}", &name);
+        let common_sources = format!("{}/src/common/*.c", &extracted_dir_name);
+        let osx_sources = format!("{}/src/osx/*.c", &extracted_dir_name);
+        let unix_sources = format!("{}/src/unix/*.c", &extracted_dir_name);
+        let win_sources = format!("{}/src/win/*.c", &extracted_dir_name);
+
+        if common_dir.exists() {
+            plugin.source(&common_sources);
+        }
 
         match core.builder().target() {
             BuilderTarget::MacOS => {
-                plugin.add_sources(
-                    FilesNamed::wildmatch("*.c")
-                        .within(extracted_dir.join("src/osx"))
-                        .find()
-                        .unwrap(),
-                );
-
-                // If MacOS specific version does not exist we add unix for MacOS
-                if !extracted_dir.join("src/osx").exists() {
-                    plugin.add_sources(
-                        FilesNamed::wildmatch("*.c")
-                            .within(extracted_dir.join("src/unix"))
-                            .find()
-                            .unwrap(),
-                    );
+                if osx_dir.exists() {
+                    plugin.source(&osx_sources);
+                    // If MacOS specific version does not exist we add unix for MacOS
+                } else if unix_dir.exists() {
+                    plugin.source(&unix_sources);
                 }
             }
             BuilderTarget::Linux => {
-                plugin.add_sources(
-                    FilesNamed::wildmatch("*.c")
-                        .within(extracted_dir.join("src/unix"))
-                        .find()
-                        .unwrap(),
-                );
+                if unix_dir.exists() {
+                    plugin.source(&unix_sources);
+                }
             }
             BuilderTarget::Windows => {
-                plugin.add_sources(
-                    FilesNamed::wildmatch("*.c")
-                        .within(extracted_dir.join("src/win"))
-                        .find()
-                        .unwrap(),
-                );
+                if win_dir.exists() {
+                    plugin.source(&win_sources);
+                }
             }
         }
 
@@ -148,7 +141,7 @@ impl CompilationUnit for Plugin {
         self
     }
 
-    fn add_source<P: AsRef<Path>>(&mut self, dir: P) -> &mut Self {
+    fn add_source(&mut self, dir: impl AsRef<str>) -> &mut Self {
         self.plugin.add_source(dir);
         self
     }

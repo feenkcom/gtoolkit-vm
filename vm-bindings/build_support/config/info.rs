@@ -4,13 +4,15 @@ use git2::{DescribeFormatOptions, DescribeOptions, Repository};
 use semver::Version;
 use std::fmt::{Display, Formatter};
 use std::rc::Rc;
+use serde::Serialize;
 
 use crate::Builder;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct BuildInfo {
     long_hash: String,
     short_hash: String,
+    #[serde(skip)]
     author_date: DateTime<FixedOffset>,
     tag: Option<String>,
     version: Option<Version>,
@@ -50,7 +52,7 @@ impl BuildInfo {
         let version = tag
             .as_ref()
             .map(|tag| tag.strip_prefix("v").unwrap_or(tag))
-            .map(|tag| semver::Version::parse(tag))
+            .map(|tag| Version::parse(tag))
             .map_or(None, |result| result.ok());
 
         Ok(Self {

@@ -3,11 +3,13 @@ use std::ffi::c_void;
 use std::mem;
 use std::os::raw::{c_int, c_long, c_longlong};
 use std::rc::Rc;
+use serde::Serialize;
 
 use crate::*;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct VirtualMachine {
+    #[serde(skip)]
     builder: Rc<dyn Builder>,
     vmmaker: VMMaker,
     build_info: BuildInfo,
@@ -156,7 +158,7 @@ impl VirtualMachine {
                     "{sources}/src/win/winDebugWindow.c",
                     // Support sources
                     "{sources}/src/fileDialogWin32.c",
-                    "{crate}/asm/setjmp-Windows-wrapper-X64.asm",
+                    "{crate}/patched/setjmp-Windows-wrapper-X64.asm",
                 ])
             }
         }
@@ -257,7 +259,6 @@ impl VirtualMachine {
 
         if core.target().is_windows() {
             core.define("WIN", "1");
-            core.flag("-Ob0"); // disable inlining (otherwise worker.c does not link properly, see 
             core.dependency(Dependency::SystemLibrary("User32".to_string()));
             core.dependency(Dependency::SystemLibrary("Ws2_32".to_string()));
             core.dependency(Dependency::SystemLibrary("DbgHelp".to_string()));
@@ -336,6 +337,10 @@ impl VirtualMachine {
             core,
             plugins,
         })
+    }
+
+    pub fn get_core(&self) -> &Core {
+        &self.core
     }
 
     pub fn compile(&self) {

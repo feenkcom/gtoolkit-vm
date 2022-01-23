@@ -7,6 +7,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::rc::Rc;
 use unzipper::{FileToUnzip, FilesToUnzip};
+use serde::Serialize;
 
 const VM_CLIENT_VMMAKER_VM_VAR: &str = "VM_CLIENT_VMMAKER";
 const VM_CLIENT_VMMAKER_IMAGE_VAR: &str = "VM_CLIENT_VMMAKER_IMAGE";
@@ -21,10 +22,11 @@ const VMMAKER_IMAGE_URL: &str =
 /// a folder within $OUT_DIR in which the vm is extracted
 const VMMAKER_VM_FOLDER: &str = "vmmaker-vm";
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct VMMaker {
     vm: PathBuf,
     image: PathBuf,
+    #[serde(skip)]
     builder: Rc<dyn Builder>,
 }
 

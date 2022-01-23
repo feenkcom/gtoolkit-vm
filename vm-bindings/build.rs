@@ -9,6 +9,7 @@ mod build_support;
 
 use crate::build_support::*;
 use console::Emoji;
+use std::io::Write;
 use user_error::{UserFacingError, UFE};
 
 pub static DOWNLOADING: Emoji<'_, '_> = Emoji("📥 ", "");
@@ -26,6 +27,15 @@ pub static MACOSX_DEPLOYMENT_TARGET: &str = "10.8";
 fn build() -> anyhow::Result<()> {
     let vm = VirtualMachine::new()?;
     vm.compile();
+
+    // export the vm info to json
+    let json = serde_json::to_string_pretty(&vm)?;
+    let file_path = vm
+        .get_core()
+        .artefact_directory()
+        .join("vm-info.json");
+    let mut file = std::fs::File::create(file_path)?;
+    writeln!(&mut file, "{}", json).unwrap();
     Ok(())
 }
 

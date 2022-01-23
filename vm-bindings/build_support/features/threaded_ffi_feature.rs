@@ -11,7 +11,7 @@ pub fn threaded_ffi_feature(core: &Core) -> Feature {
     feature.define("FEATURE_THREADED_FFI", "1");
 
     feature.source("{sources}/ffi/src/pThreadedFFI.c");
-    feature.source("{sources}/ffi/src/worker/worker.c");
+    feature.source("{crate}/patched/worker.c");
     feature.source("{sources}/ffi/src/worker/workerPrimitives.c");
     feature.source("{sources}/ffi/src/worker/workerTask.c");
 

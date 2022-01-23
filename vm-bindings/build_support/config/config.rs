@@ -9,9 +9,10 @@ use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use std::string::ToString;
 use strum::{Display, EnumVariantNames, VariantNames};
+use serde::Serialize;
 
 #[allow(non_camel_case_types)]
-#[derive(Display, EnumVariantNames, Debug, Clone)]
+#[derive(Display, EnumVariantNames, Debug, Clone, Serialize)]
 pub enum Config {
     VM_NAME(String),
     DEFAULT_IMAGE_NAME(String),
@@ -54,7 +55,7 @@ impl Config {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct ConfigTemplate {
     config: PathBuf,
     output: PathBuf,

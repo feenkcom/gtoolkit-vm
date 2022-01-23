@@ -3,9 +3,11 @@ use crate::{Builder, CompilationUnit, Feature, Unit};
 use cc::Build;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
+use serde::Serialize;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct Core {
+    #[serde(flatten)]
     core: Unit,
     features: Vec<Feature>,
 }
@@ -59,7 +61,7 @@ impl CompilationUnit for Core {
         self
     }
 
-    fn add_source<P: AsRef<Path>>(&mut self, dir: P) -> &mut Self {
+    fn add_source(&mut self, dir: impl AsRef<str>) -> &mut Self {
         self.core.add_source(dir);
         self
     }
