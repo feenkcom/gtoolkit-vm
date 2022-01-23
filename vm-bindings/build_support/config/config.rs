@@ -1,6 +1,7 @@
 use crate::Builder;
 use new_string_template::template::Template;
 use regex::Regex;
+use serde::Serialize;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io;
@@ -9,7 +10,6 @@ use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use std::string::ToString;
 use strum::{Display, EnumVariantNames, VariantNames};
-use serde::Serialize;
 
 #[allow(non_camel_case_types)]
 #[derive(Display, EnumVariantNames, Debug, Clone, Serialize)]
@@ -57,7 +57,9 @@ impl Config {
 
 #[derive(Debug, Clone, Serialize)]
 pub struct ConfigTemplate {
+    #[serde(skip)]
     config: PathBuf,
+    #[serde(skip)]
     output: PathBuf,
     data: HashMap<String, String>,
 }

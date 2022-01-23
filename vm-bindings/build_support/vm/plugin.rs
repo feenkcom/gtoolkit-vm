@@ -74,7 +74,7 @@ impl Plugin {
         plugin
     }
 
-    pub fn get_includes(&self) -> &Vec<PathBuf> {
+    pub fn get_includes(&self) -> &Vec<String> {
         self.plugin.get_includes()
     }
 
@@ -87,27 +87,60 @@ impl Plugin {
             .join("plugins")
             .join(self.plugin.name());
 
-        self.add_include(extracted_dir.join("include/common"));
-        self.add_include(extracted_dir.join("src/common"));
+        let common_include_dir = extracted_dir.join("include").join("common");
+        let common_src_dir = extracted_dir.join("src").join("common");
+        let osx_include_dir = extracted_dir.join("include").join("osx");
+        let osx_src_dir = extracted_dir.join("include").join("osx");
+        let unix_include_dir = extracted_dir.join("include").join("unix");
+        let unix_src_dir = extracted_dir.join("src").join("unix");
+        let win_include_dir = extracted_dir.join("include").join("win");
+        let win_src_dir = extracted_dir.join("src").join("win");
+
+        let extracted_dir_name = format!("{{sources}}/extracted/plugins/{}", &self.plugin.name());
+        let common_includes = format!("{}/include/common", &extracted_dir_name);
+        let common_sources = format!("{}/src/common", &extracted_dir_name);
+        let osx_includes = format!("{}/include/osx", &extracted_dir_name);
+        let osx_sources = format!("{}/src/osx", &extracted_dir_name);
+        let unix_includes = format!("{}/include/unix", &extracted_dir_name);
+        let unix_sources = format!("{}/src/unix", &extracted_dir_name);
+        let win_includes = format!("{}/include/win", &extracted_dir_name);
+        let win_sources = format!("{}/src/win", &extracted_dir_name);
+
+        if common_include_dir.exists() {
+            self.include(&common_includes);
+        }
+        if common_src_dir.exists() {
+            self.include(&common_sources);
+        }
 
         match self.builder().target() {
             BuilderTarget::MacOS => {
-                self.add_include(extracted_dir.join("include/osx"));
-                self.add_include(extracted_dir.join("src/osx"));
-                if !extracted_dir.join("include/osx").exists() {
-                    self.add_include(extracted_dir.join("include/unix"));
+                if osx_include_dir.exists() {
+                    self.include(&osx_includes);
+                } else if unix_include_dir.exists() {
+                    self.include(&unix_includes);
                 }
-                if !extracted_dir.join("src/osx").exists() {
-                    self.add_include(extracted_dir.join("src/unix"));
+                if osx_src_dir.exists() {
+                    self.include(&osx_sources);
+                } else if unix_src_dir.exists() {
+                    self.include(&unix_sources);
                 }
             }
             BuilderTarget::Linux => {
-                self.add_include(extracted_dir.join("include/unix"));
-                self.add_include(extracted_dir.join("src/unix"));
+                if unix_include_dir.exists() {
+                    self.include(&unix_includes);
+                }
+                if unix_src_dir.exists() {
+                    self.include(&unix_sources);
+                }
             }
             BuilderTarget::Windows => {
-                self.add_include(extracted_dir.join("include/win"));
-                self.add_include(extracted_dir.join("src/win"));
+                if win_include_dir.exists() {
+                    self.include(&win_includes);
+                }
+                if win_src_dir.exists() {
+                    self.include(&win_sources);
+                }
             }
         }
     }
@@ -136,7 +169,7 @@ impl CompilationUnit for Plugin {
         self.plugin.builder()
     }
 
-    fn add_include<P: AsRef<Path>>(&mut self, dir: P) -> &mut Self {
+    fn add_include(&mut self, dir: impl AsRef<str>) -> &mut Self {
         self.plugin.add_include(dir);
         self
     }

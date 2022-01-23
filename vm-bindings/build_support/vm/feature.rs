@@ -1,8 +1,8 @@
 use crate::build_support::Dependency;
 use crate::{Builder, CompilationUnit, Core, Unit};
+use serde::Serialize;
 use std::path::Path;
 use std::rc::Rc;
-use serde::Serialize;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Feature {
@@ -31,7 +31,7 @@ impl CompilationUnit for Feature {
         self.feature.builder()
     }
 
-    fn add_include<P: AsRef<Path>>(&mut self, dir: P) -> &mut Self {
+    fn add_include(&mut self, dir: impl AsRef<str>) -> &mut Self {
         self.feature.add_include(dir);
         self
     }

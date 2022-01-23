@@ -3,11 +3,11 @@ use anyhow::{anyhow, Result};
 use commander::{CommandToExecute, CommandsToExecute};
 use downloader::{FileToDownload, FilesToDownload};
 use file_matcher::{FileNamed, OneEntryCopier};
+use serde::Serialize;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::rc::Rc;
 use unzipper::{FileToUnzip, FilesToUnzip};
-use serde::Serialize;
 
 const VM_CLIENT_VMMAKER_VM_VAR: &str = "VM_CLIENT_VMMAKER";
 const VM_CLIENT_VMMAKER_IMAGE_VAR: &str = "VM_CLIENT_VMMAKER_IMAGE";

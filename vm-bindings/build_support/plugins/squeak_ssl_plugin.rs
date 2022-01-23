@@ -21,7 +21,12 @@ pub fn squeak_ssl_plugin(core: &Core) -> Option<Plugin> {
                     openssl.link_paths.clone(),
                 ));
             }
-            plugin.add_includes(&openssl.include_paths);
+            let includes: Vec<String> = openssl
+                .include_paths
+                .iter()
+                .map(|each| each.display().to_string())
+                .collect();
+            plugin.add_includes(includes);
         }
         BuilderTarget::Windows => {
             plugin.dependency(Dependency::SystemLibrary("Crypt32".to_string()));

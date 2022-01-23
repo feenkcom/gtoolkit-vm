@@ -30,10 +30,7 @@ fn build() -> anyhow::Result<()> {
 
     // export the vm info to json
     let json = serde_json::to_string_pretty(&vm)?;
-    let file_path = vm
-        .get_core()
-        .artefact_directory()
-        .join("vm-info.json");
+    let file_path = vm.get_core().artefact_directory().join("vm-info.json");
     let mut file = std::fs::File::create(file_path)?;
     writeln!(&mut file, "{}", json).unwrap();
     Ok(())

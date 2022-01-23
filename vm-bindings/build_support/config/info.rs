@@ -2,9 +2,9 @@ use anyhow::anyhow;
 use chrono::{DateTime, FixedOffset, TimeZone};
 use git2::{DescribeFormatOptions, DescribeOptions, Repository};
 use semver::Version;
+use serde::Serialize;
 use std::fmt::{Display, Formatter};
 use std::rc::Rc;
-use serde::Serialize;
 
 use crate::Builder;
 

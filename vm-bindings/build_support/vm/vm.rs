@@ -1,9 +1,9 @@
 use anyhow::{anyhow, Result};
+use serde::Serialize;
 use std::ffi::c_void;
 use std::mem;
 use std::os::raw::{c_int, c_long, c_longlong};
 use std::rc::Rc;
-use serde::Serialize;
 
 use crate::*;
 
@@ -11,6 +11,7 @@ use crate::*;
 pub struct VirtualMachine {
     #[serde(skip)]
     builder: Rc<dyn Builder>,
+    #[serde(skip)]
     vmmaker: VMMaker,
     build_info: BuildInfo,
     config: ConfigTemplate,
@@ -263,6 +264,7 @@ impl VirtualMachine {
             core.dependency(Dependency::SystemLibrary("Ws2_32".to_string()));
             core.dependency(Dependency::SystemLibrary("DbgHelp".to_string()));
             core.dependency(Dependency::SystemLibrary("Ole32".to_string()));
+            core.dependency(Dependency::SystemLibrary("Shell32".to_string()));
             core.dependency(Dependency::Library(
                 "pthreads".to_string(),
                 vec![core

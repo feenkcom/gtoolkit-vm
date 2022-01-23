@@ -40,11 +40,11 @@ pub trait CompilationUnit {
         self.builder().artefact_directory()
     }
 
-    fn add_include<P: AsRef<Path>>(&mut self, dir: P) -> &mut Self;
+    fn add_include(&mut self, dir: impl AsRef<str>) -> &mut Self;
     fn add_includes<P>(&mut self, dirs: P) -> &mut Self
     where
         P: IntoIterator,
-        P::Item: AsRef<Path>,
+        P::Item: AsRef<str>,
     {
         for dir in dirs {
             self.add_include(dir);
@@ -53,8 +53,7 @@ pub trait CompilationUnit {
     }
 
     fn include(&mut self, include: impl AsRef<str>) -> &mut Self {
-        let path = template_string_to_path(include.as_ref(), self.builder());
-        self.add_include(path);
+        self.add_include(include);
         self
     }
 
@@ -154,6 +153,7 @@ pub enum Dependency {
     #[serde(serialize_with = "plugin_dependency")]
     Plugin(Plugin),
     SystemLibrary(String),
+    #[serde(serialize_with = "library_dependency")]
     Library(String, Vec<PathBuf>),
 }
 
@@ -162,7 +162,7 @@ pub struct Unit {
     #[serde(skip)]
     builder: Rc<dyn Builder>,
     name: String,
-    includes: Vec<PathBuf>,
+    includes: Vec<String>,
     sources: Vec<String>,
     defines: Vec<(String, Option<String>)>,
     flags: Vec<String>,
@@ -210,6 +210,8 @@ impl Unit {
             sources.push(obj);
         }
 
+        let includes = find_all_includes(&self.includes, self.builder.clone());
+
         let mut build = cc::Build::new();
         build
             .cargo_metadata(false)
@@ -217,7 +219,7 @@ impl Unit {
             .shared_flag(true)
             .pic(true)
             .files(sources)
-            .includes(&self.includes)
+            .includes(&includes)
             .warnings(false)
             .extra_warnings(false);
 
@@ -385,7 +387,7 @@ impl Unit {
         &self.sources
     }
 
-    pub fn get_includes(&self) -> &Vec<PathBuf> {
+    pub fn get_includes(&self) -> &Vec<String> {
         &self.includes
     }
 
@@ -426,14 +428,8 @@ impl CompilationUnit for Unit {
         self.builder.clone()
     }
 
-    fn add_include<P: AsRef<Path>>(&mut self, dir: P) -> &mut Self {
-        let path = dir.as_ref().to_path_buf();
-        if path.exists() {
-            let path = canonicalize(path).unwrap();
-            self.includes.push(path);
-        } else {
-            eprintln!("Include path does not exist: {}", &path.display());
-        }
+    fn add_include(&mut self, dir: impl AsRef<str>) -> &mut Self {
+        self.includes.push(dir.as_ref().to_string());
         self
     }
 
@@ -489,6 +485,15 @@ fn find_sources(sources_wildmatch: &str, builder: Rc<dyn Builder>) -> Result<Vec
     Ok(files)
 }
 
+fn find_all_includes(includes: &Vec<String>, builder: Rc<dyn Builder>) -> Vec<PathBuf> {
+    includes
+        .iter()
+        .map(|each| template_string_to_path(each.as_str(), builder.clone()))
+        .filter(|each| each.exists())
+        .map(|each| canonicalize(each).unwrap())
+        .collect()
+}
+
 fn template_string_to_path(template_path: &str, builder: Rc<dyn Builder>) -> PathBuf {
     let template = Template::new(template_path);
     let mut data = HashMap::<String, String>::new();
@@ -518,10 +523,27 @@ fn template_string_to_path(template_path: &str, builder: Rc<dyn Builder>) -> Pat
     PathBuf::from(rendered)
 }
 
-fn core_dependency<S>(core: &Core, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
+fn core_dependency<S>(core: &Core, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
     serializer.serialize_str(core.name())
 }
 
-fn plugin_dependency<S>(plugin: &Plugin, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
+fn plugin_dependency<S>(plugin: &Plugin, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
     serializer.serialize_str(plugin.name())
+}
+
+fn library_dependency<S>(
+    name: &String,
+    _links: &Vec<PathBuf>,
+    serializer: S,
+) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    serializer.serialize_str(name.as_str())
 }

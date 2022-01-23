@@ -15,7 +15,12 @@ pub fn uuid_plugin(core: &Core) -> Option<Plugin> {
         BuilderTarget::MacOS => {}
         BuilderTarget::Linux => {
             let uuid_lib = pkg_config::probe_library("uuid").unwrap();
-            plugin.add_includes(uuid_lib.include_paths);
+            let includes: Vec<String> = uuid_lib
+                .include_paths
+                .iter()
+                .map(|each| each.display().to_string())
+                .collect();
+            plugin.add_includes(includes);
             plugin.dependency(Dependency::Library("uuid".to_string(), vec![]));
         }
         BuilderTarget::Windows => {

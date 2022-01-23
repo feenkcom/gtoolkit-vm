@@ -73,17 +73,12 @@ pub fn ffi_feature(core: &Core) -> Feature {
 
     if cfg!(target_arch = "x86_64") {
         compile_ffi(core).expect("Failed to compile ffi");
-        let lib_ffi_include = feature
-            .builder()
-            .output_directory()
-            .join("libffi-build")
-            .join("include");
         let lib_ffi = feature
             .builder()
             .output_directory()
             .join("libffi-build")
             .join("lib");
-        feature.add_include(&lib_ffi_include);
+        feature.include("{output}/libffi-build/include");
         feature.dependency(Dependency::Library("ffi".to_string(), vec![lib_ffi]));
     } else if cfg!(target_arch = "aarch64") {
         let clang = Clang::find(None, &[]).unwrap();
@@ -91,8 +86,8 @@ pub fn ffi_feature(core: &Core) -> Feature {
         if let Some(c_search_paths) = clang.c_search_paths {
             for search_path in &c_search_paths {
                 if search_path.join("ffi").join("ffi.h").exists() {
-                    ffi_includes.push(search_path.clone());
-                    ffi_includes.push(search_path.join("ffi"));
+                    ffi_includes.push(search_path.clone().display().to_string());
+                    ffi_includes.push(search_path.join("ffi").display().to_string());
                 }
             }
         }

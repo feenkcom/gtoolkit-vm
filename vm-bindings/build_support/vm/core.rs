@@ -1,9 +1,9 @@
 use crate::build_support::Dependency;
 use crate::{Builder, CompilationUnit, Feature, Unit};
 use cc::Build;
+use serde::Serialize;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
-use serde::Serialize;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Core {
@@ -20,7 +20,7 @@ impl Core {
         }
     }
 
-    pub fn get_includes(&self) -> &Vec<PathBuf> {
+    pub fn get_includes(&self) -> &Vec<String> {
         self.core.get_includes()
     }
 
@@ -56,7 +56,7 @@ impl CompilationUnit for Core {
         self.core.builder()
     }
 
-    fn add_include<P: AsRef<Path>>(&mut self, dir: P) -> &mut Self {
+    fn add_include(&mut self, dir: impl AsRef<str>) -> &mut Self {
         self.core.add_include(dir);
         self
     }
