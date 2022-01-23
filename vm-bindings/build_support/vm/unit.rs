@@ -201,7 +201,7 @@ impl Unit {
             let obj = if !obj.starts_with(&dst) {
                 let mut source = obj
                     .strip_prefix(self.builder.vm_sources_directory())
-                    .unwrap_or_else(|| obj.strip_prefix(std::env::current_dir().unwrap()).unwrap())
+                    .unwrap_or_else(|_| obj.strip_prefix(std::env::current_dir().unwrap()).unwrap())
                     .to_path_buf();
 
                 if let Some(extension) = source.extension() {
