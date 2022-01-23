@@ -493,6 +493,7 @@ fn template_string_to_path(template_path: &str, builder: Rc<dyn Builder>) -> Pat
         builder.vm_sources_directory().display().to_string(),
     );
     data.insert("profile".to_string(), builder.profile());
+    data.insert("crate".to_string(), std::env::current_dir().unwrap().display().to_string());
     let rendered = template.render_string(&data).unwrap();
     PathBuf::from(rendered)
 }

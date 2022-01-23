@@ -156,7 +156,7 @@ impl VirtualMachine {
                     "{sources}/src/win/winDebugWindow.c",
                     // Support sources
                     "{sources}/src/fileDialogWin32.c",
-                    "{sources}/src/utils/setjmp-Windows-wrapper-X64.S",
+                    "{crate}/asm/setjmp-Windows-wrapper-X64.asm",
                 ])
             }
         }
