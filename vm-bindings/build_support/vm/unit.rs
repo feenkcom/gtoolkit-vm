@@ -201,7 +201,7 @@ impl Unit {
             let obj = if !obj.starts_with(&dst) {
                 let mut source = obj
                     .strip_prefix(self.builder.vm_sources_directory())
-                    .unwrap()
+                    .unwrap_or_else(|| obj.strip_prefix(std::env::current_dir().unwrap()).unwrap())
                     .to_path_buf();
 
                 if let Some(extension) = source.extension() {
@@ -493,7 +493,10 @@ fn template_string_to_path(template_path: &str, builder: Rc<dyn Builder>) -> Pat
         builder.vm_sources_directory().display().to_string(),
     );
     data.insert("profile".to_string(), builder.profile());
-    data.insert("crate".to_string(), std::env::current_dir().unwrap().display().to_string());
+    data.insert(
+        "crate".to_string(),
+        std::env::current_dir().unwrap().display().to_string(),
+    );
     let rendered = template.render_string(&data).unwrap();
     PathBuf::from(rendered)
 }
