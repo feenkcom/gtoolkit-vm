@@ -1,26 +1,14 @@
 #![windows_subsystem = "console"]
 extern crate vm_bindings;
 
-mod error;
-mod event_loop;
-mod image_finder;
-mod virtual_machine;
+pub(crate) mod platform;
+mod runtime;
+pub use runtime::*;
 
 use clap::{App, AppSettings, Arg};
-use image_finder::validate_user_image_file;
 use std::sync::mpsc::channel;
 use std::sync::Arc;
 use vm_bindings::InterpreterParameters;
-
-pub use event_loop::{EventLoop, EventLoopMessage};
-pub use virtual_machine::VirtualMachine;
-
-#[no_mangle]
-pub static mut VIRTUAL_MACHINE: Option<Arc<VirtualMachine>> = None;
-#[no_mangle]
-pub fn has_virtual_machine() -> bool {
-    unsafe { VIRTUAL_MACHINE.is_some() }
-}
 
 fn main() {
     let matches = App::new("Virtual Machine")
@@ -38,11 +26,6 @@ fn main() {
             Arg::new("interactive")
                 .long("interactive")
                 .help("Start image in the interactive (UI) mode"),
-        )
-        .arg(
-            Arg::new("worker")
-                .long("worker")
-                .help("Run vm in the worker process"),
         )
         .get_matches();
 
@@ -74,19 +57,5 @@ fn main() {
     parameters.set_image_file_name(image_path.as_os_str().to_str().unwrap().to_owned());
     parameters.set_is_interactive_session(matches.is_present("interactive"));
 
-    println!("{:?}", &parameters);
-    run(parameters);
-}
-
-fn run(parameters: InterpreterParameters) {
-    let (event_loop, sender) = EventLoop::new();
-
-    let vm = Arc::new(VirtualMachine::new(parameters, sender));
-    unsafe { VIRTUAL_MACHINE = Some(vm.clone()) };
-    let join = vm.start().unwrap();
-
-    //join.is_running()
-
-    let result = join.join().unwrap();
-    result.unwrap();
+    Constellation::run(parameters);
 }

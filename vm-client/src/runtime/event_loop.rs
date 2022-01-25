@@ -1,4 +1,4 @@
-use crate::error::{ApplicationError, Result};
+use crate::{ApplicationError, Result};
 use std::sync::mpsc::{channel, Receiver, RecvError, Sender};
 use std::thread::JoinHandle;
 

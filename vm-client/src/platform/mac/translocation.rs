@@ -1,7 +1,5 @@
 #![cfg(target_os = "macos")]
 
-use crate::error::ApplicationError;
-use crate::Result;
 use core_foundation::base::{Boolean, CFIndex};
 use core_foundation::bundle::{CFBundleCopyBundleURL, CFBundleGetMainBundle};
 use core_foundation::error::CFErrorRef;
@@ -14,6 +12,8 @@ use std::path::PathBuf;
 use std::ffi::OsStr;
 #[cfg(unix)]
 use std::os::unix::ffi::OsStrExt;
+
+use crate::{ApplicationError, Result};
 
 /// Try to change the working directory back to the original location
 pub fn un_translocate() -> Result<()> {

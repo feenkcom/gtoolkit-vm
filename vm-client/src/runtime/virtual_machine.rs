@@ -1,13 +1,13 @@
 use crate::EventLoopMessage;
 use anyhow::Result;
-use std::sync::Arc;
 use std::sync::mpsc::Sender;
+use std::sync::Arc;
 use std::thread::JoinHandle;
-use vm_bindings::{InterpreterParameters, PharoInterpreter};
+use vm_bindings::{InterpreterParameters, LogLevel, PharoInterpreter};
 
 #[derive(Debug)]
 pub struct VirtualMachine {
-    interpreter: Arc<PharoInterpreter>,
+    pub interpreter: Arc<PharoInterpreter>,
     event_loop_sender: Sender<EventLoopMessage>,
 }
 
@@ -23,7 +23,12 @@ impl VirtualMachine {
     }
 
     /// Starts the interpreter in a worker thread
-    pub fn start(&self) -> Result<JoinHandle<Result<()>>> {
+    pub fn start_in_worker(&self) -> Result<JoinHandle<Result<()>>> {
         self.interpreter.clone().start_in_worker()
+    }
+
+    /// Starts the interpreter in a worker thread
+    pub fn start(&self) -> Result<()> {
+        self.interpreter.clone().start()
     }
 }

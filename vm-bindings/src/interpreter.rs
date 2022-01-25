@@ -1,13 +1,13 @@
-#![feature(catch_panic)]
-
 use crate::bindings::{
-    installErrorHandlers, logLevel, osCogStackPageHeadroom,
+    free, installErrorHandlers, logLevel, osCogStackPageHeadroom, pluginExports,
     registerCurrentThreadToHandleExceptions, setProcessArguments, setProcessEnvironmentVector,
-    vm_init, vm_main_with_parameters, vm_run_interpreter,
+    sqExport, sqInt, vm_init, vm_main_with_parameters, vm_run_interpreter,
 };
-use crate::prelude::NativeAccess;
+use crate::prelude::{Handle, NativeAccess, NativeDrop, NativeTransmutable};
 use crate::InterpreterParameters;
 use anyhow::{bail, Result};
+use std::ffi::{c_void, CStr, CString};
+use std::fmt::{Debug, Display, Formatter};
 use std::os::raw::c_int;
 use std::panic;
 use std::sync::mpsc::Sender;
@@ -34,7 +34,6 @@ impl PharoInterpreter {
 
     /// Launch the vm in the main process
     pub fn start(&self) -> Result<()> {
-        self.log_level(LogLevel::Trace);
         self.prepare_environment();
         self.run();
         Ok(())
@@ -42,7 +41,6 @@ impl PharoInterpreter {
 
     /// Launch the vm in a worker thread returning the Join handle
     pub fn start_in_worker(self: Arc<Self>) -> Result<JoinHandle<Result<()>>> {
-        self.log_level(LogLevel::Trace);
         self.prepare_environment();
 
         let vm = self.clone();
@@ -92,6 +90,118 @@ impl PharoInterpreter {
         unsafe {
             vm_run_interpreter();
         };
+    }
+
+    pub fn vm_exports(&self) -> &[Export] {
+        let plugin_exports: [*mut sqExport; 3usize] = unsafe { pluginExports };
+
+        let vm_exports_ptr: *const Export = plugin_exports[0] as *const Export;
+        let length = detect_length(plugin_exports[0]);
+        unsafe { std::slice::from_raw_parts(vm_exports_ptr, length) }
+    }
+}
+
+fn detect_length(exports: *const sqExport) -> usize {
+    let exports = exports as *const sqExport;
+
+    let mut length = 0 as usize;
+    loop {
+        let each_export_ptr = unsafe { exports.offset(length as isize) };
+        if each_export_ptr == std::ptr::null_mut() {
+            break;
+        }
+        let each_export = unsafe { &*each_export_ptr };
+        if !each_export.is_valid() {
+            println!("export is not valid! {:?}", each_export);
+            break;
+        }
+        length = length + 1;
+    }
+    length
+}
+
+#[derive(Copy, Clone, Debug)]
+#[repr(transparent)]
+pub struct ObjectPointer(sqInt);
+impl NativeTransmutable<sqInt> for ObjectPointer {}
+
+#[derive(Copy, Clone, Debug)]
+#[repr(transparent)]
+pub struct ObjectFieldIndex(sqInt);
+impl NativeTransmutable<sqInt> for ObjectFieldIndex {}
+
+#[derive(Copy, Clone, Debug)]
+#[repr(transparent)]
+pub struct StackOffset(sqInt);
+impl NativeTransmutable<sqInt> for StackOffset {}
+
+pub type Export = Handle<sqExport>;
+impl NativeDrop for sqExport {
+    fn drop(&mut self) {
+        self.take_plugin_name();
+        self.take_primitive_name();
+    }
+}
+
+impl Export {
+    pub fn plugin_name(&self) -> &str {
+        let plugin_name_ptr: *mut std::os::raw::c_char = self.native().pluginName;
+        unsafe { CStr::from_ptr(plugin_name_ptr) }.to_str().unwrap()
+    }
+
+    pub fn primitive_name(&self) -> &str {
+        let primitive_name_ptr: *mut std::os::raw::c_char = self.native().primitiveName;
+        unsafe { CStr::from_ptr(primitive_name_ptr) }
+            .to_str()
+            .unwrap()
+    }
+
+    pub fn primitive_address(&self) -> *const std::os::raw::c_void {
+        self.native().primitiveAddress
+    }
+}
+
+impl sqExport {
+    fn take_plugin_name(&mut self) -> String {
+        let plugin_name_ptr: *mut std::os::raw::c_char = self.pluginName;
+        self.pluginName = std::ptr::null_mut();
+        unsafe { CString::from_raw(plugin_name_ptr) }
+            .into_string()
+            .unwrap()
+    }
+
+    fn take_primitive_name(&mut self) -> String {
+        let primitive_name_ptr: *mut std::os::raw::c_char = self.primitiveName;
+        self.primitiveName = std::ptr::null_mut();
+        unsafe { CString::from_raw(primitive_name_ptr) }
+            .into_string()
+            .unwrap()
+    }
+
+    fn is_valid(&self) -> bool {
+        if self.primitiveName == std::ptr::null_mut() {
+            return false;
+        }
+
+        if self.pluginName == std::ptr::null_mut() {
+            return false;
+        }
+
+        if self.primitiveAddress == std::ptr::null_mut() {
+            return false;
+        }
+
+        true
+    }
+}
+
+impl Debug for Export {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Export")
+            .field("plugin_name", &self.plugin_name())
+            .field("primitive_name", &self.primitive_name())
+            .field("primitive_address", &self.primitive_address())
+            .finish()
     }
 }
 

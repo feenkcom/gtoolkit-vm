@@ -119,7 +119,8 @@ impl VirtualMachine {
             // Common sources
             "{sources}/extracted/vm/src/common/sqHeapMap.c",
             "{sources}/extracted/vm/src/common/sqVirtualMachine.c",
-            "{sources}/extracted/vm/src/common/sqNamedPrims.c",
+            //"{sources}/extracted/vm/src/common/sqNamedPrims.c",
+            "{crate}/patched/sqNamedPrims.c",
             "{sources}/extracted/vm/src/common/sqExternalSemaphores.c",
             "{sources}/extracted/vm/src/common/sqTicker.c",
         ]
@@ -170,6 +171,7 @@ impl VirtualMachine {
     /// Return a list of include directories for a given build taregt platform
     fn includes(target: &BuilderTarget) -> Vec<&str> {
         let mut includes = [
+            "{crate}/patched",
             "{sources}/extracted/vm/include/common",
             "{sources}/include",
             "{sources}/include/pharovm",

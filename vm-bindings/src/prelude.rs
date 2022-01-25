@@ -374,18 +374,11 @@ where
     }
 }
 
-/// A wrapper type that represents a native type with a pointer to
-/// the native object.
+/// A wrapper type that represents a native type with a pointer to the native object not owned by Rust
 #[repr(transparent)]
-pub struct RefHandle<N: NativeDrop>(ptr::NonNull<N>);
+pub struct RefHandle<N>(ptr::NonNull<N>);
 
-impl<N: NativeDrop> Drop for RefHandle<N> {
-    fn drop(&mut self) {
-        self.native_mut().drop()
-    }
-}
-
-impl<N: NativeDrop> NativeAccess<N> for RefHandle<N> {
+impl<N> NativeAccess<N> for RefHandle<N> {
     fn native(&self) -> &N {
         unsafe { self.0.as_ref() }
     }
@@ -394,11 +387,10 @@ impl<N: NativeDrop> NativeAccess<N> for RefHandle<N> {
     }
 }
 
-impl<N: NativeDrop> RefHandle<N> {
+impl<N> RefHandle<N> {
     /// Creates a RefHandle from a native pointer.
     ///
-    /// From this time on, the handle owns the object that the pointer points
-    /// to and will call its NativeDrop implementation if it goes out of scope.
+    /// The handle does not own the object that the pointer points to
     pub(crate) fn from_ptr(ptr: *mut N) -> Option<Self> {
         ptr::NonNull::new(ptr).map(Self)
     }

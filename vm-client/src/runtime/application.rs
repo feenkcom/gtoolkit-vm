@@ -2,10 +2,10 @@ use std::path::{Path, PathBuf};
 
 use vm_bindings::{InterpreterParameters, PharoInterpreter};
 
-use crate::image_finder::{pick_image_with_dialog, search_image_file_within_directories};
-use crate::working_directory::executable_working_directory;
-use crate::AppOptions;
-use crate::{ApplicationError, Result};
+use crate::{
+    executable_working_directory, pick_image_with_dialog, search_image_file_within_directories,
+    AppOptions, ApplicationError, Constellation, Result,
+};
 
 #[derive(Debug, Clone)]
 pub struct Application {
@@ -62,7 +62,7 @@ impl Application {
         parameters.set_image_file_name(self.image.as_os_str().to_str().unwrap().to_owned());
         parameters.set_is_interactive_session(true);
 
-        PharoInterpreter::new(parameters).start().unwrap();
+        Constellation::run(parameters);
         Ok(())
     }
 

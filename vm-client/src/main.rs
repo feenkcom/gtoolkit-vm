@@ -7,21 +7,14 @@ extern crate vm_bindings;
 #[macro_use]
 extern crate log;
 
-mod error;
-mod image_finder;
+pub(crate) mod platform;
+mod runtime;
 
-mod application;
-mod application_options;
-mod platform;
-mod working_directory;
+pub use runtime::*;
 
 use clap::Parser;
 
 use user_error::{UserFacingError, UFE};
-
-pub use crate::application::Application;
-pub use crate::application_options::AppOptions;
-pub use crate::error::*;
 
 fn run() -> Result<()> {
     // we should read options and canonicalize the image path before changing current directory

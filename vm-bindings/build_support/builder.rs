@@ -124,10 +124,21 @@ pub trait Builder: Debug {
             .allowlist_function("osCogStackPageHeadroom")
             .allowlist_function("logLevel")
             .allowlist_function("free")
+            .allowlist_type("sqInt")
+            .allowlist_var("pluginExports")
             .header(
                 include_dir
                     .join("pharovm")
                     .join("pharoClient.h")
+                    .display()
+                    .to_string(),
+            )
+            .header(
+                std::env::current_dir()
+                    .unwrap()
+                    .join("patched")
+                    .join("pharovm")
+                    .join("sqNamedPrims.h")
                     .display()
                     .to_string(),
             )
