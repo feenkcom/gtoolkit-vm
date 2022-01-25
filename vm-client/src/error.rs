@@ -1,5 +1,6 @@
 use std::ffi::OsString;
 use std::path::PathBuf;
+use std::sync::mpsc::RecvError;
 use thiserror::Error;
 
 pub type Result<T> = core::result::Result<T, ApplicationError>;
@@ -31,6 +32,10 @@ pub enum ApplicationError {
     ImageFileNotFound,
     #[error("Directory `{0}` does not have a parent")]
     NoParentDirectory(PathBuf),
+    #[error("Failed to receive an event loop message")]
+    EventLoopReceiverError(#[from] RecvError),
+    #[error("Failed to join a thread")]
+    JoinHandleError,
     #[error("unknown data store error")]
     Unknown,
 }

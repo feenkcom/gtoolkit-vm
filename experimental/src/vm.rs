@@ -350,7 +350,6 @@ impl GToolkitVM {
             }
         }
     }
-
 }
 
 #[repr(C)]

@@ -9,7 +9,7 @@ use std::fmt;
 use std::mem::forget;
 use std::os::raw::{c_char, c_void};
 
-pub type VMParameters = Handle<NativeVMParameters>;
+pub type InterpreterParameters = Handle<NativeVMParameters>;
 
 impl NativeDrop for NativeVMParameters {
     fn drop(&mut self) {
@@ -19,7 +19,7 @@ impl NativeDrop for NativeVMParameters {
     }
 }
 
-impl VMParameters {
+impl InterpreterParameters {
     pub fn from_args<P: AsRef<str>>(arguments: Vec<P>) -> Self {
         let vars = std::env::vars()
             .map(|arg| CString::new(format!("{}={}", arg.0, arg.1)).unwrap())
@@ -54,14 +54,14 @@ impl VMParameters {
         Self::from_args(std::env::args().collect())
     }
 
-    pub fn image_file_name(&self) -> String {
+    pub fn image_file_name(&self) -> &str {
         if self.native().imageFileName.is_null() {
-            return "".to_string();
+            return "";
         }
 
         let c_str: &CStr = unsafe { CStr::from_ptr(self.native().imageFileName) };
         let str_slice: &str = c_str.to_str().unwrap();
-        str_slice.to_owned()
+        str_slice
     }
 
     pub fn set_image_file_name<P: Into<String>>(&mut self, file_name: P) {
@@ -168,11 +168,11 @@ impl VMParameters {
     }
 
     pub fn virtual_machine_parameters(&self) -> &VirtualMachineParameters {
-        VirtualMachineParameters::borrow_from_native(&self.native().imageParameters)
+        VirtualMachineParameters::borrow_from_native(&self.native().vmParameters)
     }
 }
 
-impl fmt::Debug for VMParameters {
+impl fmt::Debug for InterpreterParameters {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("VMParameters")
             .field("image_file_name", &self.image_file_name())
@@ -196,7 +196,7 @@ impl fmt::Debug for VMParameters {
     }
 }
 
-impl Default for VMParameters {
+impl Default for InterpreterParameters {
     fn default() -> Self {
         Self::from_native_c(NativeVMParameters {
             imageFileName: std::ptr::null_mut(),

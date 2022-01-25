@@ -5,6 +5,7 @@ authors = ["feenk gmbh. <contact@feenk.com>"]
 edition = "2021"
 
 [dependencies]
+anyhow = "1.0"
 
 [features]
 default = ["full"]
@@ -29,7 +30,7 @@ all_plugins = [
     "unix_os_process_plugin",
     "uuid_plugin" ]
 # Enables all features, such as ffi and all plugins
-full = ["immutability", "inline_memory_accessors", "ffi", "threaded_ffi", "all_plugins"]
+full = ["immutability", "inline_memory_accessors", "ffi", "threaded_ffi", "vm_in_worker_thread","all_plugins"]
 gnuisation = []
 # Include primitives to make objects readonly
 immutability = []
@@ -37,6 +38,7 @@ immutability = []
 inline_memory_accessors = []
 ffi = []
 threaded_ffi = ["ffi"]
+vm_in_worker_thread = [ "threaded_ffi" ]
 # VM Plugins
 b2d_plugin = []
 bit_blt_plugin = []

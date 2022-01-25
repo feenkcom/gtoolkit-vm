@@ -1,5 +1,5 @@
 use crate::build_support::{Core, Plugin};
-use crate::{Builder, BuilderTarget, MACOSX_DEPLOYMENT_TARGET};
+use crate::{Builder, BuilderTarget, Feature, MACOSX_DEPLOYMENT_TARGET};
 use anyhow::{bail, Result};
 use cc::Build;
 use file_matcher::FilesNamed;
@@ -152,6 +152,8 @@ pub enum Dependency {
     Core(Core),
     #[serde(serialize_with = "plugin_dependency")]
     Plugin(Plugin),
+    #[serde(serialize_with = "feature_dependency")]
+    Feature(Feature),
     SystemLibrary(String),
     #[serde(serialize_with = "library_dependency")]
     Library(String, Vec<PathBuf>),
@@ -287,6 +289,7 @@ impl Unit {
                         }
                         build.ar_flag(&format!("{}.lib", library));
                     }
+                    Dependency::Feature(_) => { /* nothing to do here */ }
                 }
             }
         }
@@ -349,6 +352,7 @@ impl Unit {
                         }
                         command.arg("-l").arg(library);
                     }
+                    Dependency::Feature(_) => { /* nothing to do here */ }
                 }
             }
 
@@ -535,6 +539,13 @@ where
     S: Serializer,
 {
     serializer.serialize_str(plugin.name())
+}
+
+fn feature_dependency<S>(feature: &Feature, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    serializer.serialize_str(feature.name())
 }
 
 fn library_dependency<S>(

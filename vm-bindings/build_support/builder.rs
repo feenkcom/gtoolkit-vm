@@ -1,3 +1,4 @@
+use crate::vm_in_worker_thread_feature;
 use std::fmt::Debug;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
@@ -113,8 +114,15 @@ pub trait Builder: Debug {
             generated_config_directory.display()
         );
 
-        let bindings = bindgen::Builder::default()
+        let mut builder = bindgen::Builder::default();
+        builder = builder
             .allowlist_function("vm_.*")
+            .allowlist_function("registerCurrentThreadToHandleExceptions")
+            .allowlist_function("installErrorHandlers")
+            .allowlist_function("setProcessArguments")
+            .allowlist_function("setProcessEnvironmentVector")
+            .allowlist_function("osCogStackPageHeadroom")
+            .allowlist_function("logLevel")
             .allowlist_function("free")
             .header(
                 include_dir
@@ -132,7 +140,9 @@ pub trait Builder: Debug {
             .clang_arg("-DLSB_FIRST=1")
             // Tell cargo to invalidate the built crate whenever any of the
             // included header files changed.
-            .parse_callbacks(Box::new(bindgen::CargoCallbacks))
+            .parse_callbacks(Box::new(bindgen::CargoCallbacks));
+
+        let bindings = builder
             // Finish the builder and generate the bindings.
             .generate()
             // Unwrap the Result and panic on failure.

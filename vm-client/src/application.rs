@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 
-use vm_bindings::{VMParameters, VM};
+use vm_bindings::{InterpreterParameters, PharoInterpreter};
 
 use crate::image_finder::{pick_image_with_dialog, search_image_file_within_directories};
 use crate::working_directory::executable_working_directory;
@@ -58,11 +58,11 @@ impl Application {
         vm_args.push(executable_path.as_os_str().to_str().unwrap().to_owned());
         vm_args.push(self.image.as_os_str().to_str().unwrap().to_owned());
 
-        let mut parameters = VMParameters::from_args(vm_args);
+        let mut parameters = InterpreterParameters::from_args(vm_args);
         parameters.set_image_file_name(self.image.as_os_str().to_str().unwrap().to_owned());
         parameters.set_is_interactive_session(true);
 
-        VM::start(parameters).unwrap();
+        PharoInterpreter::new(parameters).start().unwrap();
         Ok(())
     }
 

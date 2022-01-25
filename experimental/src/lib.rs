@@ -280,8 +280,6 @@ pub fn gtoolkit_vm_main_thread_callout(
 pub fn app_main() {
     let (sender, receiver) = channel();
 
-
-
     unsafe {
         let interpreter: VirtualMachine = unsafe { *sqGetInterpreterProxy() };
 

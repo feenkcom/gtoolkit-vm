@@ -1,8 +1,8 @@
 mod bindings;
+mod interpreter;
 mod parameter_vector;
 mod parameters;
 mod prelude;
-mod vm;
 
-pub use parameters::VMParameters;
-pub use vm::VM;
+pub use interpreter::PharoInterpreter;
+pub use parameters::InterpreterParameters;
