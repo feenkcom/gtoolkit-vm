@@ -92,11 +92,20 @@ impl PharoInterpreter {
         };
     }
 
+    /// Return a slice of all named primitives that are exported from the vm
     pub fn vm_exports(&self) -> &[Export] {
         let plugin_exports: [*mut sqExport; 3usize] = unsafe { pluginExports };
 
         let vm_exports_ptr: *const Export = plugin_exports[0] as *const Export;
         let length = detect_length(plugin_exports[0]);
+        unsafe { std::slice::from_raw_parts(vm_exports_ptr, length) }
+    }
+
+    pub fn os_exports(&self) -> &[Export] {
+        let plugin_exports: [*mut sqExport; 3usize] = unsafe { pluginExports };
+
+        let vm_exports_ptr: *const Export = plugin_exports[1] as *const Export;
+        let length = detect_length(plugin_exports[1]);
         unsafe { std::slice::from_raw_parts(vm_exports_ptr, length) }
     }
 }
@@ -112,7 +121,6 @@ fn detect_length(exports: *const sqExport) -> usize {
         }
         let each_export = unsafe { &*each_export_ptr };
         if !each_export.is_valid() {
-            println!("export is not valid! {:?}", each_export);
             break;
         }
         length = length + 1;

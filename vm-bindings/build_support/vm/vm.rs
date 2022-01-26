@@ -155,9 +155,13 @@ impl VirtualMachine {
                     // Platform sources
                     "{sources}/extracted/vm/src/win/sqWin32SpurAlloc.c",
                     "{sources}/extracted/vm/src/win/aioWin.c",
-                    "{sources}/src/win/winDebug.c",
-                    "{sources}/src/win/winDebugMenu.c",
-                    "{sources}/src/win/winDebugWindow.c",
+                    // Choose debugging sources based on the VM Version. Starting with v9.0.8
+                    // the sources moved
+                    "{sources}/src/debugWin.c",
+                    // "{sources}/src/win/winDebug.c",
+                    // "{sources}/src/win/winDebugMenu.c",
+                    // "{sources}/src/win/winDebugWindow.c",
+
                     // Support sources
                     "{sources}/src/fileDialogWin32.c",
                     "{crate}/patched/setjmp-Windows-wrapper-X64.asm",
