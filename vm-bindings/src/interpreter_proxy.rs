@@ -1,4 +1,4 @@
-use crate::bindings::{sqGetInterpreterProxy, sqInt, usqInt, VirtualMachine as sqInterpreterProxy};
+use crate::bindings::{sqInt, usqInt, VirtualMachine as sqInterpreterProxy};
 use std::ffi::{CStr, CString};
 use std::mem::size_of;
 

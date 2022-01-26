@@ -1,7 +1,8 @@
 use crate::bindings::{
-    free, getVMExports, installErrorHandlers, logLevel, getOsCogStackPageHeadroom,
-    registerCurrentThreadToHandleExceptions, setProcessArguments, setProcessEnvironmentVector,
-    setVMExports, sqExport, sqGetInterpreterProxy, sqInt, vm_init, vm_main_with_parameters,
+    free, getOsCogStackPageHeadroom as osCogStackPageHeadroom,
+    getSqGetInterpreterProxy as sqGetInterpreterProxy, getVMExports, installErrorHandlers,
+    logLevel, registerCurrentThreadToHandleExceptions, setProcessArguments,
+    setProcessEnvironmentVector, setVMExports, sqExport, sqInt, vm_init, vm_main_with_parameters,
     vm_run_interpreter, VirtualMachine,
 };
 use crate::prelude::{Handle, NativeAccess, NativeClone, NativeDrop, NativeTransmutable};
@@ -61,7 +62,7 @@ impl PharoInterpreter {
                 self.parameters.native().processArgv,
             )
         };
-        unsafe { getOsCogStackPageHeadroom() };
+        unsafe { osCogStackPageHeadroom() };
     }
 
     /// Initializes the vm and runs the interpreter.

@@ -122,8 +122,10 @@ impl VirtualMachine {
             "{sources}/extracted/vm/src/common/sqNamedPrims.c",
             "{sources}/extracted/vm/src/common/sqExternalSemaphores.c",
             "{sources}/extracted/vm/src/common/sqTicker.c",
+            // Re-exports of private VM functions
             "{crate}/extra/sqExport.c",
             "{crate}/extra/osCogStackPageHeadroom.c",
+            "{crate}/extra/sqGetInterpreterProxy.c",
         ]
         .to_vec();
 

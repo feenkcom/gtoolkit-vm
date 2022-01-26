@@ -113,6 +113,8 @@ pub trait Builder: Debug {
             generated_config_directory.display()
         );
 
+        let extra_headers = std::env::current_dir().unwrap().join("extra");
+
         let mut builder = bindgen::Builder::default();
         builder = builder
             .allowlist_function("vm_.*")
@@ -123,7 +125,7 @@ pub trait Builder: Debug {
             .allowlist_function("getOsCogStackPageHeadroom")
             .allowlist_function("logLevel")
             .allowlist_function("free")
-            .allowlist_function("sqGetInterpreterProxy")
+            .allowlist_function("getSqGetInterpreterProxy")
             .allowlist_function("getVMExports")
             .allowlist_function("setVMExports")
             .allowlist_type("sqInt")
@@ -137,19 +139,16 @@ pub trait Builder: Debug {
                     .display()
                     .to_string(),
             )
+            .header(extra_headers.join("sqExport.h").display().to_string())
             .header(
-                std::env::current_dir()
-                    .unwrap()
-                    .join("extra")
-                    .join("sqExport.h")
+                extra_headers
+                    .join("osCogStackPageHeadroom.h")
                     .display()
                     .to_string(),
             )
             .header(
-                std::env::current_dir()
-                    .unwrap()
-                    .join("extra")
-                    .join("osCogStackPageHeadroom.h")
+                extra_headers
+                    .join("sqGetInterpreterProxy.h")
                     .display()
                     .to_string(),
             )
