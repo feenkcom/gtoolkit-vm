@@ -16,7 +16,7 @@
 #include "pharovm/sqNamedPrims.h"
 #include "pharovm/debug.h"
 
-EXPORT(sqExport) *pluginExports[] = {
+EXPORT(sqExport) *pluginExports[3] = {
 	vm_exports,
 	os_exports,
 //	SecurityPlugin_exports,
