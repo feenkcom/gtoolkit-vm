@@ -1,4 +1,3 @@
-use crate::vm_in_worker_thread_feature;
 use std::fmt::Debug;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;

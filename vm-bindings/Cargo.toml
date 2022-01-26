@@ -38,7 +38,6 @@ immutability = []
 inline_memory_accessors = []
 ffi = []
 threaded_ffi = ["ffi"]
-vm_in_worker_thread = [ "threaded_ffi" ]
 # VM Plugins
 b2d_plugin = []
 bit_blt_plugin = []

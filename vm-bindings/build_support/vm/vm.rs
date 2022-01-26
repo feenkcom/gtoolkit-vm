@@ -284,8 +284,6 @@ impl VirtualMachine {
         core.add_feature(ffi_feature(&core));
         #[cfg(feature = "threaded_ffi")]
         core.add_feature(threaded_ffi_feature(&core));
-        #[cfg(feature = "vm_in_worker_thread")]
-        core.add_feature(vm_in_worker_thread_feature(&core));
         core
     }
 
