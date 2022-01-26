@@ -124,6 +124,8 @@ pub trait Builder: Debug {
             .allowlist_function("logLevel")
             .allowlist_function("free")
             .allowlist_function("sqGetInterpreterProxy")
+            .allowlist_function("getVMExports")
+            .allowlist_function("setVMExports")
             .allowlist_type("sqInt")
             .allowlist_type("usqInt")
             .allowlist_type("sqExport")
@@ -138,9 +140,8 @@ pub trait Builder: Debug {
             .header(
                 std::env::current_dir()
                     .unwrap()
-                    .join("patched")
-                    .join("pharovm")
-                    .join("sqNamedPrims.h")
+                    .join("extra")
+                    .join("sqExport.h")
                     .display()
                     .to_string(),
             )

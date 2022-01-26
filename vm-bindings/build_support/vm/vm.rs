@@ -104,7 +104,7 @@ impl VirtualMachine {
             // support sources
             "{sources}/src/debug.c",
             //"{sources}/src/utils.c",
-            "{crate}/patched/utils.c",
+            "{crate}/extra/utils.c",
             "{sources}/src/errorCode.c",
             "{sources}/src/nullDisplay.c",
             "{sources}/src/externalPrimitives.c",
@@ -120,10 +120,10 @@ impl VirtualMachine {
             // Common sources
             "{sources}/extracted/vm/src/common/sqHeapMap.c",
             "{sources}/extracted/vm/src/common/sqVirtualMachine.c",
-            //"{sources}/extracted/vm/src/common/sqNamedPrims.c",
-            "{crate}/patched/sqNamedPrims.c",
+            "{sources}/extracted/vm/src/common/sqNamedPrims.c",
             "{sources}/extracted/vm/src/common/sqExternalSemaphores.c",
             "{sources}/extracted/vm/src/common/sqTicker.c",
+            "{crate}/extra/sqExport.c",
         ]
         .to_vec();
 
@@ -165,7 +165,7 @@ impl VirtualMachine {
 
                     // Support sources
                     "{sources}/src/fileDialogWin32.c",
-                    "{crate}/patched/setjmp-Windows-wrapper-X64.asm",
+                    "{crate}/extra/setjmp-Windows-wrapper-X64.asm",
                 ])
             }
         }
@@ -176,7 +176,7 @@ impl VirtualMachine {
     /// Return a list of include directories for a given build taregt platform
     fn includes(target: &BuilderTarget) -> Vec<&str> {
         let mut includes = [
-            "{crate}/patched",
+            "{crate}/extra",
             "{sources}/extracted/vm/include/common",
             "{sources}/include",
             "{sources}/include/pharovm",
@@ -193,7 +193,6 @@ impl VirtualMachine {
                 includes.push("{sources}/extracted/vm/include/unix");
             }
             BuilderTarget::Windows => {
-                includes.push("{crate}/patched/extracted/vm/include/win");
                 includes.push("{sources}/extracted/vm/include/win");
                 includes.push("{ output }/pthreads/lib/x64/{ profile }");
             }

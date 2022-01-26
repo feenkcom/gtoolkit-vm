@@ -25,18 +25,18 @@ pub static MACOSX_DEPLOYMENT_TARGET: &str = "10.8";
 /// Possible parameters
 ///  - VM_CLIENT_VMMAKER to use a specific VM to run a VM Maker image
 fn build() -> anyhow::Result<()> {
-    let vm = VirtualMachine::new()?;
-    vm.compile();
+    // let vm = VirtualMachine::new()?;
+    // vm.compile();
+    //
+    // // export the vm info to json
+    // let json = serde_json::to_string_pretty(&vm)?;
+    // let file_path = vm.get_core().artefact_directory().join("vm-info.json");
+    // let mut file = std::fs::File::create(file_path)?;
+    // writeln!(&mut file, "{}", json).unwrap();
 
-    // export the vm info to json
-    let json = serde_json::to_string_pretty(&vm)?;
-    let file_path = vm.get_core().artefact_directory().join("vm-info.json");
-    let mut file = std::fs::File::create(file_path)?;
-    writeln!(&mut file, "{}", json).unwrap();
-
-    // let builder = VirtualMachine::builder()?;
-    // builder.link_libraries();
-    // builder.generate_bindings();
+    let builder = VirtualMachine::builder()?;
+    builder.link_libraries();
+    builder.generate_bindings();
 
     Ok(())
 }

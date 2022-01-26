@@ -3,7 +3,7 @@ use crate::bindings::sqExport;
 use crate::prelude::{Handle, NativeAccess, NativeClone, NativeDrop};
 use std::ffi::{CStr, CString};
 use std::fmt::{Debug, Formatter};
-use std::os::raw::c_char;
+use std::os::raw::{c_char, c_void};
 
 pub type NamedPrimitive = Handle<sqExport>;
 
@@ -46,11 +46,11 @@ impl NamedPrimitive {
         self
     }
 
-    pub fn primitive_address(&self) -> *const std::os::raw::c_void {
+    pub fn primitive_address(&self) -> *const c_void {
         self.native().primitive_address()
     }
 
-    pub fn with_primitive_address(mut self, address: impl Into<*const std::os::raw::c_void>) -> Self {
+    pub fn with_primitive_address(mut self, address: impl Into<*const c_void>) -> Self {
         self.native_mut().set_primitive_address(address.into());
         self
     }
@@ -244,4 +244,3 @@ mod tests {
         assert_eq!(export.primitive_address().is_null(), true);
     }
 }
-

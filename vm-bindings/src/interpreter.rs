@@ -1,10 +1,11 @@
 use crate::bindings::{
-    free, installErrorHandlers, logLevel, osCogStackPageHeadroom, pluginExports,
+    free, getVMExports, installErrorHandlers, logLevel, osCogStackPageHeadroom,
     registerCurrentThreadToHandleExceptions, setProcessArguments, setProcessEnvironmentVector,
-    sqExport, sqInt, vm_init, vm_main_with_parameters, vm_run_interpreter,
+    setVMExports, sqExport, sqGetInterpreterProxy, sqInt, vm_init, vm_main_with_parameters,
+    vm_run_interpreter, VirtualMachine,
 };
 use crate::prelude::{Handle, NativeAccess, NativeClone, NativeDrop, NativeTransmutable};
-use crate::{NamedPrimitive, InterpreterParameters};
+use crate::{InterpreterParameters, InterpreterProxy, NamedPrimitive};
 use anyhow::{bail, Result};
 use std::ffi::{c_void, CStr, CString};
 use std::fmt::{Debug, Display, Formatter};
@@ -94,23 +95,26 @@ impl PharoInterpreter {
         };
     }
 
+    pub fn proxy(&self) -> &InterpreterProxy {
+        unsafe { InterpreterProxy::from_native_ref(&*sqGetInterpreterProxy()) }
+    }
+
     /// Return a slice of all named primitives that are exported from the vm
     pub fn vm_exports(&self) -> &[NamedPrimitive] {
-        let vm_exports_ptr: *const NamedPrimitive = unsafe { pluginExports[0] } as *const NamedPrimitive;
+        let vm_exports_ptr: *const NamedPrimitive =
+            unsafe { getVMExports() } as *const NamedPrimitive;
         let length = NamedPrimitive::detect_exports_length(vm_exports_ptr);
         unsafe { std::slice::from_raw_parts(vm_exports_ptr, length) }
     }
 
     pub fn add_vm_export(&self, export: NamedPrimitive) {
-        let vm_exports_ptr: *mut NamedPrimitive = unsafe { pluginExports[0] } as *mut NamedPrimitive;
+        let vm_exports_ptr: *mut NamedPrimitive = unsafe { getVMExports() } as *mut NamedPrimitive;
         let length = NamedPrimitive::detect_exports_length(vm_exports_ptr);
 
         let mut new_vm_exports = self
             .vm_exports()
             .iter()
-            .map(|each| {
-                each.clone()
-            })
+            .map(|each| each.clone())
             .collect::<Vec<NamedPrimitive>>();
         new_vm_exports.push(export);
         new_vm_exports.push(NamedPrimitive::null());
@@ -125,12 +129,13 @@ impl PharoInterpreter {
         }
         let vm_exports_ptr = new_vm_exports.as_mut_ptr() as *mut sqExport;
         std::mem::forget(new_vm_exports);
-        unsafe { pluginExports[0] = vm_exports_ptr };
+        unsafe { setVMExports(vm_exports_ptr) };
     }
 
     // re-allocate the vm-exports memory using rust allocator so that we can modify the exports
     fn initialize_vm_exports(&self) {
-        let vm_exports_ptr: *const NamedPrimitive = unsafe { pluginExports[0] } as *const NamedPrimitive;
+        let vm_exports_ptr: *const NamedPrimitive =
+            unsafe { getVMExports() } as *const NamedPrimitive;
         let length = NamedPrimitive::detect_exports_length(vm_exports_ptr);
         let vm_exports = unsafe { std::slice::from_raw_parts(vm_exports_ptr, length + 1) };
         let mut vm_exports_vec = vm_exports
@@ -143,24 +148,9 @@ impl PharoInterpreter {
         }
         let vm_exports_ptr = vm_exports_vec.as_mut_ptr() as *mut sqExport;
         std::mem::forget(vm_exports_vec);
-        unsafe { pluginExports[0] = vm_exports_ptr };
+        unsafe { setVMExports(vm_exports_ptr) };
     }
 }
-
-#[derive(Copy, Clone, Debug)]
-#[repr(transparent)]
-pub struct ObjectPointer(sqInt);
-impl NativeTransmutable<sqInt> for ObjectPointer {}
-
-#[derive(Copy, Clone, Debug)]
-#[repr(transparent)]
-pub struct ObjectFieldIndex(sqInt);
-impl NativeTransmutable<sqInt> for ObjectFieldIndex {}
-
-#[derive(Copy, Clone, Debug)]
-#[repr(transparent)]
-pub struct StackOffset(sqInt);
-impl NativeTransmutable<sqInt> for StackOffset {}
 
 #[derive(Debug, Clone)]
 #[repr(u8)]
