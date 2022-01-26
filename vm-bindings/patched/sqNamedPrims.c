@@ -16,13 +16,6 @@
 #include "pharovm/sqNamedPrims.h"
 #include "pharovm/debug.h"
 
-EXPORT(sqExport) *pluginExports[] = {
-	vm_exports,
-	os_exports,
-//	SecurityPlugin_exports,
-	NULL
-};
-
 typedef struct ModuleEntry {
 	struct ModuleEntry *next;
 	void *handle;
