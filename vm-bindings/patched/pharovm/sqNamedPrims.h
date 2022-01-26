@@ -6,4 +6,4 @@ typedef struct {
 
 extern sqExport vm_exports[];
 extern sqExport os_exports[];
-extern sqExport *pluginExports[];
+extern sqExport *pluginExports[3];
