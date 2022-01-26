@@ -1,0 +1,3 @@
+int getOsCogStackPageHeadroom() {
+    return osCogStackPageHeadroom();
+}

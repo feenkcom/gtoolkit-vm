@@ -1,5 +1,5 @@
 use crate::bindings::{
-    free, getVMExports, installErrorHandlers, logLevel, osCogStackPageHeadroom,
+    free, getVMExports, installErrorHandlers, logLevel, getOsCogStackPageHeadroom,
     registerCurrentThreadToHandleExceptions, setProcessArguments, setProcessEnvironmentVector,
     setVMExports, sqExport, sqGetInterpreterProxy, sqInt, vm_init, vm_main_with_parameters,
     vm_run_interpreter, VirtualMachine,
@@ -61,7 +61,7 @@ impl PharoInterpreter {
                 self.parameters.native().processArgv,
             )
         };
-        unsafe { osCogStackPageHeadroom() };
+        unsafe { getOsCogStackPageHeadroom() };
     }
 
     /// Initializes the vm and runs the interpreter.

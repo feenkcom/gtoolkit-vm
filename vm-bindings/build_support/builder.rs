@@ -120,7 +120,7 @@ pub trait Builder: Debug {
             .allowlist_function("installErrorHandlers")
             .allowlist_function("setProcessArguments")
             .allowlist_function("setProcessEnvironmentVector")
-            .allowlist_function("osCogStackPageHeadroom")
+            .allowlist_function("getOsCogStackPageHeadroom")
             .allowlist_function("logLevel")
             .allowlist_function("free")
             .allowlist_function("sqGetInterpreterProxy")
@@ -142,6 +142,14 @@ pub trait Builder: Debug {
                     .unwrap()
                     .join("extra")
                     .join("sqExport.h")
+                    .display()
+                    .to_string(),
+            )
+            .header(
+                std::env::current_dir()
+                    .unwrap()
+                    .join("extra")
+                    .join("osCogStackPageHeadroom.h")
                     .display()
                     .to_string(),
             )

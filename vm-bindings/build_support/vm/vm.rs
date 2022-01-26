@@ -103,8 +103,7 @@ impl VirtualMachine {
             "{generated}/vm/src/gcc3x-cointerp.c",
             // support sources
             "{sources}/src/debug.c",
-            //"{sources}/src/utils.c",
-            "{crate}/extra/utils.c",
+            "{sources}/src/utils.c",
             "{sources}/src/errorCode.c",
             "{sources}/src/nullDisplay.c",
             "{sources}/src/externalPrimitives.c",
@@ -124,6 +123,7 @@ impl VirtualMachine {
             "{sources}/extracted/vm/src/common/sqExternalSemaphores.c",
             "{sources}/extracted/vm/src/common/sqTicker.c",
             "{crate}/extra/sqExport.c",
+            "{crate}/extra/osCogStackPageHeadroom.c",
         ]
         .to_vec();
 
