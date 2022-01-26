@@ -3,16 +3,14 @@ use crate::bindings::{
     getSqGetInterpreterProxy as sqGetInterpreterProxy, getVMExports, installErrorHandlers,
     logLevel, registerCurrentThreadToHandleExceptions, setProcessArguments,
     setProcessEnvironmentVector, setVMExports, sqExport, sqInt, vm_init, vm_main_with_parameters,
-    vm_run_interpreter, VirtualMachine,
+    vm_parameters_ensure_interactive_image_parameter, vm_run_interpreter, VirtualMachine,
 };
-use crate::prelude::{Handle, NativeAccess, NativeClone, NativeDrop, NativeTransmutable};
+use crate::prelude::NativeAccess;
 use crate::{InterpreterParameters, InterpreterProxy, NamedPrimitive};
 use anyhow::{bail, Result};
-use std::ffi::{c_void, CStr, CString};
-use std::fmt::{Debug, Display, Formatter};
-use std::os::raw::{c_char, c_int};
+use std::fmt::Debug;
+use std::os::raw::c_int;
 use std::panic;
-use std::sync::mpsc::Sender;
 use std::sync::Arc;
 use std::thread::JoinHandle;
 
@@ -55,13 +53,15 @@ impl PharoInterpreter {
     }
 
     fn prepare_environment(&self) {
-        unsafe { setProcessEnvironmentVector(self.parameters.native().environmentVector) };
+        unsafe { vm_parameters_ensure_interactive_image_parameter(self.parameters.native_mut_force()) };
+        unsafe { installErrorHandlers() };
         unsafe {
             setProcessArguments(
                 self.parameters.native().processArgc,
                 self.parameters.native().processArgv,
             )
         };
+        unsafe { setProcessEnvironmentVector(self.parameters.native().environmentVector) };
         unsafe { osCogStackPageHeadroom() };
     }
 

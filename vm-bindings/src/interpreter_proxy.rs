@@ -1,5 +1,5 @@
-use crate::bindings::{sqInt, usqInt, VirtualMachine as sqInterpreterProxy};
-use std::ffi::{CStr, CString};
+use crate::bindings::{sqInt, VirtualMachine as sqInterpreterProxy};
+use std::ffi::CString;
 use std::mem::size_of;
 
 use crate::prelude::{Handle, NativeAccess, NativeDrop, NativeTransmutable};
