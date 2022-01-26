@@ -20,6 +20,8 @@ impl Constellation {
         let (event_loop, sender) = EventLoop::new();
         let vm = Arc::new(VirtualMachine::new(parameters, sender));
         unsafe { VIRTUAL_MACHINE = Some(vm.clone()) };
+        println!("{:?}", vm.interpreter.vm_exports());
+        println!("{:?}", vm.interpreter.os_exports());
         vm.start().unwrap();
         // let join = vm.start_in_worker().unwrap();
         // let result = join.join().unwrap();

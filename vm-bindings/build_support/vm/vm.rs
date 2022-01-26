@@ -239,6 +239,7 @@ impl VirtualMachine {
         core.define("STACKVM", "0");
         core.define("PharoVM", "1");
         core.define("SPURVM", "1");
+        core.define("COGVM", "1");
         core.define("ASYNC_FFI_QUEUE", "1");
         core.define("ARCH", "64");
         core.define("VM_LABEL(foo)", "0");
