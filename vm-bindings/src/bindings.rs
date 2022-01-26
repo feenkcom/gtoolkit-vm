@@ -6,3 +6,7 @@
 #![allow(improper_ctypes)]
 
 include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
+
+extern "C" {
+    pub static mut pluginExports: [*mut sqExport; 3usize];
+}

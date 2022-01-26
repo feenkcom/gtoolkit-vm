@@ -123,8 +123,11 @@ pub trait Builder: Debug {
             .allowlist_function("osCogStackPageHeadroom")
             .allowlist_function("logLevel")
             .allowlist_function("free")
+            .allowlist_function("sqGetInterpreterProxy")
             .allowlist_type("sqInt")
-            .allowlist_var("pluginExports")
+            .allowlist_type("usqInt")
+            .allowlist_type("sqExport")
+            .allowlist_type("VirtualMachine")
             .header(
                 include_dir
                     .join("pharovm")
