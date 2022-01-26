@@ -30,7 +30,7 @@ all_plugins = [
     "unix_os_process_plugin",
     "uuid_plugin" ]
 # Enables all features, such as ffi and all plugins
-full = ["immutability", "inline_memory_accessors", "ffi", "threaded_ffi", "vm_in_worker_thread","all_plugins"]
+full = ["immutability", "inline_memory_accessors", "ffi", "threaded_ffi", "all_plugins"]
 gnuisation = []
 # Include primitives to make objects readonly
 immutability = []
