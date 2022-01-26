@@ -1,4 +1,5 @@
 #![windows_subsystem = "console"]
+#[macro_use]
 extern crate vm_bindings;
 
 pub(crate) mod platform;

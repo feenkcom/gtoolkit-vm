@@ -4,7 +4,7 @@ use crate::bindings::{
     sqExport, sqInt, vm_init, vm_main_with_parameters, vm_run_interpreter,
 };
 use crate::prelude::{Handle, NativeAccess, NativeClone, NativeDrop, NativeTransmutable};
-use crate::{Export, InterpreterParameters};
+use crate::{NamedPrimitive, InterpreterParameters};
 use anyhow::{bail, Result};
 use std::ffi::{c_void, CStr, CString};
 use std::fmt::{Debug, Display, Formatter};
@@ -24,7 +24,9 @@ unsafe impl Sync for PharoInterpreter {}
 
 impl PharoInterpreter {
     pub fn new(parameters: InterpreterParameters) -> Self {
-        Self { parameters }
+        let interpreter = Self { parameters };
+        interpreter.initialize_vm_exports();
+        interpreter
     }
 
     /// Set the logLevel to use in the VM
@@ -93,24 +95,55 @@ impl PharoInterpreter {
     }
 
     /// Return a slice of all named primitives that are exported from the vm
-    pub fn vm_exports(&self) -> &[Export] {
-        let plugin_exports: [*mut sqExport; 3usize] = unsafe { pluginExports };
-
-        let vm_exports_ptr: *const Export = plugin_exports[0] as *const Export;
-        let length = Export::detect_exports_length(vm_exports_ptr);
+    pub fn vm_exports(&self) -> &[NamedPrimitive] {
+        let vm_exports_ptr: *const NamedPrimitive = unsafe { pluginExports[0] } as *const NamedPrimitive;
+        let length = NamedPrimitive::detect_exports_length(vm_exports_ptr);
         unsafe { std::slice::from_raw_parts(vm_exports_ptr, length) }
     }
 
-    pub fn add_vm_export(&self, export: Export) {
+    pub fn add_vm_export(&self, export: NamedPrimitive) {
+        let vm_exports_ptr: *mut NamedPrimitive = unsafe { pluginExports[0] } as *mut NamedPrimitive;
+        let length = NamedPrimitive::detect_exports_length(vm_exports_ptr);
 
+        let mut new_vm_exports = self
+            .vm_exports()
+            .iter()
+            .map(|each| {
+                each.clone()
+            })
+            .collect::<Vec<NamedPrimitive>>();
+        new_vm_exports.push(export);
+        new_vm_exports.push(NamedPrimitive::null());
+
+        // the `length + 1` element is part if the vector, we should take it into account
+        let mut vm_exports = unsafe { Vec::from_raw_parts(vm_exports_ptr, length + 1, length + 1) };
+        drop(vm_exports);
+
+        new_vm_exports.shrink_to_fit();
+        if new_vm_exports.len() != new_vm_exports.capacity() {
+            panic!("Failed to shrink the vector");
+        }
+        let vm_exports_ptr = new_vm_exports.as_mut_ptr() as *mut sqExport;
+        std::mem::forget(new_vm_exports);
+        unsafe { pluginExports[0] = vm_exports_ptr };
     }
 
-    pub fn os_exports(&self) -> &[Export] {
-        let plugin_exports: [*mut sqExport; 3usize] = unsafe { pluginExports };
-
-        let vm_exports_ptr: *const Export = plugin_exports[1] as *const Export;
-        let length = Export::detect_exports_length(vm_exports_ptr);
-        unsafe { std::slice::from_raw_parts(vm_exports_ptr, length) }
+    // re-allocate the vm-exports memory using rust allocator so that we can modify the exports
+    fn initialize_vm_exports(&self) {
+        let vm_exports_ptr: *const NamedPrimitive = unsafe { pluginExports[0] } as *const NamedPrimitive;
+        let length = NamedPrimitive::detect_exports_length(vm_exports_ptr);
+        let vm_exports = unsafe { std::slice::from_raw_parts(vm_exports_ptr, length + 1) };
+        let mut vm_exports_vec = vm_exports
+            .iter()
+            .map(|each_export| each_export.clone())
+            .collect::<Vec<NamedPrimitive>>();
+        vm_exports_vec.shrink_to_fit();
+        if vm_exports_vec.len() != vm_exports_vec.capacity() {
+            panic!("Failed to shrink the vector");
+        }
+        let vm_exports_ptr = vm_exports_vec.as_mut_ptr() as *mut sqExport;
+        std::mem::forget(vm_exports_vec);
+        unsafe { pluginExports[0] = vm_exports_ptr };
     }
 }
 

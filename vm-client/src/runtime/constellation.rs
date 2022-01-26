@@ -1,6 +1,6 @@
 use crate::{EventLoop, VirtualMachine};
 use std::sync::Arc;
-use vm_bindings::InterpreterParameters;
+use vm_bindings::{NamedPrimitive, InterpreterParameters, LogLevel};
 
 #[no_mangle]
 pub static mut VIRTUAL_MACHINE: Option<Arc<VirtualMachine>> = None;
@@ -18,13 +18,11 @@ pub struct Constellation;
 impl Constellation {
     pub fn run(parameters: InterpreterParameters) {
         let (event_loop, sender) = EventLoop::new();
+
         let vm = Arc::new(VirtualMachine::new(parameters, sender));
         unsafe { VIRTUAL_MACHINE = Some(vm.clone()) };
-        println!("{:?}", vm.interpreter.vm_exports());
-        println!("{:?}", vm.interpreter.os_exports());
+
+        vm.add_primitive(primitive!(primitiveGetAddressOfGToolkitVM));
         vm.start().unwrap();
-        // let join = vm.start_in_worker().unwrap();
-        // let result = join.join().unwrap();
-        // result.unwrap();
     }
 }

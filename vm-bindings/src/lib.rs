@@ -7,4 +7,4 @@ mod export;
 
 pub use interpreter::{LogLevel, PharoInterpreter};
 pub use parameters::InterpreterParameters;
-pub use export::Export;
+pub use export::NamedPrimitive;

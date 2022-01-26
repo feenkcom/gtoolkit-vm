@@ -3,6 +3,7 @@
 extern crate dirs;
 extern crate nfd2;
 extern crate thiserror;
+#[macro_use]
 extern crate vm_bindings;
 #[macro_use]
 extern crate log;

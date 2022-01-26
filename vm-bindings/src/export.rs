@@ -1,16 +1,33 @@
 use crate::bindings::sqExport;
 
+use crate::prelude::{Handle, NativeAccess, NativeClone, NativeDrop};
 use std::ffi::{CStr, CString};
 use std::fmt::{Debug, Formatter};
 use std::os::raw::c_char;
-use crate::prelude::{Handle, NativeAccess, NativeClone, NativeDrop};
 
-pub type Export = Handle<sqExport>;
+pub type NamedPrimitive = Handle<sqExport>;
 
-impl Export {
+#[macro_export]
+macro_rules! primitive {
+    ($func_name:ident) => {
+        NamedPrimitive::new()
+            .with_plugin_name("")
+            .with_primitive_name(stringify!($func_name))
+            .with_primitive_address($func_name as *const std::os::raw::c_void)
+    };
+}
+
+impl NamedPrimitive {
     pub fn new() -> Self {
         Self::from_native_c(sqExport::new())
+            .with_plugin_name("")
+            .with_primitive_name("")
     }
+
+    pub fn null() -> Self {
+        Self::from_native_c(sqExport::new())
+    }
+
     pub fn plugin_name(&self) -> &str {
         self.native().plugin_name()
     }
@@ -33,7 +50,12 @@ impl Export {
         self.native().primitive_address()
     }
 
-    pub(crate) fn detect_exports_length(exports: *const Export) -> usize {
+    pub fn with_primitive_address(mut self, address: impl Into<*const std::os::raw::c_void>) -> Self {
+        self.native_mut().set_primitive_address(address.into());
+        self
+    }
+
+    pub(crate) fn detect_exports_length(exports: *const NamedPrimitive) -> usize {
         let exports = exports as *const sqExport;
 
         let mut length = 0 as usize;
@@ -57,7 +79,7 @@ impl sqExport {
         Self {
             pluginName: std::ptr::null_mut(),
             primitiveName: std::ptr::null_mut(),
-            primitiveAddress: std::ptr::null_mut()
+            primitiveAddress: std::ptr::null_mut(),
         }
     }
 
@@ -130,7 +152,7 @@ impl sqExport {
             .unwrap()
     }
 
-    pub (crate) fn is_valid(&self) -> bool {
+    pub(crate) fn is_valid(&self) -> bool {
         if self.primitiveName.is_null() {
             return false;
         }
@@ -167,10 +189,11 @@ impl NativeClone for sqExport {
     }
 }
 
-impl Debug for Export {
+impl Debug for NamedPrimitive {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Export")
             .field("plugin_name", &self.plugin_name())
+            .field("plugin_name (ptr)", &self.native().pluginName)
             .field("primitive_name", &self.primitive_name())
             .field("primitive_address", &self.primitive_address())
             .finish()
@@ -197,7 +220,7 @@ mod tests {
 
     #[test]
     fn new_export() {
-        let mut export = Export::new();
+        let mut export = NamedPrimitive::new();
         assert_eq!(export.plugin_name(), "");
         assert_eq!(export.primitive_name(), "");
         assert_eq!(export.primitive_address().is_null(), true);
@@ -205,7 +228,7 @@ mod tests {
 
     #[test]
     fn export_with_plugin_name() {
-        let mut export = Export::new();
+        let mut export = NamedPrimitive::new();
         export = export.with_plugin_name("MyPlugin");
         assert_eq!(export.plugin_name(), "MyPlugin");
         assert_eq!(export.primitive_name(), "");
@@ -214,11 +237,11 @@ mod tests {
 
     #[test]
     fn export_with_primitive_name() {
-        let mut export = Export::new();
+        let mut export = NamedPrimitive::new();
         export = export.with_primitive_name("myPrimitive");
         assert_eq!(export.plugin_name(), "");
         assert_eq!(export.primitive_name(), "myPrimitive");
         assert_eq!(export.primitive_address().is_null(), true);
     }
-
 }
+

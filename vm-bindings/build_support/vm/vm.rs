@@ -103,7 +103,8 @@ impl VirtualMachine {
             "{generated}/vm/src/gcc3x-cointerp.c",
             // support sources
             "{sources}/src/debug.c",
-            "{sources}/src/utils.c",
+            //"{sources}/src/utils.c",
+            "{crate}/patched/utils.c",
             "{sources}/src/errorCode.c",
             "{sources}/src/nullDisplay.c",
             "{sources}/src/externalPrimitives.c",
