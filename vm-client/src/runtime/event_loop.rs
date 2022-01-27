@@ -1,11 +1,17 @@
 use crate::{ApplicationError, Result};
+use libffi::high::call;
+use libffi::low::{ffi_cif, ffi_type, CodePtr};
+use std::fmt::{Debug, Formatter};
+use std::intrinsics::transmute;
+use std::os::raw::c_void;
 use std::sync::mpsc::{channel, Receiver, RecvError, Sender};
+use std::sync::{Arc, Mutex};
 use std::thread::JoinHandle;
 
 #[derive(Debug, Clone)]
 pub enum EventLoopMessage {
     Terminate,
-    //Call(GToolkitCallout),
+    Call(Arc<Mutex<EventLoopCallout>>),
     WakeUp,
 }
 
@@ -47,7 +53,54 @@ impl EventLoop {
             EventLoopMessage::WakeUp => {
                 // wake up!
             }
+            EventLoopMessage::Call(callout) => callout.lock().unwrap().call(),
         }
         Ok(true)
+    }
+}
+
+#[repr(C)]
+pub struct EventLoopCallout {
+    pub(crate) cif: *mut ffi_cif,
+    pub(crate) func: CodePtr,
+    pub(crate) args: Option<*mut *mut c_void>,
+    pub(crate) result: Option<*mut c_void>,
+    pub(crate) callback: Option<Box<dyn FnOnce()>>,
+}
+
+impl EventLoopCallout {
+    pub fn call(&mut self) {
+        unsafe {
+            libffi::raw::ffi_call(
+                self.cif,
+                Some(*unsafe { self.func.as_safe_fun() }),
+                self.result.unwrap_or(std::ptr::null_mut()),
+                self.args.unwrap_or(std::ptr::null_mut()),
+            )
+        }
+        let callback = self.callback.take().unwrap();
+        callback();
+    }
+
+    pub fn return_type(&self) -> &ffi_type {
+        let cif: &ffi_cif = unsafe { transmute(self.cif) };
+        let rtype: &ffi_type = unsafe { transmute(cif.rtype) };
+        rtype
+    }
+
+    pub fn number_of_arguments(&self) -> usize {
+        let cif: &ffi_cif = unsafe { transmute(self.cif) };
+        cif.nargs as usize
+    }
+}
+
+impl Debug for EventLoopCallout {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Callout")
+            .field("cif", &self.cif)
+            .field("func", &self.func)
+            .field("args", &self.args)
+            .field("result", &self.result)
+            .finish()
     }
 }

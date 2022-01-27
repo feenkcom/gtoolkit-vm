@@ -1,37 +1,46 @@
-use crate::EventLoopMessage;
+use crate::{event_loop_callout, EventLoopCallout, EventLoopMessage};
 use anyhow::Result;
+use libffi::high::call;
+use libffi::low::{ffi_cif, ffi_type, CodePtr};
+use libffi::middle::Cif;
+use std::mem::{size_of, transmute};
+use std::os::raw::c_void;
+use std::process::exit;
 use std::sync::mpsc::Sender;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::thread::JoinHandle;
+use std::time::Duration;
 use vm_bindings::{
     InterpreterParameters, InterpreterProxy, LogLevel, NamedPrimitive, ObjectFieldIndex,
-    PharoInterpreter,
+    PharoInterpreter, StackOffset,
 };
 
 #[no_mangle]
 pub static mut VIRTUAL_MACHINE: Option<Arc<VirtualMachine>> = None;
-fn vm() -> &'static Arc<VirtualMachine> {
+pub fn vm() -> &'static Arc<VirtualMachine> {
     unsafe { VIRTUAL_MACHINE.as_ref().expect("VM must be initialized") }
 }
 
 #[derive(Debug)]
 pub struct VirtualMachine {
     interpreter: Arc<PharoInterpreter>,
-    event_loop_sender: Sender<EventLoopMessage>,
+    event_loop_sender: Option<Sender<EventLoopMessage>>,
 }
 
 impl VirtualMachine {
+    /// Create a Virtual Machine for given interpreter parameters.
+    /// If event loop sender is `None` - start the virtual machine
+    /// in the main thread rather than the worker thread
     pub fn new(
         parameters: InterpreterParameters,
-        event_loop_sender: Sender<EventLoopMessage>,
+        event_loop_sender: Option<Sender<EventLoopMessage>>,
     ) -> Self {
         let vm = Self {
             interpreter: Arc::new(PharoInterpreter::new(parameters)),
             event_loop_sender,
         };
-
-        vm.add_primitive(primitive!(is_virtual_machine));
         vm.add_primitive(primitive!(get_named_primitives));
+        vm.add_primitive(primitive!(event_loop_callout));
         vm
     }
 
@@ -50,18 +59,37 @@ impl VirtualMachine {
         self.interpreter.proxy()
     }
 
-    /// Starts the interpreter in a worker thread
-    pub fn start_in_worker(&self) -> Result<JoinHandle<Result<()>>> {
-        self.interpreter.clone().start_in_worker()
+    /// Launch the virtual machine either in the main thread or in the worker thread
+    /// depending on how the virtual machine was instantiated.
+    pub fn start(&self) -> Result<Option<JoinHandle<Result<()>>>> {
+        if self.event_loop_sender.is_some() {
+            Ok(Some(self.interpreter.clone().start_in_worker()?))
+        } else {
+            self.interpreter.clone().start()?;
+            Ok(None)
+        }
     }
 
-    /// Starts the interpreter in a worker thread
-    pub fn start(&self) -> Result<()> {
-        self.interpreter.clone().start()
-    }
-
+    /// Register this virtual machine in a global variable. There can only be one virtual machine running in one memory space
     pub fn register(self: Arc<Self>) {
         unsafe { VIRTUAL_MACHINE = Some(self) };
+    }
+
+    pub fn send(&self, message: EventLoopMessage) -> Result<()> {
+        if let Some(sender) = self.event_loop_sender.as_ref() {
+            sender.send(message).unwrap();
+        } else {
+            match message {
+                EventLoopMessage::Call(callout) => {
+                    callout.lock().unwrap().call();
+                }
+                EventLoopMessage::Terminate => {
+                    exit(0);
+                }
+                EventLoopMessage::WakeUp => {}
+            }
+        }
+        Ok(())
     }
 }
 

@@ -47,13 +47,16 @@ impl PharoInterpreter {
 
         let vm = self.clone();
         std::thread::Builder::new()
+            .name("PharoVM".to_string())
             .stack_size(512 * 1024)
             .spawn(move || vm.run())
             .map_err(|error| error.into())
     }
 
     fn prepare_environment(&self) {
-        unsafe { vm_parameters_ensure_interactive_image_parameter(self.parameters.native_mut_force()) };
+        unsafe {
+            vm_parameters_ensure_interactive_image_parameter(self.parameters.native_mut_force())
+        };
         unsafe { installErrorHandlers() };
         unsafe {
             setProcessArguments(
@@ -133,7 +136,7 @@ impl PharoInterpreter {
         unsafe { setVMExports(vm_exports_ptr) };
     }
 
-    // re-allocate the vm-exports memory using rust allocator so that we can modify the exports
+    /// re-allocate the vm-exports memory using rust allocator so that we can modify the exports
     fn initialize_vm_exports(&self) {
         let vm_exports_ptr: *const NamedPrimitive =
             unsafe { getVMExports() } as *const NamedPrimitive;

@@ -28,6 +28,11 @@ fn main() {
                 .long("interactive")
                 .help("Start image in the interactive (UI) mode"),
         )
+        .arg(
+            Arg::new("worker")
+                .long("worker")
+                .help("Start image in the worker thread"),
+        )
         .get_matches();
 
     let image_path = match validate_user_image_file(matches.value_of("image")) {
@@ -40,9 +45,6 @@ fn main() {
 
     let mut vm_args: Vec<String> = vec![];
     vm_args.push(std::env::args().collect::<Vec<String>>()[0].to_owned());
-    if matches.is_present("worker") {
-        vm_args.push("--worker".to_string());
-    }
     vm_args.push(image_path.as_os_str().to_str().unwrap().to_owned());
 
     if let Some((external, sub_m)) = matches.subcommand() {
@@ -58,5 +60,10 @@ fn main() {
     parameters.set_image_file_name(image_path.as_os_str().to_str().unwrap().to_owned());
     parameters.set_is_interactive_session(matches.is_present("interactive"));
 
-    Constellation::run(parameters);
+    if matches.is_present("worker") {
+        Constellation::run_worker(parameters);
+    }
+    else {
+        Constellation::run(parameters);
+    }
 }

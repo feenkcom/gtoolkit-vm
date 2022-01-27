@@ -1,9 +1,20 @@
-use crate::bindings::{sqInt, VirtualMachine as sqInterpreterProxy};
+use crate::bindings::{
+    calloc, getHandler, malloc, memcpy, sqInt, VirtualMachine as sqInterpreterProxy,
+};
+
+#[cfg(feature = "ffi")]
+use libffi::low::ffi_type;
+#[cfg(feature = "ffi")]
+use libffi_sys::*;
+
 use std::ffi::CString;
-use std::mem::size_of;
+use std::mem::{size_of, transmute};
 
 use crate::prelude::{Handle, NativeAccess, NativeDrop, NativeTransmutable};
-use std::os::raw::{c_char, c_void};
+use anyhow::{bail, Result};
+use libffi::high::arg;
+use log::{log, Level};
+use std::os::raw::{c_char, c_double, c_float, c_int, c_ushort, c_void};
 
 pub type InterpreterProxy = Handle<sqInterpreterProxy>;
 impl NativeDrop for sqInterpreterProxy {
@@ -68,6 +79,10 @@ impl InterpreterProxy {
         }
     }
 
+    pub fn get_handler(&self, object: ObjectPointer) -> *mut c_void {
+        unsafe { getHandler(object.into_native()) }
+    }
+
     /// Return an item at an index within the indexable object (array, string, etc.).
     /// The index must start from 1, and not 0 like in Rust
     pub fn item_at(
@@ -122,6 +137,21 @@ impl InterpreterProxy {
         unsafe { function(object.into_native()) }
     }
 
+    pub fn is_character_object(&self, object: ObjectPointer) -> bool {
+        let function = self.native().isCharacterObject.unwrap();
+        unsafe { function(object.into_native()) != 0 }
+    }
+
+    pub fn character_value_of(&self, object: ObjectPointer) -> c_char {
+        let function = self.native().characterValueOf.unwrap();
+        unsafe { function(object.into_native()) as c_char }
+    }
+
+    pub fn fetch_float_at(&self, object: ObjectPointer, index: ObjectFieldIndex) -> c_double {
+        let function = self.native().fetchFloatofObject.unwrap();
+        unsafe { function(index.into_native(), object.into_native()) }
+    }
+
     pub fn instantiate_indexable_class_of_size(
         &self,
         class: ObjectPointer,
@@ -169,7 +199,7 @@ impl InterpreterProxy {
         ObjectPointer::from_native_c(oop)
     }
 
-    pub fn new_external_address(&self, address: *const c_void) -> ObjectPointer {
+    pub fn new_external_address<T>(&self, address: *const T) -> ObjectPointer {
         let external_address = self.instantiate_indexable_class_of_size(
             self.class_external_address(),
             size_of::<*mut c_void>(),
@@ -180,6 +210,215 @@ impl InterpreterProxy {
         };
         external_address
     }
+
+    /// Reads the float value from the array at a given index and store the value in a value holder at a given address.
+    /// *Important!* The value holder must be already pre-allocated to fit the float value
+    pub fn marshall_float_at(
+        &self,
+        array: ObjectPointer,
+        index: usize,
+        holder: *mut c_void,
+    ) -> Result<()> {
+        let value = self.fetch_float_at(array, ObjectFieldIndex::new(index));
+        if value > c_float::MAX as c_double {
+            bail!(
+                "Float argument ({}) at index {} exceeded the max value of c_float({})",
+                value,
+                index,
+                c_float::MAX
+            );
+        }
+        if value < c_float::MIN as c_double {
+            bail!(
+                "Float argument ({}) at index {} exceeded the min value of c_float({})",
+                value,
+                index,
+                c_float::MIN
+            );
+        }
+        write_value(value as c_float, holder);
+        Ok(())
+    }
+
+    /// Reads the double value from the array at a given index and store the value in a value holder at a given address.
+    /// *Important!* The value holder must be already pre-allocated to fit the double value
+    pub fn marshall_double_at(
+        &self,
+        array: ObjectPointer,
+        index: usize,
+        holder: *mut c_void,
+    ) -> Result<()> {
+        let value = self.fetch_float_at(array, ObjectFieldIndex::new(index));
+        write_value(value, holder);
+        Ok(())
+    }
+
+    /// Reads the uint8 value from the array at a given index and store the value in a value holder at a given address.
+    /// *Important!* The value holder must be already pre-allocated to fit the uint8 value
+    pub fn marshall_u8_at(
+        &self,
+        array: ObjectPointer,
+        index: usize,
+        holder: *mut c_void,
+    ) -> Result<()> {
+        let object = self.object_field_at(array, ObjectFieldIndex::new(index));
+        let value = if self.is_character_object(object) {
+            self.character_value_of(object) as sqInt
+        } else {
+            self.integer_value_of(object)
+        };
+
+        if value > u8::MAX as sqInt {
+            bail!(
+                "uint8 argument ({}) at index {} exceeded the max value of uint8({})",
+                value,
+                index,
+                u8::MAX
+            );
+        }
+        if value < u8::MIN as sqInt {
+            bail!(
+                "unit argument ({}) at index {} exceeded the min value of uint8({})",
+                value,
+                index,
+                u8::MIN
+            );
+        }
+
+        write_value(value as u8, holder);
+        Ok(())
+    }
+
+    #[cfg(feature = "ffi")]
+    pub fn marshall_argument_from_at_index_into_of_type_with_size(
+        &self,
+        arguments: ObjectPointer,
+        index: usize,
+        arg_type: &mut ffi_type,
+    ) -> Result<*mut c_void> {
+        let arg_holder = self.malloc(arg_type.size);
+
+        match arg_type.type_ as u32 {
+            FFI_TYPE_FLOAT => self.marshall_float_at(arguments, index, arg_holder)?,
+            FFI_TYPE_DOUBLE => self.marshall_double_at(arguments, index, arg_holder)?,
+            FFI_TYPE_UINT8 => self.marshall_u8_at(arguments, index, arg_holder)?,
+            FFI_TYPE_SINT8 => {}
+            FFI_TYPE_UINT16 => {}
+            FFI_TYPE_SINT16 => {}
+            FFI_TYPE_UINT32 => {}
+            FFI_TYPE_SINT32 => {}
+            FFI_TYPE_UINT64 => {}
+            FFI_TYPE_SINT64 => {}
+            FFI_TYPE_STRUCT => {}
+            FFI_TYPE_POINTER => {}
+            FFI_TYPE_VOID => {
+                bail!(
+                    "Void argument type of the argument at {} is not supported",
+                    index
+                );
+            }
+            FFI_TYPE_INT => {
+                bail!(
+                    "Int argument type of the argument at {} is not supported",
+                    index
+                );
+            }
+            FFI_TYPE_LONGDOUBLE => {
+                bail!(
+                    "Long argument type of the argument at {} is not supported",
+                    index
+                );
+            }
+            FFI_TYPE_COMPLEX => {
+                bail!(
+                    "Complex argument type of the argument at {} is not supported",
+                    index
+                );
+            }
+            _ => {
+                bail!(
+                    "Unknown type {} of the argument at {}",
+                    arg_type.type_,
+                    index
+                );
+            }
+        };
+
+        Ok(arg_holder)
+    }
+
+    //StackInterpreterPrimitives >> marshallArgumentFrom: argumentsArrayOop atIndex: i into: argHolder ofType: argType withSize: argTypeSize [
+    //
+    // 	<option: #FEATURE_FFI>
+    // 	[ argType ]
+    // 		caseOf:
+    // 			{([ FFI_TYPE_POINTER ]
+    // 				-> [ self marshallPointerFrom: argumentsArrayOop at: i into: argHolder ]).
+    // 			([ FFI_TYPE_STRUCT ]
+    // 				-> [ self marshallStructFrom: argumentsArrayOop at: i into: argHolder withSize: argTypeSize ]).
+    // 			([ FFI_TYPE_FLOAT ]
+    // 				-> [ self marshallFloatFrom: argumentsArrayOop at: i into: argHolder ]).
+    // 			([ FFI_TYPE_DOUBLE ]
+    // 				-> [ self marshallDoubleFrom: argumentsArrayOop at: i into: argHolder ]).
+    // 			([ FFI_TYPE_SINT8 ]
+    // 				-> [ self marshallSInt8From: argumentsArrayOop at: i into: argHolder ]).
+    // 			([ FFI_TYPE_UINT8 ]
+    // 				-> [ self marshallUInt8From: argumentsArrayOop at: i into: argHolder ]).
+    // 			([ FFI_TYPE_SINT16 ]
+    // 				-> [ self marshallSInt16From: argumentsArrayOop at: i into: argHolder ]).
+    // 			([ FFI_TYPE_UINT16 ]
+    // 				-> [ self marshallUInt16From: argumentsArrayOop at: i into: argHolder ]).
+    // 			([ FFI_TYPE_SINT32 ]
+    // 				-> [ self marshallSInt32From: argumentsArrayOop at: i into: argHolder ]).
+    // 			([ FFI_TYPE_UINT32 ]
+    // 				-> [ self marshallUInt32From: argumentsArrayOop at: i into: argHolder ]).
+    // 			([ FFI_TYPE_SINT64 ]
+    // 				-> [ self marshallSInt64From: argumentsArrayOop at: i into: argHolder ]).
+    // 			([ FFI_TYPE_UINT64 ]
+    // 				-> [ self marshallUInt64From: argumentsArrayOop at: i into: argHolder ])}
+    // 		otherwise: [ self primitiveFailFor: PrimErrBadArgument ]
+    // ]
+
+    // #[cfg(feature = "ffi")]
+    // pub fn marshall_and_push_return_value_of_type_popping(
+    //     &self,
+    //     return_holder: *mut c_void,
+    //     return_type: &ffi_type,
+    //     primitive_arguments_and_receiver_count: usize,
+    // ) {
+    //     unsafe {
+    //         let return_type_ptr: *mut ffi_type = return_type as *mut ffi_type;
+    //
+    //         marshallAndPushReturnValueFromofTypepoping(
+    //             return_holder as sqInt,
+    //             return_type_ptr,
+    //             primitive_arguments_and_receiver_count as sqInt,
+    //         )
+    //     };
+    // }
+
+    pub fn malloc(&self, bytes: usize) -> *mut c_void {
+        unsafe { malloc(bytes.try_into().unwrap()) }
+    }
+
+    pub fn calloc(&self, amount: usize, size: usize) -> *mut c_void {
+        unsafe { calloc(amount.try_into().unwrap(), size.try_into().unwrap()) }
+    }
+
+    pub fn primitive_fail(&self) {
+        let function = self.native().primitiveFail.unwrap();
+        unsafe { function() };
+    }
+
+    pub fn is_failed(&self) -> bool {
+        let function = self.native().failed.unwrap();
+        unsafe { function() != 0 }
+    }
+}
+
+fn write_value<T>(value: T, holder: *mut c_void) {
+    let holder = holder as *mut T;
+    unsafe { *holder = value };
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -200,4 +439,9 @@ impl ObjectFieldIndex {
 #[derive(Copy, Clone, Debug)]
 #[repr(transparent)]
 pub struct StackOffset(sqInt);
+impl StackOffset {
+    pub fn new(offset: i32) -> Self {
+        Self(offset as sqInt)
+    }
+}
 impl NativeTransmutable<sqInt> for StackOffset {}
