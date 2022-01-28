@@ -131,7 +131,7 @@ pub trait Builder: Debug {
             .allowlist_function("getSqGetInterpreterProxy")
             .allowlist_function("getVMExports")
             .allowlist_function("setVMExports")
-            .allowlist_function("getHandler")
+            .allowlist_function("exportGetHandler")
             .allowlist_type("sqInt")
             .allowlist_type("usqInt")
             .allowlist_type("sqExport")
@@ -153,6 +153,12 @@ pub trait Builder: Debug {
             .header(
                 extra_headers
                     .join("sqGetInterpreterProxy.h")
+                    .display()
+                    .to_string(),
+            )
+            .header(
+                extra_headers
+                    .join("getHandler.h")
                     .display()
                     .to_string(),
             )

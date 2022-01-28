@@ -2,7 +2,7 @@ use crate::bindings::{
     free, getOsCogStackPageHeadroom as osCogStackPageHeadroom,
     getSqGetInterpreterProxy as sqGetInterpreterProxy, getVMExports, installErrorHandlers,
     logLevel, registerCurrentThreadToHandleExceptions, setProcessArguments,
-    setProcessEnvironmentVector, setVMExports, sqExport, sqInt, vm_init, vm_main_with_parameters,
+    setProcessEnvironmentVector, setVMExports, sqExport, sqInt, vm_init,
     vm_parameters_ensure_interactive_image_parameter, vm_run_interpreter, VirtualMachine,
 };
 use crate::prelude::NativeAccess;

@@ -1,5 +1,5 @@
 use crate::bindings::{
-    calloc, getHandler, malloc, memcpy, sqInt, VirtualMachine as sqInterpreterProxy,
+    calloc, exportGetHandler as getHandler, malloc, memcpy, sqInt, VirtualMachine as sqInterpreterProxy,
 };
 
 #[cfg(feature = "ffi")]

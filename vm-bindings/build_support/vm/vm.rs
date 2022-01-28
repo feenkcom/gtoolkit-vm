@@ -107,7 +107,8 @@ impl VirtualMachine {
             "{sources}/src/errorCode.c",
             "{sources}/src/nullDisplay.c",
             "{sources}/src/externalPrimitives.c",
-            "{sources}/src/client.c",
+            //"{sources}/src/client.c",
+            "{crate}/extra/client.c",
             "{sources}/src/pathUtilities.c",
             "{sources}/src/parameterVector.c",
             "{sources}/src/parameters.c",
@@ -126,6 +127,7 @@ impl VirtualMachine {
             "{crate}/extra/sqExport.c",
             "{crate}/extra/osCogStackPageHeadroom.c",
             "{crate}/extra/sqGetInterpreterProxy.c",
+            "{crate}/extra/getHandler.c",
         ]
         .to_vec();
 
@@ -136,8 +138,6 @@ impl VirtualMachine {
                     "{sources}/extracted/vm/src/osx/aioOSX.c",
                     "{sources}/src/debugUnix.c",
                     "{sources}/src/utilsMac.mm",
-                    // Support sources
-                    "{sources}/src/fileDialogMac.m",
                     // Virtual Memory functions
                     "{sources}/src/memoryUnix.c",
                 ])
