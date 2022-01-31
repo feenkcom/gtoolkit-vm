@@ -7,7 +7,7 @@ use new_string_template::template::Template;
 use serde::{Serialize, Serializer};
 use std::collections::HashMap;
 use std::ffi::OsStr;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::rc::Rc;
 use to_absolute::canonicalize;
 

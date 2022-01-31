@@ -70,6 +70,7 @@ pipeline {
                         CERT = credentials('devcertificate')
                         APPLEPASSWORD = credentials('notarizepassword-manager')
                         MACOSX_DEPLOYMENT_TARGET = '10.10'
+                        VM_CLIENT_EXECUTABLE = "${WORKSPACE}/target/${TARGET}/release/bundle/${APP_NAME}.app/Contents/MacOS/${APP_NAME}-cli"
                     }
 
                     steps {
@@ -93,6 +94,8 @@ pipeline {
                                 --libraries-versions ${APP_LIBRARIES_VERSIONS} \
                                 --release \
                                 --verbose """
+
+                        sh "cargo test --package vm-client-tests"
 
                         sh "curl -o feenk-signer -LsS https://github.com/feenkcom/feenk-signer/releases/download/${FEENK_SIGNER_VERSION}/feenk-signer-${TARGET}"
                         sh "chmod +x feenk-signer"
@@ -116,6 +119,7 @@ pipeline {
                         PATH = "$HOME/.cargo/bin:/opt/homebrew/bin:$PATH"
                         CERT = credentials('devcertificate')
                         APPLEPASSWORD = credentials('notarizepassword-manager')
+                        VM_CLIENT_EXECUTABLE = "${WORKSPACE}/target/${TARGET}/release/bundle/${APP_NAME}.app/Contents/MacOS/${APP_NAME}-cli"
                     }
 
                     steps {
@@ -139,6 +143,8 @@ pipeline {
                                 --release \
                                 --verbose """
 
+                        sh "cargo test --package vm-client-tests"
+
                         sh "curl -o feenk-signer -LsS  https://github.com/feenkcom/feenk-signer/releases/download/${FEENK_SIGNER_VERSION}/feenk-signer-${TARGET}"
                         sh "chmod +x feenk-signer"
 
@@ -159,6 +165,7 @@ pipeline {
                     environment {
                         TARGET = "${LINUX_AMD64_TARGET}"
                         PATH = "$HOME/.cargo/bin:$PATH"
+                        VM_CLIENT_EXECUTABLE = "${WORKSPACE}/target/${TARGET}/release/bundle/${APP_NAME}/bin/${APP_NAME}-cli"
                     }
 
                     steps {
@@ -180,6 +187,8 @@ pipeline {
                                 --libraries-versions ${APP_LIBRARIES_VERSIONS} \
                                 --release \
                                 --verbose """
+
+                        sh "cargo test --package vm-client-tests"
 
                         sh """
                             cd target/${TARGET}/release/bundle/${APP_NAME}/
@@ -212,6 +221,7 @@ pipeline {
                         PERL_PATH = 'C:\\Strawberry\\perl\\site\\bin;C:\\Strawberry\\perl\\bin'
                         NASM_PATH  = 'C:\\Program Files\\NASM'
                         PATH = "${CARGO_PATH};${LIBCLANG_PATH};${MSBUILD_PATH};${CMAKE_PATH};${MSVC_PATH};${PERL_PATH};${NASM_PATH};$PATH"
+                        VM_CLIENT_EXECUTABLE = "${WORKSPACE}\\target\\${TARGET}\\release\\bundle\\${APP_NAME}\\bin\\${APP_NAME}-cli.exe"
                     }
 
                     steps {
@@ -233,6 +243,8 @@ pipeline {
                                 --icons icons/GlamorousToolkit.ico `
                                 --release `
                                 --verbose """
+
+                        powershell "cargo test --package vm-client-tests"
 
                         powershell "Compress-Archive -Path target/${TARGET}/release/bundle/${APP_NAME}/* -DestinationPath ${APP_NAME}-${TARGET}.zip"
                         stash includes: "${APP_NAME}-${TARGET}.zip", name: "${TARGET}"

@@ -1,7 +1,6 @@
 use crate::build_support::Dependency;
 use crate::{Builder, CompilationUnit, Core, Unit};
 use serde::Serialize;
-use std::path::Path;
 use std::rc::Rc;
 
 #[derive(Debug, Clone, Serialize)]

@@ -1,4 +1,5 @@
 use anyhow::{anyhow, Result};
+use semver::Version;
 use serde::Serialize;
 use std::ffi::c_void;
 use std::mem;
@@ -93,7 +94,7 @@ impl VirtualMachine {
         Ok(vmmaker)
     }
 
-    fn sources(target: &BuilderTarget) -> Vec<&str> {
+    fn sources(target: &BuilderTarget, build_info: &BuildInfo) -> Vec<&'static str> {
         let mut sources = [
             // generated interpreter sources
             "{generated}/vm/src/cogit.c",
@@ -158,17 +159,23 @@ impl VirtualMachine {
                     // Platform sources
                     "{sources}/extracted/vm/src/win/sqWin32SpurAlloc.c",
                     "{sources}/extracted/vm/src/win/aioWin.c",
-                    // Choose debugging sources based on the VM Version. Starting with v9.0.8
-                    // the sources moved
-                    "{sources}/src/debugWin.c",
-                    // "{sources}/src/win/winDebug.c",
-                    // "{sources}/src/win/winDebugMenu.c",
-                    // "{sources}/src/win/winDebugWindow.c",
-
                     // Support sources
                     "{sources}/src/fileDialogWin32.c",
                     "{crate}/extra/setjmp-Windows-wrapper-X64.asm",
-                ])
+                ]);
+
+                // Choose debugging sources based on the VM Version. Starting with v9.0.8
+                // the sources moved
+                let version = build_info.version().unwrap();
+                if version < &Version::new(9, 0, 8) {
+                    sources.extend(["{sources}/src/debugWin.c"]);
+                } else {
+                    sources.extend([
+                        "{sources}/src/win/winDebug.c",
+                        "{sources}/src/win/winDebugMenu.c",
+                        "{sources}/src/win/winDebugWindow.c",
+                    ]);
+                };
             }
         }
 
@@ -202,9 +209,9 @@ impl VirtualMachine {
         includes
     }
 
-    fn core(builder: Rc<dyn Builder>) -> Core {
+    fn core(builder: Rc<dyn Builder>, build_info: &BuildInfo) -> Core {
         let mut core = Core::new("PharoVMCore", builder.clone());
-        core.sources(Self::sources(&core.target()));
+        core.sources(Self::sources(&core.target(), build_info));
         core.includes(Self::includes(&core.target()));
 
         core.define_for_header("dirent.h", "HAVE_DIRENT_H");
@@ -338,7 +345,7 @@ impl VirtualMachine {
         let build_info = Self::build_info(builder.clone())?;
         let config = Self::config(builder.clone(), &build_info)?;
         let vmmaker = Self::vmmaker(builder.clone())?;
-        let core = Self::core(builder.clone());
+        let core = Self::core(builder.clone(), &build_info);
         let plugins = Self::plugins(&core);
 
         Ok(Self {

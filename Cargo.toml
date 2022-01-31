@@ -3,6 +3,7 @@
 members = [
     "vm-bindings",
     "vm-client",
+    "vm-client-tests",
     "vm-client-test-library"
 ]
 
