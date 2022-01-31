@@ -51,7 +51,7 @@ EXPORT(int) vm_init(VMParameters* parameters)
     ioInitTime();
 
 //#ifdef PHARO_VM_IN_WORKER_THREAD
-    ioVMThread = ioCurrentOSThread();
+//    ioVMThread = ioCurrentOSThread();
 //#endif
 
 	ioInitExternalSemaphores();
