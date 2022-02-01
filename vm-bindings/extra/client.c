@@ -50,9 +50,9 @@ EXPORT(int) vm_init(VMParameters* parameters)
 
     ioInitTime();
 
-//#ifdef PHARO_VM_IN_WORKER_THREAD
-//    ioVMThread = ioCurrentOSThread();
-//#endif
+#ifdef PHARO_VM_IN_WORKER_THREAD
+    ioVMThread = ioCurrentOSThread();
+#endif
 
 	ioInitExternalSemaphores();
 	setMaxStacksToPrint(parameters->maxStackFramesToPrint);

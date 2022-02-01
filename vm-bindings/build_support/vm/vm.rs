@@ -255,6 +255,8 @@ impl VirtualMachine {
         core.define("VM_LABEL(foo)", "0");
         core.define("SOURCE_PATH_SIZE", "80");
 
+        core.define("PHARO_VM_IN_WORKER_THREAD", "1");
+
         #[cfg(not(debug_assertions))]
         {
             core.define("NDEBUG", None);

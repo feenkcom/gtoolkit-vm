@@ -22,6 +22,7 @@ enum TFPrimitiveCallout {
     Receiver,
 }
 
+#[no_mangle]
 pub fn event_loop_callout() {
     let proxy = vm().proxy();
 
