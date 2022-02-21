@@ -4,6 +4,7 @@ use crate::bindings::{
     logLevel, registerCurrentThreadToHandleExceptions, setProcessArguments,
     setProcessEnvironmentVector, setVMExports, sqExport, sqInt, vm_init,
     vm_parameters_ensure_interactive_image_parameter, vm_run_interpreter, VirtualMachine,
+    setVmRunOnWorkerThread
 };
 use crate::prelude::NativeAccess;
 use crate::{InterpreterParameters, InterpreterProxy, NamedPrimitive};
@@ -44,11 +45,12 @@ impl PharoInterpreter {
     /// Launch the vm in a worker thread returning the Join handle
     pub fn start_in_worker(self: Arc<Self>) -> Result<JoinHandle<Result<()>>> {
         self.prepare_environment();
+        self.mark_as_running_in_worker_thread();
 
         let vm = self.clone();
         std::thread::Builder::new()
             .name("PharoVM".to_string())
-            .stack_size(512 * 1024)
+            .stack_size(512 * 1024 * 1024)
             .spawn(move || vm.run())
             .map_err(|error| error.into())
     }
@@ -97,6 +99,13 @@ impl PharoInterpreter {
         unsafe {
             vm_run_interpreter();
         };
+    }
+
+    /// Mark the interpreter as running in a worker thread
+    fn mark_as_running_in_worker_thread(&self) {
+        unsafe {
+            setVmRunOnWorkerThread(1);
+        }
     }
 
     pub fn proxy(&self) -> &InterpreterProxy {
