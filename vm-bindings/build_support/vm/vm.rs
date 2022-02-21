@@ -202,6 +202,7 @@ impl VirtualMachine {
                 includes.push("{sources}/extracted/vm/include/unix");
             }
             BuilderTarget::Windows => {
+                includes.push("{crate}/extra/extracted/vm/include/win");
                 includes.push("{sources}/extracted/vm/include/win");
                 includes.push("{ output }/pthreads/lib/x64/{ profile }");
             }
