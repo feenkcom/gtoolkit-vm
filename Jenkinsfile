@@ -95,14 +95,15 @@ pipeline {
                                 --release \
                                 --verbose """
 
-                        sh "cargo test --package vm-client-tests"
-
                         sh "curl -o feenk-signer -LsS https://github.com/feenkcom/feenk-signer/releases/download/${FEENK_SIGNER_VERSION}/feenk-signer-${TARGET}"
                         sh "chmod +x feenk-signer"
 
                         sh "./feenk-signer target/${TARGET}/release/bundle/${APP_NAME}.app"
 
                         sh "ditto -c -k --sequesterRsrc --keepParent target/${TARGET}/release/bundle/${APP_NAME}.app ${APP_NAME}-${TARGET}.app.zip"
+
+                        sh "cargo test --package vm-client-tests"
+
                         sh """
                            xcrun altool -t osx -f ${APP_NAME}-${TARGET}.app.zip -itc_provider "77664ZXL29" --primary-bundle-id "com.feenk.gtoolkit-vm-x86-64" --notarize-app --verbose  --username "notarization@feenk.com" --password "${APPLEPASSWORD}"
                            """
@@ -143,14 +144,14 @@ pipeline {
                                 --release \
                                 --verbose """
 
-                        sh "cargo test --package vm-client-tests"
-
                         sh "curl -o feenk-signer -LsS  https://github.com/feenkcom/feenk-signer/releases/download/${FEENK_SIGNER_VERSION}/feenk-signer-${TARGET}"
                         sh "chmod +x feenk-signer"
 
                         sh "./feenk-signer target/${TARGET}/release/bundle/${APP_NAME}.app"
 
                         sh "ditto -c -k --sequesterRsrc --keepParent target/${TARGET}/release/bundle/${APP_NAME}.app ${APP_NAME}-${TARGET}.app.zip"
+
+                        sh "cargo test --package vm-client-tests"
 
                         sh """
                            xcrun altool -t osx -f ${APP_NAME}-${TARGET}.app.zip -itc_provider "77664ZXL29" --primary-bundle-id "com.feenk.gtoolkit-vm-aarch64" --notarize-app --verbose  --username "notarization@feenk.com" --password "${APPLEPASSWORD}"
@@ -188,12 +189,12 @@ pipeline {
                                 --release \
                                 --verbose """
 
-                        sh "cargo test --package vm-client-tests"
-
                         sh """
                             cd target/${TARGET}/release/bundle/${APP_NAME}/
                             zip -r ${APP_NAME}-${TARGET}.zip .
                             """
+
+                        sh "cargo test --package vm-client-tests"
 
                         sh 'mv target/${TARGET}/release/bundle/${APP_NAME}/${APP_NAME}-${TARGET}.zip ./${APP_NAME}-${TARGET}.zip'
 
@@ -244,9 +245,10 @@ pipeline {
                                 --release `
                                 --verbose """
 
-                        powershell "cargo test --package vm-client-tests"
-
                         powershell "Compress-Archive -Path target/${TARGET}/release/bundle/${APP_NAME}/* -DestinationPath ${APP_NAME}-${TARGET}.zip"
+
+                        powershell "cargo test --package vm-client-tests"
+                        
                         stash includes: "${APP_NAME}-${TARGET}.zip", name: "${TARGET}"
                     }
                 }
