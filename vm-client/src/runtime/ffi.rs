@@ -23,7 +23,8 @@ enum TFPrimitiveCallout {
 }
 
 #[no_mangle]
-pub fn event_loop_callout() {
+#[allow(non_snake_case)]
+pub fn primitiveEventLoopCallout() {
     let proxy = vm().proxy();
 
     let external_function_oop = proxy.stack_object_value(StackOffset::new(

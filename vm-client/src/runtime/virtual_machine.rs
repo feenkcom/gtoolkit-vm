@@ -1,4 +1,4 @@
-use crate::{event_loop_callout, EventLoopCallout, EventLoopMessage};
+use crate::{primitiveEventLoopCallout, EventLoopCallout, EventLoopMessage};
 use anyhow::Result;
 use libffi::high::call;
 use libffi::low::{ffi_cif, ffi_type, CodePtr};
@@ -39,8 +39,9 @@ impl VirtualMachine {
             interpreter: Arc::new(PharoInterpreter::new(parameters)),
             event_loop_sender,
         };
-        vm.add_primitive(primitive!(get_named_primitives));
-        vm.add_primitive(primitive!(event_loop_callout));
+        vm.add_primitive(primitive!(primitiveGetNamedPrimitives));
+        vm.add_primitive(primitive!(primitiveEventLoopCallout));
+        vm.add_primitive(primitive!(primitiveGetSemaphoreSignaller));
         vm
     }
 
@@ -99,7 +100,8 @@ pub fn is_virtual_machine() {
 }
 
 #[no_mangle]
-pub fn get_named_primitives() {
+#[allow(non_snake_case)]
+pub fn primitiveGetNamedPrimitives() {
     let proxy = vm().proxy();
     let named_primitives = vm().named_primitives();
 
@@ -132,4 +134,17 @@ pub fn get_named_primitives() {
         );
     }
     proxy.method_return_value(return_array);
+}
+
+#[no_mangle]
+#[allow(non_snake_case)]
+pub fn primitiveGetSemaphoreSignaller() {
+    let proxy = vm().proxy();
+    let signaller = proxy.new_external_address(semaphore_signaller as *const c_void);
+    proxy.method_return_value(signaller);
+}
+
+#[no_mangle]
+pub extern "C" fn semaphore_signaller(semaphore_index: usize) {
+    vm().proxy().signal_semaphore(semaphore_index);
 }
