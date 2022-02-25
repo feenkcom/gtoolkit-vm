@@ -1,5 +1,6 @@
 use crate::bindings::{
-    calloc, exportGetHandler as getHandler, malloc, memcpy, sqInt, VirtualMachine as sqInterpreterProxy,
+    calloc, exportGetHandler as getHandler, malloc, memcpy, sqInt,
+    VirtualMachine as sqInterpreterProxy,
 };
 
 #[cfg(feature = "ffi")]
@@ -190,6 +191,11 @@ impl InterpreterProxy {
         unsafe { function(object.into_native()) }
     }
 
+    pub fn is_kind_of_class(&self, object: ObjectPointer, class: ObjectPointer) -> bool {
+        let function = self.native().isKindOfClass.unwrap();
+        unsafe { function(object.into_native(), class.into_native()) != 0 }
+    }
+
     pub fn new_string(&self, string: impl AsRef<str>) -> ObjectPointer {
         let function = self.native().stringForCString.unwrap();
         let rust_str = string.as_ref();
@@ -289,6 +295,26 @@ impl InterpreterProxy {
         Ok(())
     }
 
+    pub fn marshall_pointer_at(
+        &self,
+        array: ObjectPointer,
+        index: usize,
+        holder: *mut c_void,
+    ) -> Result<()> {
+        let external_address = self.object_field_at(array, ObjectFieldIndex::new(index));
+
+        if !self.is_kind_of_class(external_address, self.class_external_address()) {
+            bail!(
+                "pointer argument at index {} is not an external address",
+                index,
+            );
+        }
+
+        let address = self.object_field_at(external_address, ObjectFieldIndex::new(0));
+        write_value(address.into_native(), holder);
+        Ok(())
+    }
+
     #[cfg(feature = "ffi")]
     pub fn marshall_argument_from_at_index_into_of_type_with_size(
         &self,
@@ -310,7 +336,7 @@ impl InterpreterProxy {
             FFI_TYPE_UINT64 => {}
             FFI_TYPE_SINT64 => {}
             FFI_TYPE_STRUCT => {}
-            FFI_TYPE_POINTER => {}
+            FFI_TYPE_POINTER => self.marshall_pointer_at(arguments, index, arg_holder)?,
             FFI_TYPE_VOID => {
                 bail!(
                     "Void argument type of the argument at {} is not supported",
