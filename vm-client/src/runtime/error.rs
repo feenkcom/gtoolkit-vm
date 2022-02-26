@@ -1,6 +1,6 @@
 use std::ffi::OsString;
 use std::path::PathBuf;
-use std::sync::mpsc::RecvError;
+use std::sync::mpsc::{RecvError, TryRecvError};
 use thiserror::Error;
 
 pub type Result<T> = core::result::Result<T, ApplicationError>;
@@ -34,6 +34,8 @@ pub enum ApplicationError {
     NoParentDirectory(PathBuf),
     #[error("Failed to receive an event loop message")]
     EventLoopReceiverError(#[from] RecvError),
+    #[error("Failed to receive an event loop message")]
+    EventLoopTryReceiverError(#[from] TryRecvError),
     #[error("Failed to join a thread")]
     JoinHandleError,
     #[error("unknown data store error")]

@@ -4,7 +4,7 @@ use libffi::low::{ffi_cif, ffi_type, CodePtr};
 use std::fmt::{Debug, Formatter};
 use std::intrinsics::transmute;
 use std::os::raw::c_void;
-use std::sync::mpsc::{channel, Receiver, RecvError, Sender};
+use std::sync::mpsc::{channel, Receiver, RecvError, Sender, TryRecvError};
 use std::sync::{Arc, Mutex};
 use std::thread::JoinHandle;
 
@@ -28,7 +28,7 @@ impl EventLoop {
         (event_loop, sender)
     }
 
-    pub fn run(mut self) -> Result<()> {
+    pub fn run(&self) -> Result<()> {
         loop {
             match self.receiver.recv() {
                 Ok(message) => match self.process_message(message) {
@@ -45,7 +45,29 @@ impl EventLoop {
         Ok(())
     }
 
-    fn process_message(&mut self, message: EventLoopMessage) -> Result<bool> {
+    pub fn try_recv(&self) -> Result<()> {
+        loop {
+            match self.receiver.try_recv() {
+                Ok(message) => match self.process_message(message) {
+                    Ok(should_continue) => {
+                        if !should_continue {
+                            break;
+                        }
+                    }
+                    Err(error) => return Err(error),
+                },
+                Err(error) => {
+                    return match error {
+                        TryRecvError::Empty => Ok(()),
+                        TryRecvError::Disconnected => Err(error.into())
+                    }
+                },
+            }
+        }
+        Ok(())
+    }
+
+    fn process_message(&self, message: EventLoopMessage) -> Result<bool> {
         match message {
             EventLoopMessage::Terminate => {
                 return Ok(false);

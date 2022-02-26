@@ -1,4 +1,4 @@
-use crate::{primitiveEventLoopCallout, EventLoopCallout, EventLoopMessage};
+use crate::{primitiveEventLoopCallout, EventLoop, EventLoopCallout, EventLoopMessage};
 use anyhow::Result;
 use libffi::high::call;
 use libffi::low::{ffi_cif, ffi_type, CodePtr};
@@ -24,6 +24,7 @@ pub fn vm() -> &'static Arc<VirtualMachine> {
 #[derive(Debug)]
 pub struct VirtualMachine {
     interpreter: Arc<PharoInterpreter>,
+    event_loop: Option<EventLoop>,
     event_loop_sender: Option<Sender<EventLoopMessage>>,
 }
 
@@ -33,15 +34,19 @@ impl VirtualMachine {
     /// in the main thread rather than the worker thread
     pub fn new(
         parameters: InterpreterParameters,
+        event_loop: Option<EventLoop>,
         event_loop_sender: Option<Sender<EventLoopMessage>>,
     ) -> Self {
         let vm = Self {
             interpreter: Arc::new(PharoInterpreter::new(parameters)),
+            event_loop,
             event_loop_sender,
         };
         vm.add_primitive(primitive!(primitiveGetNamedPrimitives));
         vm.add_primitive(primitive!(primitiveEventLoopCallout));
         vm.add_primitive(primitive!(primitiveGetSemaphoreSignaller));
+        vm.add_primitive(primitive!(primitiveGetEventLoop));
+        vm.add_primitive(primitive!(primitiveGetEventLoopReceiver));
         vm
     }
 
@@ -69,6 +74,10 @@ impl VirtualMachine {
             self.interpreter.clone().start()?;
             Ok(None)
         }
+    }
+
+    pub fn event_loop(&self) -> Option<&EventLoop> {
+        self.event_loop.as_ref()
     }
 
     /// Register this virtual machine in a global variable. There can only be one virtual machine running in one memory space
@@ -142,6 +151,37 @@ pub fn primitiveGetSemaphoreSignaller() {
     let proxy = vm().proxy();
     let signaller = proxy.new_external_address(semaphore_signaller as *const c_void);
     proxy.method_return_value(signaller);
+}
+
+#[no_mangle]
+#[allow(non_snake_case)]
+pub fn primitiveGetEventLoop() {
+    let vm = vm();
+    let proxy = vm.proxy();
+
+    let event_loop = match vm.event_loop() {
+        None => std::ptr::null(),
+        Some(event_loop) => event_loop as *const EventLoop,
+    };
+
+    proxy.method_return_value(proxy.new_external_address(event_loop));
+}
+
+#[no_mangle]
+#[allow(non_snake_case)]
+pub fn primitiveGetEventLoopReceiver() {
+    let proxy = vm().proxy();
+    let receiver = proxy.new_external_address(try_receive_events as *const c_void);
+    proxy.method_return_value(receiver);
+}
+
+#[no_mangle]
+pub extern "C" fn try_receive_events(event_loop_ptr: *const EventLoop) {
+    if event_loop_ptr.is_null() {
+        return;
+    }
+    let event_loop = unsafe { &*event_loop_ptr };
+    event_loop.try_recv().unwrap();
 }
 
 #[no_mangle]
