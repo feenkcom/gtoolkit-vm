@@ -132,8 +132,8 @@ pub trait Builder: Debug {
             .allowlist_function("getVMExports")
             .allowlist_function("setVMExports")
             .allowlist_function("exportGetHandler")
+            .allowlist_function("exportReadAddress")
             .allowlist_function("setVmRunOnWorkerThread")
-            .allowlist_function("readAddress")
             .allowlist_type("sqInt")
             .allowlist_type("usqInt")
             .allowlist_type("sqExport")
@@ -159,6 +159,7 @@ pub trait Builder: Debug {
                     .to_string(),
             )
             .header(extra_headers.join("getHandler.h").display().to_string())
+            .header(extra_headers.join("readAddress.h").display().to_string())
             .header(
                 extra_headers
                     .join("vmRunOnWorkerThread.h")

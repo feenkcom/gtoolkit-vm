@@ -129,6 +129,7 @@ impl VirtualMachine {
             "{crate}/extra/osCogStackPageHeadroom.c",
             "{crate}/extra/sqGetInterpreterProxy.c",
             "{crate}/extra/getHandler.c",
+            "{crate}/extra/readAddress.c",
             "{crate}/extra/vmRunOnWorkerThread.c",
         ]
         .to_vec();
