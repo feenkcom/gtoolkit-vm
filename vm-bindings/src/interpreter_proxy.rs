@@ -1,5 +1,5 @@
 use crate::bindings::{
-    calloc, exportGetHandler as getHandler, malloc, memcpy, sqInt,
+    calloc, exportGetHandler as getHandler, malloc, memcpy, free, readAddress, sqInt,
     VirtualMachine as sqInterpreterProxy,
 };
 
@@ -71,6 +71,13 @@ impl InterpreterProxy {
     pub fn stack_integer_value(&self, offset: StackOffset) -> sqInt {
         let function = self.native().stackIntegerValue.unwrap();
         unsafe { function(offset.into_native()) }
+    }
+
+    pub fn pop(&self, amount_of_stack_items: usize) {
+        let function = self.native().pop.unwrap();
+        unsafe {
+            function(amount_of_stack_items as sqInt);
+        }
     }
 
     pub fn pop_then_push(&self, amount_of_stack_items: usize, object: ObjectPointer) {
@@ -215,6 +222,10 @@ impl InterpreterProxy {
                 address as *mut c_void
         };
         external_address
+    }
+
+    pub fn read_address(&self, external_address_object: ObjectPointer) -> *mut c_void {
+        unsafe { readAddress(external_address_object.into_native()) }
     }
 
     /// Reads the float value from the array at a given index and store the value in a value holder at a given address.
@@ -405,23 +416,87 @@ impl InterpreterProxy {
     // 		otherwise: [ self primitiveFailFor: PrimErrBadArgument ]
     // ]
 
-    // #[cfg(feature = "ffi")]
-    // pub fn marshall_and_push_return_value_of_type_popping(
-    //     &self,
-    //     return_holder: *mut c_void,
-    //     return_type: &ffi_type,
-    //     primitive_arguments_and_receiver_count: usize,
-    // ) {
-    //     unsafe {
-    //         let return_type_ptr: *mut ffi_type = return_type as *mut ffi_type;
+    #[cfg(feature = "ffi")]
+    pub fn marshall_and_push_return_value_of_type_popping(
+        &self,
+        return_holder: *const c_void,
+        return_type: &ffi_type,
+        primitive_arguments_and_receiver_count: usize,
+    ) -> Result<()> {
+        match return_type.type_ as u32 {
+            FFI_TYPE_FLOAT => {}
+            FFI_TYPE_DOUBLE => {}
+            FFI_TYPE_UINT8 => {}
+            FFI_TYPE_SINT8 => {}
+            FFI_TYPE_UINT16 => {}
+            FFI_TYPE_SINT16 => {}
+            FFI_TYPE_UINT32 => {}
+            FFI_TYPE_SINT32 => {}
+            FFI_TYPE_UINT64 => {}
+            FFI_TYPE_SINT64 => {}
+            FFI_TYPE_STRUCT => {}
+            FFI_TYPE_POINTER => {
+                let address = unsafe { *(return_holder as *const *const c_void) };
+                self.pop_then_push(
+                    primitive_arguments_and_receiver_count,
+                    self.new_external_address(address),
+                )
+            }
+            FFI_TYPE_VOID => {
+                self.pop(primitive_arguments_and_receiver_count - 1);
+            }
+            FFI_TYPE_INT => {
+                bail!("Int return type is not supported",);
+            }
+            FFI_TYPE_LONGDOUBLE => {
+                bail!("Long return type is not supported",);
+            }
+            FFI_TYPE_COMPLEX => {
+                bail!("Complex return type is not supported",);
+            }
+            _ => {
+                bail!("Unknown return type {}", return_type.type_);
+            }
+        };
+
+        Ok(())
+    }
+
+    // StackInterpreterPrimitives >> marshallAndPushReturnValueFrom: returnHolder ofType: ffiType poping: argumentsAndReceiverCount [
     //
-    //         marshallAndPushReturnValueFromofTypepoping(
-    //             return_holder as sqInt,
-    //             return_type_ptr,
-    //             primitive_arguments_and_receiver_count as sqInt,
-    //         )
-    //     };
-    // }
+    // 	<option: #FEATURE_FFI>
+    // 	<var: #ffiType type: #'ffi_type *'>
+    //
+    // 	[ ffiType type ]
+    // 		caseOf: {
+    // 			[ FFI_TYPE_SINT8 ] 	-> [ self pop: argumentsAndReceiverCount thenPushInteger: (objectMemory readSINT8AtPointer: returnHolder) ].
+    // 			[ FFI_TYPE_SINT16 ] 	-> [ self pop: argumentsAndReceiverCount thenPushInteger: (objectMemory readSINT16AtPointer: returnHolder) ].
+    // 			[ FFI_TYPE_SINT32 ] 	-> [ self
+    // 													pop: argumentsAndReceiverCount
+    // 													thenPush: (objectMemory signed32BitIntegerFor: (objectMemory readSINT32AtPointer: returnHolder)) ].
+    // 			[ FFI_TYPE_SINT64 ] 	-> [ self
+    // 													pop: argumentsAndReceiverCount
+    // 													thenPush: (objectMemory signed64BitIntegerFor: (objectMemory readSINT64AtPointer: returnHolder)) ].
+    //
+    // 			[ FFI_TYPE_UINT8 ] 	-> [ self pop: argumentsAndReceiverCount thenPushInteger: (objectMemory readUINT8AtPointer: returnHolder) ].
+    // 			[ FFI_TYPE_UINT16 ] 	-> [ self pop: argumentsAndReceiverCount thenPushInteger: (objectMemory readUINT16AtPointer: returnHolder) ].
+    // 			[ FFI_TYPE_UINT32 ] 	-> [ self
+    // 													pop: argumentsAndReceiverCount
+    // 													thenPush: (objectMemory positive32BitIntegerFor: (objectMemory readUINT32AtPointer: returnHolder)) ].
+    // 			[ FFI_TYPE_UINT64 ] 	-> [ self
+    // 													pop: argumentsAndReceiverCount
+    // 													thenPush: (objectMemory positive64BitIntegerFor: (objectMemory readUINT64AtPointer: returnHolder)) ].
+    //
+    // 			[ FFI_TYPE_POINTER ] 	-> [ self pop: argumentsAndReceiverCount thenPush: (objectMemory newExternalAddressWithValue: (objectMemory readPointerAtPointer: returnHolder)) ].
+    //
+    // 			[ FFI_TYPE_STRUCT ] 	-> [ self pop: argumentsAndReceiverCount thenPush: (self newByteArrayWithStructContent: returnHolder size: ffiType size) ].
+    //
+    // 			[ FFI_TYPE_FLOAT ] 	-> [ self pop: argumentsAndReceiverCount thenPushFloat: (objectMemory readFloat32AtPointer: returnHolder) ].
+    // 			[ FFI_TYPE_DOUBLE ] 	-> [ self pop: argumentsAndReceiverCount thenPushFloat: (objectMemory readFloat64AtPointer: returnHolder) ].
+    // 			[ FFI_TYPE_VOID ] 		-> [ self pop: argumentsAndReceiverCount - 1 "Pop the arguments leaving the receiver" ]}
+    // 			otherwise: [ self primitiveFailFor: PrimErrBadArgument ]
+    //
+    // ]
 
     pub fn malloc(&self, bytes: usize) -> *mut c_void {
         unsafe { malloc(bytes.try_into().unwrap()) }
@@ -429,6 +504,10 @@ impl InterpreterProxy {
 
     pub fn calloc(&self, amount: usize, size: usize) -> *mut c_void {
         unsafe { calloc(amount.try_into().unwrap(), size.try_into().unwrap()) }
+    }
+
+    pub fn free(&self, address: *mut c_void) {
+        unsafe { free(address); }
     }
 
     pub fn primitive_fail(&self) {

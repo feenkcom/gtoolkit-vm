@@ -133,6 +133,7 @@ pub trait Builder: Debug {
             .allowlist_function("setVMExports")
             .allowlist_function("exportGetHandler")
             .allowlist_function("setVmRunOnWorkerThread")
+            .allowlist_function("readAddress")
             .allowlist_type("sqInt")
             .allowlist_type("usqInt")
             .allowlist_type("sqExport")

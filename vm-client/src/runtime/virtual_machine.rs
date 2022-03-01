@@ -1,4 +1,4 @@
-use crate::{primitiveEventLoopCallout, EventLoop, EventLoopCallout, EventLoopMessage};
+use crate::{primitiveEventLoopCallout, primitiveExtractReturnValue, EventLoop, EventLoopCallout, EventLoopMessage};
 use anyhow::Result;
 use libffi::high::call;
 use libffi::low::{ffi_cif, ffi_type, CodePtr};
@@ -44,6 +44,7 @@ impl VirtualMachine {
         };
         vm.add_primitive(primitive!(primitiveGetNamedPrimitives));
         vm.add_primitive(primitive!(primitiveEventLoopCallout));
+        vm.add_primitive(primitive!(primitiveExtractReturnValue));
         vm.add_primitive(primitive!(primitiveGetSemaphoreSignaller));
         vm.add_primitive(primitive!(primitiveGetEventLoop));
         vm.add_primitive(primitive!(primitiveGetEventLoopReceiver));

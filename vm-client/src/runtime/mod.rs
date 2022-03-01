@@ -16,4 +16,4 @@ pub use event_loop::{EventLoop, EventLoopCallout, EventLoopMessage};
 pub use image_finder::*;
 pub use virtual_machine::{vm, VirtualMachine};
 pub use working_directory::executable_working_directory;
-pub use ffi::primitiveEventLoopCallout;
+pub use ffi::{primitiveEventLoopCallout, primitiveExtractReturnValue};

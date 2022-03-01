@@ -96,3 +96,62 @@ pub fn primitiveEventLoopCallout() {
 
     proxy.method_return_value(proxy.new_external_address(callout_ptr));
 }
+
+#[repr(u16)]
+enum TFPrimitiveReturnValue {
+    CalloutAddress,
+    Receiver,
+}
+
+#[no_mangle]
+#[allow(non_snake_case)]
+pub fn primitiveExtractReturnValue() {
+    unsafe {
+        let proxy = vm().proxy();
+
+        let callout_address_oop = proxy.stack_object_value(StackOffset::new(
+            TFPrimitiveReturnValue::CalloutAddress as i32,
+        ));
+        let callout_address = proxy.read_address(callout_address_oop) as *mut Mutex<EventLoopCallout>;
+
+        let mut callout = Arc::from_raw(callout_address);
+
+        let mut locked_callout = callout.lock().unwrap();
+
+        if let Some(return_holder) = locked_callout.result {
+            proxy.marshall_and_push_return_value_of_type_popping(
+                return_holder,
+                locked_callout.return_type(),
+                2, // one for the argument + one for the receiver
+            ).unwrap();
+        }
+
+        // start freeing memory:
+        // - arguments
+        // - return holder
+        if let Some(arguments) = locked_callout.args {
+            let arguments_size = locked_callout.number_of_arguments();
+
+            let arguments_slice = std::slice::from_raw_parts_mut(arguments, arguments_size);
+            for index in 0..arguments_size {
+                let argument = arguments_slice[index];
+                if !argument.is_null() {
+                    proxy.free(argument);
+                }
+            }
+
+            proxy.free(arguments as *mut c_void);
+            locked_callout.args = None;
+        }
+
+        if let Some(return_holder) = locked_callout.result {
+            if !return_holder.is_null() {
+                proxy.free(return_holder);
+            }
+            locked_callout.result = None;
+        }
+
+        drop(locked_callout);
+        drop(callout);
+    }
+}
