@@ -9,7 +9,6 @@ extern crate vm_bindings;
 extern crate log;
 extern crate num;
 #[macro_use]
-extern crate num_derive;
 extern crate num_traits;
 
 pub(crate) mod platform;
