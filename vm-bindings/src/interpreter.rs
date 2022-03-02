@@ -165,7 +165,7 @@ impl PharoInterpreter {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, FromPrimitive, ToPrimitive)]
 #[repr(u8)]
 pub enum LogLevel {
     None = 0,

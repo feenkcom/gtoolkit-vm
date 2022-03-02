@@ -1,4 +1,7 @@
-use crate::{primitiveEventLoopCallout, primitiveExtractReturnValue, EventLoop, EventLoopCallout, EventLoopMessage};
+use crate::{
+    primitiveEventLoopCallout, primitiveExtractReturnValue, EventLoop, EventLoopCallout,
+    EventLoopMessage,
+};
 use anyhow::Result;
 use libffi::high::call;
 use libffi::low::{ffi_cif, ffi_type, CodePtr};
@@ -14,6 +17,8 @@ use vm_bindings::{
     InterpreterParameters, InterpreterProxy, LogLevel, NamedPrimitive, ObjectFieldIndex,
     PharoInterpreter, StackOffset,
 };
+
+use num_traits::FromPrimitive;
 
 #[no_mangle]
 pub static mut VIRTUAL_MACHINE: Option<Arc<VirtualMachine>> = None;
@@ -42,6 +47,7 @@ impl VirtualMachine {
             event_loop,
             event_loop_sender,
         };
+        vm.add_primitive(primitive!(primitiveSetLogLevel));
         vm.add_primitive(primitive!(primitiveGetNamedPrimitives));
         vm.add_primitive(primitive!(primitiveEventLoopCallout));
         vm.add_primitive(primitive!(primitiveExtractReturnValue));
@@ -54,6 +60,11 @@ impl VirtualMachine {
     /// Register a given named primitive in the interpreter
     pub fn add_primitive(&self, primitive: NamedPrimitive) {
         self.interpreter.add_vm_export(primitive);
+    }
+
+    /// Set the log level of the vm
+    pub fn log_level(&self, log_level: LogLevel) {
+        self.interpreter.log_level(log_level);
     }
 
     /// Return a slice of all registered named primitives in the vm
@@ -174,6 +185,24 @@ pub fn primitiveGetEventLoopReceiver() {
     let proxy = vm().proxy();
     let receiver = proxy.new_external_address(try_receive_events as *const c_void);
     proxy.method_return_value(receiver);
+}
+
+#[no_mangle]
+#[allow(non_snake_case)]
+pub fn primitiveSetLogLevel() {
+    let vm = vm();
+    let proxy = vm.proxy();
+
+    let semaphore_index = proxy.stack_integer_value(StackOffset::new(1)) as u8;
+    let log_level: Option<LogLevel> = LogLevel::from_u8(semaphore_index);
+    match log_level {
+        None => proxy.primitive_fail(),
+        Some(log_level) => {
+            vm.log_level(log_level);
+        }
+    }
+
+    proxy.method_return_boolean(true);
 }
 
 #[no_mangle]

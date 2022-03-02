@@ -7,6 +7,10 @@ extern crate thiserror;
 extern crate vm_bindings;
 #[macro_use]
 extern crate log;
+extern crate num;
+#[macro_use]
+extern crate num_derive;
+extern crate num_traits;
 
 pub(crate) mod platform;
 mod runtime;

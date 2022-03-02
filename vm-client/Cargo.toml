@@ -24,6 +24,8 @@ user-error = "1.2"
 to_absolute = "0.1"
 anyhow = "1.0"
 libffi = "2.0"
+num = "0.4"
+num-traits = "0.2"
 
 [features]
 default = ["full"]
