@@ -193,8 +193,8 @@ pub fn primitiveSetLogLevel() {
     let vm = vm();
     let proxy = vm.proxy();
 
-    let semaphore_index = proxy.stack_integer_value(StackOffset::new(1)) as u8;
-    let log_level: Option<LogLevel> = LogLevel::from_u8(semaphore_index);
+    let log_level = proxy.stack_integer_value(StackOffset::new(0)) as u8;
+    let log_level: Option<LogLevel> = LogLevel::from_u8(log_level);
     match log_level {
         None => proxy.primitive_fail(),
         Some(log_level) => {
