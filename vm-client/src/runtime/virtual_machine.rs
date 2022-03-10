@@ -1,5 +1,5 @@
 use crate::{
-    primitiveEventLoopCallout, primitiveExtractReturnValue, EventLoop, EventLoopCallout,
+    primitiveEventLoopCallout, primitiveExtractReturnValue, primitiveSetBeaconLogger, primitiveRemoveBeaconLogger, primitivePollBeaconLogger, EventLoop, EventLoopCallout,
     EventLoopMessage,
 };
 use anyhow::Result;
@@ -54,6 +54,9 @@ impl VirtualMachine {
         vm.add_primitive(primitive!(primitiveGetSemaphoreSignaller));
         vm.add_primitive(primitive!(primitiveGetEventLoop));
         vm.add_primitive(primitive!(primitiveGetEventLoopReceiver));
+        vm.add_primitive(primitive!(primitiveSetBeaconLogger));
+        vm.add_primitive(primitive!(primitiveRemoveBeaconLogger));
+        vm.add_primitive(primitive!(primitivePollBeaconLogger));
         vm
     }
 
@@ -75,6 +78,10 @@ impl VirtualMachine {
     /// Return a proxy to the interpreter which can be used to communicate with the vm
     pub fn proxy(&self) -> &InterpreterProxy {
         self.interpreter.proxy()
+    }
+
+    pub fn interpreter(&self) -> &PharoInterpreter {
+        &self.interpreter
     }
 
     /// Launch the virtual machine either in the main thread or in the worker thread

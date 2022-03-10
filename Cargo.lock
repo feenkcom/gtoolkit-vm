@@ -1912,6 +1912,7 @@ dependencies = [
  "core-foundation",
  "dirs",
  "embed-resource",
+ "lazy_static",
  "libc",
  "libffi",
  "libloading",

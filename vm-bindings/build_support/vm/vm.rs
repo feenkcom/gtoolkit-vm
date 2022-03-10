@@ -103,7 +103,7 @@ impl VirtualMachine {
             #[cfg(feature = "gnuisation")]
             "{generated}/vm/src/gcc3x-cointerp.c",
             // support sources
-            "{sources}/src/debug.c",
+            "{crate}/extra/debug.c",
             "{sources}/src/utils.c",
             "{sources}/src/errorCode.c",
             "{sources}/src/nullDisplay.c",
@@ -126,11 +126,7 @@ impl VirtualMachine {
             "{sources}/extracted/vm/src/common/sqTicker.c",
             // Re-exports of private VM functions
             "{crate}/extra/sqExport.c",
-            "{crate}/extra/osCogStackPageHeadroom.c",
-            "{crate}/extra/sqGetInterpreterProxy.c",
-            "{crate}/extra/getHandler.c",
-            "{crate}/extra/readAddress.c",
-            "{crate}/extra/vmRunOnWorkerThread.c",
+            "{crate}/extra/exported.c",
         ]
         .to_vec();
 

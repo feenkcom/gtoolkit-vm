@@ -125,6 +125,26 @@ impl VMMaker {
             )
             .execute()?;
 
+        let mut command = Command::new(&vmmaker_vm);
+        command
+            .arg("--headless")
+            .arg(&vmmaker_image)
+            .arg("--no-default-preferences")
+            .arg("eval")
+            .arg("--save")
+            .arg(
+                "(RBAddPragmaTransformation pragma: '<api>' inMethod: #instantiateClass:isPinned: inClass: #SpurMemoryManager) asRefactoring execute",
+            );
+
+        CommandsToExecute::new()
+            .add(
+                CommandToExecute::new(command)
+                    .with_name("Patch VMMaker")
+                    .with_verbose(true)
+                    .without_log_prefix(),
+            )
+            .execute()?;
+
         return Ok(VMMaker {
             vm: vmmaker_vm,
             image: vmmaker_image,

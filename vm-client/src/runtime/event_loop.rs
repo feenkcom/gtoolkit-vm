@@ -59,9 +59,9 @@ impl EventLoop {
                 Err(error) => {
                     return match error {
                         TryRecvError::Empty => Ok(()),
-                        TryRecvError::Disconnected => Err(error.into())
+                        TryRecvError::Disconnected => Err(error.into()),
                     }
-                },
+                }
             }
         }
         Ok(())

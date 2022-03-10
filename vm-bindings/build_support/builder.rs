@@ -126,14 +126,18 @@ pub trait Builder: Debug {
             .allowlist_function("installErrorHandlers")
             .allowlist_function("setProcessArguments")
             .allowlist_function("setProcessEnvironmentVector")
-            .allowlist_function("getOsCogStackPageHeadroom")
             .allowlist_function("logLevel")
-            .allowlist_function("getSqGetInterpreterProxy")
             .allowlist_function("getVMExports")
             .allowlist_function("setVMExports")
+            // re-export the internal methods
+            .allowlist_function("exportSqGetInterpreterProxy")
+            .allowlist_function("exportOsCogStackPageHeadroom")
             .allowlist_function("exportGetHandler")
             .allowlist_function("exportReadAddress")
+            .allowlist_function("exportGetLogLevel")
+            .allowlist_function("exportInstantiateClassIsPinned")
             .allowlist_function("setVmRunOnWorkerThread")
+            .allowlist_function("setLogger")
             .allowlist_type("sqInt")
             .allowlist_type("usqInt")
             .allowlist_type("sqExport")
@@ -146,26 +150,8 @@ pub trait Builder: Debug {
                     .to_string(),
             )
             .header(extra_headers.join("sqExport.h").display().to_string())
-            .header(
-                extra_headers
-                    .join("osCogStackPageHeadroom.h")
-                    .display()
-                    .to_string(),
-            )
-            .header(
-                extra_headers
-                    .join("sqGetInterpreterProxy.h")
-                    .display()
-                    .to_string(),
-            )
-            .header(extra_headers.join("getHandler.h").display().to_string())
-            .header(extra_headers.join("readAddress.h").display().to_string())
-            .header(
-                extra_headers
-                    .join("vmRunOnWorkerThread.h")
-                    .display()
-                    .to_string(),
-            )
+            .header(extra_headers.join("exported.h").display().to_string())
+            .header(extra_headers.join("setLogger.h").display().to_string())
             .clang_arg(format!("-I{}", &include_dir.display()))
             .clang_arg(format!("-I{}", &include_dir.join("pharovm").display()))
             .clang_arg(format!("-I{}", generated_config_directory.display()))

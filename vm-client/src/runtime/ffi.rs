@@ -1,10 +1,10 @@
+use libffi::low::{ffi_cif, ffi_type, CodePtr};
 use std::mem::{size_of, transmute};
-use libffi::low::{CodePtr, ffi_cif, ffi_type};
 use std::os::raw::c_void;
 use std::sync::{Arc, Mutex};
 use vm_bindings::{ObjectFieldIndex, StackOffset};
 
-use crate::{EventLoopCallout, EventLoopMessage, vm};
+use crate::{vm, EventLoopCallout, EventLoopMessage};
 
 #[repr(u16)]
 enum TFExternalFunction {
@@ -68,7 +68,8 @@ pub fn primitiveEventLoopCallout() {
                     arguments_array_oop,
                     argument_index,
                     arg_type,
-                ).unwrap();
+                )
+                .unwrap();
         }
     }
 
@@ -112,18 +113,21 @@ pub fn primitiveExtractReturnValue() {
         let callout_address_oop = proxy.stack_object_value(StackOffset::new(
             TFPrimitiveReturnValue::CalloutAddress as i32,
         ));
-        let callout_address = proxy.read_address(callout_address_oop) as *mut Mutex<EventLoopCallout>;
+        let callout_address =
+            proxy.read_address(callout_address_oop) as *mut Mutex<EventLoopCallout>;
 
         let mut callout = Arc::from_raw(callout_address);
 
         let mut locked_callout = callout.lock().unwrap();
 
         if let Some(return_holder) = locked_callout.result {
-            proxy.marshall_and_push_return_value_of_type_popping(
-                return_holder,
-                locked_callout.return_type(),
-                2, // one for the argument + one for the receiver
-            ).unwrap();
+            proxy
+                .marshall_and_push_return_value_of_type_popping(
+                    return_holder,
+                    locked_callout.return_type(),
+                    2, // one for the argument + one for the receiver
+                )
+                .unwrap();
         }
 
         // start freeing memory:

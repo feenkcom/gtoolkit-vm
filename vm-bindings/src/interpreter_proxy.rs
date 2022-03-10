@@ -1,6 +1,6 @@
 use crate::bindings::{
-    calloc, exportGetHandler as getHandler, malloc, memcpy, free, exportReadAddress as readAddress, sqInt,
-    VirtualMachine as sqInterpreterProxy,
+    calloc, exportGetHandler as getHandler, exportReadAddress as readAddress, free, malloc, memcpy,
+    sqInt, VirtualMachine as sqInterpreterProxy, exportInstantiateClassIsPinned as instantiateClassIsPinned
 };
 
 #[cfg(feature = "ffi")]
@@ -507,7 +507,9 @@ impl InterpreterProxy {
     }
 
     pub fn free(&self, address: *mut c_void) {
-        unsafe { free(address); }
+        unsafe {
+            free(address);
+        }
     }
 
     pub fn primitive_fail(&self) {

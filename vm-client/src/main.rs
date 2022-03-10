@@ -10,6 +10,8 @@ extern crate log;
 extern crate num;
 #[macro_use]
 extern crate num_traits;
+#[macro_use]
+extern crate lazy_static;
 
 pub(crate) mod platform;
 mod runtime;
