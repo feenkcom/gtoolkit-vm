@@ -54,7 +54,7 @@ pipeline {
                 }
                 echo "Will build using gtoolkit-vm-builder ${VM_BUILDER_VERSION}"
                 echo "Will release using feenk-releaser ${FEENK_RELEASER_VERSION}"
-                echo "Will sign using feenk-releaser ${FEENK_SIGNER_VERSION}"
+                echo "Will sign using feenk-signer ${FEENK_SIGNER_VERSION}"
             }
         }
         stage ('Parallel build') {
