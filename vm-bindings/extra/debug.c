@@ -1,6 +1,7 @@
 #include "pharovm/pharo.h"
 #include <stdarg.h>
 #include "setLogger.h"
+#include "debug.h"
 
 #ifdef _WIN32
 
