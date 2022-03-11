@@ -102,13 +102,13 @@ void logMessageToStandardStream(int level, const char* fileName, const char* fun
 	//Printing the header.
 	// Ex: [DEBUG] 2017-11-14 21:57:53,661 functionName (filename:line) - This is a debug log message.
 
-	fprintf_impl(outputStream, "[%-5s] %s.%03d %s (%s:%d):", severityName[level - 1], timestamp, 0 /* milliseconds */ , functionName, fileName, line);
-	fprintf_impl(outputStream, message);
+	fprintf(outputStream, "[%-5s] %s.%03d %s (%s:%d):", severityName[level - 1], timestamp, 0 /* milliseconds */ , functionName, fileName, line);
+	fprintf(outputStream, message);
 
 	int formatLength = strlen(format);
 
 	if(formatLength == 0 || format[formatLength - 1] != '\n'){
-		fprintf_impl(outputStream,"\n");
+		fprintf(outputStream,"\n");
 	}
 
 	fflush(outputStream);
@@ -237,7 +237,7 @@ vm_printf(const char * format, ... ){
 		outputStream = stdout;
 	}
 
-	int returnValue = vfprintf_impl(outputStream, format, list);
+	int returnValue = vfprintf(outputStream, format, list);
 
 	va_end(list);
 
