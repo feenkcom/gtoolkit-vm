@@ -1,5 +1,4 @@
 use crate::vm;
-use libc::{calloc, free, size_t};
 use num_traits::FromPrimitive;
 use std::ffi::{c_void, CStr, CString};
 use std::mem;
