@@ -1,9 +1,10 @@
 use crate::bindings::{
-    exportGetLogLevel as getLogLevel, exportOsCogStackPageHeadroom as osCogStackPageHeadroom,
+    exportOsCogStackPageHeadroom as osCogStackPageHeadroom,
     exportSqGetInterpreterProxy as sqGetInterpreterProxy, free, getVMExports, installErrorHandlers,
-    logLevel, registerCurrentThreadToHandleExceptions, setProcessArguments,
-    setProcessEnvironmentVector, setVMExports, setVmRunOnWorkerThread, sqExport, sqInt, vm_init,
-    vm_parameters_ensure_interactive_image_parameter, vm_run_interpreter, VirtualMachine, setLogger
+    registerCurrentThreadToHandleExceptions, setLogger, setProcessArguments,
+    setProcessEnvironmentVector, setShouldLog, setVMExports, setVmRunOnWorkerThread, sqExport,
+    sqInt, vm_init, vm_parameters_ensure_interactive_image_parameter, vm_run_interpreter,
+    VirtualMachine,
 };
 use crate::prelude::NativeAccess;
 use crate::{InterpreterParameters, InterpreterProxy, NamedPrimitive};
@@ -11,7 +12,7 @@ use anyhow::{bail, Result};
 use log::Log;
 use num_traits::FromPrimitive;
 use std::fmt::Debug;
-use std::os::raw::{c_int, c_char};
+use std::os::raw::{c_char, c_int};
 use std::panic;
 use std::sync::Arc;
 use std::thread::JoinHandle;
@@ -31,25 +32,28 @@ impl PharoInterpreter {
         interpreter
     }
 
-    /// Set the logLevel to use in the VM
-    pub fn log_level(&self, level: LogLevel) {
-        unsafe { logLevel(level as u8 as c_int) };
-    }
-
-    /// Get the current log level
-    pub fn get_log_level(&self) -> LogLevel {
-        LogLevel::from_u8(unsafe { getLogLevel() as u8 }).unwrap()
-    }
-
     /// Set the logger to be used
-    pub fn set_logger(&self, logger: Option<unsafe extern "C" fn(
-            level: c_int,
-            file_name: *const c_char,
-            function_name: *const c_char,
-            line: c_int,
-            message: *const c_char,
-        )>) {
+    pub fn set_logger(
+        &self,
+        logger: Option<
+            unsafe extern "C" fn(
+                log_type: *const c_char,
+                file_name: *const c_char,
+                function_name: *const c_char,
+                line: c_int,
+                message: *const c_char,
+            ),
+        >,
+    ) {
         unsafe { setLogger(logger) };
+    }
+
+    /// Set the function that should be called to determine if a given log type should be logged
+    pub fn set_should_log(
+        &self,
+        should_log: Option<unsafe extern "C" fn(log_type: *const c_char) -> bool>,
+    ) {
+        unsafe { setShouldLog(should_log) };
     }
 
     /// Launch the vm in the main process

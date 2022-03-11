@@ -1,6 +1,7 @@
 use crate::bindings::{
-    calloc, exportGetHandler as getHandler, exportReadAddress as readAddress, free, malloc, memcpy,
-    sqInt, VirtualMachine as sqInterpreterProxy, exportInstantiateClassIsPinned as instantiateClassIsPinned
+    calloc, exportGetHandler as getHandler,
+    exportInstantiateClassIsPinned as instantiateClassIsPinned, exportReadAddress as readAddress,
+    free, malloc, memcpy, sqInt, VirtualMachine as sqInterpreterProxy,
 };
 
 #[cfg(feature = "ffi")]
@@ -143,6 +144,16 @@ impl InterpreterProxy {
     pub fn checked_integer_value_of(&self, object: ObjectPointer) -> sqInt {
         let function = self.native().checkedIntegerValueOf.unwrap();
         unsafe { function(object.into_native()) }
+    }
+
+    pub fn cstring_value_of(&self, object: ObjectPointer) -> Option<CString> {
+        let function = self.native().cStringOrNullFor.unwrap();
+        let buffer: *mut c_char = unsafe { function(object.into_native()) };
+        if buffer.is_null() {
+            None
+        } else {
+            unsafe { Some(CString::from_raw(buffer)) }
+        }
     }
 
     pub fn is_character_object(&self, object: ObjectPointer) -> bool {

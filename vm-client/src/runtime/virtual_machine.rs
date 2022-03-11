@@ -1,6 +1,7 @@
 use crate::{
-    primitiveEventLoopCallout, primitiveExtractReturnValue, primitiveSetBeaconLogger, primitiveRemoveBeaconLogger, primitivePollBeaconLogger, EventLoop, EventLoopCallout,
-    EventLoopMessage,
+    log_signal, primitiveEnableLogSignal, primitiveEventLoopCallout, primitiveExtractReturnValue,
+    primitiveGetEnabledLogSignals, primitivePollLogger, primitiveStartBeacon, primitiveStopLogger,
+    should_log_signal, EventLoop, EventLoopCallout, EventLoopMessage,
 };
 use anyhow::Result;
 use libffi::high::call;
@@ -47,27 +48,27 @@ impl VirtualMachine {
             event_loop,
             event_loop_sender,
         };
-        vm.add_primitive(primitive!(primitiveSetLogLevel));
+
+        vm.interpreter().set_logger(Some(log_signal));
+        vm.interpreter().set_should_log(Some(should_log_signal));
+
         vm.add_primitive(primitive!(primitiveGetNamedPrimitives));
         vm.add_primitive(primitive!(primitiveEventLoopCallout));
         vm.add_primitive(primitive!(primitiveExtractReturnValue));
         vm.add_primitive(primitive!(primitiveGetSemaphoreSignaller));
         vm.add_primitive(primitive!(primitiveGetEventLoop));
         vm.add_primitive(primitive!(primitiveGetEventLoopReceiver));
-        vm.add_primitive(primitive!(primitiveSetBeaconLogger));
-        vm.add_primitive(primitive!(primitiveRemoveBeaconLogger));
-        vm.add_primitive(primitive!(primitivePollBeaconLogger));
+        vm.add_primitive(primitive!(primitiveStopLogger));
+        vm.add_primitive(primitive!(primitivePollLogger));
+        vm.add_primitive(primitive!(primitiveEnableLogSignal));
+        vm.add_primitive(primitive!(primitiveGetEnabledLogSignals));
+        vm.add_primitive(primitive!(primitiveStartBeacon));
         vm
     }
 
     /// Register a given named primitive in the interpreter
     pub fn add_primitive(&self, primitive: NamedPrimitive) {
         self.interpreter.add_vm_export(primitive);
-    }
-
-    /// Set the log level of the vm
-    pub fn log_level(&self, log_level: LogLevel) {
-        self.interpreter.log_level(log_level);
     }
 
     /// Return a slice of all registered named primitives in the vm
@@ -192,24 +193,6 @@ pub fn primitiveGetEventLoopReceiver() {
     let proxy = vm().proxy();
     let receiver = proxy.new_external_address(try_receive_events as *const c_void);
     proxy.method_return_value(receiver);
-}
-
-#[no_mangle]
-#[allow(non_snake_case)]
-pub fn primitiveSetLogLevel() {
-    let vm = vm();
-    let proxy = vm.proxy();
-
-    let log_level = proxy.stack_integer_value(StackOffset::new(0)) as u8;
-    let log_level: Option<LogLevel> = LogLevel::from_u8(log_level);
-    match log_level {
-        None => proxy.primitive_fail(),
-        Some(log_level) => {
-            vm.log_level(log_level);
-        }
-    }
-
-    proxy.method_return_boolean(true);
 }
 
 #[no_mangle]

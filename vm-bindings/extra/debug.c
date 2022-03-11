@@ -1,7 +1,9 @@
-#include "pharovm/pharo.h"
 #include <stdarg.h>
+#include <stdbool.h>
+#include "pharovm/pharo.h"
 #include "setLogger.h"
 #include "debug.h"
+#include "beacon.h"
 
 #ifdef _WIN32
 
@@ -15,36 +17,17 @@
 
 char * GetAttributeString(sqInt id);
 
-#if defined(DEBUG) && DEBUG
-static int max_error_level = 4;
-#else
-static int max_error_level = 1;
-#endif
-/*
- * This function set the logLevel to use in the VM
- *
- * LOG_NONE 		0
- * LOG_ERROR 		1
- * LOG_WARN 		2
- * LOG_INFO 		3
- * LOG_DEBUG		4
- * LOG_TRACE		5
- *
- */
-EXPORT(void) logLevel(int value){
-	max_error_level = value;
+void (*logger)(const char* type, const char* fileName, const char* functionName, int line, const char* message);
+bool (*shouldLog)(const char* type);
+
+void logLevel(int level) {}
+
+int getLogLevel() {
+	return LOG_TRACE;
 }
 
-EXPORT(int) getLogLevel(){
-	return max_error_level;
-}
-
-EXPORT(int) exportGetLogLevel() {
-    return max_error_level;
-}
-
-EXPORT(int) isLogDebug(){
-	return getLogLevel() >= LOG_DEBUG;
+int isLogDebug() {
+	return false;
 }
 
 void error(char *errorMessage){
@@ -53,9 +36,9 @@ void error(char *errorMessage){
     abort();
 }
 
-static const char* severityName[5] = {"ERROR", "WARN", "INFO", "DEBUG", "TRACE"};
+static const char* severityName[6] = { "NONE", "ERROR", "WARNING", "INFO", "DEBUG", "TRACE" };
 
-EXPORT(void) logAssert(const char* fileName, const char* functionName, int line, char* msg){
+void logAssert(const char* fileName, const char* functionName, int line, char* msg){
 	logMessage(LOG_WARN, fileName, functionName, line, msg);
 }
 
@@ -71,78 +54,57 @@ void logMessageFromErrno(int level, const char* msg, const char* fileName, const
 	logMessage(level, fileName, functionName, line, "%s: %s", msg, buffer);
 }
 
-FILE* getStreamForLevel(int level){
-	if(level <= LOG_ERROR){
-		return stderr;
-	}else{
-		return stdout;
-	}
+static void logTypedMessage_impl(const char* type, const char* fileName, const char* functionName, int line, va_list args) {
+    char * format;
+    char * buffer;
+    int max_buffer_len;
+
+    if (!shouldLog) {
+        return;
+    }
+    if (!logger) {
+    	return;
+    }
+    if (!shouldLog(type)) {
+        return;
+    }
+
+    format = va_arg(args, char*);
+    max_buffer_len = 250;
+    buffer = malloc(max_buffer_len);
+
+    vsnprintf(buffer, max_buffer_len, format, args);
+
+    logger(type, fileName, functionName, line, buffer);
+
+    free(buffer);
 }
 
-void logMessageToStandardStream(int level, const char* fileName, const char* functionName, int line, const char* message){
-	char * format;
-	char timestamp[20];
-
-	FILE* outputStream;
-
-	outputStream = getStreamForLevel(level);
-
-	time_t now = time(NULL);
-
-#if defined(_WIN32)
-	struct tm ltime_struct;
-	localtime_s(&ltime_struct, &now);
-	struct tm* ltime = &ltime_struct;
-#else
-	struct tm* ltime = localtime(&now);
-#endif
-
-	strftime(timestamp, 20, "%Y-%m-%d %H:%M:%S", ltime);
-
-	//Printing the header.
-	// Ex: [DEBUG] 2017-11-14 21:57:53,661 functionName (filename:line) - This is a debug log message.
-
-	fprintf(outputStream, "[%-5s] %s.%03d %s (%s:%d):", severityName[level - 1], timestamp, 0 /* milliseconds */ , functionName, fileName, line);
-	fprintf(outputStream, message);
-
-	int formatLength = strlen(format);
-
-	if(formatLength == 0 || format[formatLength - 1] != '\n'){
-		fprintf(outputStream,"\n");
-	}
-
-	fflush(outputStream);
-}
-
-void (*logger)(int level, const char* fileName, const char* functionName, int line, const char* message) = logMessageToStandardStream;
-
-EXPORT(void) setLogger(void (*newLogger)(int level, const char* fileName, const char* functionName, int line, const char* message)) {
+void setLogger(void (*newLogger)(const char* type, const char* fileName, const char* functionName, int line, const char* message)) {
     logger = newLogger;
 }
 
-EXPORT(void) logMessage(int level, const char* fileName, const char* functionName, int line, ...) {
-    if(level > max_error_level){
-		return;
-	}
+void setShouldLog(bool (*newShouldLog)(const char* type)) {
+    shouldLog = newShouldLog;
+}
 
-	if (!logger) {
-	    return;
-	}
+void logTypedMessage(const char* type, const char* fileName, const char* functionName, int line, ...) {
+    va_list args;
+    va_start(args, line);
+    logTypedMessage_impl(type, fileName, functionName, line, args);
+    va_end(args);
+}
 
-    char * format;
-    va_list list;
-	va_start(list, line);
-	format = va_arg(list, char*);
+void logMessage(int level, const char* fileName, const char* functionName, int line, ...) {
+    va_list args;
+    const char * type;
 
-    int max_len = 250;
-    char *buffer = malloc(max_len);
+	va_start(args, line);
+	type = severityName[level];
 
-    int j = snprintf(buffer, max_len, format, list);
+	logTypedMessage_impl(type, fileName, functionName, line, args);
 
-    logger(level, fileName, functionName, line, buffer);
-
-    free(buffer);
-	va_end(list);
+	va_end(args);
 }
 
 void getCrashDumpFilenameInto(char *buf)
