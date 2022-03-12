@@ -6,6 +6,7 @@ use file_matcher::FilesNamed;
 use new_string_template::template::Template;
 use serde::{Serialize, Serializer};
 use std::collections::HashMap;
+use std::env;
 use std::ffi::OsStr;
 use std::path::PathBuf;
 use std::rc::Rc;
@@ -245,7 +246,9 @@ impl Unit {
         // the `cc` crate create a static library by default. In case of msvc we should override the used archiver from lib.exe to link.exe and
         // correctly provide the linking libraries from the dependencies
         if compiler.is_like_msvc() {
-            build.archiver("link.exe");
+            let target = env::var("TARGET").expect("Could not find TARGET env.var.");
+            let linker = cc::windows_registry::find_tool(&target, "link.exe").expect("Could not find link.exe");
+            build.archiver(linker.path());
             build.ar_flag("-DLL");
             let libs = compiler
                 .env()

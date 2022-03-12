@@ -1,7 +1,7 @@
 use crate::{Builder, BuilderTarget};
 use std::fmt;
 use std::fmt::{Debug, Formatter};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::process::Command;
 use std::rc::Rc;
 
