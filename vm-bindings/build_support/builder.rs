@@ -37,8 +37,6 @@ pub trait Builder: Debug {
         self.profile() == "debug"
     }
 
-    fn ensure_build_tools(&self) {}
-
     fn output_directory(&self) -> PathBuf {
         Path::new(env::var("OUT_DIR").unwrap().as_str()).to_path_buf()
     }

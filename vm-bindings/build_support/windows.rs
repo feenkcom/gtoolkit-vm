@@ -74,26 +74,6 @@ impl Builder for WindowsBuilder {
         BuilderTarget::Windows
     }
 
-    fn ensure_build_tools(&self) {
-        which::which("pkg-config").expect("Could not find pkg-config. Please add it to PATH");
-        which::which("cmake").expect("Could not find cmake. Please add it to PATH");
-        which::which("git").expect("Could not find git. Please add it to PATH");
-        which::which("MSBuild").expect("Could not find MSBuild. Please add it to PATH");
-        which::which("clang").expect("Could not find clang. Please add it to PATH");
-        which::which("clang++").expect("Could not find clang++. Please add it to PATH");
-        which::which("lld").expect("Could not find lld. Please add it to PATH");
-        if !Path::new(&std::env::var("LIBCLANG_PATH").expect("LIBCLANG_PATH must be set")).exists()
-        {
-            panic!(
-                "LIBCLANG_PATH must exist: {:?}",
-                &std::env::var("LIBCLANG_PATH")
-            )
-        }
-        if !Path::new(&std::env::var("LLVM_HOME").expect("LLVM_HOME must be set")).exists() {
-            panic!("LLVM_HOME must exist: {:?}", &std::env::var("LLVM_HOME"))
-        }
-    }
-
     fn prepare_environment(&self) {
         self.clone_pthread();
         self.compile_pthread();
