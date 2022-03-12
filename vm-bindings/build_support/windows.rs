@@ -29,7 +29,7 @@ impl WindowsBuilder {
             .arg("clone")
             .arg("https://github.com/BrianGladman/pthreads.git")
             .status()
-            .unwrap();
+            .expect("Could not clone repository. Is git installed?");
 
         // checkout the version of pthreads that works
         Command::new("git")
@@ -57,13 +57,15 @@ impl WindowsBuilder {
             &solution.display()
         );
 
-        Command::new("MSBuild")
+        let mut msbuild =
+            cc::windows_registry::find("msvc", "msbuild").expect("Could not find MSBuild.");
+        msbuild
             .current_dir(self.pthreads_directory())
             .arg(&solution)
             .arg("/p:Platform=x64")
             .arg(format!("/property:Configuration={}", self.profile()))
             .status()
-            .unwrap();
+            .expect("Could not compile pthreads.");
     }
 }
 

@@ -480,7 +480,7 @@ fn find_sources(sources_wildmatch: &str, builder: Rc<dyn Builder>) -> Result<Vec
         .find()
         .unwrap();
     if files.is_empty() {
-        return bail!(
+        bail!(
             "Could not find files matching {} in {}",
             &file_name,
             directory.display()
