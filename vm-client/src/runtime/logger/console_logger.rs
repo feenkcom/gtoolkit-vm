@@ -10,6 +10,7 @@ use vm_bindings::{LogLevel, ObjectFieldIndex, StackOffset};
 
 use colored::*;
 use std::sync::Mutex;
+use chrono::Local;
 
 #[derive(Debug)]
 struct ConsoleLogger;
@@ -23,10 +24,12 @@ impl ConsoleLogger {
 impl Logger for ConsoleLogger {
     fn log(&mut self, log: LogSignal) {
         println!(
-            "[{}] {}:{} {}",
+            "{} {} {} - {}",
+            Local::now().format("%Y-%m-%d %H:%M:%S").to_string().bright_black(),
             log.log_type.bright_black().bold(),
-            log.file_name.bright_black(),
-            log.line.to_string().bright_black(),
+            format!("{}:{}",
+                    log.file_name,
+                    log.line).bright_black(),
             log.message.trim()
         );
     }

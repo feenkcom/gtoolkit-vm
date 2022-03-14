@@ -26,12 +26,12 @@ impl BeaconLogger {
 }
 
 impl Logger for BeaconLogger {
-    fn log(&mut self, log: crate::runtime::logger::base_logger::LogSignal) {
+    fn log(&mut self, log: LogSignal) {
         self.buffered_logs.push(log);
         vm().proxy().signal_semaphore(self.semaphore);
     }
 
-    fn poll_all(&mut self) -> Vec<crate::runtime::logger::base_logger::LogSignal> {
+    fn poll_all(&mut self) -> Vec<LogSignal> {
         mem::replace(&mut self.buffered_logs, vec![])
     }
 
