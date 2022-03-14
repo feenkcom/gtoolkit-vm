@@ -1,6 +1,6 @@
 use crate::{
     log_signal, primitiveEnableLogSignal, primitiveEventLoopCallout, primitiveExtractReturnValue,
-    primitiveGetEnabledLogSignals, primitivePollLogger, primitiveStartBeacon, primitiveStopLogger,
+    primitiveGetEnabledLogSignals, primitivePollLogger, primitiveStartBeacon, primitiveStartConsoleLogger, primitiveStopLogger,
     should_log_signal, EventLoop, EventLoopCallout, EventLoopMessage,
 };
 use anyhow::Result;
@@ -63,6 +63,7 @@ impl VirtualMachine {
         vm.add_primitive(primitive!(primitiveEnableLogSignal));
         vm.add_primitive(primitive!(primitiveGetEnabledLogSignals));
         vm.add_primitive(primitive!(primitiveStartBeacon));
+        vm.add_primitive(primitive!(primitiveStartConsoleLogger));
         vm
     }
 

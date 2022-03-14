@@ -69,7 +69,9 @@ pub trait Logger: Debug + Send {
         false
     }
     fn log(&mut self, log: LogSignal);
-    fn poll_all(&mut self) -> Vec<LogSignal>;
+    fn poll_all(&mut self) -> Vec<LogSignal> {
+        vec![]
+    }
     fn any(&self) -> &dyn Any;
     fn any_mut(&mut self) -> &mut dyn Any;
 }
@@ -91,10 +93,6 @@ impl Logger for NullLogger {
     }
 
     fn log(&mut self, log: LogSignal) {}
-
-    fn poll_all(&mut self) -> Vec<LogSignal> {
-        vec![]
-    }
 
     fn any(&self) -> &dyn Any {
         self
