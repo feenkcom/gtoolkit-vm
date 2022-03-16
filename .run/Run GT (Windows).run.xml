@@ -1,0 +1,6 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Run GT (Windows)" type="PowerShellRunType" factoryName="PowerShell" scriptUrl="C:\Users\Aliaksei Syrel\Coding\gtoolkit-vm\scripts\run-gt.ps1" workingDirectory="C:\Users\Aliaksei Syrel\Coding\gtoolkit-vm" executablePath="$PROJECT_DIR$/../../../../Windows/System32/WindowsPowerShell/v1.0/powershell.exe">
+    <envs />
+    <method v="2" />
+  </configuration>
+</component>
