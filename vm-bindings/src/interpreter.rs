@@ -10,7 +10,6 @@ use crate::prelude::NativeAccess;
 use crate::{InterpreterParameters, InterpreterProxy, NamedPrimitive};
 use anyhow::{bail, Result};
 use log::Log;
-use num_traits::FromPrimitive;
 use std::fmt::Debug;
 use std::os::raw::{c_char, c_int};
 use std::panic;

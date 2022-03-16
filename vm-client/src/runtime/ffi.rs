@@ -2,7 +2,7 @@ use libffi::low::{ffi_cif, ffi_type, CodePtr};
 use std::mem::{size_of, transmute};
 use std::os::raw::c_void;
 use std::sync::{Arc, Mutex};
-use vm_bindings::{ObjectFieldIndex, StackOffset};
+use vm_bindings::{Marshallable, ObjectFieldIndex, StackOffset};
 
 use crate::{vm, EventLoopCallout, EventLoopMessage};
 
@@ -116,6 +116,10 @@ pub fn primitiveExtractReturnValue() {
         let callout_address =
             proxy.read_address(callout_address_oop) as *mut Mutex<EventLoopCallout>;
 
+        if callout_address.is_null() {
+            return proxy.primitive_fail();
+        }
+
         let mut callout = Arc::from_raw(callout_address);
 
         let mut locked_callout = callout.lock().unwrap();
@@ -127,7 +131,9 @@ pub fn primitiveExtractReturnValue() {
                     locked_callout.return_type(),
                     2, // one for the argument + one for the receiver
                 )
-                .unwrap();
+                .expect("Failed to marshall the return value");
+        } else {
+            proxy.pop(1);
         }
 
         // start freeing memory:

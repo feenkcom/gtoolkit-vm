@@ -2,6 +2,9 @@ use std::ffi::c_void;
 use std::os::raw::c_char;
 
 #[no_mangle]
+pub fn pass_and_return_void() {}
+
+#[no_mangle]
 pub fn pass_and_return_bool(boolean: bool) -> bool {
     return boolean;
 }

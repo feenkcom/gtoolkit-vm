@@ -4,18 +4,10 @@ use crate::bindings::{
     free, malloc, memcpy, sqInt, VirtualMachine as sqInterpreterProxy,
 };
 
-#[cfg(feature = "ffi")]
-use libffi::low::ffi_type;
-#[cfg(feature = "ffi")]
-use libffi_sys::*;
-
 use std::ffi::CString;
-use std::mem::{size_of, transmute};
+use std::mem::size_of;
 
 use crate::prelude::{Handle, NativeAccess, NativeDrop, NativeTransmutable};
-use anyhow::{bail, Result};
-use libffi::high::arg;
-use log::{log, Level};
 use std::os::raw::{c_char, c_double, c_float, c_int, c_ushort, c_void};
 
 pub type InterpreterProxy = Handle<sqInterpreterProxy>;
@@ -86,6 +78,10 @@ impl InterpreterProxy {
         unsafe {
             function(amount_of_stack_items as sqInt, object.into_native());
         }
+    }
+
+    pub fn pop_then_push_integer(&self, amount_of_stack_items: usize, number: impl Into<sqInt>) {
+        self.pop_then_push(amount_of_stack_items, self.new_integer(number));
     }
 
     pub fn get_handler(&self, object: ObjectPointer) -> *mut c_void {
@@ -214,6 +210,12 @@ impl InterpreterProxy {
         unsafe { function(object.into_native(), class.into_native()) != 0 }
     }
 
+    pub fn new_integer(&self, number: impl Into<sqInt>) -> ObjectPointer {
+        let function = self.native().integerObjectOf.unwrap();
+        let oop = unsafe { function(number.into()) };
+        ObjectPointer::from_native_c(oop)
+    }
+
     pub fn new_string(&self, string: impl AsRef<str>) -> ObjectPointer {
         let function = self.native().stringForCString.unwrap();
         let rust_str = string.as_ref();
@@ -238,276 +240,6 @@ impl InterpreterProxy {
     pub fn read_address(&self, external_address_object: ObjectPointer) -> *mut c_void {
         unsafe { readAddress(external_address_object.into_native()) }
     }
-
-    /// Reads the float value from the array at a given index and store the value in a value holder at a given address.
-    /// *Important!* The value holder must be already pre-allocated to fit the float value
-    pub fn marshall_float_at(
-        &self,
-        array: ObjectPointer,
-        index: usize,
-        holder: *mut c_void,
-    ) -> Result<()> {
-        let value = self.fetch_float_at(array, ObjectFieldIndex::new(index));
-        if value > c_float::MAX as c_double {
-            bail!(
-                "Float argument ({}) at index {} exceeded the max value of c_float({})",
-                value,
-                index,
-                c_float::MAX
-            );
-        }
-        if value < c_float::MIN as c_double {
-            bail!(
-                "Float argument ({}) at index {} exceeded the min value of c_float({})",
-                value,
-                index,
-                c_float::MIN
-            );
-        }
-        write_value(value as c_float, holder);
-        Ok(())
-    }
-
-    /// Reads the double value from the array at a given index and store the value in a value holder at a given address.
-    /// *Important!* The value holder must be already pre-allocated to fit the double value
-    pub fn marshall_double_at(
-        &self,
-        array: ObjectPointer,
-        index: usize,
-        holder: *mut c_void,
-    ) -> Result<()> {
-        let value = self.fetch_float_at(array, ObjectFieldIndex::new(index));
-        write_value(value, holder);
-        Ok(())
-    }
-
-    /// Reads the uint8 value from the array at a given index and store the value in a value holder at a given address.
-    /// *Important!* The value holder must be already pre-allocated to fit the uint8 value
-    pub fn marshall_u8_at(
-        &self,
-        array: ObjectPointer,
-        index: usize,
-        holder: *mut c_void,
-    ) -> Result<()> {
-        let object = self.object_field_at(array, ObjectFieldIndex::new(index));
-        let value = if self.is_character_object(object) {
-            self.character_value_of(object) as sqInt
-        } else {
-            self.integer_value_of(object)
-        };
-
-        if value > u8::MAX as sqInt {
-            bail!(
-                "uint8 argument ({}) at index {} exceeded the max value of uint8({})",
-                value,
-                index,
-                u8::MAX
-            );
-        }
-        if value < u8::MIN as sqInt {
-            bail!(
-                "unit argument ({}) at index {} exceeded the min value of uint8({})",
-                value,
-                index,
-                u8::MIN
-            );
-        }
-
-        write_value(value as u8, holder);
-        Ok(())
-    }
-
-    pub fn marshall_pointer_at(
-        &self,
-        array: ObjectPointer,
-        index: usize,
-        holder: *mut c_void,
-    ) -> Result<()> {
-        let external_address = self.object_field_at(array, ObjectFieldIndex::new(index));
-
-        if !self.is_kind_of_class(external_address, self.class_external_address()) {
-            bail!(
-                "pointer argument at index {} is not an external address",
-                index,
-            );
-        }
-
-        let address = self.object_field_at(external_address, ObjectFieldIndex::new(0));
-        write_value(address.into_native(), holder);
-        Ok(())
-    }
-
-    #[cfg(feature = "ffi")]
-    pub fn marshall_argument_from_at_index_into_of_type_with_size(
-        &self,
-        arguments: ObjectPointer,
-        index: usize,
-        arg_type: &mut ffi_type,
-    ) -> Result<*mut c_void> {
-        let arg_holder = self.malloc(arg_type.size);
-
-        match arg_type.type_ as u32 {
-            FFI_TYPE_FLOAT => self.marshall_float_at(arguments, index, arg_holder)?,
-            FFI_TYPE_DOUBLE => self.marshall_double_at(arguments, index, arg_holder)?,
-            FFI_TYPE_UINT8 => self.marshall_u8_at(arguments, index, arg_holder)?,
-            FFI_TYPE_SINT8 => {}
-            FFI_TYPE_UINT16 => {}
-            FFI_TYPE_SINT16 => {}
-            FFI_TYPE_UINT32 => {}
-            FFI_TYPE_SINT32 => {}
-            FFI_TYPE_UINT64 => {}
-            FFI_TYPE_SINT64 => {}
-            FFI_TYPE_STRUCT => {}
-            FFI_TYPE_POINTER => self.marshall_pointer_at(arguments, index, arg_holder)?,
-            FFI_TYPE_VOID => {
-                bail!(
-                    "Void argument type of the argument at {} is not supported",
-                    index
-                );
-            }
-            FFI_TYPE_INT => {
-                bail!(
-                    "Int argument type of the argument at {} is not supported",
-                    index
-                );
-            }
-            FFI_TYPE_LONGDOUBLE => {
-                bail!(
-                    "Long argument type of the argument at {} is not supported",
-                    index
-                );
-            }
-            FFI_TYPE_COMPLEX => {
-                bail!(
-                    "Complex argument type of the argument at {} is not supported",
-                    index
-                );
-            }
-            _ => {
-                bail!(
-                    "Unknown type {} of the argument at {}",
-                    arg_type.type_,
-                    index
-                );
-            }
-        };
-
-        Ok(arg_holder)
-    }
-
-    //StackInterpreterPrimitives >> marshallArgumentFrom: argumentsArrayOop atIndex: i into: argHolder ofType: argType withSize: argTypeSize [
-    //
-    // 	<option: #FEATURE_FFI>
-    // 	[ argType ]
-    // 		caseOf:
-    // 			{([ FFI_TYPE_POINTER ]
-    // 				-> [ self marshallPointerFrom: argumentsArrayOop at: i into: argHolder ]).
-    // 			([ FFI_TYPE_STRUCT ]
-    // 				-> [ self marshallStructFrom: argumentsArrayOop at: i into: argHolder withSize: argTypeSize ]).
-    // 			([ FFI_TYPE_FLOAT ]
-    // 				-> [ self marshallFloatFrom: argumentsArrayOop at: i into: argHolder ]).
-    // 			([ FFI_TYPE_DOUBLE ]
-    // 				-> [ self marshallDoubleFrom: argumentsArrayOop at: i into: argHolder ]).
-    // 			([ FFI_TYPE_SINT8 ]
-    // 				-> [ self marshallSInt8From: argumentsArrayOop at: i into: argHolder ]).
-    // 			([ FFI_TYPE_UINT8 ]
-    // 				-> [ self marshallUInt8From: argumentsArrayOop at: i into: argHolder ]).
-    // 			([ FFI_TYPE_SINT16 ]
-    // 				-> [ self marshallSInt16From: argumentsArrayOop at: i into: argHolder ]).
-    // 			([ FFI_TYPE_UINT16 ]
-    // 				-> [ self marshallUInt16From: argumentsArrayOop at: i into: argHolder ]).
-    // 			([ FFI_TYPE_SINT32 ]
-    // 				-> [ self marshallSInt32From: argumentsArrayOop at: i into: argHolder ]).
-    // 			([ FFI_TYPE_UINT32 ]
-    // 				-> [ self marshallUInt32From: argumentsArrayOop at: i into: argHolder ]).
-    // 			([ FFI_TYPE_SINT64 ]
-    // 				-> [ self marshallSInt64From: argumentsArrayOop at: i into: argHolder ]).
-    // 			([ FFI_TYPE_UINT64 ]
-    // 				-> [ self marshallUInt64From: argumentsArrayOop at: i into: argHolder ])}
-    // 		otherwise: [ self primitiveFailFor: PrimErrBadArgument ]
-    // ]
-
-    #[cfg(feature = "ffi")]
-    pub fn marshall_and_push_return_value_of_type_popping(
-        &self,
-        return_holder: *const c_void,
-        return_type: &ffi_type,
-        primitive_arguments_and_receiver_count: usize,
-    ) -> Result<()> {
-        match return_type.type_ as u32 {
-            FFI_TYPE_FLOAT => {}
-            FFI_TYPE_DOUBLE => {}
-            FFI_TYPE_UINT8 => {}
-            FFI_TYPE_SINT8 => {}
-            FFI_TYPE_UINT16 => {}
-            FFI_TYPE_SINT16 => {}
-            FFI_TYPE_UINT32 => {}
-            FFI_TYPE_SINT32 => {}
-            FFI_TYPE_UINT64 => {}
-            FFI_TYPE_SINT64 => {}
-            FFI_TYPE_STRUCT => {}
-            FFI_TYPE_POINTER => {
-                let address = unsafe { *(return_holder as *const *const c_void) };
-                self.pop_then_push(
-                    primitive_arguments_and_receiver_count,
-                    self.new_external_address(address),
-                )
-            }
-            FFI_TYPE_VOID => {
-                self.pop(primitive_arguments_and_receiver_count - 1);
-            }
-            FFI_TYPE_INT => {
-                bail!("Int return type is not supported",);
-            }
-            FFI_TYPE_LONGDOUBLE => {
-                bail!("Long return type is not supported",);
-            }
-            FFI_TYPE_COMPLEX => {
-                bail!("Complex return type is not supported",);
-            }
-            _ => {
-                bail!("Unknown return type {}", return_type.type_);
-            }
-        };
-
-        Ok(())
-    }
-
-    // StackInterpreterPrimitives >> marshallAndPushReturnValueFrom: returnHolder ofType: ffiType poping: argumentsAndReceiverCount [
-    //
-    // 	<option: #FEATURE_FFI>
-    // 	<var: #ffiType type: #'ffi_type *'>
-    //
-    // 	[ ffiType type ]
-    // 		caseOf: {
-    // 			[ FFI_TYPE_SINT8 ] 	-> [ self pop: argumentsAndReceiverCount thenPushInteger: (objectMemory readSINT8AtPointer: returnHolder) ].
-    // 			[ FFI_TYPE_SINT16 ] 	-> [ self pop: argumentsAndReceiverCount thenPushInteger: (objectMemory readSINT16AtPointer: returnHolder) ].
-    // 			[ FFI_TYPE_SINT32 ] 	-> [ self
-    // 													pop: argumentsAndReceiverCount
-    // 													thenPush: (objectMemory signed32BitIntegerFor: (objectMemory readSINT32AtPointer: returnHolder)) ].
-    // 			[ FFI_TYPE_SINT64 ] 	-> [ self
-    // 													pop: argumentsAndReceiverCount
-    // 													thenPush: (objectMemory signed64BitIntegerFor: (objectMemory readSINT64AtPointer: returnHolder)) ].
-    //
-    // 			[ FFI_TYPE_UINT8 ] 	-> [ self pop: argumentsAndReceiverCount thenPushInteger: (objectMemory readUINT8AtPointer: returnHolder) ].
-    // 			[ FFI_TYPE_UINT16 ] 	-> [ self pop: argumentsAndReceiverCount thenPushInteger: (objectMemory readUINT16AtPointer: returnHolder) ].
-    // 			[ FFI_TYPE_UINT32 ] 	-> [ self
-    // 													pop: argumentsAndReceiverCount
-    // 													thenPush: (objectMemory positive32BitIntegerFor: (objectMemory readUINT32AtPointer: returnHolder)) ].
-    // 			[ FFI_TYPE_UINT64 ] 	-> [ self
-    // 													pop: argumentsAndReceiverCount
-    // 													thenPush: (objectMemory positive64BitIntegerFor: (objectMemory readUINT64AtPointer: returnHolder)) ].
-    //
-    // 			[ FFI_TYPE_POINTER ] 	-> [ self pop: argumentsAndReceiverCount thenPush: (objectMemory newExternalAddressWithValue: (objectMemory readPointerAtPointer: returnHolder)) ].
-    //
-    // 			[ FFI_TYPE_STRUCT ] 	-> [ self pop: argumentsAndReceiverCount thenPush: (self newByteArrayWithStructContent: returnHolder size: ffiType size) ].
-    //
-    // 			[ FFI_TYPE_FLOAT ] 	-> [ self pop: argumentsAndReceiverCount thenPushFloat: (objectMemory readFloat32AtPointer: returnHolder) ].
-    // 			[ FFI_TYPE_DOUBLE ] 	-> [ self pop: argumentsAndReceiverCount thenPushFloat: (objectMemory readFloat64AtPointer: returnHolder) ].
-    // 			[ FFI_TYPE_VOID ] 		-> [ self pop: argumentsAndReceiverCount - 1 "Pop the arguments leaving the receiver" ]}
-    // 			otherwise: [ self primitiveFailFor: PrimErrBadArgument ]
-    //
-    // ]
 
     pub fn malloc(&self, bytes: usize) -> *mut c_void {
         unsafe { malloc(bytes.try_into().unwrap()) }
@@ -534,7 +266,7 @@ impl InterpreterProxy {
     }
 }
 
-fn write_value<T>(value: T, holder: *mut c_void) {
+pub(crate) fn write_value<T>(value: T, holder: *mut c_void) {
     let holder = holder as *mut T;
     unsafe { *holder = value };
 }
