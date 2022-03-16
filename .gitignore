@@ -48,3 +48,7 @@ temp/
 PharoDebug.log
 libs
 gtoolkit-vm-builder
+gtoolkit-vm-builder.exe
+glamoroustoolkit/
+windows.ps1
+gt-installer.exe
