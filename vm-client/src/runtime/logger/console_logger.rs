@@ -8,9 +8,9 @@ use std::mem::size_of;
 pub use std::os::raw::{c_char, c_int};
 use vm_bindings::{LogLevel, ObjectFieldIndex, StackOffset};
 
+use chrono::Local;
 use colored::*;
 use std::sync::Mutex;
-use chrono::Local;
 
 #[derive(Debug)]
 struct ConsoleLogger;
@@ -25,11 +25,12 @@ impl Logger for ConsoleLogger {
     fn log(&mut self, log: LogSignal) {
         println!(
             "{} {} {} - {}",
-            Local::now().format("%Y-%m-%d %H:%M:%S").to_string().bright_black(),
+            Local::now()
+                .format("%Y-%m-%d %H:%M:%S")
+                .to_string()
+                .bright_black(),
             log.log_type.bright_black().bold(),
-            format!("{}:{}",
-                    log.file_name,
-                    log.line).bright_black(),
+            format!("{}:{}", log.file_name, log.line).bright_black(),
             log.message.trim()
         );
     }

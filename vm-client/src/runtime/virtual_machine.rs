@@ -1,7 +1,8 @@
 use crate::{
     log_signal, primitiveEnableLogSignal, primitiveEventLoopCallout, primitiveExtractReturnValue,
-    primitiveGetEnabledLogSignals, primitivePollLogger, primitiveStartBeacon, primitiveStartConsoleLogger, primitiveStopLogger,
-    should_log_signal, EventLoop, EventLoopCallout, EventLoopMessage,
+    primitiveGetEnabledLogSignals, primitivePollLogger, primitiveStartBeacon,
+    primitiveStartConsoleLogger, primitiveStopLogger, should_log_signal, EventLoop,
+    EventLoopCallout, EventLoopMessage,
 };
 use anyhow::Result;
 use libffi::high::call;

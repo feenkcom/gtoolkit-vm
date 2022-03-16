@@ -247,7 +247,8 @@ impl Unit {
         // correctly provide the linking libraries from the dependencies
         if compiler.is_like_msvc() {
             let target = env::var("TARGET").expect("Could not find TARGET env.var.");
-            let linker = cc::windows_registry::find_tool(&target, "link.exe").expect("Could not find link.exe");
+            let linker = cc::windows_registry::find_tool(&target, "link.exe")
+                .expect("Could not find link.exe");
             build.archiver(linker.path());
             build.ar_flag("-DLL");
             let libs = compiler
