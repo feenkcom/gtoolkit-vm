@@ -1,7 +1,7 @@
 use crate::bindings::{
     calloc, exportGetHandler as getHandler,
     exportInstantiateClassIsPinned as instantiateClassIsPinned, exportReadAddress as readAddress,
-    free, malloc, memcpy, sqInt, VirtualMachine as sqInterpreterProxy,
+    free, malloc, memcpy, sqInt, usqInt, VirtualMachine as sqInterpreterProxy,
 };
 
 use std::ffi::CString;
@@ -160,6 +160,11 @@ impl InterpreterProxy {
     pub fn character_value_of(&self, object: ObjectPointer) -> c_char {
         let function = self.native().characterValueOf.unwrap();
         unsafe { function(object.into_native()) as c_char }
+    }
+
+    pub fn positive_32bit_value_of(&self, object: ObjectPointer) -> usqInt {
+        let function = self.native().positive32BitValueOf.unwrap();
+        unsafe { function(object.into_native()) }
     }
 
     pub fn fetch_float_at(&self, object: ObjectPointer, index: ObjectFieldIndex) -> c_double {

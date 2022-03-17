@@ -1,4 +1,4 @@
-use crate::bindings::sqInt;
+use crate::bindings::{sqInt, usqInt};
 
 use crate::{InterpreterProxy, ObjectFieldIndex, ObjectPointer};
 
@@ -63,6 +63,13 @@ pub trait Marshallable {
         holder: *mut c_void,
     ) -> Result<()>;
 
+    fn marshall_u32_at(
+        &self,
+        array: ObjectPointer,
+        index: usize,
+        holder: *mut c_void,
+    ) -> Result<()>;
+
     fn marshall_pointer_at(
         &self,
         array: ObjectPointer,
@@ -88,7 +95,7 @@ impl Marshallable for InterpreterProxy {
             FFI_TYPE_SINT8 => self.marshall_i8_at(arguments, index, arg_holder)?,
             FFI_TYPE_UINT16 => self.marshall_u16_at(arguments, index, arg_holder)?,
             FFI_TYPE_SINT16 => self.marshall_i16_at(arguments, index, arg_holder)?,
-            FFI_TYPE_UINT32 => {}
+            FFI_TYPE_UINT32 => self.marshall_u32_at(arguments, index, arg_holder)?,
             FFI_TYPE_SINT32 => {}
             FFI_TYPE_UINT64 => {}
             FFI_TYPE_SINT64 => {}
@@ -443,6 +450,37 @@ impl Marshallable for InterpreterProxy {
         }
 
         write_value(value as i16, holder);
+        Ok(())
+    }
+
+    /// Reads the uint32 value from the array at a given index and store the value in a value holder at a given address.
+    /// *Important!* The value holder must be already pre-allocated to fit the uint32 value
+    fn marshall_u32_at(
+        &self,
+        array: ObjectPointer,
+        index: usize,
+        holder: *mut c_void,
+    ) -> Result<()> {
+        let object = self.object_field_at(array, ObjectFieldIndex::new(index));
+        let value = self.positive_32bit_value_of(object);
+        if value > u32::MAX as usqInt {
+            bail!(
+                "uint32 argument ({}) at index {} exceeded the max value of uint32({})",
+                value,
+                index,
+                u32::MAX
+            );
+        }
+        if value < u32::MIN as usqInt {
+            bail!(
+                "uint32 argument ({}) at index {} exceeded the min value of uint32({})",
+                value,
+                index,
+                u32::MIN
+            );
+        }
+
+        write_value(value as u32, holder);
         Ok(())
     }
 
