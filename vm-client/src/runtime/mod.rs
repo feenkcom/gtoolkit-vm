@@ -13,7 +13,7 @@ pub use application::Application;
 pub use application_options::AppOptions;
 pub use constellation::Constellation;
 pub use error::{ApplicationError, Result};
-pub use event_loop::{EventLoop, EventLoopCallout, EventLoopMessage};
+pub use event_loop::{EventLoop, EventLoopCallout, EventLoopMessage, EventLoopWaker};
 pub use ffi::{primitiveEventLoopCallout, primitiveExtractReturnValue};
 pub use image_finder::*;
 pub use logger::*;

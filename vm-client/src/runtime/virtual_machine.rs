@@ -2,12 +2,13 @@ use crate::{
     log_signal, primitiveEnableLogSignal, primitiveEventLoopCallout, primitiveExtractReturnValue,
     primitiveGetEnabledLogSignals, primitivePollLogger, primitiveStartBeacon,
     primitiveStartConsoleLogger, primitiveStopLogger, should_log_signal, EventLoop,
-    EventLoopCallout, EventLoopMessage,
+    EventLoopCallout, EventLoopMessage, EventLoopWaker,
 };
 use anyhow::Result;
 use libffi::high::call;
 use libffi::low::{ffi_cif, ffi_type, CodePtr};
 use libffi::middle::Cif;
+use std::cell::{BorrowError, Cell, Ref, RefCell};
 use std::mem::{size_of, transmute};
 use std::os::raw::c_void;
 use std::process::exit;
@@ -33,6 +34,7 @@ pub struct VirtualMachine {
     interpreter: Arc<PharoInterpreter>,
     event_loop: Option<EventLoop>,
     event_loop_sender: Option<Sender<EventLoopMessage>>,
+    event_loop_waker: RefCell<Option<EventLoopWaker>>,
 }
 
 impl VirtualMachine {
@@ -48,6 +50,7 @@ impl VirtualMachine {
             interpreter: Arc::new(PharoInterpreter::new(parameters)),
             event_loop,
             event_loop_sender,
+            event_loop_waker: RefCell::new(None),
         };
 
         vm.interpreter().set_logger(Some(log_signal));
@@ -65,6 +68,7 @@ impl VirtualMachine {
         vm.add_primitive(primitive!(primitiveGetEnabledLogSignals));
         vm.add_primitive(primitive!(primitiveStartBeacon));
         vm.add_primitive(primitive!(primitiveStartConsoleLogger));
+        vm.add_primitive(primitive!(primitiveSetEventLoopWaker));
         vm
     }
 
@@ -110,6 +114,10 @@ impl VirtualMachine {
     pub fn send(&self, message: EventLoopMessage) -> Result<()> {
         if let Some(sender) = self.event_loop_sender.as_ref() {
             sender.send(message).unwrap();
+
+            if let Some(waker) = self.event_loop_waker.borrow().as_ref() {
+                waker.wake();
+            }
         } else {
             match message {
                 EventLoopMessage::Call(callout) => {
@@ -209,4 +217,24 @@ pub extern "C" fn try_receive_events(event_loop_ptr: *const EventLoop) {
 #[no_mangle]
 pub extern "C" fn semaphore_signaller(semaphore_index: usize) {
     vm().proxy().signal_semaphore(semaphore_index);
+}
+
+#[no_mangle]
+#[allow(non_snake_case)]
+pub fn primitiveSetEventLoopWaker() {
+    let proxy = vm().proxy();
+
+    let waker_thunk_external_address = proxy.stack_object_value(StackOffset::new(1));
+    let waker_function_external_address = proxy.stack_object_value(StackOffset::new(0));
+
+    let waker_function_ptr = proxy.read_address(waker_function_external_address);
+
+    let waker_function: extern "C" fn(*const c_void, u32) -> bool =
+        unsafe { std::mem::transmute(waker_function_ptr) };
+    let waker_thunk = proxy.read_address(waker_thunk_external_address);
+
+    let waker = EventLoopWaker::new(waker_function, waker_thunk);
+    vm().event_loop_waker.replace(Some(waker));
+
+    proxy.method_return_boolean(true);
 }

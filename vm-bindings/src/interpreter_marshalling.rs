@@ -70,6 +70,13 @@ pub trait Marshallable {
         holder: *mut c_void,
     ) -> Result<()>;
 
+    fn marshall_u64_at(
+        &self,
+        array: ObjectPointer,
+        index: usize,
+        holder: *mut c_void,
+    ) -> Result<()>;
+
     fn marshall_pointer_at(
         &self,
         array: ObjectPointer,
@@ -96,10 +103,25 @@ impl Marshallable for InterpreterProxy {
             FFI_TYPE_UINT16 => self.marshall_u16_at(arguments, index, arg_holder)?,
             FFI_TYPE_SINT16 => self.marshall_i16_at(arguments, index, arg_holder)?,
             FFI_TYPE_UINT32 => self.marshall_u32_at(arguments, index, arg_holder)?,
-            FFI_TYPE_SINT32 => {}
-            FFI_TYPE_UINT64 => {}
-            FFI_TYPE_SINT64 => {}
-            FFI_TYPE_STRUCT => {}
+            FFI_TYPE_SINT32 => {
+                bail!(
+                    "FFI_TYPE_SINT32 argument type of the argument at {} is not supported",
+                    index
+                );
+            }
+            FFI_TYPE_UINT64 => self.marshall_u64_at(arguments, index, arg_holder)?,
+            FFI_TYPE_SINT64 => {
+                bail!(
+                    "FFI_TYPE_SINT64 argument type of the argument at {} is not supported",
+                    index
+                );
+            }
+            FFI_TYPE_STRUCT => {
+                bail!(
+                    "FFI_TYPE_STRUCT argument type of the argument at {} is not supported",
+                    index
+                );
+            }
             FFI_TYPE_POINTER => self.marshall_pointer_at(arguments, index, arg_holder)?,
             FFI_TYPE_VOID => {
                 bail!(
@@ -463,7 +485,7 @@ impl Marshallable for InterpreterProxy {
     ) -> Result<()> {
         let object = self.object_field_at(array, ObjectFieldIndex::new(index));
         let value = self.positive_32bit_value_of(object);
-        if value > u32::MAX as usqInt {
+        if value > u32::MAX {
             bail!(
                 "uint32 argument ({}) at index {} exceeded the max value of uint32({})",
                 value,
@@ -471,7 +493,7 @@ impl Marshallable for InterpreterProxy {
                 u32::MAX
             );
         }
-        if value < u32::MIN as usqInt {
+        if value < u32::MIN {
             bail!(
                 "uint32 argument ({}) at index {} exceeded the min value of uint32({})",
                 value,
@@ -480,7 +502,38 @@ impl Marshallable for InterpreterProxy {
             );
         }
 
-        write_value(value as u32, holder);
+        write_value(value, holder);
+        Ok(())
+    }
+
+    /// Reads the uint64 value from the array at a given index and store the value in a value holder at a given address.
+    /// *Important!* The value holder must be already pre-allocated to fit the uint64 value
+    fn marshall_u64_at(
+        &self,
+        array: ObjectPointer,
+        index: usize,
+        holder: *mut c_void,
+    ) -> Result<()> {
+        let object = self.object_field_at(array, ObjectFieldIndex::new(index));
+        let value = self.positive_64bit_value_of(object);
+        if value > u64::MAX {
+            bail!(
+                "uint64 argument ({}) at index {} exceeded the max value of uint64({})",
+                value,
+                index,
+                u64::MAX
+            );
+        }
+        if value < u64::MIN {
+            bail!(
+                "uint64 argument ({}) at index {} exceeded the min value of uint64({})",
+                value,
+                index,
+                u64::MIN
+            );
+        }
+
+        write_value(value, holder);
         Ok(())
     }
 

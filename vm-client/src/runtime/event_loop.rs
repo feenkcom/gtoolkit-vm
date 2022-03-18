@@ -126,3 +126,22 @@ impl Debug for EventLoopCallout {
             .finish()
     }
 }
+
+#[derive(Debug)]
+pub struct EventLoopWaker {
+    waker: extern "C" fn(*const c_void, u32) -> bool,
+    waker_thunk: *const c_void,
+}
+
+impl EventLoopWaker {
+    pub fn new(
+        waker: extern "C" fn(*const c_void, u32) -> bool,
+        waker_thunk: *const c_void,
+    ) -> Self {
+        Self { waker, waker_thunk }
+    }
+
+    pub fn wake(&self) -> bool {
+        (self.waker)(self.waker_thunk, 0)
+    }
+}
