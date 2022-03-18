@@ -2,15 +2,7 @@ use std::path::PathBuf;
 use std::process::Command;
 
 fn executable() -> PathBuf {
-    let executable = std::env::var("VM_CLIENT_EXECUTABLE").map_or_else(
-        |_| {
-            PathBuf::from(env!("CARGO_WORKSPACE_DIR"))
-                .join("target")
-                .join("release")
-                .join("vm_client-cli")
-        },
-        |path| PathBuf::from(path),
-    );
+    let executable = PathBuf::from(env!("VM_CLIENT_EXECUTABLE"));
     if !executable.exists() {
         panic!("{} does not exist", &executable.display());
     }
