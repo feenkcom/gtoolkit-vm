@@ -1,6 +1,7 @@
 use crate::{ApplicationError, Result};
 use libffi::high::call;
 use libffi::low::{ffi_cif, ffi_type, CodePtr};
+use std::ffi::CString;
 use std::fmt::{Debug, Formatter};
 use std::intrinsics::transmute;
 use std::os::raw::c_void;
@@ -48,19 +49,25 @@ impl EventLoop {
     pub fn try_recv(&self) -> Result<()> {
         loop {
             match self.receiver.try_recv() {
-                Ok(message) => match self.process_message(message) {
-                    Ok(should_continue) => {
-                        if !should_continue {
-                            break;
+                Ok(message) => {
+                    trace!("Received {:?}", &message);
+                    match self.process_message(message) {
+                        Ok(should_continue) => {
+                            if !should_continue {
+                                break;
+                            }
+                        }
+                        Err(error) => {
+                            error!("{}", &error);
+                            return Err(error);
                         }
                     }
-                    Err(error) => return Err(error),
-                },
+                }
                 Err(error) => {
                     return match error {
                         TryRecvError::Empty => Ok(()),
                         TryRecvError::Disconnected => Err(error.into()),
-                    }
+                    };
                 }
             }
         }
@@ -83,6 +90,8 @@ impl EventLoop {
 
 #[repr(C)]
 pub struct EventLoopCallout {
+    pub(crate) function_name: Option<CString>,
+    pub(crate) module_name: Option<CString>,
     pub(crate) cif: *mut ffi_cif,
     pub(crate) func: CodePtr,
     pub(crate) args: Option<*mut *mut c_void>,
@@ -119,6 +128,8 @@ impl EventLoopCallout {
 impl Debug for EventLoopCallout {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Callout")
+            .field("function_name", &self.function_name)
+            .field("module_name", &self.module_name)
             .field("cif", &self.cif)
             .field("func", &self.func)
             .field("args", &self.args)

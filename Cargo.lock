@@ -1925,6 +1925,7 @@ dependencies = [
  "core-foundation",
  "dirs",
  "embed-resource",
+ "env_logger",
  "lazy_static",
  "libc",
  "libffi",

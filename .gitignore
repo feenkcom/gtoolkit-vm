@@ -49,7 +49,7 @@ PharoDebug.log
 libs
 gtoolkit-vm-builder
 gtoolkit-vm-builder.exe
-glamoroustoolkit/
+glamoroustoolkit*
 windows.ps1
 gt-installer.exe
 gt-installer

@@ -40,6 +40,28 @@ pub fn primitiveEventLoopCallout() {
     let cif_ptr = proxy.get_handler(cif_oop) as *mut ffi_cif;
     let cif: &ffi_cif = unsafe { transmute(cif_ptr) };
 
+    let function_name_oop = proxy.object_field_at(
+        external_function_oop,
+        ObjectFieldIndex::new(TFExternalFunction::FunctionName as usize),
+    );
+
+    let function_name = if proxy.is_kind_of_class(function_name_oop, proxy.class_string()) {
+        proxy.cstring_value_of(function_name_oop)
+    } else {
+        None
+    };
+
+    let module_name_oop = proxy.object_field_at(
+        external_function_oop,
+        ObjectFieldIndex::new(TFExternalFunction::ModuleName as usize),
+    );
+
+    let module_name = if proxy.is_kind_of_class(module_name_oop, proxy.class_string()) {
+        proxy.cstring_value_of(module_name_oop)
+    } else {
+        None
+    };
+
     let semaphore_index = proxy
         .stack_integer_value(StackOffset::new(TFPrimitiveCallout::SemaphoreIndex as i32))
         as usize;
@@ -88,6 +110,8 @@ pub fn primitiveEventLoopCallout() {
         callback: Some(Box::new(move || {
             vm().proxy().signal_semaphore(semaphore_index);
         })),
+        function_name,
+        module_name,
     }));
 
     vm().send(EventLoopMessage::Call(callout.clone())).unwrap();

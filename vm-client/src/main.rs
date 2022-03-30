@@ -39,6 +39,8 @@ fn run() -> Result<()> {
 }
 
 fn main() {
+    env_logger::init();
+
     if let Err(error) = run() {
         let error: Box<dyn std::error::Error> = Box::new(error);
         let user_facing_error: UserFacingError = error.into();

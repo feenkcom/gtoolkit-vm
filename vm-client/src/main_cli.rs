@@ -6,6 +6,8 @@ extern crate num;
 extern crate num_traits;
 #[macro_use]
 extern crate lazy_static;
+#[macro_use]
+extern crate log;
 
 pub(crate) mod platform;
 mod runtime;
@@ -17,6 +19,8 @@ use std::sync::Arc;
 use vm_bindings::InterpreterParameters;
 
 fn main() {
+    env_logger::init();
+
     let matches = App::new("Virtual Machine")
         .version("1.0")
         .author("feenk gmbh. <contact@feenk.com>")
