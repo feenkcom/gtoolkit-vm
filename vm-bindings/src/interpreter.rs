@@ -4,7 +4,7 @@ use crate::bindings::{
     registerCurrentThreadToHandleExceptions, setLogger, setProcessArguments,
     setProcessEnvironmentVector, setShouldLog, setVMExports, setVmRunOnWorkerThread, sqExport,
     sqInt, vm_init, vm_parameters_ensure_interactive_image_parameter, vm_run_interpreter,
-    VirtualMachine,
+    VirtualMachine, exportStatFullGCUsecs as statFullGCUsecs, exportStatScavengeGCUsecs as statScavengeGCUsecs
 };
 use crate::prelude::NativeAccess;
 use crate::{InterpreterParameters, InterpreterProxy, NamedPrimitive};
@@ -163,6 +163,16 @@ impl PharoInterpreter {
         let vm_exports_ptr = new_vm_exports.as_mut_ptr() as *mut sqExport;
         std::mem::forget(new_vm_exports);
         unsafe { setVMExports(vm_exports_ptr) };
+    }
+
+    /// Return the total amount of microseconds spent on full garbage collection
+    pub fn full_gc_microseconds(&self) -> u64 {
+        unsafe { statFullGCUsecs() }
+    }
+
+    /// Return the total amount of microseconds spent on scavenge garbage collection
+    pub fn scavenge_gc_microseconds(&self) -> u64 {
+        unsafe { statScavengeGCUsecs() }
     }
 
     /// re-allocate the vm-exports memory using rust allocator so that we can modify the exports

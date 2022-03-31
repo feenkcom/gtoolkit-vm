@@ -69,6 +69,8 @@ impl VirtualMachine {
         vm.add_primitive(primitive!(primitiveStartBeacon));
         vm.add_primitive(primitive!(primitiveStartConsoleLogger));
         vm.add_primitive(primitive!(primitiveSetEventLoopWaker));
+        vm.add_primitive(primitive!(primitiveFullGarbageCollectorMicroseconds));
+        vm.add_primitive(primitive!(primitiveScavengeGarbageCollectorMicroseconds));
         vm
     }
 
@@ -237,4 +239,22 @@ pub fn primitiveSetEventLoopWaker() {
     vm().event_loop_waker.replace(Some(waker));
 
     proxy.method_return_boolean(true);
+}
+
+#[no_mangle]
+#[allow(non_snake_case)]
+pub fn primitiveFullGarbageCollectorMicroseconds() {
+    let proxy = vm().proxy();
+
+    let microseconds = vm().interpreter().full_gc_microseconds();
+    proxy.method_return_value(proxy.new_positive_64bit_integer(microseconds));
+}
+
+#[no_mangle]
+#[allow(non_snake_case)]
+pub fn primitiveScavengeGarbageCollectorMicroseconds() {
+    let proxy = vm().proxy();
+
+    let microseconds = vm().interpreter().scavenge_gc_microseconds();
+    proxy.method_return_value(proxy.new_positive_64bit_integer(microseconds));
 }

@@ -132,6 +132,8 @@ pub trait Builder: Debug {
             .allowlist_function("exportGetHandler")
             .allowlist_function("exportReadAddress")
             .allowlist_function("exportInstantiateClassIsPinned")
+            .allowlist_function("exportStatFullGCUsecs")
+            .allowlist_function("exportStatScavengeGCUsecs")
             .allowlist_function("setVmRunOnWorkerThread")
             .allowlist_function("setLogger")
             .allowlist_function("setShouldLog")

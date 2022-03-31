@@ -23,3 +23,11 @@ void setVmRunOnWorkerThread(int isOnWorker) {
 sqInt exportInstantiateClassIsPinned(sqInt classObj, sqInt isPinned) {
     return instantiateClassisPinned(classObj, isPinned);
 }
+
+usqLong exportStatFullGCUsecs() {
+    return getStatFullGCUsecs();
+}
+
+usqLong exportStatScavengeGCUsecs() {
+    return getStatScavengeGCUsecs();
+}

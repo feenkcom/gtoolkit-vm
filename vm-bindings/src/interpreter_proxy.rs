@@ -247,6 +247,12 @@ impl InterpreterProxy {
         external_address
     }
 
+    pub fn new_positive_64bit_integer(&self, integer: u64) -> ObjectPointer {
+        let function = self.native().positive64BitIntegerFor.unwrap();
+        let oop = unsafe { function(integer) };
+        ObjectPointer::from_native_c(oop)
+    }
+
     pub fn read_address(&self, external_address_object: ObjectPointer) -> *mut c_void {
         unsafe { readAddress(external_address_object.into_native()) }
     }

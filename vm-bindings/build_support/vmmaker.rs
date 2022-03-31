@@ -130,11 +130,8 @@ impl VMMaker {
             .arg("--headless")
             .arg(&vmmaker_image)
             .arg("--no-default-preferences")
-            .arg("eval")
-            .arg("--save")
-            .arg(
-                "(RBAddPragmaTransformation pragma: '<api>' inMethod: #instantiateClass:isPinned: inClass: #SpurMemoryManager) asRefactoring execute",
-            );
+            .arg("st")
+            .arg(std::env::current_dir().unwrap().join("extra").join("vmmaker-patch.st"));
 
         CommandsToExecute::new()
             .add(
