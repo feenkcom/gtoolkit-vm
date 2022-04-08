@@ -5,7 +5,7 @@
   "Git": "v0.2.0",
   "Gleam": "v0.3.0",
   "Glutin": "v0.10.0",
-  "Pixels": "v0.3.0",
+  "Pixels": "v0.5.0",
   "Process": "v0.13.0",
   "Sdl2": "v0.2.0",
   "Skia": "v0.6.1",
