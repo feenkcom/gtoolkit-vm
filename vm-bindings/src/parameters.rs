@@ -10,6 +10,8 @@ use std::mem::forget;
 use std::os::raw::{c_char, c_void};
 
 pub type InterpreterParameters = Handle<NativeVMParameters>;
+unsafe impl Send for InterpreterParameters {}
+unsafe impl Sync for InterpreterParameters {}
 
 impl NativeDrop for NativeVMParameters {
     fn drop(&mut self) {
@@ -64,7 +66,7 @@ impl InterpreterParameters {
         str_slice
     }
 
-    pub fn set_image_file_name<P: Into<String>>(&mut self, file_name: P) {
+    pub fn set_image_file_name(&mut self, file_name: impl Into<String>) {
         let new_image_name: String = file_name.into();
 
         if self.image_file_name() == new_image_name {

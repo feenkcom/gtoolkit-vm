@@ -1,20 +1,29 @@
 use crate::{EventLoop, VirtualMachine};
 use std::sync::Arc;
-use vm_bindings::InterpreterParameters;
+use vm_bindings::InterpreterConfiguration;
 
 pub struct Constellation;
 impl Constellation {
-    pub fn run(parameters: InterpreterParameters) {
-        let vm = Arc::new(VirtualMachine::new(parameters, None, None));
+    pub fn run(configuration: InterpreterConfiguration) {
+        if configuration.is_worker_thread() {
+            Self::run_in_worker_thread(configuration);
+        }
+        else {
+            Self::run_in_main_thread(configuration);
+        }
+    }
+
+    fn run_in_main_thread(configuration: InterpreterConfiguration) {
+        let vm = Arc::new(VirtualMachine::new(configuration, None, None));
         vm.clone().register();
         vm.start().unwrap();
     }
 
-    pub fn run_worker(parameters: InterpreterParameters) {
+    fn run_in_worker_thread(configuration: InterpreterConfiguration) {
         let (mut event_loop, sender) = EventLoop::new();
 
         let vm = Arc::new(VirtualMachine::new(
-            parameters,
+            configuration,
             Some(event_loop),
             Some(sender),
         ));

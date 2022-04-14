@@ -6,6 +6,7 @@ use vm_bindings::{Marshallable, ObjectFieldIndex, StackOffset};
 
 use crate::{vm, EventLoopCallout, EventLoopMessage};
 
+#[allow(dead_code)]
 #[repr(u16)]
 enum TFExternalFunction {
     Handle,
@@ -14,6 +15,7 @@ enum TFExternalFunction {
     ModuleName,
 }
 
+#[allow(dead_code)]
 #[repr(u16)]
 enum TFPrimitiveCallout {
     SemaphoreIndex,

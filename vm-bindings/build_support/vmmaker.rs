@@ -1,6 +1,6 @@
 use crate::{Builder, BuilderTarget, DOWNLOADING, EXTRACTING};
 use anyhow::{anyhow, bail, Result};
-use commander::{CommandToExecute, CommandsToExecute};
+use commander::CommandToExecute;
 use downloader::{FileToDownload, FilesToDownload};
 use file_matcher::{FileNamed, OneEntryCopier};
 use serde::Serialize;
@@ -12,15 +12,20 @@ use unzipper::{FileToUnzip, FilesToUnzip};
 const VM_CLIENT_VMMAKER_VM_VAR: &str = "VM_CLIENT_VMMAKER";
 const VM_CLIENT_VMMAKER_IMAGE_VAR: &str = "VM_CLIENT_VMMAKER_IMAGE";
 
-const VMMAKER_WINDOWS_VM_URL: VirtualMachineUrl = VirtualMachineUrl::Pharo("https://files.pharo.org/vm/pharo-spur64-headless/Windows-x86_64/PharoVM-9.0.15-2585c2d7-Windows-x86_64-bin.zip");
 const VMMAKER_LINUX_VM_URL: VirtualMachineUrl = VirtualMachineUrl::Pharo("https://files.pharo.org/vm/pharo-spur64-headless/Linux-x86_64/PharoVM-9.0.11-9e68882-Linux-x86_64-bin.zip");
 const VMMAKER_DARWIN_INTEL_VM_URL: VirtualMachineUrl = VirtualMachineUrl::Pharo("https://files.pharo.org/vm/pharo-spur64-headless/Darwin-x86_64/PharoVM-9.0.11-9e688828-Darwin-x86_64-bin.zip");
-const VMMAKER_DARWIN_M1_VM_URL: VirtualMachineUrl = VirtualMachineUrl::Pharo("https://files.pharo.org/vm/pharo-spur64-headless/Darwin-arm64/PharoVM-9.0.11-9e688828-Darwin-arm64-bin.zip");
-const VMMAKER_IMAGE_URL: &str =
-    "https://files.pharo.org/image/100/Pharo10-SNAPSHOT.build.349.sha.3e26baf.arch.64bit.zip";
+const VMMAKER_WINDOWS_VM_URL: VirtualMachineUrl = VirtualMachineUrl::GToolkit(
+    "https://dl.feenk.com/gtvm/GlamorousToolkit-x86_64-pc-windows-msvc-v0.2.58.zip",
+);
+const VMMAKER_DARWIN_M1_VM_URL: VirtualMachineUrl = VirtualMachineUrl::GToolkit(
+    "https://dl.feenk.com/gtvm/GlamorousToolkit-aarch64-apple-darwin.app-v0.2.58.zip",
+);
 
-/// a folder within $OUT_DIR in which the vm is extracted
-const VMMAKER_VM_FOLDER: &str = "vmmaker-vm";
+const VMMAKER_IMAGE_URL: &str =
+    "https://dl.feenk.com/gtvm/Pharo10.0.0-0.build.512.sha.bfb3a61.arch.64bit.zip";
+
+/// a folder prefix within $OUT_DIR in which the vm is extracted
+const VMMAKER_VM_FOLDER_PREFIX: &str = "vmmaker-vm";
 
 #[derive(Debug, Clone, Serialize)]
 pub struct VMMaker {
@@ -36,6 +41,15 @@ enum VirtualMachineUrl {
     GToolkit(&'static str),
 }
 
+impl VirtualMachineUrl {
+    pub fn as_executable(&self) -> VirtualMachineExecutable {
+        match self {
+            Self::Pharo(_) => VirtualMachineExecutable::Pharo(PathBuf::new()),
+            Self::GToolkit(_) => VirtualMachineExecutable::GToolkit(PathBuf::new()),
+        }
+    }
+}
+
 impl From<VirtualMachineUrl> for String {
     fn from(url: VirtualMachineUrl) -> Self {
         match url {
@@ -45,14 +59,126 @@ impl From<VirtualMachineUrl> for String {
     }
 }
 
-#[derive(Debug, Clone)]
-pub enum VirtualMachineExecutable {
+#[derive(Debug, Clone, Serialize)]
+enum VirtualMachineExecutable {
     Pharo(PathBuf),
     GToolkit(PathBuf),
 }
 
+impl VirtualMachineExecutable {
+    fn all_by_priority() -> [Self; 2] {
+        [Self::GToolkit(PathBuf::new()), Self::Pharo(PathBuf::new())]
+    }
+
+    fn name(&self) -> &'static str {
+        match self {
+            Self::Pharo(_) => "pharo",
+            Self::GToolkit(_) => "gtoolkit",
+        }
+    }
+
+    fn folder_name(&self) -> String {
+        format!("{}-{}", VMMAKER_VM_FOLDER_PREFIX, self.name())
+    }
+
+    fn for_type(vm_type: impl AsRef<str>) -> Result<Self> {
+        let vm_type = vm_type.as_ref().to_lowercase();
+        match vm_type.as_str() {
+            "pharo" => Ok(Self::Pharo(PathBuf::new())),
+            "gtoolkit" => Ok(Self::GToolkit(PathBuf::new())),
+            _ => bail!("Unsupported vm type: \"{}\"", vm_type),
+        }
+    }
+
+    fn for_target_in_folder(target: BuilderTarget, folder: impl AsRef<Path>) -> Result<Self> {
+        let path = folder.as_ref();
+        let folder_name = path
+            .file_name()
+            .ok_or_else(|| anyhow!("Could not get the name of {}", path.display()))?
+            .to_str()
+            .ok_or_else(|| {
+                anyhow!(
+                    "Could not convert the folder name of {} to string",
+                    path.display()
+                )
+            })?;
+        match folder_name.split("-").collect::<Vec<&str>>()[..] {
+            [] => bail!(
+                "Folder name {} does not have a vm type suffix separated by `-`",
+                folder_name
+            ),
+            [_] => bail!(
+                "Folder name {} does not have a vm type suffix separated by `-`",
+                folder_name
+            ),
+            [.., vm_type] => Ok(Self::for_type(vm_type)
+                .map_err(|error| {
+                    anyhow!(
+                        "Failed to detect vm type based on folder name \"{}\": {}",
+                        &folder_name,
+                        error
+                    )
+                })?
+                .with_target(target, path)),
+        }
+    }
+
+    fn path(&self) -> &Path {
+        match self {
+            Self::Pharo(path) => path.as_path(),
+            Self::GToolkit(path) => path.as_path(),
+        }
+    }
+
+    fn exists(&self) -> bool {
+        self.path().exists()
+    }
+
+    fn with_path(&self, path: impl AsRef<Path>) -> Self {
+        let path = path.as_ref().to_path_buf();
+
+        match self {
+            Self::Pharo(_) => Self::Pharo(path),
+            Self::GToolkit(_) => Self::GToolkit(path),
+        }
+    }
+
+    fn with_target(&self, target: BuilderTarget, folder: impl AsRef<Path>) -> Self {
+        let folder = folder.as_ref();
+        match target {
+            BuilderTarget::MacOS => match self {
+                Self::Pharo(_) => Self::Pharo(folder.join("Pharo.app/Contents/MacOS/Pharo")),
+                Self::GToolkit(_) => Self::GToolkit(
+                    folder.join("GlamorousToolkit.app/Contents/MacOS/GlamorousToolkit-cli"),
+                ),
+            },
+            BuilderTarget::Linux => match self {
+                Self::Pharo(_) => Self::Pharo(folder.join("pharo")),
+                Self::GToolkit(_) => Self::GToolkit(folder.join("bin/GlamorousToolkit-cli")),
+            },
+            BuilderTarget::Windows => match self {
+                Self::Pharo(_) => Self::Pharo(folder.join("PharoConsole.exe")),
+                Self::GToolkit(_) => {
+                    Self::GToolkit(folder.join("bin").join("GlamorousToolkit-cli.exe"))
+                }
+            },
+        }
+    }
+
+    pub fn as_command(&self) -> Command {
+        let mut command = Command::new(self.path());
+        match self {
+            Self::Pharo(_) => {
+                command.arg("--headless");
+            }
+            _ => {}
+        };
+        command
+    }
+}
+
 struct VMMakerSource {
-    vm: Option<PathBuf>,
+    vm: Option<VirtualMachineExecutable>,
     image: Option<PathBuf>,
 }
 
@@ -67,7 +193,7 @@ impl VMMaker {
         // the definitive location of the vmmaker image
         let vmmaker_image = vmmaker_image_dir.join("VMMaker.image");
         // let's see if the vm is provided by the user
-        let vmmaker_vm = Self::custom_vmmaker_vm();
+        let vmmaker_vm = Self::custom_vmmaker_vm()?;
 
         // if both the image and vm exist, we are done and can return the vmmaker
         if vmmaker_image.exists() && vmmaker_vm.is_some() {
@@ -78,14 +204,22 @@ impl VMMaker {
             });
         }
 
-        let vmmaker_vm_dir = builder.output_directory().join(VMMAKER_VM_FOLDER);
-        // an expected location of the downloaded and extracted vm
-        let vmmaker_vm = Self::vmmaker_executable(builder.clone(), vmmaker_vm_dir.clone());
+        let existing_vmmaker_vms: Vec<VirtualMachineExecutable> =
+            VirtualMachineExecutable::all_by_priority()
+                .into_iter()
+                .map(|each| {
+                    each.with_target(
+                        builder.target(),
+                        builder.output_directory().join(each.folder_name()),
+                    )
+                })
+                .filter(|each| each.exists())
+                .collect();
 
         // both vm and image exist, we are done
-        if vmmaker_image.exists() && vmmaker_vm.exists() {
+        if vmmaker_image.exists() && !existing_vmmaker_vms.is_empty() {
             return Ok(VMMaker {
-                vm: vmmaker_vm,
+                vm: existing_vmmaker_vms.first().unwrap().clone(),
                 image: vmmaker_image,
                 builder: builder.clone(),
             });
@@ -94,7 +228,7 @@ impl VMMaker {
         // at this point we have neither a ready vmmaker image nor a vm.
         // we should download a new image if there is no custom one and get a vm
         let mut source = VMMakerSource {
-            vm: Self::custom_vmmaker_vm(),
+            vm: Self::custom_vmmaker_vm()?,
             image: Self::custom_source_image(),
         };
 
@@ -106,67 +240,61 @@ impl VMMaker {
         let vmmaker_vm = source.vm.unwrap();
         let source_image = source.image.unwrap();
 
-        CommandToExecute::new_with(&vmmaker_vm, |command| {
+        CommandToExecute::build_command(vmmaker_vm.as_command(), |command| {
             command
-                .arg("--headless")
                 .arg(&source_image)
                 .arg("save")
                 .arg(vmmaker_image_dir.join("VMMaker"));
         })
         .with_name("Save image as VMMaker")
+        .with_verbose(true)
         .without_log_prefix()
+        .into_commands()
         .execute()?;
 
         FileNamed::wildmatch("*.sources")
             .within(source_image.parent().unwrap())
             .copy(&vmmaker_image_dir)?;
 
-        let mut command = Command::new(&vmmaker_vm);
-        command
-            .arg("--headless")
-            .arg(&vmmaker_image)
-            .arg("--no-default-preferences")
-            .arg("--save")
-            .arg("--quit")
-            .arg(
-                builder
-                    .vm_sources_directory()
-                    .join("scripts")
-                    .join("installVMMaker.st"),
-            )
-            .arg(builder.vm_sources_directory())
-            .arg("scpUrl");
+        CommandToExecute::build_command(vmmaker_vm.as_command(), |command| {
+            command
+                .arg(&vmmaker_image)
+                .arg("st")
+                .arg("--no-default-preferences")
+                .arg("--save")
+                .arg("--quit")
+                .arg(
+                    builder
+                        .vm_sources_directory()
+                        .join("scripts")
+                        .join("installVMMaker.st"),
+                )
+                .arg(builder.vm_sources_directory())
+                .arg("scpUrl");
+        })
+        .with_name("Installing VMMaker")
+        .with_verbose(true)
+        .without_log_prefix()
+        .into_commands()
+        .execute()?;
 
-        CommandsToExecute::new()
-            .add(
-                CommandToExecute::new(command)
-                    .with_name("Installing VMMaker")
-                    .with_verbose(true)
-                    .without_log_prefix(),
-            )
-            .execute()?;
-
-        let mut command = Command::new(&vmmaker_vm);
-        command
-            .arg("--headless")
-            .arg(&vmmaker_image)
-            .arg("--no-default-preferences")
-            .arg("st")
-            .arg(
-                std::env::current_dir()
-                    .unwrap()
-                    .join("extra")
-                    .join("vmmaker-patch.st"),
-            );
-
-        CommandsToExecute::new()
-            .add(
-                CommandToExecute::new(command)
-                    .with_name("Patch VMMaker")
-                    .with_verbose(true)
-                    .without_log_prefix(),
-            )
-            .execute()?;
+        CommandToExecute::build_command(vmmaker_vm.as_command(), |command| {
+            command
+                .arg(&vmmaker_image)
+                .arg("st")
+                .arg("--no-default-preferences")
+                .arg(
+                    std::env::current_dir()
+                        .unwrap()
+                        .join("extra")
+                        .join("vmmaker-patch.st"),
+                );
+        })
+        .with_name("Patch VMMaker")
+        .with_verbose(true)
+        .without_log_prefix()
+        .into_commands()
+        .execute()?;
 
         return Ok(VMMaker {
             vm: vmmaker_vm,
@@ -175,32 +303,25 @@ impl VMMaker {
         });
     }
 
-    pub fn generate_sources(&self) {
+    pub fn generate_sources(&self) -> Result<()> {
         if self.builder.output_directory().join("generated").exists() {
-            return;
+            return Ok(());
         }
 
-        let mut command = Command::new(&self.vm);
-        command
-            .arg("--headless")
-            .arg(&self.image)
-            .arg("--no-default-preferences")
-            .arg("eval")
-            .arg(format!(
+        CommandToExecute::build_command(self.vm.as_command(), |command| {
+            command.arg(&self.image).arg("eval").arg(format!(
                 "PharoVMMaker generate: #'{}' outputDirectory: '{}'",
                 "CoInterpreter",
                 self.builder.output_directory().display()
             ));
+        })
+        .with_name("Generating sources")
+        .with_verbose(true)
+        .without_log_prefix()
+        .into_commands()
+        .execute()?;
 
-        CommandsToExecute::new()
-            .add(
-                CommandToExecute::new(command)
-                    .with_name("Generating sources")
-                    .with_verbose(true)
-                    .without_log_prefix(),
-            )
-            .execute()
-            .unwrap();
+        Ok(())
     }
 
     fn download_vmmaker(source: &mut VMMakerSource, builder: Rc<dyn Builder>) -> Result<()> {
@@ -216,7 +337,7 @@ impl VMMaker {
             BuilderTarget::Windows => VMMAKER_WINDOWS_VM_URL,
         };
 
-        let vm = FileToDownload::new(url, &builder.output_directory(), "vmmaker-vm.zip");
+        let vm = FileToDownload::new(url.clone(), &builder.output_directory(), "vmmaker-vm.zip");
         let image = FileToDownload::new(
             VMMAKER_IMAGE_URL,
             &builder.output_directory(),
@@ -244,7 +365,9 @@ impl VMMaker {
 
         let mut unzip = FilesToUnzip::new();
 
-        let vm_folder = builder.output_directory().join(VMMAKER_VM_FOLDER);
+        let vm_executable = url.as_executable();
+
+        let vm_folder = builder.output_directory().join(vm_executable.folder_name());
         let image_folder = builder.output_directory().join("vmmaker-image");
 
         if source.vm.is_none() && !vm_folder.exists() {
@@ -263,49 +386,32 @@ impl VMMaker {
                 .within(&image_folder)
                 .find()?,
         );
-        source.vm = Some(Self::vmmaker_executable(builder.clone(), vm_folder));
+        source.vm = Some(vm_executable.with_target(builder.target(), vm_folder));
         Ok(())
     }
 
-    ///
-    fn custom_vmmaker_vm() -> Option<Result<VirtualMachineExecutable>> {
-        std::env::var(VM_CLIENT_VMMAKER_VM_VAR).map_or(None, |value| {
+    fn custom_vmmaker_vm() -> Result<Option<VirtualMachineExecutable>> {
+        std::env::var(VM_CLIENT_VMMAKER_VM_VAR).map_or(Ok(None), |value| {
             let type_and_path = value.split(":").collect::<Vec<&str>>();
 
-
             let executable = match type_and_path[..] {
-                [ ] => return Some(anyhow!(
-                    "The value of {} is empty",
-                    VM_CLIENT_VMMAKER_VM_VAR,
-                ).into()),
-                [path] => VirtualMachineExecutable::Pharo(Path::new(path).into_path_buf())
-                [vm_type, path] => {
-                    match vm_type.to_lowercase().as_str() {
-                        "pharo" => VirtualMachineExecutable::Pharo(Path::new(path).into_path_buf()),
-                        "gtoolkit" => VirtualMachineExecutable::Pharo(Path::new(path).into_path_buf()),
-                        _ => return Some(anyhow!(
-                    "The vm type {} specified in {} is unsupported",
-                            vm_type,
-                    VM_CLIENT_VMMAKER_VM_VAR,
-                ).into())
-                    }
-                },
-                _ => return Some(anyhow!(
+                [] => bail!("The value of {} is empty", VM_CLIENT_VMMAKER_VM_VAR,),
+                [path] => VirtualMachineExecutable::Pharo(Path::new(path).to_path_buf()),
+                [vm_type, path] => VirtualMachineExecutable::for_type(vm_type)?.with_path(path),
+                _ => bail!(
                     "The value of {} is malformed: {}",
                     VM_CLIENT_VMMAKER_VM_VAR,
                     &value
-                ).into()),
+                ),
             };
 
-
-            let path = Path::new(&path);
-            if path.exists() {
-                Some(Ok(executable))
+            if executable.exists() {
+                Ok(Some(executable))
             } else {
-                panic!(
-                    "Specified {} does not exist: {}",
+                bail!(
+                    "Path specified in {} does not exist: {}",
                     VM_CLIENT_VMMAKER_VM_VAR,
-                    path.display()
+                    executable.path().display()
                 );
             }
         })
@@ -325,17 +431,5 @@ impl VMMaker {
                 );
             }
         })
-    }
-
-    fn vmmaker_executable(builder: Rc<dyn Builder>, vm_folder: PathBuf) -> PathBuf {
-        match builder.target() {
-            BuilderTarget::MacOS => vm_folder
-                .join("Pharo.app")
-                .join("Contents")
-                .join("MacOS")
-                .join("Pharo"),
-            BuilderTarget::Linux => vm_folder.join("pharo"),
-            BuilderTarget::Windows => vm_folder.join("PharoConsole.exe"),
-        }
     }
 }

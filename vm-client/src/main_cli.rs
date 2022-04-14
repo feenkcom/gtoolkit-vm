@@ -16,7 +16,7 @@ pub use runtime::*;
 use clap::{App, AppSettings, Arg};
 use std::sync::mpsc::channel;
 use std::sync::Arc;
-use vm_bindings::InterpreterParameters;
+use vm_bindings::InterpreterConfiguration;
 
 fn main() {
     env_logger::init();
@@ -42,6 +42,11 @@ fn main() {
                 .long("worker")
                 .help("Start image in the worker thread"),
         )
+        .arg(
+            Arg::new("no-error-handling")
+                .long("no-error-handling")
+                .help("Disable error handling by the virtual machine"),
+        )
         .get_matches();
 
     let image_path = match validate_user_image_file(matches.value_of("image")) {
@@ -52,26 +57,20 @@ fn main() {
         Some(path) => path,
     };
 
-    let mut vm_args: Vec<String> = vec![];
-    vm_args.push(std::env::args().collect::<Vec<String>>()[0].to_owned());
-    vm_args.push(image_path.as_os_str().to_str().unwrap().to_owned());
-
+    let mut extra_args: Vec<String> = vec![];
     if let Some((external, sub_m)) = matches.subcommand() {
-        vm_args.push(external.to_owned());
+        extra_args.push(external.to_owned());
         if let Some(values) = sub_m.values_of("") {
             for each in values {
-                vm_args.push(each.to_owned());
+                extra_args.push(each.to_owned());
             }
         }
     }
 
-    let mut parameters = InterpreterParameters::from_args(vm_args);
-    parameters.set_image_file_name(image_path.as_os_str().to_str().unwrap().to_owned());
-    parameters.set_is_interactive_session(matches.is_present("interactive"));
-
-    if matches.is_present("worker") {
-        Constellation::run_worker(parameters);
-    } else {
-        Constellation::run(parameters);
-    }
+    let mut configuration = InterpreterConfiguration::new(image_path);
+    configuration.set_interactive_session(matches.is_present("interactive"));
+    configuration.set_is_worker_thread(matches.is_present("worker"));
+    configuration.set_should_handle_errors(!matches.is_present("no-error-handling"));
+    configuration.set_extra_arguments(extra_args);
+    Constellation::run(configuration);
 }

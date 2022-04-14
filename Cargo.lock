@@ -255,6 +255,7 @@ dependencies = [
 [[package]]
 name = "commander"
 version = "0.1.0"
+source = "git+https://github.com/feenkcom/build-helpers-rs#776c2fcbc9c5bc6692b30b643e3ac88882eee7ea"
 dependencies = [
  "indicatif 0.16.2",
  "new_string_template",
@@ -334,6 +335,7 @@ dependencies = [
 [[package]]
 name = "downloader"
 version = "0.1.0"
+source = "git+https://github.com/feenkcom/build-helpers-rs#776c2fcbc9c5bc6692b30b643e3ac88882eee7ea"
 dependencies = [
  "futures",
  "indicatif 0.16.2",
@@ -1840,6 +1842,7 @@ checksum = "8ccb82d61f80a663efe1f787a51b16b5a51e3314d6ac365b08639f52387b33f3"
 [[package]]
 name = "unzipper"
 version = "0.2.0"
+source = "git+https://github.com/feenkcom/build-helpers-rs#776c2fcbc9c5bc6692b30b643e3ac88882eee7ea"
 dependencies = [
  "futures",
  "indicatif 0.17.0-rc.10",

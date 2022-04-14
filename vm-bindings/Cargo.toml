@@ -91,9 +91,9 @@ tokio = { version = "1.0", features = ["full"] }
 serde = { version = "1.0", features = [ "derive" ]}
 serde_json = "1.0"
 
-#downloader = { git = "https://github.com/feenkcom/build-helpers-rs" }
-#unzipper = { git = "https://github.com/feenkcom/build-helpers-rs" }
-#commander = { git = "https://github.com/feenkcom/build-helpers-rs" }
-downloader = { path = "../../build-helpers-rs/downloader" }
-unzipper = { path = "../../build-helpers-rs/unzipper" }
-commander = { path = "../../build-helpers-rs/commander" }
+downloader = { git = "https://github.com/feenkcom/build-helpers-rs" }
+unzipper = { git = "https://github.com/feenkcom/build-helpers-rs" }
+commander = { git = "https://github.com/feenkcom/build-helpers-rs" }
+#downloader = { path = "../../build-helpers-rs/downloader" }
+#unzipper = { path = "../../build-helpers-rs/unzipper" }
+#commander = { path = "../../build-helpers-rs/commander" }

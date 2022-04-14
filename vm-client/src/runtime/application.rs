@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 
-use vm_bindings::{InterpreterParameters, PharoInterpreter};
+use vm_bindings::InterpreterConfiguration;
 
 use crate::{
     executable_working_directory, pick_image_with_dialog, search_image_file_within_directories,
@@ -9,7 +9,6 @@ use crate::{
 
 #[derive(Debug, Clone)]
 pub struct Application {
-    options: AppOptions,
     working_directory: PathBuf,
     image: PathBuf,
 }
@@ -43,7 +42,6 @@ impl Application {
             .to_path_buf();
 
         Ok(Self {
-            options,
             working_directory,
             image,
         })
@@ -52,17 +50,12 @@ impl Application {
     pub fn start(&self) -> Result<()> {
         std::env::set_current_dir(self.working_directory.as_path())?;
 
-        let executable_path = std::env::current_exe()?;
+        let mut configuration = InterpreterConfiguration::new(self.image.clone());
+        configuration.set_interactive_session(true);
+        configuration.set_should_handle_errors(true);
+        configuration.set_is_worker_thread(false);
 
-        let mut vm_args: Vec<String> = vec![];
-        vm_args.push(executable_path.as_os_str().to_str().unwrap().to_owned());
-        vm_args.push(self.image.as_os_str().to_str().unwrap().to_owned());
-
-        let mut parameters = InterpreterParameters::from_args(vm_args);
-        parameters.set_image_file_name(self.image.as_os_str().to_str().unwrap().to_owned());
-        parameters.set_is_interactive_session(true);
-
-        Constellation::run(parameters);
+        Constellation::run(configuration);
         Ok(())
     }
 

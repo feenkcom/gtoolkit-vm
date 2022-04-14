@@ -90,7 +90,7 @@ impl VirtualMachine {
 
     fn vmmaker(builder: Rc<dyn Builder>) -> Result<VMMaker> {
         let vmmaker = VMMaker::prepare(builder)?;
-        vmmaker.generate_sources();
+        vmmaker.generate_sources()?;
         Ok(vmmaker)
     }
 

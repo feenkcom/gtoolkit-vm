@@ -1,13 +1,14 @@
 use crate::bindings::{
     exportOsCogStackPageHeadroom as osCogStackPageHeadroom,
-    exportSqGetInterpreterProxy as sqGetInterpreterProxy, free, getVMExports, installErrorHandlers,
+    exportSqGetInterpreterProxy as sqGetInterpreterProxy, exportStatFullGCUsecs as statFullGCUsecs,
+    exportStatScavengeGCUsecs as statScavengeGCUsecs, free, getVMExports, installErrorHandlers,
     registerCurrentThreadToHandleExceptions, setLogger, setProcessArguments,
     setProcessEnvironmentVector, setShouldLog, setVMExports, setVmRunOnWorkerThread, sqExport,
     sqInt, vm_init, vm_parameters_ensure_interactive_image_parameter, vm_run_interpreter,
-    VirtualMachine, exportStatFullGCUsecs as statFullGCUsecs, exportStatScavengeGCUsecs as statScavengeGCUsecs
+    VirtualMachine,
 };
 use crate::prelude::NativeAccess;
-use crate::{InterpreterParameters, InterpreterProxy, NamedPrimitive};
+use crate::{InterpreterConfiguration, InterpreterProxy, NamedPrimitive};
 use anyhow::{bail, Result};
 use log::Log;
 use std::fmt::Debug;
@@ -15,18 +16,19 @@ use std::os::raw::{c_char, c_int};
 use std::panic;
 use std::sync::Arc;
 use std::thread::JoinHandle;
+use crate::parameters::InterpreterParameters;
 
 #[derive(Debug)]
 pub struct PharoInterpreter {
-    parameters: InterpreterParameters,
+    configuration: InterpreterConfiguration,
 }
 
 unsafe impl Send for PharoInterpreter {}
 unsafe impl Sync for PharoInterpreter {}
 
 impl PharoInterpreter {
-    pub fn new(parameters: InterpreterParameters) -> Self {
-        let interpreter = Self { parameters };
+    pub fn new(configuration: InterpreterConfiguration) -> Self {
+        let interpreter = Self { configuration };
         interpreter.initialize_vm_exports();
         interpreter
     }
@@ -55,56 +57,69 @@ impl PharoInterpreter {
         unsafe { setShouldLog(should_log) };
     }
 
+    /// Launch the vm according to the configuration
+    pub fn start(self: Arc<Self>) -> Result<Option<JoinHandle<Result<()>>>> {
+        let parameters = self.configuration.create_interpreter_parameters();
+        if self.configuration.is_worker_thread() {
+            Ok(Some(self.start_in_worker_thread(parameters)?))
+        } else {
+            self.start_in_main_thread(parameters)?;
+            Ok(None)
+        }
+    }
+
     /// Launch the vm in the main process
-    pub fn start(&self) -> Result<()> {
-        self.prepare_environment();
-        self.run();
+    fn start_in_main_thread(self: Arc<Self>, parameters: InterpreterParameters) -> Result<()> {
+        self.prepare_environment(&parameters);
+        self.run(parameters)?;
         Ok(())
     }
 
     /// Launch the vm in a worker thread returning the Join handle
-    pub fn start_in_worker(self: Arc<Self>) -> Result<JoinHandle<Result<()>>> {
-        self.prepare_environment();
+    fn start_in_worker_thread(self: Arc<Self>, parameters: InterpreterParameters) -> Result<JoinHandle<Result<()>>> {
+        self.prepare_environment(&parameters);
         self.mark_as_running_in_worker_thread();
 
         let vm = self.clone();
         std::thread::Builder::new()
             .name("PharoVM".to_string())
             .stack_size(512 * 1024 * 1024)
-            .spawn(move || vm.run())
+            .spawn(move || vm.run(parameters))
             .map_err(|error| error.into())
     }
 
-    fn prepare_environment(&self) {
+    fn prepare_environment(&self, parameters: &InterpreterParameters) {
         unsafe {
-            vm_parameters_ensure_interactive_image_parameter(self.parameters.native_mut_force())
+            vm_parameters_ensure_interactive_image_parameter(parameters.native_mut_force())
         };
-        //unsafe { installErrorHandlers() };
+        if self.configuration.should_handle_errors() {
+            unsafe { installErrorHandlers() };
+        }
         unsafe {
             setProcessArguments(
-                self.parameters.native().processArgc,
-                self.parameters.native().processArgv,
+                parameters.native().processArgc,
+                parameters.native().processArgv,
             )
         };
-        unsafe { setProcessEnvironmentVector(self.parameters.native().environmentVector) };
+        unsafe { setProcessEnvironmentVector(parameters.native().environmentVector) };
         unsafe { osCogStackPageHeadroom() };
     }
 
     /// Initializes the vm and runs the interpreter.
     /// Can be executed from any thread
-    fn run(&self) -> Result<()> {
-        self.init()?;
+    fn run(&self, parameters: InterpreterParameters) -> Result<()> {
+        self.init(parameters)?;
         self.register_current_thread_to_handle_exceptions();
         self.run_interpreter();
         Ok(())
     }
 
     /// Initializes the vm with the current parameters
-    fn init(&self) -> Result<()> {
-        if !unsafe { vm_init(self.parameters.native_mut_force()) != 0 } {
+    fn init(&self, parameters: InterpreterParameters) -> Result<()> {
+        if !unsafe { vm_init(parameters.native_mut_force()) != 0 } {
             return bail!(
                 "Error opening image file: {}",
-                self.parameters.image_file_name()
+                self.configuration.image().display()
             );
         }
         Ok(())
@@ -153,7 +168,7 @@ impl PharoInterpreter {
         new_vm_exports.push(NamedPrimitive::null());
 
         // the `length + 1` element is part if the vector, we should take it into account
-        let mut vm_exports = unsafe { Vec::from_raw_parts(vm_exports_ptr, length + 1, length + 1) };
+        let vm_exports = unsafe { Vec::from_raw_parts(vm_exports_ptr, length + 1, length + 1) };
         drop(vm_exports);
 
         new_vm_exports.shrink_to_fit();

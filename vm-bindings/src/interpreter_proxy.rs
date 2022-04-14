@@ -8,7 +8,7 @@ use std::ffi::CString;
 use std::mem::size_of;
 
 use crate::prelude::{Handle, NativeAccess, NativeDrop, NativeTransmutable};
-use std::os::raw::{c_char, c_double, c_float, c_int, c_ushort, c_void};
+use std::os::raw::{c_char, c_double, c_void};
 
 pub type InterpreterProxy = Handle<sqInterpreterProxy>;
 impl NativeDrop for sqInterpreterProxy {

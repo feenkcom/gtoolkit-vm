@@ -16,10 +16,7 @@ use std::sync::mpsc::Sender;
 use std::sync::{Arc, Mutex};
 use std::thread::JoinHandle;
 use std::time::Duration;
-use vm_bindings::{
-    InterpreterParameters, InterpreterProxy, LogLevel, NamedPrimitive, ObjectFieldIndex,
-    PharoInterpreter, StackOffset,
-};
+use vm_bindings::{InterpreterConfiguration, InterpreterProxy, LogLevel, NamedPrimitive, ObjectFieldIndex, PharoInterpreter, StackOffset};
 
 use num_traits::FromPrimitive;
 
@@ -42,12 +39,12 @@ impl VirtualMachine {
     /// If event loop sender is `None` - start the virtual machine
     /// in the main thread rather than the worker thread
     pub fn new(
-        parameters: InterpreterParameters,
+        configuration: InterpreterConfiguration,
         event_loop: Option<EventLoop>,
         event_loop_sender: Option<Sender<EventLoopMessage>>,
     ) -> Self {
         let vm = Self {
-            interpreter: Arc::new(PharoInterpreter::new(parameters)),
+            interpreter: Arc::new(PharoInterpreter::new(configuration)),
             event_loop,
             event_loop_sender,
             event_loop_waker: RefCell::new(None),
@@ -96,12 +93,7 @@ impl VirtualMachine {
     /// Launch the virtual machine either in the main thread or in the worker thread
     /// depending on how the virtual machine was instantiated.
     pub fn start(&self) -> Result<Option<JoinHandle<Result<()>>>> {
-        if self.event_loop_sender.is_some() {
-            Ok(Some(self.interpreter.clone().start_in_worker()?))
-        } else {
-            self.interpreter.clone().start()?;
-            Ok(None)
-        }
+        self.interpreter.clone().start()
     }
 
     pub fn event_loop(&self) -> Option<&EventLoop> {
