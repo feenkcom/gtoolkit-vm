@@ -1,5 +1,5 @@
 use crate::{Builder, BuilderTarget, DOWNLOADING, EXTRACTING};
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, bail, Result};
 use commander::{CommandToExecute, CommandsToExecute};
 use downloader::{FileToDownload, FilesToDownload};
 use file_matcher::{FileNamed, OneEntryCopier};
@@ -12,10 +12,10 @@ use unzipper::{FileToUnzip, FilesToUnzip};
 const VM_CLIENT_VMMAKER_VM_VAR: &str = "VM_CLIENT_VMMAKER";
 const VM_CLIENT_VMMAKER_IMAGE_VAR: &str = "VM_CLIENT_VMMAKER_IMAGE";
 
-const VMMAKER_WINDOWS_VM_URL: &str = "https://files.pharo.org/vm/pharo-spur64-headless/Windows-x86_64/PharoVM-9.0.11-9e688828-Windows-x86_64-bin.zip";
-const VMMAKER_LINUX_VM_URL: &str = "https://files.pharo.org/vm/pharo-spur64-headless/Linux-x86_64/PharoVM-9.0.11-9e68882-Linux-x86_64-bin.zip";
-const VMMAKER_DARWIN_INTEL_VM_URL: &str = "https://files.pharo.org/vm/pharo-spur64-headless/Darwin-x86_64/PharoVM-9.0.11-9e688828-Darwin-x86_64-bin.zip";
-const VMMAKER_DARWIN_M1_VM_URL: &str = "https://files.pharo.org/vm/pharo-spur64-headless/Darwin-arm64/PharoVM-9.0.11-9e688828-Darwin-arm64-bin.zip";
+const VMMAKER_WINDOWS_VM_URL: VirtualMachineUrl = VirtualMachineUrl::Pharo("https://files.pharo.org/vm/pharo-spur64-headless/Windows-x86_64/PharoVM-9.0.15-2585c2d7-Windows-x86_64-bin.zip");
+const VMMAKER_LINUX_VM_URL: VirtualMachineUrl = VirtualMachineUrl::Pharo("https://files.pharo.org/vm/pharo-spur64-headless/Linux-x86_64/PharoVM-9.0.11-9e68882-Linux-x86_64-bin.zip");
+const VMMAKER_DARWIN_INTEL_VM_URL: VirtualMachineUrl = VirtualMachineUrl::Pharo("https://files.pharo.org/vm/pharo-spur64-headless/Darwin-x86_64/PharoVM-9.0.11-9e688828-Darwin-x86_64-bin.zip");
+const VMMAKER_DARWIN_M1_VM_URL: VirtualMachineUrl = VirtualMachineUrl::Pharo("https://files.pharo.org/vm/pharo-spur64-headless/Darwin-arm64/PharoVM-9.0.11-9e688828-Darwin-arm64-bin.zip");
 const VMMAKER_IMAGE_URL: &str =
     "https://files.pharo.org/image/100/Pharo10-SNAPSHOT.build.349.sha.3e26baf.arch.64bit.zip";
 
@@ -24,10 +24,31 @@ const VMMAKER_VM_FOLDER: &str = "vmmaker-vm";
 
 #[derive(Debug, Clone, Serialize)]
 pub struct VMMaker {
-    vm: PathBuf,
+    vm: VirtualMachineExecutable,
     image: PathBuf,
     #[serde(skip)]
     builder: Rc<dyn Builder>,
+}
+
+#[derive(Debug, Clone)]
+enum VirtualMachineUrl {
+    Pharo(&'static str),
+    GToolkit(&'static str),
+}
+
+impl From<VirtualMachineUrl> for String {
+    fn from(url: VirtualMachineUrl) -> Self {
+        match url {
+            VirtualMachineUrl::Pharo(url) => url.to_string(),
+            VirtualMachineUrl::GToolkit(url) => url.to_string(),
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum VirtualMachineExecutable {
+    Pharo(PathBuf),
+    GToolkit(PathBuf),
 }
 
 struct VMMakerSource {
@@ -85,16 +106,16 @@ impl VMMaker {
         let vmmaker_vm = source.vm.unwrap();
         let source_image = source.image.unwrap();
 
-        let status = Command::new(&vmmaker_vm)
-            .arg("--headless")
-            .arg(&source_image)
-            .arg("save")
-            .arg(vmmaker_image_dir.join("VMMaker"))
-            .status()?;
-
-        if !status.success() {
-            anyhow!("Failed to create VMMaker image");
-        }
+        CommandToExecute::new_with(&vmmaker_vm, |command| {
+            command
+                .arg("--headless")
+                .arg(&source_image)
+                .arg("save")
+                .arg(vmmaker_image_dir.join("VMMaker"));
+        })
+        .with_name("Save image as VMMaker")
+        .without_log_prefix()
+        .execute()?;
 
         FileNamed::wildmatch("*.sources")
             .within(source_image.parent().unwrap())
@@ -131,7 +152,12 @@ impl VMMaker {
             .arg(&vmmaker_image)
             .arg("--no-default-preferences")
             .arg("st")
-            .arg(std::env::current_dir().unwrap().join("extra").join("vmmaker-patch.st"));
+            .arg(
+                std::env::current_dir()
+                    .unwrap()
+                    .join("extra")
+                    .join("vmmaker-patch.st"),
+            );
 
         CommandsToExecute::new()
             .add(
@@ -197,37 +223,40 @@ impl VMMaker {
             "vmmaker-image.zip",
         );
 
-        let mut download = FilesToDownload::new();
-        if source.vm.is_none() {
-            download = download.add(vm.clone());
-        }
-        if source.image.is_none() {
-            download = download.add(image.clone());
-        }
-
         let rt = tokio::runtime::Builder::new_multi_thread()
             .worker_threads(2)
             .enable_all()
             .build()
             .unwrap();
 
-        println!("{}Downloading VMMaker", DOWNLOADING);
-        rt.block_on(download.download())?;
+        let mut download = FilesToDownload::new();
+        if source.vm.is_none() && !vm.already_downloaded() {
+            download = download.add(vm.clone());
+        }
+        if source.image.is_none() && !image.already_downloaded() {
+            download = download.add(image.clone());
+        }
+
+        if !download.is_empty() {
+            println!("{}Downloading VMMaker", DOWNLOADING);
+            rt.block_on(download.download())?;
+        }
 
         let mut unzip = FilesToUnzip::new();
 
         let vm_folder = builder.output_directory().join(VMMAKER_VM_FOLDER);
         let image_folder = builder.output_directory().join("vmmaker-image");
 
-        if source.vm.is_none() {
+        if source.vm.is_none() && !vm_folder.exists() {
             unzip = unzip.add(FileToUnzip::new(vm.path(), &vm_folder));
         }
-        if source.image.is_none() {
+        if source.image.is_none() && !image_folder.exists() {
             unzip = unzip.add(FileToUnzip::new(image.path(), &image_folder));
         }
-
-        println!("{}Extracting VMMaker", EXTRACTING);
-        rt.block_on(unzip.unzip())?;
+        if !unzip.is_empty() {
+            println!("{}Extracting VMMaker", EXTRACTING);
+            rt.block_on(unzip.unzip())?;
+        }
 
         source.image = Some(
             FileNamed::wildmatch("*.image")
@@ -238,11 +267,40 @@ impl VMMaker {
         Ok(())
     }
 
-    fn custom_vmmaker_vm() -> Option<PathBuf> {
-        std::env::var(VM_CLIENT_VMMAKER_VM_VAR).map_or(None, |path| {
+    ///
+    fn custom_vmmaker_vm() -> Option<Result<VirtualMachineExecutable>> {
+        std::env::var(VM_CLIENT_VMMAKER_VM_VAR).map_or(None, |value| {
+            let type_and_path = value.split(":").collect::<Vec<&str>>();
+
+
+            let executable = match type_and_path[..] {
+                [ ] => return Some(anyhow!(
+                    "The value of {} is empty",
+                    VM_CLIENT_VMMAKER_VM_VAR,
+                ).into()),
+                [path] => VirtualMachineExecutable::Pharo(Path::new(path).into_path_buf())
+                [vm_type, path] => {
+                    match vm_type.to_lowercase().as_str() {
+                        "pharo" => VirtualMachineExecutable::Pharo(Path::new(path).into_path_buf()),
+                        "gtoolkit" => VirtualMachineExecutable::Pharo(Path::new(path).into_path_buf()),
+                        _ => return Some(anyhow!(
+                    "The vm type {} specified in {} is unsupported",
+                            vm_type,
+                    VM_CLIENT_VMMAKER_VM_VAR,
+                ).into())
+                    }
+                },
+                _ => return Some(anyhow!(
+                    "The value of {} is malformed: {}",
+                    VM_CLIENT_VMMAKER_VM_VAR,
+                    &value
+                ).into()),
+            };
+
+
             let path = Path::new(&path);
             if path.exists() {
-                Some(path.to_path_buf())
+                Some(Ok(executable))
             } else {
                 panic!(
                     "Specified {} does not exist: {}",

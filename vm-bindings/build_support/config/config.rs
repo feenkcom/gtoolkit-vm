@@ -102,7 +102,9 @@ impl ConfigTemplate {
             panic!("Some config values are not defined: {:?}", keys);
         }
 
-        let mut output = File::create(&self.output).unwrap();
+        let mut output = File::create(&self.output).unwrap_or_else(|error| {
+            panic!("Failed to create file named {}: {}", &self.output.display(), error);
+        });
         let custom_regex = Regex::new(r"(?mi)@+([^@]+)@").unwrap();
 
         if let Ok(lines) = Self::read_lines(&self.config) {

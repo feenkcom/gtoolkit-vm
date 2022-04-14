@@ -79,7 +79,7 @@ impl PharoInterpreter {
         unsafe {
             vm_parameters_ensure_interactive_image_parameter(self.parameters.native_mut_force())
         };
-        unsafe { installErrorHandlers() };
+        //unsafe { installErrorHandlers() };
         unsafe {
             setProcessArguments(
                 self.parameters.native().processArgc,

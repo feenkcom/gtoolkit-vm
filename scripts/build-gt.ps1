@@ -12,6 +12,7 @@ if (-not(Test-Path -Path $builder -PathType Leaf)) {
 
 & .\$builder `
     --release `
+    -vvvv `
     --app-name 'GlamorousToolkit' `
     --identifier 'com.gtoolkit' `
     --author "feenk gmbh <contact@feenk.com>" `
