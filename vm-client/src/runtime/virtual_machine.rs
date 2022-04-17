@@ -16,7 +16,10 @@ use std::sync::mpsc::Sender;
 use std::sync::{Arc, Mutex};
 use std::thread::JoinHandle;
 use std::time::Duration;
-use vm_bindings::{InterpreterConfiguration, InterpreterProxy, LogLevel, NamedPrimitive, ObjectFieldIndex, PharoInterpreter, StackOffset};
+use vm_bindings::{
+    InterpreterConfiguration, InterpreterProxy, LogLevel, NamedPrimitive, ObjectFieldIndex,
+    PharoInterpreter, StackOffset,
+};
 
 use num_traits::FromPrimitive;
 

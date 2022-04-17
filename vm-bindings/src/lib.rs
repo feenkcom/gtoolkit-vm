@@ -13,6 +13,6 @@ mod prelude;
 
 pub use export::NamedPrimitive;
 pub use interpreter::{LogLevel, PharoInterpreter};
+pub use interpreter_config::InterpreterConfiguration;
 pub use interpreter_marshalling::Marshallable;
 pub use interpreter_proxy::{InterpreterProxy, ObjectFieldIndex, ObjectPointer, StackOffset};
-pub use interpreter_config::InterpreterConfiguration;

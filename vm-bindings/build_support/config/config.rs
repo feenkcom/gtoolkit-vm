@@ -103,7 +103,11 @@ impl ConfigTemplate {
         }
 
         let mut output = File::create(&self.output).unwrap_or_else(|error| {
-            panic!("Failed to create file named {}: {}", &self.output.display(), error);
+            panic!(
+                "Failed to create file named {}: {}",
+                &self.output.display(),
+                error
+            );
         });
         let custom_regex = Regex::new(r"(?mi)@+([^@]+)@").unwrap();
 

@@ -11,6 +11,7 @@ use crate::{
 pub struct Application {
     working_directory: PathBuf,
     image: PathBuf,
+    options: AppOptions,
 }
 
 impl Application {
@@ -44,6 +45,7 @@ impl Application {
         Ok(Self {
             working_directory,
             image,
+            options,
         })
     }
 
@@ -53,7 +55,7 @@ impl Application {
         let mut configuration = InterpreterConfiguration::new(self.image.clone());
         configuration.set_interactive_session(true);
         configuration.set_should_handle_errors(true);
-        configuration.set_is_worker_thread(false);
+        configuration.set_is_worker_thread(self.options.should_run_in_worker_thread());
 
         Constellation::run(configuration);
         Ok(())

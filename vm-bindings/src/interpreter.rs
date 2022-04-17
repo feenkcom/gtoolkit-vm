@@ -7,6 +7,7 @@ use crate::bindings::{
     sqInt, vm_init, vm_parameters_ensure_interactive_image_parameter, vm_run_interpreter,
     VirtualMachine,
 };
+use crate::parameters::InterpreterParameters;
 use crate::prelude::NativeAccess;
 use crate::{InterpreterConfiguration, InterpreterProxy, NamedPrimitive};
 use anyhow::{bail, Result};
@@ -16,7 +17,6 @@ use std::os::raw::{c_char, c_int};
 use std::panic;
 use std::sync::Arc;
 use std::thread::JoinHandle;
-use crate::parameters::InterpreterParameters;
 
 #[derive(Debug)]
 pub struct PharoInterpreter {
@@ -76,7 +76,10 @@ impl PharoInterpreter {
     }
 
     /// Launch the vm in a worker thread returning the Join handle
-    fn start_in_worker_thread(self: Arc<Self>, parameters: InterpreterParameters) -> Result<JoinHandle<Result<()>>> {
+    fn start_in_worker_thread(
+        self: Arc<Self>,
+        parameters: InterpreterParameters,
+    ) -> Result<JoinHandle<Result<()>>> {
         self.prepare_environment(&parameters);
         self.mark_as_running_in_worker_thread();
 
@@ -89,9 +92,7 @@ impl PharoInterpreter {
     }
 
     fn prepare_environment(&self, parameters: &InterpreterParameters) {
-        unsafe {
-            vm_parameters_ensure_interactive_image_parameter(parameters.native_mut_force())
-        };
+        unsafe { vm_parameters_ensure_interactive_image_parameter(parameters.native_mut_force()) };
         if self.configuration.should_handle_errors() {
             unsafe { installErrorHandlers() };
         }

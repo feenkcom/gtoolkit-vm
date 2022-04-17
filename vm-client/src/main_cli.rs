@@ -13,7 +13,7 @@ pub(crate) mod platform;
 mod runtime;
 pub use runtime::*;
 
-use clap::{App, AppSettings, Arg};
+use clap::{App, AppSettings, Arg, ArgEnum, arg, PossibleValue};
 use std::sync::mpsc::channel;
 use std::sync::Arc;
 use vm_bindings::InterpreterConfiguration;
@@ -38,9 +38,12 @@ fn main() {
                 .help("Start image in the interactive (UI) mode"),
         )
         .arg(
-            Arg::new("worker")
+            arg!(<MODE>)
                 .long("worker")
-                .help("Start image in the worker thread"),
+                .required(false)
+                .default_value(WorkerThreadMode::Auto.to_possible_value().unwrap().get_name())
+                .long_help(WorkerThreadMode::long_help_str())
+                .possible_values(WorkerThreadMode::possible_values()),
         )
         .arg(
             Arg::new("no-error-handling")
@@ -67,9 +70,11 @@ fn main() {
         }
     }
 
+    let worker_mode = matches.value_of_t("WORKER").unwrap_or_else(|_| WorkerThreadMode::Auto);
+
     let mut configuration = InterpreterConfiguration::new(image_path);
     configuration.set_interactive_session(matches.is_present("interactive"));
-    configuration.set_is_worker_thread(matches.is_present("worker"));
+    configuration.set_is_worker_thread(worker_mode.should_run_in_worker_thread());
     configuration.set_should_handle_errors(!matches.is_present("no-error-handling"));
     configuration.set_extra_arguments(extra_args);
     Constellation::run(configuration);

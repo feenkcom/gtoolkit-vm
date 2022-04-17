@@ -7,8 +7,7 @@ impl Constellation {
     pub fn run(configuration: InterpreterConfiguration) {
         if configuration.is_worker_thread() {
             Self::run_in_worker_thread(configuration);
-        }
-        else {
+        } else {
             Self::run_in_main_thread(configuration);
         }
     }

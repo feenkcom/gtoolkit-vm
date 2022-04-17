@@ -1,6 +1,6 @@
+use crate::parameters::InterpreterParameters;
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
-use crate::parameters::InterpreterParameters;
 
 #[derive(Debug, Clone)]
 pub struct InterpreterConfiguration {
@@ -18,7 +18,7 @@ impl InterpreterConfiguration {
             interactive_session: false,
             handle_errors: true,
             worker_thread: false,
-            arguments: vec![]
+            arguments: vec![],
         }
     }
 

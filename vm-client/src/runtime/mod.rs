@@ -10,7 +10,7 @@ mod virtual_machine;
 mod working_directory;
 
 pub use application::Application;
-pub use application_options::AppOptions;
+pub use application_options::{AppOptions, WorkerThreadMode, WORKER_HELP};
 pub use constellation::Constellation;
 pub use error::{ApplicationError, Result};
 pub use event_loop::{EventLoop, EventLoopCallout, EventLoopMessage, EventLoopWaker};
