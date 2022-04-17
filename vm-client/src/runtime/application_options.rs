@@ -8,7 +8,7 @@ lazy_static! {
 }
 
 #[derive(Parser, Clone, Debug)]
-#[clap(version = "1.0", author = "feenk gmbh <contact@feenk.com>")]
+#[clap(version = "0.3.0", author = "feenk gmbh <contact@feenk.com>")]
 pub struct AppOptions {
     /// A path to a custom Pharo .image to use instead of automatically detecting one
     #[clap(long, parse(from_os_str))]

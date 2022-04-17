@@ -22,7 +22,7 @@ fn main() {
     env_logger::init();
 
     let matches = App::new("Virtual Machine")
-        .version("1.0")
+        .version("0.3.0")
         .author("feenk gmbh. <contact@feenk.com>")
         .setting(AppSettings::AllowExternalSubcommands)
         .arg(
