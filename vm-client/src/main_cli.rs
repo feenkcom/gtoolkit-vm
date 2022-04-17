@@ -70,7 +70,7 @@ fn main() {
         }
     }
 
-    let worker_mode = matches.value_of_t("WORKER").unwrap_or_else(|_| WorkerThreadMode::Auto);
+    let worker_mode = matches.value_of_t("MODE").unwrap_or_else(|_| WorkerThreadMode::Auto);
 
     let mut configuration = InterpreterConfiguration::new(image_path);
     configuration.set_interactive_session(matches.is_present("interactive"));
