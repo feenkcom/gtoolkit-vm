@@ -76,6 +76,27 @@ pub fn minimal_worker_add() {
 }
 
 #[test]
+pub fn minimal_is_not_in_worker() {
+    let executable = executable();
+    let output = Command::new(&executable)
+        .current_dir(executable.parent().unwrap())
+        .arg("--worker")
+        .arg("no")
+        .arg(minimal_image())
+        .arg("eval")
+        .arg("Smalltalk vm isRunningInWorkerThread")
+        .output()
+        .unwrap();
+
+    // extract the raw bytes that we captured and interpret them as a string
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    let stderr = String::from_utf8(output.stderr).unwrap();
+
+    assert_eq!(stdout.trim(), "false");
+    assert_eq!(stderr.trim(), "");
+}
+
+#[test]
 pub fn minimal_worker_is_in_worker() {
     let executable = executable();
     let output = Command::new(&executable)
@@ -93,6 +114,33 @@ pub fn minimal_worker_is_in_worker() {
     let stderr = String::from_utf8(output.stderr).unwrap();
 
     assert_eq!(stdout.trim(), "true");
+    assert_eq!(stderr.trim(), "");
+}
+
+#[test]
+pub fn minimal_worker_auto() {
+    let executable = executable();
+    let output = Command::new(&executable)
+        .current_dir(executable.parent().unwrap())
+        .arg("--worker")
+        .arg("auto")
+        .arg(minimal_image())
+        .arg("eval")
+        .arg("Smalltalk vm isRunningInWorkerThread")
+        .output()
+        .unwrap();
+
+    // extract the raw bytes that we captured and interpret them as a string
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    let stderr = String::from_utf8(output.stderr).unwrap();
+
+    let expected = if cfg!(target_os = "macos") || cfg!(target_os = "windows") {
+        "true"
+    } else {
+        "false"
+    };
+
+    assert_eq!(stdout.trim(), expected);
     assert_eq!(stderr.trim(), "");
 }
 
