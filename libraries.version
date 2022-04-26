@@ -6,7 +6,7 @@
   "Gleam": "v0.3.0",
   "Glutin": "v0.11.0",
   "Pixels": "v0.5.0",
-  "Process": "v0.14.0",
+  "Process": "v0.15.0",
   "Sdl2": "v0.2.0",
   "Skia": "v0.7.1",
   "Ssl": "v0.2.0",
