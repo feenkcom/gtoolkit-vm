@@ -13,7 +13,7 @@ pub(crate) mod platform;
 mod runtime;
 pub use runtime::*;
 
-use clap::{App, AppSettings, Arg, ArgEnum, arg, PossibleValue};
+use clap::{arg, App, AppSettings, Arg, ArgEnum, PossibleValue};
 use std::sync::mpsc::channel;
 use std::sync::Arc;
 use vm_bindings::InterpreterConfiguration;
@@ -41,7 +41,12 @@ fn main() {
             arg!(<MODE>)
                 .long("worker")
                 .required(false)
-                .default_value(WorkerThreadMode::Auto.to_possible_value().unwrap().get_name())
+                .default_value(
+                    WorkerThreadMode::Auto
+                        .to_possible_value()
+                        .unwrap()
+                        .get_name(),
+                )
                 .long_help(WorkerThreadMode::long_help_str())
                 .possible_values(WorkerThreadMode::possible_values()),
         )
@@ -70,7 +75,9 @@ fn main() {
         }
     }
 
-    let worker_mode = matches.value_of_t("MODE").unwrap_or_else(|_| WorkerThreadMode::Auto);
+    let worker_mode = matches
+        .value_of_t("MODE")
+        .unwrap_or_else(|_| WorkerThreadMode::Auto);
 
     let mut configuration = InterpreterConfiguration::new(image_path);
     configuration.set_interactive_session(matches.is_present("interactive"));

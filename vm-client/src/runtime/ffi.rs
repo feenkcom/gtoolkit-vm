@@ -118,10 +118,16 @@ pub fn primitiveEventLoopCallout() {
 
     vm().send(EventLoopMessage::Call(callout.clone())).unwrap();
 
-    // intentionally leak the callout so that it can be released later, once the return value is read
-    let callout_ptr = Arc::into_raw(callout);
+    // if semaphore index is zero it means that nothing is waiting for the callout and we can just return nil.
+    if semaphore_index == 0 {
+        let callout_ptr: *const Mutex<EventLoopCallout> = std::ptr::null();
+        proxy.method_return_value(proxy.new_external_address(callout_ptr))
+    } else {
+        // intentionally leak the callout so that it can be released later, once the return value is read
+        let callout_ptr = Arc::into_raw(callout);
 
-    proxy.method_return_value(proxy.new_external_address(callout_ptr));
+        proxy.method_return_value(proxy.new_external_address(callout_ptr));
+    }
 }
 
 #[repr(u16)]
