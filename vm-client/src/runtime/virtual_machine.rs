@@ -17,11 +17,12 @@ use std::sync::{Arc, Mutex};
 use std::thread::JoinHandle;
 use std::time::Duration;
 use vm_bindings::{
-    InterpreterConfiguration, InterpreterProxy, LogLevel, NamedPrimitive, ObjectFieldIndex,
-    PharoInterpreter, StackOffset,
+    virtual_machine_info, InterpreterConfiguration, InterpreterProxy, LogLevel, NamedPrimitive,
+    ObjectFieldIndex, PharoInterpreter, StackOffset,
 };
 
 use num_traits::FromPrimitive;
+use crate::runtime::version::app_info;
 
 #[no_mangle]
 pub static mut VIRTUAL_MACHINE: Option<Arc<VirtualMachine>> = None;
@@ -71,6 +72,10 @@ impl VirtualMachine {
         vm.add_primitive(primitive!(primitiveSetEventLoopWaker));
         vm.add_primitive(primitive!(primitiveFullGarbageCollectorMicroseconds));
         vm.add_primitive(primitive!(primitiveScavengeGarbageCollectorMicroseconds));
+        vm.add_primitive(primitive!(primitiveFirstBytePointerOfDataObject));
+        vm.add_primitive(primitive!(primitivePointerAtPointer));
+        vm.add_primitive(primitive!(primitiveVirtualMachineInfo));
+        vm.add_primitive(primitive!(primitiveAppInfo));
         vm
     }
 
@@ -252,4 +257,41 @@ pub fn primitiveScavengeGarbageCollectorMicroseconds() {
 
     let microseconds = vm().interpreter().scavenge_gc_microseconds();
     proxy.method_return_value(proxy.new_positive_64bit_integer(microseconds));
+}
+
+#[no_mangle]
+#[allow(non_snake_case)]
+pub fn primitiveFirstBytePointerOfDataObject() {
+    let proxy = vm().proxy();
+    let receiver = proxy.stack_object_value(StackOffset::new(0));
+
+    let pointer = proxy.first_byte_pointer_of_data_object(receiver);
+    proxy.method_return_value(proxy.new_external_address(pointer));
+}
+
+#[no_mangle]
+#[allow(non_snake_case)]
+pub fn primitivePointerAtPointer() {
+    let proxy = vm().proxy();
+    let external_address = proxy.stack_object_value(StackOffset::new(0));
+
+    let external_address_pointer = proxy.read_address(external_address);
+    let pointer = proxy.pointer_at_pointer(external_address_pointer);
+    proxy.method_return_value(proxy.new_external_address(pointer));
+}
+
+#[no_mangle]
+#[allow(non_snake_case)]
+pub fn primitiveVirtualMachineInfo() {
+    let proxy = vm().proxy();
+    let info = virtual_machine_info();
+    proxy.method_return_value(proxy.new_string(info));
+}
+
+#[no_mangle]
+#[allow(non_snake_case)]
+pub fn primitiveAppInfo() {
+    let proxy = vm().proxy();
+    let info = app_info();
+    proxy.method_return_value(proxy.new_string(info));
 }

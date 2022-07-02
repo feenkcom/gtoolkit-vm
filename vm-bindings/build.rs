@@ -21,6 +21,8 @@ pub static MACOSX_DEPLOYMENT_TARGET: &str = "11.0";
 #[cfg(not(target_arch = "aarch64"))]
 pub static MACOSX_DEPLOYMENT_TARGET: &str = "10.8";
 
+static CARGO_ENV: &str = "cargo:rustc-env=";
+
 ///
 /// Possible parameters
 ///  - VM_CLIENT_VMMAKER to use a specific VM to run a VM Maker image
@@ -31,8 +33,9 @@ fn build() -> anyhow::Result<()> {
     // export the vm info to json
     let json = serde_json::to_string_pretty(&vm)?;
     let file_path = vm.get_core().artefact_directory().join("vm-info.json");
-    let mut file = std::fs::File::create(file_path)?;
+    let mut file = std::fs::File::create(file_path.clone())?;
     writeln!(&mut file, "{}", json).unwrap();
+    println!("{}VM_INFO={}", CARGO_ENV, file_path.display());
 
     // let builder = VirtualMachine::builder()?;
     // builder.link_libraries();

@@ -30,6 +30,8 @@ num-traits = "0.2"
 lazy_static = "1.4.0"
 colored = "2"
 chrono = "0.4"
+comfy-table = "6.0.0"
+json = "0.12"
 
 [features]
 default = ["full"]

@@ -22,20 +22,26 @@ fn main() {
     env_logger::init();
 
     let matches = App::new("Virtual Machine")
-        .version("0.3.0")
         .author("feenk gmbh. <contact@feenk.com>")
         .setting(AppSettings::AllowExternalSubcommands)
+        .setting(AppSettings::NoAutoVersion)
         .arg(
             Arg::new("image")
                 .value_name("image")
                 .index(1)
-                .required(true)
+                .required_unless_present("version")
                 .help("A path to an image file to run"),
         )
         .arg(
             Arg::new("interactive")
                 .long("interactive")
                 .help("Start image in the interactive (UI) mode"),
+        )
+        .arg(
+            Arg::new("version")
+                .long("version")
+                .short('V')
+                .help("Print the version information of the executable."),
         )
         .arg(
             arg!(<MODE>)
@@ -56,6 +62,11 @@ fn main() {
                 .help("Disable error handling by the virtual machine"),
         )
         .get_matches();
+
+    if matches.is_present("version") {
+        print_version();
+        return;
+    }
 
     let image_path = match validate_user_image_file(matches.value_of("image")) {
         None => {

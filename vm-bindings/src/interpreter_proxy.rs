@@ -1,7 +1,8 @@
 use crate::bindings::{
-    calloc, exportGetHandler as getHandler,
-    exportInstantiateClassIsPinned as instantiateClassIsPinned, exportReadAddress as readAddress,
-    free, malloc, memcpy, sqInt, usqInt, VirtualMachine as sqInterpreterProxy,
+    calloc, exportFirstBytePointerOfDataObject as firstBytePointerOfDataObject,
+    exportGetHandler as getHandler, exportInstantiateClassIsPinned as instantiateClassIsPinned,
+    exportReadAddress as readAddress, free, malloc, memcpy, sqInt, usqInt,
+    VirtualMachine as sqInterpreterProxy,
 };
 
 use std::ffi::CString;
@@ -215,6 +216,14 @@ impl InterpreterProxy {
         unsafe { function(object.into_native()) }
     }
 
+    pub fn first_byte_pointer_of_data_object(&self, object: ObjectPointer) -> *mut c_void {
+        unsafe { firstBytePointerOfDataObject(object.into_native()) }
+    }
+
+    pub fn pointer_at_pointer(&self, pointer: *mut c_void) -> *mut c_void {
+        return unsafe { *(pointer as *mut *mut c_void) };
+    }
+
     pub fn is_kind_of_class(&self, object: ObjectPointer, class: ObjectPointer) -> bool {
         let function = self.native().isKindOfClass.unwrap();
         unsafe { function(object.into_native(), class.into_native()) != 0 }
@@ -274,6 +283,11 @@ impl InterpreterProxy {
     pub fn primitive_fail(&self) {
         let function = self.native().primitiveFail.unwrap();
         unsafe { function() };
+    }
+
+    pub fn primitive_fail_code(&self, code: sqInt) {
+        let function = self.native().primitiveFailFor.unwrap();
+        unsafe { function(code) };
     }
 
     pub fn is_failed(&self) -> bool {

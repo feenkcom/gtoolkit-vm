@@ -16,3 +16,7 @@ pub use interpreter::{LogLevel, PharoInterpreter};
 pub use interpreter_config::InterpreterConfiguration;
 pub use interpreter_marshalling::Marshallable;
 pub use interpreter_proxy::{InterpreterProxy, ObjectFieldIndex, ObjectPointer, StackOffset};
+
+pub fn virtual_machine_info() -> &'static str {
+    include_str!(env!("VM_INFO"))
+}

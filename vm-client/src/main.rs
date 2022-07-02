@@ -25,6 +25,11 @@ use user_error::{UserFacingError, UFE};
 fn run() -> Result<()> {
     // we should read options and canonicalize the image path before changing current directory
     let mut options: AppOptions = AppOptions::parse();
+    if options.version {
+        print_version();
+        return Ok(());
+    }
+
     options.canonicalize()?;
 
     #[cfg(target_os = "macos")]

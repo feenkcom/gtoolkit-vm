@@ -1,5 +1,5 @@
 use crate::{ApplicationError, Result};
-use clap::{ArgEnum, Parser, PossibleValue};
+use clap::{AppSettings, ArgEnum, Parser, PossibleValue};
 use std::fmt::format;
 use std::path::{Path, PathBuf};
 
@@ -8,13 +8,17 @@ lazy_static! {
 }
 
 #[derive(Parser, Clone, Debug)]
-#[clap(version = "0.3.0", author = "feenk gmbh <contact@feenk.com>")]
+#[clap(author = "feenk gmbh <contact@feenk.com>")]
+#[clap(global_setting(AppSettings::NoAutoVersion))]
 pub struct AppOptions {
     /// A path to a custom Pharo .image to use instead of automatically detecting one
     #[clap(long, parse(from_os_str))]
     image: Option<PathBuf>,
     #[clap(long, value_name = "MODE", arg_enum, default_value_t = WorkerThreadMode::Auto, long_help = WorkerThreadMode::long_help_str())]
     worker: WorkerThreadMode,
+    /// Print the version information of the executable.
+    #[clap(long, short = 'V')]
+    pub version: bool,
 }
 
 impl AppOptions {
