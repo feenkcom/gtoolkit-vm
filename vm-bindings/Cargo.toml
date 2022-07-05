@@ -77,7 +77,7 @@ titlecase = "1.1.0"
 file-matcher = "0.5.0"
 cc = { git = "https://github.com/syrel/cc-rs", rev = "2794bd456cd7ecf75e5bc79c2499a8eb9920f0a2" }
 new_string_template = "1.0"
-regex = "1.5.4"
+regex = "1.5.5"
 pkg-config = "0.3.24"
 strum = { version = "0.23", features = ["derive"] }
 git2 = "0.13"
