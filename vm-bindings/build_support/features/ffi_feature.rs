@@ -1,7 +1,7 @@
 #[cfg(not(feature = "ffi"))]
 compile_error!("ffi must be enabled for this crate.");
 
-use crate::{BuilderTarget, CompilationUnit, Core, Dependency, Feature, MACOSX_DEPLOYMENT_TARGET};
+use crate::{BuilderTarget, CompilationUnit, Core, Dependency, Feature, MACOSX_DEPLOYMENT_TARGET, WindowsBuilder};
 use clang_sys::support::Clang;
 use std::process::Command;
 
@@ -71,29 +71,39 @@ pub fn ffi_feature(core: &Core) -> Feature {
     feature.source("{sources}/src/semaphores/pharoSemaphore.c");
     feature.source("{sources}/src/threadSafeQueue/threadSafeQueue.c");
 
-    if cfg!(target_arch = "x86_64") {
-        compile_ffi(core).expect("Failed to compile ffi");
-        let lib_ffi = feature
-            .builder()
-            .output_directory()
-            .join("libffi-build")
-            .join("lib");
-        feature.include("{output}/libffi-build/include");
-        feature.dependency(Dependency::Library("ffi".to_string(), vec![lib_ffi]));
-    } else if cfg!(target_arch = "aarch64") {
-        let clang = Clang::find(None, &[]).unwrap();
-        let mut ffi_includes = vec![];
-        if let Some(c_search_paths) = clang.c_search_paths {
-            for search_path in &c_search_paths {
-                if search_path.join("ffi").join("ffi.h").exists() {
-                    ffi_includes.push(search_path.clone().display().to_string());
-                    ffi_includes.push(search_path.join("ffi").display().to_string());
+
+    if core.target().is_windows() {
+        let lib_ffi = WindowsBuilder::install_ffi().join("lib");
+        feature.include(format!("{{ output }}/{}/{}/include", WindowsBuilder::ffi_name(), WindowsBuilder::vcpkg_triplet()));
+        feature.dependency(Dependency::Library("libffi".to_string(), vec![lib_ffi]));
+    }
+    else {
+        if cfg!(target_arch = "x86_64") {
+            compile_ffi(core).expect("Failed to compile ffi");
+            let lib_ffi = feature
+                .builder()
+                .output_directory()
+                .join("libffi-build")
+                .join("lib");
+            feature.include("{output}/libffi-build/include");
+            feature.dependency(Dependency::Library("ffi".to_string(), vec![lib_ffi]));
+        } else if cfg!(target_arch = "aarch64") {
+            let clang = Clang::find(None, &[]).unwrap();
+            let mut ffi_includes = vec![];
+            if let Some(c_search_paths) = clang.c_search_paths {
+                for search_path in &c_search_paths {
+                    if search_path.join("ffi").join("ffi.h").exists() {
+                        ffi_includes.push(search_path.clone().display().to_string());
+                        ffi_includes.push(search_path.join("ffi").display().to_string());
+                    }
                 }
             }
+            feature.add_includes(ffi_includes);
+            feature.dependency(Dependency::Library("ffi".to_string(), vec![]));
         }
-        feature.add_includes(ffi_includes);
-        feature.dependency(Dependency::Library("ffi".to_string(), vec![]));
     }
+
+
 
     feature
 }

@@ -159,8 +159,16 @@ impl VirtualMachine {
                     "{sources}/extracted/vm/src/win/aioWin.c",
                     // Support sources
                     "{sources}/src/fileDialogWin32.c",
-                    "{crate}/extra/setjmp-Windows-wrapper-X64.asm",
                 ]);
+
+                let target_arch = std::env::var("CARGO_CFG_TARGET_ARCH").unwrap();
+                let setjmp = match target_arch.as_str() {
+                    "x86_64" => "{crate}/extra/setjmp-Windows-wrapper-X64.asm",
+                    "aarch64" => "{crate}/extra/setjmp-Windows-wrapper-ARM64.asm",
+                    _ => panic!("Unsupported arch: {}", &target_arch),
+                };
+
+                sources.extend([setjmp]);
 
                 // Choose debugging sources based on the VM Version. Starting with v9.0.8
                 // the sources moved
@@ -180,29 +188,29 @@ impl VirtualMachine {
         sources
     }
 
-    /// Return a list of include directories for a given build taregt platform
-    fn includes(target: &BuilderTarget) -> Vec<&str> {
+    /// Return a list of include directories for a given build target platform
+    fn includes(target: &BuilderTarget) -> Vec<String> {
         let mut includes = [
-            "{crate}/extra",
-            "{sources}/extracted/vm/include/common",
-            "{sources}/include",
-            "{sources}/include/pharovm",
-            "{generated}/vm/include",
+            "{crate}/extra".to_owned(),
+            "{sources}/extracted/vm/include/common".to_owned(),
+            "{sources}/include".to_owned(),
+            "{sources}/include/pharovm".to_owned(),
+            "{generated}/vm/include".to_owned(),
         ]
-        .to_vec();
+            .to_vec();
 
         match target {
             BuilderTarget::MacOS => {
-                includes.push("{sources}/extracted/vm/include/osx");
-                includes.push("{sources}/extracted/vm/include/unix");
+                includes.push("{sources}/extracted/vm/include/osx".to_owned());
+                includes.push("{sources}/extracted/vm/include/unix".to_owned());
             }
             BuilderTarget::Linux => {
-                includes.push("{sources}/extracted/vm/include/unix");
+                includes.push("{sources}/extracted/vm/include/unix".to_owned());
             }
             BuilderTarget::Windows => {
-                includes.push("{crate}/extra/extracted/vm/include/win");
-                includes.push("{sources}/extracted/vm/include/win");
-                includes.push("{ output }/pthreads/lib/x64/{ profile }");
+                includes.push("{crate}/extra/extracted/vm/include/win".to_owned());
+                includes.push("{sources}/extracted/vm/include/win".to_owned());
+                includes.push(format!("{{ output }}/{}/{}/include", WindowsBuilder::pthreads_name(), WindowsBuilder::vcpkg_triplet()));
             }
         }
         includes
@@ -284,11 +292,8 @@ impl VirtualMachine {
             core.dependency(Dependency::SystemLibrary("Ole32".to_string()));
             core.dependency(Dependency::SystemLibrary("Shell32".to_string()));
             core.dependency(Dependency::Library(
-                "pthreads".to_string(),
-                vec![core
-                    .output_directory()
-                    .join("pthreads\\lib\\x64")
-                    .join(core.builder().profile())],
+                WindowsBuilder::pthreads_lib_name().to_string(),
+                vec![WindowsBuilder::pthreads_lib()],
             ));
         }
 

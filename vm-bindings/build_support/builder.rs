@@ -159,6 +159,8 @@ pub trait Builder: Debug {
             .clang_arg(format!("-I{}", self.common_include_directory().display()))
             .clang_arg(format!("-I{}", self.platform_include_directory().display()))
             .clang_arg("-DLSB_FIRST=1")
+            // the following allows bindgen to parse headers when building for arm64 Windows
+            .clang_arg("-D_NO_CRT_STDIO_INLINE")
             // Tell cargo to invalidate the built crate whenever any of the
             // included header files changed.
             .parse_callbacks(Box::new(bindgen::CargoCallbacks));

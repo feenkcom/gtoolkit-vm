@@ -1,8 +1,8 @@
 use crate::{Builder, BuilderTarget};
-use std::fmt;
+use std::{env, fmt};
 use std::fmt::{Debug, Formatter};
-use std::path::PathBuf;
-use std::process::Command;
+use std::path::{Path, PathBuf};
+use std::process::{Command, Stdio};
 use std::rc::Rc;
 
 #[derive(Default, Clone)]
@@ -15,57 +15,157 @@ impl Debug for WindowsBuilder {
 }
 
 impl WindowsBuilder {
-    fn pthreads_directory(&self) -> PathBuf {
-        self.output_directory().join("pthreads")
+    fn prepare_vcpkg() -> PathBuf {
+        match which::which("vcpkg") {
+            Ok(vcpkg) => vcpkg,
+            Err(_) => {
+                let vcpkg_directory = Self::out_dir().join("vcpkg");
+
+                if !vcpkg_directory.exists() {
+                    let status = Command::new("git")
+                        .current_dir(Self::out_dir())
+                        .stdout(Stdio::inherit())
+                        .stderr(Stdio::inherit())
+                        .arg("clone")
+                        .arg("https://github.com/Microsoft/vcpkg.git")
+                        .status()
+                        .expect("Could not clone repository. Is git installed?");
+
+                    if !status.success() {
+                        panic!("Could not clone vcpkg repository. Is git installed?")
+                    }
+                }
+
+                let vcpkg = vcpkg_directory.join("vcpkg.exe");
+
+                if !vcpkg.exists() {
+                    let status = Command::new("cmd")
+                        .current_dir(&vcpkg_directory)
+                        .stdout(Stdio::inherit())
+                        .stderr(Stdio::inherit())
+                        .args(&["/C", ".\\bootstrap-vcpkg.bat"])
+                        .status()
+                        .expect("failed to execute process");
+
+                    if !status.success() {
+                        panic!("Failed bootstrap vcpkg.")
+                    }
+                }
+
+                if !vcpkg.exists() {
+                    panic!(
+                        "Could not find vcpkg executable in {}.",
+                        &vcpkg_directory.display()
+                    );
+                }
+
+                vcpkg
+            }
+        }
     }
 
-    fn clone_pthread(&self) {
-        if self.pthreads_directory().exists() {
-            return;
+    pub fn vcpkg_triplet() -> &'static str {
+        let target = std::env::var("CARGO_CFG_TARGET_ARCH").unwrap();
+
+        match target.as_str() {
+            "x86_64" => "x64-windows-static",
+            "aarch64" => "arm64-windows-static",
+            _ => {
+                panic!("Unsupported target: {}", &target)
+            }
+        }
+    }
+
+    fn out_dir() -> PathBuf {
+        Path::new(env::var("OUT_DIR").unwrap().as_str()).to_path_buf()
+    }
+
+    fn pthreads_install_directory() -> PathBuf {
+        Self::out_dir().join("pthreads")
+    }
+
+    fn pthreads_directory() -> PathBuf {
+        Self::pthreads_install_directory().join(Self::vcpkg_triplet())
+    }
+
+    pub fn pthreads_name() -> &'static str {
+        "pthreads"
+    }
+
+    pub fn pthreads_include() -> PathBuf {
+        Self::pthreads_directory().join("include")
+    }
+
+    pub fn pthreads_lib() -> PathBuf {
+        Self::pthreads_directory().join("lib")
+    }
+
+    pub fn pthreads_lib_name() -> &'static str {
+        "pthreadVC3"
+    }
+
+    fn install_pthreads() -> PathBuf {
+        let vcpkg = Self::prepare_vcpkg();
+        let pthread_install_directory = Self::pthreads_install_directory();
+        let triplet = Self::vcpkg_triplet();
+
+        let pthreads_directory = Self::pthreads_directory();
+        if !pthreads_directory.exists() {
+            let status = Command::new(&vcpkg)
+                .current_dir(&Self::out_dir())
+                .stdout(Stdio::inherit())
+                .stderr(Stdio::inherit())
+                .args(&["--triplet", triplet])
+                .args(&["install", "pthreads"])
+                .arg("--x-install-root")
+                .arg(&pthread_install_directory)
+                .status()
+                .expect("failed to execute process");
+
+            if !status.success() {
+                panic!("Failed to install pthreads.")
+            }
         }
 
-        Command::new("git")
-            .current_dir(self.output_directory())
-            .arg("clone")
-            .arg("https://github.com/BrianGladman/pthreads.git")
-            .status()
-            .expect("Could not clone repository. Is git installed?");
-
-        // checkout the version of pthreads that works
-        Command::new("git")
-            .current_dir(self.pthreads_directory())
-            .arg("checkout")
-            .arg("c49d9e1bce919638f46c82655a2117e9ccda4bb9")
-            .status()
-            .unwrap();
+        pthreads_directory
     }
 
-    fn compile_pthread(&self) {
-        let solution = self
-            .pthreads_directory()
-            .join("build.vs")
-            .join("pthreads.sln");
+    pub fn ffi_name() -> &'static str {
+        "libffi"
+    }
 
-        assert!(
-            self.pthreads_directory().exists(),
-            "Pthread source folder must exist: {:?}",
-            self.pthreads_directory().display()
-        );
-        assert!(
-            solution.exists(),
-            "Solution file must exist: {:?}",
-            &solution.display()
-        );
+    fn ffi_install_directory() -> PathBuf {
+        Self::out_dir().join(Self::ffi_name())
+    }
 
-        let mut msbuild =
-            cc::windows_registry::find("msvc", "msbuild").expect("Could not find MSBuild.");
-        msbuild
-            .current_dir(self.pthreads_directory())
-            .arg(&solution)
-            .arg("/p:Platform=x64")
-            .arg(format!("/property:Configuration={}", self.profile()))
-            .status()
-            .expect("Could not compile pthreads.");
+    fn ffi_directory() -> PathBuf {
+        Self::ffi_install_directory().join(Self::vcpkg_triplet())
+    }
+
+    pub fn install_ffi() -> PathBuf {
+        let vcpkg = Self::prepare_vcpkg();
+        let ffi_install_directory = Self::ffi_install_directory();
+        let triplet = Self::vcpkg_triplet();
+
+        let ffi_directory = Self::ffi_directory();
+        if !ffi_directory.exists() {
+            let status = Command::new(&vcpkg)
+                .current_dir(&Self::out_dir())
+                .stdout(Stdio::inherit())
+                .stderr(Stdio::inherit())
+                .args(&["--triplet", triplet])
+                .args(&["install", Self::ffi_name()])
+                .arg("--x-install-root")
+                .arg(&ffi_install_directory)
+                .status()
+                .expect("failed to execute process");
+
+            if !status.success() {
+                panic!("Failed to install pthreads.")
+            }
+        }
+
+        ffi_directory
     }
 }
 
@@ -75,8 +175,8 @@ impl Builder for WindowsBuilder {
     }
 
     fn prepare_environment(&self) {
-        self.clone_pthread();
-        self.compile_pthread();
+        let pthread_install = Self::install_pthreads();
+        println!("Pthreads installed in {}", pthread_install.display());
     }
 
     fn platform_include_directory(&self) -> PathBuf {

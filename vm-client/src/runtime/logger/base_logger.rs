@@ -134,6 +134,11 @@ pub unsafe extern "C" fn should_log_signal(log_type: *const c_char) -> bool {
 }
 
 #[no_mangle]
+pub unsafe extern "C" fn should_log_all_signals(log_type: *const c_char) -> bool {
+    true
+}
+
+#[no_mangle]
 #[allow(non_snake_case)]
 pub fn primitiveEnableLogSignal() {
     let proxy = vm().proxy();

@@ -13,7 +13,7 @@ use colored::*;
 use std::sync::Mutex;
 
 #[derive(Debug)]
-struct ConsoleLogger;
+pub struct ConsoleLogger;
 
 impl ConsoleLogger {
     pub fn new() -> Self {

@@ -7,8 +7,8 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0"
 log = "0.4"
-libffi = { version = "2.0", optional = true }
-libffi-sys = { version = "1.3", optional = true }
+libffi = { version = "3.0.0", optional = true }
+libffi-sys = { version = "2.0.0", optional = true }
 num = "0.4"
 num-derive = "0.3"
 num-traits = "0.2"
@@ -36,7 +36,7 @@ all_plugins = [
     "unix_os_process_plugin",
     "uuid_plugin" ]
 # Enables all features, such as ffi and all plugins
-full = ["immutability", "inline_memory_accessors", "ffi", "threaded_ffi", "all_plugins"]
+full = ["immutability", "inline_memory_accessors", "ffi", "all_plugins"]
 gnuisation = []
 # Include primitives to make objects readonly
 immutability = []
@@ -68,7 +68,7 @@ ndk-sys = "0.1.0"
 ndk-glue = "0.1.0"
 
 [build-dependencies]
-bindgen = "0.59"
+bindgen = "0.60"
 fs_extra = "1.1.0"
 to_absolute = "0.1"
 cmake = { git = "https://github.com/syrel/cmake-rs", rev = "cce9d58d87bd5dd95afb9183fdbbf4cb5d4b2255" }

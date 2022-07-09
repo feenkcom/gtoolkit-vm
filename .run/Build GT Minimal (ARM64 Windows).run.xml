@@ -1,0 +1,6 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Build GT Minimal (ARM64 Windows)" type="PowerShellRunType" factoryName="PowerShell" scriptUrl="$PROJECT_DIR$/../gtoolkit-vm\scripts\build-gt-minimal-arm64.ps1" workingDirectory="$PROJECT_DIR$" executablePath="$PROJECT_DIR$/../../../../Windows/System32/WindowsPowerShell/v1.0/powershell.exe">
+    <envs />
+    <method v="2" />
+  </configuration>
+</component>
