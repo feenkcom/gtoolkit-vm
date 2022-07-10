@@ -25,8 +25,10 @@ pipeline {
         MACOS_INTEL_TARGET = 'x86_64-apple-darwin'
         MACOS_M1_TARGET = 'aarch64-apple-darwin'
 
-        WINDOWS_SERVER_NAME = 'daffy-duck'
+        WINDOWS_AMD64_SERVER_NAME = 'daffy-duck'
         WINDOWS_AMD64_TARGET = 'x86_64-pc-windows-msvc'
+        WINDOWS_ARM64_SERVER_NAME = 'bugs-bunny'
+        WINDOWS_ARM64_TARGET = 'aarch64-pc-windows-msvc'
 
         LINUX_SERVER_NAME = 'mickey-mouse'
         LINUX_AMD64_TARGET = 'x86_64-unknown-linux-gnu'
@@ -204,7 +206,7 @@ pipeline {
                 stage ('Windows x86_64') {
                     agent {
                         node {
-                          label "${WINDOWS_AMD64_TARGET}-${WINDOWS_SERVER_NAME}"
+                          label "${WINDOWS_AMD64_TARGET}-${WINDOWS_AMD64_SERVER_NAME}"
                           customWorkspace 'C:\\j\\gtvm'
                         }
                     }
@@ -243,6 +245,7 @@ pipeline {
                                 --libraries-versions ${APP_LIBRARIES_VERSIONS} `
                                 --icons icons/GlamorousToolkit.ico `
                                 --release `
+                                --target ${TARGET} `
                                 --verbose """
 
                         powershell "Compress-Archive -Path target/${TARGET}/release/bundle/${APP_NAME}/* -DestinationPath ${APP_NAME}-${TARGET}.zip"
@@ -252,15 +255,61 @@ pipeline {
                         stash includes: "${APP_NAME}-${TARGET}.zip", name: "${TARGET}"
                     }
                 }
+                stage ('Windows arm64') {
+                    agent {
+                        node {
+                          label "${WINDOWS_ARM64_TARGET}-${WINDOWS_ARM64_SERVER_NAME}"
+                          customWorkspace 'C:\\j\\gtvm'
+                        }
+                    }
+
+                    environment {
+                        TARGET = "${WINDOWS_AMD64_TARGET}"
+                        LLVM_HOME = 'C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\BuildTools\\VC\\Tools\\Llvm\\x64'
+                        LIBCLANG_PATH = "${LLVM_HOME}\\bin"
+                        CARGO_HOME = "C:\\.cargo"
+                        CARGO_PATH = "${CARGO_HOME}\\bin"
+                        PATH = "${CARGO_PATH};${LIBCLANG_PATH};$PATH"
+                        VM_CLIENT_EXECUTABLE = "${WORKSPACE}\\target\\${TARGET}\\release\\bundle\\${APP_NAME}\\bin\\${APP_NAME}-cli.exe"
+                    }
+
+                    steps {
+                        powershell 'Remove-Item -Force -Recurse -Path target -ErrorAction Ignore'
+                        powershell 'Remove-Item -Force -Recurse -Path third_party -ErrorAction Ignore'
+                        powershell 'Remove-Item -Force -Recurse -Path libs -ErrorAction Ignore'
+                        powershell 'git clean -fdx'
+                        powershell 'git submodule update --init --recursive'
+
+                        powershell "curl -o gtoolkit-vm-builder.exe https://github.com/feenkcom/gtoolkit-vm-builder/releases/download/${VM_BUILDER_VERSION}/gtoolkit-vm-builder-${TARGET}.exe"
+
+                        powershell """
+                           ./gtoolkit-vm-builder.exe `
+                                --app-name ${APP_NAME} `
+                                --identifier ${APP_IDENTIFIER} `
+                                --author ${APP_AUTHOR} `
+                                --libraries boxer clipboard process skia winit pixels test-library `
+                                --libraries-versions ${APP_LIBRARIES_VERSIONS} `
+                                --icons icons/GlamorousToolkit.ico `
+                                --release `
+                                --target ${TARGET} `
+                                --verbose """
+
+                        powershell "Compress-Archive -Path target/${TARGET}/release/bundle/${APP_NAME}/* -DestinationPath ${APP_NAME}-${TARGET}.zip"
+
+                        powershell "cargo test --package vm-client-tests"
+
+                        stash includes: "${APP_NAME}-${TARGET}.zip", name: "${TARGET}"
+                    }
+                }
             }
         }
 
         stage ('Deployment') {
             agent {
-                label "${LINUX_AMD64_TARGET}-${LINUX_SERVER_NAME}"
+                label "${MACOS_M1_TARGET}"
             }
             environment {
-                TARGET = "${LINUX_AMD64_TARGET}"
+                TARGET = "${MACOS_M1_TARGET}"
             }
             when {
                 expression {
@@ -272,6 +321,7 @@ pipeline {
                 unstash "${MACOS_INTEL_TARGET}"
                 unstash "${MACOS_M1_TARGET}"
                 unstash "${WINDOWS_AMD64_TARGET}"
+                unstash "${WINDOWS_ARM64_TARGET}"
 
                 sh "wget -O feenk-releaser https://github.com/feenkcom/releaser-rs/releases/download/${FEENK_RELEASER_VERSION}/feenk-releaser-${TARGET}"
                 sh "chmod +x feenk-releaser"
@@ -287,7 +337,8 @@ pipeline {
                         ${APP_NAME}-${LINUX_AMD64_TARGET}.zip \
                         ${APP_NAME}-${MACOS_INTEL_TARGET}.app.zip \
                         ${APP_NAME}-${MACOS_M1_TARGET}.app.zip \
-                        ${APP_NAME}-${WINDOWS_AMD64_TARGET}.zip """
+                        ${APP_NAME}-${WINDOWS_AMD64_TARGET}.zip \
+                        ${APP_NAME}-${WINDOWS_ARM64_TARGET}.zip """
             }
         }
     }
