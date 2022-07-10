@@ -36,7 +36,7 @@ all_plugins = [
     "unix_os_process_plugin",
     "uuid_plugin" ]
 # Enables all features, such as ffi and all plugins
-full = ["immutability", "inline_memory_accessors", "ffi", "all_plugins"]
+full = ["immutability", "inline_memory_accessors", "ffi", "threaded_ffi", "all_plugins"]
 gnuisation = []
 # Include primitives to make objects readonly
 immutability = []
@@ -69,16 +69,16 @@ ndk-glue = "0.1.0"
 
 [build-dependencies]
 bindgen = "0.60"
-fs_extra = "1.1.0"
+fs_extra = "1.1"
 to_absolute = "0.1"
 cmake = { git = "https://github.com/syrel/cmake-rs", rev = "cce9d58d87bd5dd95afb9183fdbbf4cb5d4b2255" }
-which = "4.1.0"
-titlecase = "1.1.0"
-file-matcher = "0.5.0"
+which = "4.1"
+titlecase = "1.1"
+file-matcher = "0.5"
 cc = { git = "https://github.com/syrel/cc-rs", rev = "2794bd456cd7ecf75e5bc79c2499a8eb9920f0a2" }
 new_string_template = "1.0"
-regex = "1.5.5"
-pkg-config = "0.3.24"
+regex = "1.5"
+pkg-config = "0.3"
 strum = { version = "0.23", features = ["derive"] }
 git2 = "0.13"
 anyhow = "1.0"
@@ -90,7 +90,6 @@ console = { version = ">=0.9.1, <1.0.0", default-features = false }
 tokio = { version = "1.0", features = ["full"] }
 serde = { version = "1.0", features = [ "derive" ]}
 serde_json = "1.0"
-
 downloader = { git = "https://github.com/feenkcom/build-helpers-rs" }
 unzipper = { git = "https://github.com/feenkcom/build-helpers-rs" }
 commander = { git = "https://github.com/feenkcom/build-helpers-rs" }
