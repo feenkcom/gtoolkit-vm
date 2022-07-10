@@ -264,7 +264,7 @@ pipeline {
                     }
 
                     environment {
-                        TARGET = "${WINDOWS_AMD64_TARGET}"
+                        TARGET = "${WINDOWS_ARM64_TARGET}"
                         LLVM_HOME = 'C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\BuildTools\\VC\\Tools\\Llvm\\x64'
                         LIBCLANG_PATH = "${LLVM_HOME}\\bin"
                         CARGO_HOME = "C:\\.cargo"
