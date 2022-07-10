@@ -265,6 +265,7 @@ pipeline {
 
                     environment {
                         TARGET = "${WINDOWS_ARM64_TARGET}"
+                        HOST = "${WINDOWS_AMD64_TARGET}"
                         LLVM_HOME = 'C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\BuildTools\\VC\\Tools\\Llvm\\x64'
                         LIBCLANG_PATH = "${LLVM_HOME}\\bin"
                         CARGO_HOME = "C:\\.cargo"
@@ -280,7 +281,7 @@ pipeline {
                         powershell 'git clean -fdx'
                         powershell 'git submodule update --init --recursive'
 
-                        powershell "curl -o gtoolkit-vm-builder.exe https://github.com/feenkcom/gtoolkit-vm-builder/releases/download/${VM_BUILDER_VERSION}/gtoolkit-vm-builder-${TARGET}.exe"
+                        powershell "curl -o gtoolkit-vm-builder.exe https://github.com/feenkcom/gtoolkit-vm-builder/releases/download/${VM_BUILDER_VERSION}/gtoolkit-vm-builder-${HOST}.exe"
 
                         powershell """
                            ./gtoolkit-vm-builder.exe `
@@ -295,8 +296,6 @@ pipeline {
                                 --verbose """
 
                         powershell "Compress-Archive -Path target/${TARGET}/release/bundle/${APP_NAME}/* -DestinationPath ${APP_NAME}-${TARGET}.zip"
-
-                        powershell "cargo test --package vm-client-tests"
 
                         stash includes: "${APP_NAME}-${TARGET}.zip", name: "${TARGET}"
                     }
