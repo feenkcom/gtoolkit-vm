@@ -149,6 +149,14 @@ impl InterpreterParameters {
         self.native_mut().isInteractiveSession = is_interactive_session;
     }
 
+    pub fn is_worker(&self) -> bool {
+        self.native().isWorker
+    }
+
+    pub fn set_is_worker(&mut self, is_worker: bool) {
+        self.native_mut().isWorker = is_worker;
+    }
+
     pub fn max_stack_frames_to_print(&self) -> usize {
         self.native().maxStackFramesToPrint as usize
     }
@@ -205,6 +213,7 @@ impl Default for InterpreterParameters {
             isDefaultImage: false,
             defaultImageFound: false,
             isInteractiveSession: false,
+            isWorker: false,
             maxStackFramesToPrint: 0,
             maxOldSpaceSize: 0,
             maxCodeSize: 0,

@@ -263,6 +263,12 @@ pipeline {
                         }
                     }
 
+                    when {
+                        expression {
+                            false
+                        }
+                    }
+
                     environment {
                         TARGET = "${WINDOWS_ARM64_TARGET}"
                         HOST = "${WINDOWS_AMD64_TARGET}"
@@ -320,7 +326,6 @@ pipeline {
                 unstash "${MACOS_INTEL_TARGET}"
                 unstash "${MACOS_M1_TARGET}"
                 unstash "${WINDOWS_AMD64_TARGET}"
-                unstash "${WINDOWS_ARM64_TARGET}"
 
                 sh "curl -o feenk-releaser -LsS https://github.com/feenkcom/releaser-rs/releases/download/${FEENK_RELEASER_VERSION}/feenk-releaser-${TARGET}"
                 sh "chmod +x feenk-releaser"
@@ -336,8 +341,7 @@ pipeline {
                         ${APP_NAME}-${LINUX_AMD64_TARGET}.zip \
                         ${APP_NAME}-${MACOS_INTEL_TARGET}.app.zip \
                         ${APP_NAME}-${MACOS_M1_TARGET}.app.zip \
-                        ${APP_NAME}-${WINDOWS_AMD64_TARGET}.zip \
-                        ${APP_NAME}-${WINDOWS_ARM64_TARGET}.zip """
+                        ${APP_NAME}-${WINDOWS_AMD64_TARGET}.zip """
             }
         }
     }

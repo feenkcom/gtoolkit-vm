@@ -197,9 +197,19 @@ impl Unit {
                     .unwrap_or_else(|_| obj.strip_prefix(std::env::current_dir().unwrap()).unwrap())
                     .to_path_buf();
 
-                if let Some(extension) = source.extension() {
-                    if extension == OsStr::new("S") {
-                        source = source.with_extension("asm");
+                let extension = source
+                    .extension()
+                    .and_then(|ext| ext.to_str())
+                    .map(|ext| ext.to_string());
+                if let Some(extension) = extension.as_ref() {
+                    source = match extension.as_str() {
+                        "S" => source.with_extension("asm"),
+                        "m" => {
+                            let new_name =
+                                format!("{}-mac.m", source.file_stem().unwrap().to_str().unwrap());
+                            source.with_file_name(new_name)
+                        }
+                        _ => source,
                     }
                 }
 

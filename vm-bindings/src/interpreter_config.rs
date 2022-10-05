@@ -65,6 +65,7 @@ impl InterpreterConfiguration {
         let mut parameters = InterpreterParameters::from_args(vm_args);
         parameters.set_image_file_name(self.image.as_os_str().to_str().unwrap().to_owned());
         parameters.set_is_interactive_session(self.interactive_session);
+        parameters.set_is_worker(self.worker_thread);
 
         parameters
     }

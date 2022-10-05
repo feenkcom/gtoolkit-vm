@@ -111,8 +111,8 @@ impl VirtualMachine {
             //"{sources}/src/client.c",
             "{crate}/extra/client.c",
             "{sources}/src/pathUtilities.c",
-            "{sources}/src/parameterVector.c",
-            "{sources}/src/parameters.c",
+            "{sources}/src/parameters/parameterVector.c",
+            "{sources}/src/parameters/parameters.c",
             "{sources}/src/fileDialogCommon.c",
             "{sources}/src/stringUtilities.c",
             "{sources}/src/imageAccess.c",
@@ -137,6 +137,7 @@ impl VirtualMachine {
                     "{sources}/extracted/vm/src/osx/aioOSX.c",
                     "{sources}/src/debugUnix.c",
                     "{sources}/src/utilsMac.mm",
+                    "{sources}/src/parameters/parameters.m",
                     // Virtual Memory functions
                     "{sources}/src/memoryUnix.c",
                 ])
