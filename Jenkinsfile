@@ -255,17 +255,12 @@ pipeline {
                         stash includes: "${APP_NAME}-${TARGET}.zip", name: "${TARGET}"
                     }
                 }
+/*
                 stage ('Windows arm64') {
                     agent {
                         node {
                           label "${WINDOWS_ARM64_TARGET}-${WINDOWS_ARM64_SERVER_NAME}"
                           customWorkspace 'C:\\j\\gtvm'
-                        }
-                    }
-
-                    when {
-                        expression {
-                            false
                         }
                     }
 
@@ -306,9 +301,9 @@ pipeline {
                         stash includes: "${APP_NAME}-${TARGET}.zip", name: "${TARGET}"
                     }
                 }
+*/
             }
         }
-
         stage ('Deployment') {
             agent {
                 label "${MACOS_M1_TARGET}"
