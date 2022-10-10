@@ -26,8 +26,8 @@ fn minimal_image() -> PathBuf {
     let image = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("tests")
         .join("images")
-        .join("Pharo9.0-64bit-minimal")
-        .join("Pharo9.0-64bit-minimal.image");
+        .join("Pharo10.0-64bit-minimal")
+        .join("Pharo10.0-64bit-minimal.image");
 
     if !image.exists() {
         panic!("{} does not exist", &image.display());
