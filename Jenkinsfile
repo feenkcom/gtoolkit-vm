@@ -255,7 +255,6 @@ pipeline {
                         stash includes: "${APP_NAME}-${TARGET}.zip", name: "${TARGET}"
                     }
                 }
-/*
                 stage ('Windows arm64') {
                     agent {
                         node {
@@ -291,6 +290,7 @@ pipeline {
                                 --author ${APP_AUTHOR} `
                                 --libraries boxer clipboard crypto freetype git process skia ssl winit pixels test-library `
                                 --libraries-versions ${APP_LIBRARIES_VERSIONS} `
+                                --override-library-version winit=v0.11.0 `
                                 --icons icons/GlamorousToolkit.ico `
                                 --release `
                                 --target ${TARGET} `
@@ -301,7 +301,6 @@ pipeline {
                         stash includes: "${APP_NAME}-${TARGET}.zip", name: "${TARGET}"
                     }
                 }
-*/
             }
         }
         stage ('Deployment') {
@@ -321,6 +320,7 @@ pipeline {
                 unstash "${MACOS_INTEL_TARGET}"
                 unstash "${MACOS_M1_TARGET}"
                 unstash "${WINDOWS_AMD64_TARGET}"
+                unstash "${WINDOWS_ARM64_TARGET}"
 
                 sh "curl -o feenk-releaser -LsS https://github.com/feenkcom/releaser-rs/releases/download/${FEENK_RELEASER_VERSION}/feenk-releaser-${TARGET}"
                 sh "chmod +x feenk-releaser"
@@ -336,7 +336,8 @@ pipeline {
                         ${APP_NAME}-${LINUX_AMD64_TARGET}.zip \
                         ${APP_NAME}-${MACOS_INTEL_TARGET}.app.zip \
                         ${APP_NAME}-${MACOS_M1_TARGET}.app.zip \
-                        ${APP_NAME}-${WINDOWS_AMD64_TARGET}.zip """
+                        ${APP_NAME}-${WINDOWS_AMD64_TARGET}.zip \
+                        ${APP_NAME}-${WINDOWS_ARM64_TARGET}.zip """
             }
         }
     }
