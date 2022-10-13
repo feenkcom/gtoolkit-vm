@@ -270,6 +270,10 @@ impl VirtualMachine {
             core.define("NDEBUG", None);
             core.define("DEBUGVM", "0");
         }
+        #[cfg(debug_assertions)]
+        {
+            core.define("DEBUGVM", "1");
+        }
 
         if core.target().is_unix() {
             core.define("LSB_FIRST", "1");
