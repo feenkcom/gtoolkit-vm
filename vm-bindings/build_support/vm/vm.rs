@@ -265,15 +265,10 @@ impl VirtualMachine {
 
         core.define("PHARO_VM_IN_WORKER_THREAD", "1");
 
-        #[cfg(not(debug_assertions))]
-        {
-            core.define("NDEBUG", None);
-            core.define("DEBUGVM", "0");
-        }
-        #[cfg(debug_assertions)]
-        {
-            core.define("DEBUGVM", "1");
-        }
+        // let's never build phar-vm in debug mode because it enables assertions
+        // and the whole thing becomes too slow
+        core.define("NDEBUG", None);
+        core.define("DEBUGVM", "0");
 
         if core.target().is_unix() {
             core.define("LSB_FIRST", "1");
