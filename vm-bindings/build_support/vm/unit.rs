@@ -261,6 +261,11 @@ impl Unit {
                 .expect("Could not find link.exe");
             build.archiver(linker.path());
             build.ar_flag("-DLL");
+
+            if self.builder().is_debug() {
+                build.ar_flag("-DEBUG");
+            }
+
             let libs = compiler
                 .env()
                 .iter()
@@ -396,6 +401,15 @@ impl Unit {
                     .join(format!("{}.exp", self.name())),
             )
             .unwrap();
+
+            if self.builder().is_debug() {
+                std::fs::copy(
+                    self.output_directory().join(format!("{}.pdb", self.name())),
+                    self.artefact_directory()
+                        .join(format!("{}.pdb", self.name())),
+                )
+                .unwrap();
+            }
         }
 
         build
