@@ -1,9 +1,9 @@
 use crate::{Builder, BuilderTarget};
-use std::{env, fmt};
 use std::fmt::{Debug, Formatter};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::rc::Rc;
+use std::{env, fmt};
 
 #[derive(Default, Clone)]
 pub struct WindowsBuilder {}
@@ -111,7 +111,7 @@ impl WindowsBuilder {
 
         let pthreads_directory = Self::pthreads_directory();
         if !pthreads_directory.exists() {
-            let status = Command::new(&vcpkg)
+            let output = Command::new(&vcpkg)
                 .current_dir(&Self::out_dir())
                 .stdout(Stdio::inherit())
                 .stderr(Stdio::inherit())
@@ -119,11 +119,15 @@ impl WindowsBuilder {
                 .args(&["install", "pthreads"])
                 .arg("--x-install-root")
                 .arg(&pthread_install_directory)
-                .status()
+                .output()
                 .expect("failed to execute process");
 
-            if !status.success() {
-                panic!("Failed to install pthreads.")
+            if !output.status.success() {
+                println!("{}", String::from_utf8(output.stdout).unwrap());
+                panic!(
+                    "Failed to install pthreads: {}",
+                    String::from_utf8(output.stderr).unwrap()
+                )
             }
         }
 
@@ -149,7 +153,7 @@ impl WindowsBuilder {
 
         let ffi_directory = Self::ffi_directory();
         if !ffi_directory.exists() {
-            let status = Command::new(&vcpkg)
+            let output = Command::new(&vcpkg)
                 .current_dir(&Self::out_dir())
                 .stdout(Stdio::inherit())
                 .stderr(Stdio::inherit())
@@ -157,11 +161,15 @@ impl WindowsBuilder {
                 .args(&["install", Self::ffi_name()])
                 .arg("--x-install-root")
                 .arg(&ffi_install_directory)
-                .status()
+                .output()
                 .expect("failed to execute process");
 
-            if !status.success() {
-                panic!("Failed to install pthreads.")
+            if !output.status.success() {
+                println!("{}", String::from_utf8(output.stdout).unwrap());
+                panic!(
+                    "Failed to install ffi: {}",
+                    String::from_utf8(output.stderr).unwrap()
+                )
             }
         }
 

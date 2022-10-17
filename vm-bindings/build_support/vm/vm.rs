@@ -198,7 +198,7 @@ impl VirtualMachine {
             "{sources}/include/pharovm".to_owned(),
             "{generated}/vm/include".to_owned(),
         ]
-            .to_vec();
+        .to_vec();
 
         match target {
             BuilderTarget::MacOS => {
@@ -211,7 +211,11 @@ impl VirtualMachine {
             BuilderTarget::Windows => {
                 includes.push("{crate}/extra/extracted/vm/include/win".to_owned());
                 includes.push("{sources}/extracted/vm/include/win".to_owned());
-                includes.push(format!("{{ output }}/{}/{}/include", WindowsBuilder::pthreads_name(), WindowsBuilder::vcpkg_triplet()));
+                includes.push(format!(
+                    "{{ output }}/{}/{}/include",
+                    WindowsBuilder::pthreads_name(),
+                    WindowsBuilder::vcpkg_triplet()
+                ));
             }
         }
         includes

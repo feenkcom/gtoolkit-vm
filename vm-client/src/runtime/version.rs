@@ -59,10 +59,7 @@ pub fn fetch_version() -> String {
     .green()
     .bold();
 
-    format!(
-        "{}\n\n{components_table}",
-        intro
-    )
+    format!("{}\n\n{components_table}", intro)
 }
 
 pub fn print_version() {

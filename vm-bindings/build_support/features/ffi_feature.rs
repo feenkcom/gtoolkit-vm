@@ -1,7 +1,10 @@
 #[cfg(not(feature = "ffi"))]
 compile_error!("ffi must be enabled for this crate.");
 
-use crate::{BuilderTarget, CompilationUnit, Core, Dependency, Feature, MACOSX_DEPLOYMENT_TARGET, WindowsBuilder};
+use crate::{
+    BuilderTarget, CompilationUnit, Core, Dependency, Feature, WindowsBuilder,
+    MACOSX_DEPLOYMENT_TARGET,
+};
 use clang_sys::support::Clang;
 use std::process::Command;
 
@@ -71,13 +74,15 @@ pub fn ffi_feature(core: &Core) -> Feature {
     feature.source("{sources}/src/semaphores/pharoSemaphore.c");
     feature.source("{sources}/src/threadSafeQueue/threadSafeQueue.c");
 
-
     if core.target().is_windows() {
         let lib_ffi = WindowsBuilder::install_ffi().join("lib");
-        feature.include(format!("{{ output }}/{}/{}/include", WindowsBuilder::ffi_name(), WindowsBuilder::vcpkg_triplet()));
+        feature.include(format!(
+            "{{ output }}/{}/{}/include",
+            WindowsBuilder::ffi_name(),
+            WindowsBuilder::vcpkg_triplet()
+        ));
         feature.dependency(Dependency::Library("libffi".to_string(), vec![lib_ffi]));
-    }
-    else {
+    } else {
         if cfg!(target_arch = "x86_64") {
             compile_ffi(core).expect("Failed to compile ffi");
             let lib_ffi = feature
@@ -102,8 +107,6 @@ pub fn ffi_feature(core: &Core) -> Feature {
             feature.dependency(Dependency::Library("ffi".to_string(), vec![]));
         }
     }
-
-
 
     feature
 }

@@ -18,6 +18,6 @@ pub use event_loop::{EventLoop, EventLoopCallout, EventLoopMessage, EventLoopWak
 pub use ffi::{primitiveEventLoopCallout, primitiveExtractReturnValue};
 pub use image_finder::*;
 pub use logger::*;
-pub use version::{print_version, fetch_version};
+pub use version::{fetch_version, print_version};
 pub use virtual_machine::{vm, VirtualMachine};
 pub use working_directory::executable_working_directory;

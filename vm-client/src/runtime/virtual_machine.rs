@@ -21,8 +21,8 @@ use vm_bindings::{
     ObjectFieldIndex, PharoInterpreter, StackOffset,
 };
 
-use num_traits::FromPrimitive;
 use crate::runtime::version::app_info;
+use num_traits::FromPrimitive;
 
 #[no_mangle]
 pub static mut VIRTUAL_MACHINE: Option<Arc<VirtualMachine>> = None;
