@@ -14,11 +14,16 @@ const VM_CLIENT_VMMAKER_IMAGE_VAR: &str = "VM_CLIENT_VMMAKER_IMAGE";
 
 const VMMAKER_LINUX_VM_URL: VirtualMachineUrl = VirtualMachineUrl::Pharo("https://files.pharo.org/vm/pharo-spur64-headless/Linux-x86_64/PharoVM-9.0.11-9e68882-Linux-x86_64-bin.zip");
 const VMMAKER_DARWIN_INTEL_VM_URL: VirtualMachineUrl = VirtualMachineUrl::Pharo("https://files.pharo.org/vm/pharo-spur64-headless/Darwin-x86_64/PharoVM-9.0.11-9e688828-Darwin-x86_64-bin.zip");
-const VMMAKER_WINDOWS_VM_URL: VirtualMachineUrl = VirtualMachineUrl::GToolkit(
-    "https://dl.feenk.com/gtvm/GlamorousToolkit-x86_64-pc-windows-msvc-v0.2.58.zip",
-);
+
 const VMMAKER_DARWIN_M1_VM_URL: VirtualMachineUrl = VirtualMachineUrl::GToolkit(
-    "https://dl.feenk.com/gtvm/GlamorousToolkit-aarch64-apple-darwin.app-v0.2.58.zip",
+    "https://github.com/feenkcom/gtoolkit-vm/releases/download/v0.3.9/GlamorousToolkit-aarch64-apple-darwin.app.zip",
+);
+
+const VMMAKER_WINDOWS_AMD64_VM_URL: VirtualMachineUrl = VirtualMachineUrl::GToolkit(
+    "https://github.com/feenkcom/gtoolkit-vm/releases/download/v0.3.9/GlamorousToolkit-x86_64-pc-windows-msvc.zip",
+);
+const VMMAKER_WINDOWS_ARM64_VM_URL: VirtualMachineUrl = VirtualMachineUrl::GToolkit(
+    "https://github.com/feenkcom/gtoolkit-vm/releases/download/v0.3.9/GlamorousToolkit-aarch64-pc-windows-msvc.zip",
 );
 
 const VMMAKER_IMAGE_URL: &str =
@@ -326,15 +331,17 @@ impl VMMaker {
 
     fn download_vmmaker(source: &mut VMMakerSource, builder: Rc<dyn Builder>) -> Result<()> {
         let url = match builder.target() {
-            BuilderTarget::MacOS => {
-                if cfg!(target_arch = "aarch64") {
-                    VMMAKER_DARWIN_M1_VM_URL
-                } else {
-                    VMMAKER_DARWIN_INTEL_VM_URL
-                }
-            }
+            BuilderTarget::MacOS => match std::env::consts::ARCH {
+                "aarch64" => VMMAKER_DARWIN_M1_VM_URL,
+                "x86_64" => VMMAKER_DARWIN_INTEL_VM_URL,
+                _ => bail!("Unsupported architecture: {}", std::env::consts::ARCH),
+            },
             BuilderTarget::Linux => VMMAKER_LINUX_VM_URL,
-            BuilderTarget::Windows => VMMAKER_WINDOWS_VM_URL,
+            BuilderTarget::Windows => match std::env::consts::ARCH {
+                "aarch64" => VMMAKER_WINDOWS_ARM64_VM_URL,
+                "x86_64" => VMMAKER_WINDOWS_AMD64_VM_URL,
+                _ => bail!("Unsupported architecture: {}", std::env::consts::ARCH),
+            },
         };
 
         let vm = FileToDownload::new(url.clone(), &builder.output_directory(), "vmmaker-vm.zip");

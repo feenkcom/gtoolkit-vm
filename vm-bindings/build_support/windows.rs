@@ -119,8 +119,9 @@ impl WindowsBuilder {
                 .args(&["install", "pthreads"])
                 .arg("--x-install-root")
                 .arg(&pthread_install_directory)
+                .arg("--editable")
                 .output()
-                .expect("failed to execute process");
+                .expect("Failed to execute command to build pthreads");
 
             if !output.status.success() {
                 println!("{}", String::from_utf8(output.stdout).unwrap());
@@ -162,7 +163,7 @@ impl WindowsBuilder {
                 .arg("--x-install-root")
                 .arg(&ffi_install_directory)
                 .output()
-                .expect("failed to execute process");
+                .expect("Failed to execute command to build ffi");
 
             if !output.status.success() {
                 println!("{}", String::from_utf8(output.stdout).unwrap());
