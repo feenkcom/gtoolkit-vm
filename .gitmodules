@@ -1,4 +1,3 @@
-[submodule "opensmalltalk-vm"]
-	path = opensmalltalk-vm
-	url = https://github.com/pharo-project/opensmalltalk-vm.git
-	branch = pharoX
+[submodule "pharo-vm"]
+	path = pharo-vm
+	url = https://github.com/feenkcom/pharo-vm.git

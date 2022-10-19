@@ -1,7 +1,9 @@
+use std::{env, fmt};
 use std::fmt::Debug;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
-use std::{env, fmt};
+
+pub const SOURCES_DIRECTORY: &str = "pharo-vm";
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum BuilderTarget {
@@ -30,7 +32,7 @@ pub trait Builder: Debug {
     fn target(&self) -> BuilderTarget;
 
     fn profile(&self) -> String {
-        std::env::var("PROFILE").unwrap()
+        env::var("PROFILE").unwrap()
     }
 
     fn is_debug(&self) -> bool {
@@ -58,7 +60,7 @@ pub trait Builder: Debug {
             .parent()
             .unwrap()
             .to_path_buf()
-            .join("opensmalltalk-vm")
+            .join(SOURCES_DIRECTORY)
     }
 
     fn prepare_environment(&self);
@@ -111,7 +113,7 @@ pub trait Builder: Debug {
             generated_config_directory.display()
         );
 
-        let extra_headers = std::env::current_dir().unwrap().join("extra");
+        let extra_headers = env::current_dir().unwrap().join("extra");
 
         let mut builder = bindgen::Builder::default();
         builder = builder
