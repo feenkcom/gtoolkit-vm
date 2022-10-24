@@ -56,14 +56,6 @@ pipeline {
                         script: "cat feenk-signer.version",
                         returnStdout: true
                     ).trim()
-                    APP_VERSION = sh (
-                        script: "./feenk-releaser \
-                                     --owner ${REPOSITORY_OWNER} \
-                                     --repo ${REPOSITORY_NAME} \
-                                     --token GITHUB_TOKEN \
-                                     next-version --bump ${params.BUMP}",
-                        returnStdout: true
-                    ).trim()
                 }
 
                 sh "curl -o feenk-releaser -LsS https://github.com/feenkcom/releaser-rs/releases/download/${FEENK_RELEASER_VERSION}/feenk-releaser-${TARGET}"
@@ -75,7 +67,7 @@ pipeline {
                                      --repo ${REPOSITORY_NAME} \
                                      --token GITHUB_TOKEN \
                                      next-version \
-                                     --bump ${params.BUMP} \",
+                                     --bump ${params.BUMP}",
                         returnStdout: true
                     ).trim()
                 }
