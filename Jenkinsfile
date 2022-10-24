@@ -348,8 +348,8 @@ pipeline {
                     --owner ${REPOSITORY_OWNER} \
                     --repo ${REPOSITORY_NAME} \
                     --token GITHUB_TOKEN \
-                    --version ${APP_VERSION} \
                     release \
+                    --version ${APP_VERSION} \
                     --auto-accept \
                     --assets \
                         ${APP_NAME}-${LINUX_AMD64_TARGET}.zip \
