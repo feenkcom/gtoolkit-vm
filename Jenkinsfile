@@ -62,12 +62,7 @@ pipeline {
                 sh "chmod +x feenk-releaser"
                 script {
                     APP_VERSION = sh (
-                        script: "./feenk-releaser \
-                                     --owner ${REPOSITORY_OWNER} \
-                                     --repo ${REPOSITORY_NAME} \
-                                     --token GITHUB_TOKEN \
-                                     next-version \
-                                     --bump ${params.BUMP}",
+                        script: "./feenk-releaser --owner ${REPOSITORY_OWNER} --repo ${REPOSITORY_NAME} --token GITHUB_TOKEN next-version --bump ${params.BUMP}",
                         returnStdout: true
                     ).trim()
                 }
