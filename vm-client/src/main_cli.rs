@@ -44,6 +44,11 @@ fn main() {
                 .help("Print the version information of the executable."),
         )
         .arg(
+            Arg::new("short-version")
+                .long("short-version")
+                .help("Print just the version of the executable."),
+        )
+        .arg(
             arg!(<MODE>)
                 .long("worker")
                 .required(false)
@@ -65,6 +70,10 @@ fn main() {
 
     if matches.is_present("version") {
         print_version();
+        return;
+    }
+    if matches.is_present("short-version") {
+        print_short_version();
         return;
     }
 

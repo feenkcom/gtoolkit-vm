@@ -8,7 +8,7 @@ pub fn app_info() -> &'static str {
 
 /// Return an app (or bundle) version in form X.Y.Z
 pub fn app_version() -> &'static str {
-    env!("VM_CLIENT_VERSION")
+    concat!("v", env!("VM_CLIENT_VERSION"))
 }
 
 pub fn fetch_version() -> String {
@@ -74,4 +74,8 @@ pub fn fetch_version() -> String {
 
 pub fn print_version() {
     println!("{}", fetch_version())
+}
+
+pub fn print_short_version() {
+    println!("{}", app_version())
 }
