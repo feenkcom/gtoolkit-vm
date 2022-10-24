@@ -32,7 +32,7 @@ pub fn fetch_version() -> String {
     components.push(vec![
         "App".to_string(),
         format!(
-            "v{} - Commit: {}",
+            "{} - Commit: {}",
             app_version,
             app_build_hash.as_str().unwrap_or("unknown")
         ),
@@ -63,7 +63,7 @@ pub fn fetch_version() -> String {
     let app_build_timestamp_str = app_build_timestamp.as_str().unwrap_or("unknown");
 
     let intro = format!(
-        "{} v{} by {} built on {}",
+        "{} {} by {} built on {}",
         app_name_str, app_version, author_str, app_build_timestamp_str
     )
     .green()
