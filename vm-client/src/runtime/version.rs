@@ -6,6 +6,11 @@ pub fn app_info() -> &'static str {
     include_str!(env!("APP_BUILD_INFO"))
 }
 
+/// Return an app (or bundle) version in form X.Y.Z
+pub fn app_version() -> &'static str {
+    env!("VM_CLIENT_VERSION")
+}
+
 pub fn fetch_version() -> String {
     let mut vm_info = json::parse(virtual_machine_info()).unwrap();
     let mut config = vm_info.remove("config");
@@ -22,10 +27,15 @@ pub fn fetch_version() -> String {
     let mut app_build_info = app_info_json.remove("app_build_info");
     let app_build_hash = app_build_info.remove("git_sha");
     let app_build_timestamp = app_build_info.remove("build_timestamp");
+    let app_version = app_version();
 
     components.push(vec![
         "App".to_string(),
-        format!("Commit: {}", app_build_hash.as_str().unwrap_or("unknown")),
+        format!(
+            "v{} - Commit: {}",
+            app_version,
+            app_build_hash.as_str().unwrap_or("unknown")
+        ),
     ]);
 
     let mut app_builder_info = app_info_json.remove("builder_info");
@@ -53,8 +63,8 @@ pub fn fetch_version() -> String {
     let app_build_timestamp_str = app_build_timestamp.as_str().unwrap_or("unknown");
 
     let intro = format!(
-        "{} by {} built on {}",
-        app_name_str, author_str, app_build_timestamp_str
+        "{} v{} by {} built on {}",
+        app_name_str, app_version, author_str, app_build_timestamp_str
     )
     .green()
     .bold();

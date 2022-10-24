@@ -39,6 +39,9 @@ pipeline {
             agent {
                 label "${MACOS_M1_TARGET}"
             }
+            environment {
+                TARGET = "${MACOS_M1_TARGET}"
+            }
             steps {
                 script {
                     VM_BUILDER_VERSION = sh (
@@ -53,10 +56,33 @@ pipeline {
                         script: "cat feenk-signer.version",
                         returnStdout: true
                     ).trim()
+                    APP_VERSION = sh (
+                        script: "./feenk-releaser \
+                                     --owner ${REPOSITORY_OWNER} \
+                                     --repo ${REPOSITORY_NAME} \
+                                     --token GITHUB_TOKEN \
+                                     next-version --bump ${params.BUMP}",
+                        returnStdout: true
+                    ).trim()
+                }
+
+                sh "curl -o feenk-releaser -LsS https://github.com/feenkcom/releaser-rs/releases/download/${FEENK_RELEASER_VERSION}/feenk-releaser-${TARGET}"
+                sh "chmod +x feenk-releaser"
+                script {
+                    APP_VERSION = sh (
+                        script: "./feenk-releaser \
+                                     --owner ${REPOSITORY_OWNER} \
+                                     --repo ${REPOSITORY_NAME} \
+                                     --token GITHUB_TOKEN \
+                                     next-version \
+                                     --bump ${params.BUMP} \",
+                        returnStdout: true
+                    ).trim()
                 }
                 echo "Will build using gtoolkit-vm-builder ${VM_BUILDER_VERSION}"
                 echo "Will release using feenk-releaser ${FEENK_RELEASER_VERSION}"
                 echo "Will sign using feenk-signer ${FEENK_SIGNER_VERSION}"
+                echo "Will release a new version: ${APP_VERSION}"
             }
         }
         stage ('Parallel build') {
@@ -91,6 +117,7 @@ pipeline {
                                 --app-name ${APP_NAME} \
                                 --identifier ${APP_IDENTIFIER} \
                                 --author ${APP_AUTHOR} \
+                                --version ${APP_VERSION} \
                                 --icons icons/GlamorousToolkit.icns \
                                 --libraries ${APP_LIBRARIES} \
                                 --libraries-versions ${APP_LIBRARIES_VERSIONS} \
@@ -140,6 +167,7 @@ pipeline {
                                 --app-name ${APP_NAME} \
                                 --identifier ${APP_IDENTIFIER} \
                                 --author ${APP_AUTHOR} \
+                                --version ${APP_VERSION} \
                                 --icons icons/GlamorousToolkit.icns \
                                 --libraries ${APP_LIBRARIES} \
                                 --libraries-versions ${APP_LIBRARIES_VERSIONS} \
@@ -186,6 +214,7 @@ pipeline {
                                 --app-name ${APP_NAME} \
                                 --identifier ${APP_IDENTIFIER} \
                                 --author ${APP_AUTHOR} \
+                                --version ${APP_VERSION} \
                                 --libraries ${APP_LIBRARIES} \
                                 --libraries-versions ${APP_LIBRARIES_VERSIONS} \
                                 --release \
@@ -241,6 +270,7 @@ pipeline {
                                 --app-name ${APP_NAME} `
                                 --identifier ${APP_IDENTIFIER} `
                                 --author ${APP_AUTHOR} `
+                                --version ${APP_VERSION} `
                                 --libraries ${APP_LIBRARIES} `
                                 --libraries-versions ${APP_LIBRARIES_VERSIONS} `
                                 --icons icons/GlamorousToolkit.ico `
@@ -288,6 +318,7 @@ pipeline {
                                 --app-name ${APP_NAME} `
                                 --identifier ${APP_IDENTIFIER} `
                                 --author ${APP_AUTHOR} `
+                                --version ${APP_VERSION} `
                                 --libraries boxer clipboard crypto freetype git process sdl2 skia ssl winit pixels test-library `
                                 --libraries-versions ${APP_LIBRARIES_VERSIONS} `
                                 --override-library-version winit=v0.11.0 `
@@ -330,7 +361,8 @@ pipeline {
                     --owner ${REPOSITORY_OWNER} \
                     --repo ${REPOSITORY_NAME} \
                     --token GITHUB_TOKEN \
-                    --bump ${params.BUMP} \
+                    --version ${APP_VERSION} \
+                    release \
                     --auto-accept \
                     --assets \
                         ${APP_NAME}-${LINUX_AMD64_TARGET}.zip \

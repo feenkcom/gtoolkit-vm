@@ -1,7 +1,7 @@
-use std::{env, fmt};
 use std::fmt::Debug;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
+use std::{env, fmt};
 
 pub const SOURCES_DIRECTORY: &str = "pharo-vm";
 

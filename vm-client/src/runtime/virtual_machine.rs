@@ -21,7 +21,7 @@ use vm_bindings::{
     ObjectFieldIndex, PharoInterpreter, StackOffset,
 };
 
-use crate::runtime::version::app_info;
+use crate::runtime::version::{app_info, app_version};
 use num_traits::FromPrimitive;
 
 #[no_mangle]
@@ -76,6 +76,7 @@ impl VirtualMachine {
         vm.add_primitive(primitive!(primitivePointerAtPointer));
         vm.add_primitive(primitive!(primitiveVirtualMachineInfo));
         vm.add_primitive(primitive!(primitiveAppInfo));
+        vm.add_primitive(primitive!(primitiveAppVersion));
         vm
     }
 
@@ -294,4 +295,12 @@ pub fn primitiveAppInfo() {
     let proxy = vm().proxy();
     let info = app_info();
     proxy.method_return_value(proxy.new_string(info));
+}
+
+#[no_mangle]
+#[allow(non_snake_case)]
+pub fn primitiveAppVersion() {
+    let proxy = vm().proxy();
+    let version = app_version();
+    proxy.method_return_value(proxy.new_string(version));
 }
