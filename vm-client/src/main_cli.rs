@@ -30,6 +30,7 @@ fn main() {
                 .value_name("image")
                 .index(1)
                 .required_unless_present("version")
+                .required_unless_present("short-version")
                 .help("A path to an image file to run"),
         )
         .arg(
