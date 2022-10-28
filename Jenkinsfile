@@ -308,7 +308,6 @@ pipeline {
                                 --version ${APP_VERSION} `
                                 --libraries boxer clipboard crypto freetype git process sdl2 skia ssl winit pixels test-library `
                                 --libraries-versions ${APP_LIBRARIES_VERSIONS} `
-                                --override-library-version winit=v0.11.0 `
                                 --icons icons/GlamorousToolkit.ico `
                                 --release `
                                 --target ${TARGET} `
