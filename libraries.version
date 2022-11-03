@@ -3,7 +3,7 @@
   "Clipboard": "v0.2.0",
   "Gleam": "v0.4.0",
   "Glutin": "v0.11.0",
-  "Pixels": "v0.9.0",
+  "Pixels": "v0.8.0",
   "Process": "v0.19.0",
   "Skia": "v0.11.0",
   "Winit": "v0.14.0",
