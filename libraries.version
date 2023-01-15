@@ -4,6 +4,7 @@
   "Gleam": "v0.5.0",
   "Glutin": "v0.12.0",
   "Pixels": "v0.11.0",
+  "Phlow": "v0.1.0",
   "Process": "v0.20.0",
   "Skia": "v0.13.0",
   "Winit": "v0.19.0",
