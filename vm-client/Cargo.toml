@@ -1,6 +1,6 @@
 [package]
 name = "vm-client"
-version = "0.3.0"
+version = "0.4.0"
 authors = ["feenk gmbh. contact@feenk.com>"]
 edition = "2021"
 description = "GToolkit VM"
