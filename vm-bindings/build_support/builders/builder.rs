@@ -338,7 +338,7 @@ pub trait Builder: Debug {
         if self.target().os() == &OS::Emscripten {
             builder = builder.clang_arg(format!(
                 "-I{}/upstream/emscripten/cache/sysroot/include",
-                env!("EMSDK")
+                env::var("EMSDK").unwrap()
             ));
             match self.arch_bits() {
                 ArchBits::Bit32 => builder = builder.clang_arg("--target=i686-unknown-linux-gnu"),
