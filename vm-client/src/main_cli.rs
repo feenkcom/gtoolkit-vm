@@ -97,13 +97,13 @@ fn main() {
     let image_path = match validate_user_image_file(image_path_string) {
         None => {
             eprintln!(
-                "Could not find an .image file {:?} in {}",
+                "Could not find an .image file {:?}. Current directory: {}",
                 &image_path_string,
                 current_dir.display()
             );
             return;
         }
-        Some(path) => current_dir.join(path),
+        Some(path) => path,
     };
 
     let mut extra_args: Vec<String> = vec![];

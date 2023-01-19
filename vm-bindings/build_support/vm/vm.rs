@@ -31,28 +31,36 @@ impl VirtualMachine {
         BuildInfo::new(builder)
     }
 
-    fn size_of_int(arch: &ArchBits) -> usize {
+    fn size_of_int(_os: &TargetOS, arch: &ArchBits) -> usize {
         match arch {
             ArchBits::Bit32 => 4,
             ArchBits::Bit64 => 4,
         }
     }
 
-    fn size_of_long(arch: &ArchBits) -> usize {
+    fn size_of_long(os: &TargetOS, arch: &ArchBits) -> usize {
         match arch {
             ArchBits::Bit32 => 4,
-            ArchBits::Bit64 => 8,
+            ArchBits::Bit64 => {
+                match os.family() {
+                    FamilyOS::Unix | FamilyOS::Other => 8,
+                    FamilyOS::Apple => 8,
+                    // An int and a long are 32-bit values on 64-bit Windows operating systems.
+                    // https://learn.microsoft.com/en-us/cpp/build/common-visual-cpp-64-bit-migration-issues?redirectedfrom=MSDN&view=msvc-170
+                    FamilyOS::Windows => 4,
+                }
+            }
         }
     }
 
-    fn size_of_long_long(arch: &ArchBits) -> usize {
+    fn size_of_long_long(_os: &TargetOS, arch: &ArchBits) -> usize {
         match arch {
             ArchBits::Bit32 => 8,
             ArchBits::Bit64 => 8,
         }
     }
 
-    fn size_of_void_pointer(arch: &ArchBits) -> usize {
+    fn size_of_void_pointer(_os: &TargetOS, arch: &ArchBits) -> usize {
         match arch {
             ArchBits::Bit32 => 4,
             ArchBits::Bit64 => 8,
@@ -63,11 +71,12 @@ impl VirtualMachine {
     fn config(builder: Rc<dyn Builder>, info: &BuildInfo) -> Result<ConfigTemplate> {
         let mut config = ConfigTemplate::new(builder.clone());
         let arch_bits = builder.arch_bits();
+        let target_os = builder.target();
 
-        let size_of_int = Self::size_of_int(&arch_bits);
-        let size_of_long = Self::size_of_long(&arch_bits);
-        let size_of_long_long = Self::size_of_long_long(&arch_bits);
-        let size_of_void_p = Self::size_of_void_pointer(&arch_bits);
+        let size_of_int = Self::size_of_int(&target_os, &arch_bits);
+        let size_of_long = Self::size_of_long(&target_os, &arch_bits);
+        let size_of_long_long = Self::size_of_long_long(&target_os, &arch_bits);
+        let size_of_void_p = Self::size_of_void_pointer(&target_os, &arch_bits);
         let squeak_int64_type = if size_of_long == 8 {
             "long"
         } else {
