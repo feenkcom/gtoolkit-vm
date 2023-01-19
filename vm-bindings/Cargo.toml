@@ -14,9 +14,16 @@ num-derive = "0.3"
 num-traits = "0.2"
 
 [features]
-default = ["full"]
-# The minimally working VM without ffi and most plugins
-minimal = ["file_plugin", "file_attributes_plugin", "misc_primitive_plugin"]
+default = [ "full" ]
+# Production ready VM with jit. Ideal for desktop on all platforms.
+full = [ "jit", "full_without_jit" ]
+# Production ready VM without jit support. Will be slow.
+full_without_jit = [ "ffi", "threaded_ffi", "all_plugins", "immutability", "inline_memory_accessors" ]
+# Compile Just-In-Time enabled virtual machine. JIT is not available on iOS devices.
+jit = []
+# The minimally working non-jit VM without ffi and most plugins
+# minimal VM is capable of booting a minimal pharo image and evaluate smalltalk
+minimal = [ "file_plugin", "file_attributes_plugin", "misc_primitive_plugin" ]
 # Enables all plugins
 all_plugins = [
     "b2d_plugin",
@@ -35,9 +42,6 @@ all_plugins = [
     "surface_plugin",
     "unix_os_process_plugin",
     "uuid_plugin" ]
-# Enables all features, such as ffi and all plugins
-full = ["immutability", "inline_memory_accessors", "ffi", "threaded_ffi", "all_plugins"]
-gnuisation = []
 # Include primitives to make objects readonly
 immutability = []
 # Use static inline functions when the compiler produces efficient code for small accessors.
@@ -61,6 +65,9 @@ squeak_ssl_plugin = []
 surface_plugin = []
 unix_os_process_plugin = ["file_plugin", "socket_plugin"]
 uuid_plugin = []
+# Compile GNU processed interpreter sources.
+# Clang does not require gnuisation
+gnuisation = []
 
 [target.'cfg(target_os = "android")'.dependencies]
 ndk = "0.1.0"
@@ -68,6 +75,7 @@ ndk-sys = "0.1.0"
 ndk-glue = "0.1.0"
 
 [build-dependencies]
+platforms = "3.0"
 bindgen = "0.60"
 fs_extra = "1.1"
 to_absolute = "0.1"

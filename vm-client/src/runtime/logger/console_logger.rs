@@ -9,7 +9,6 @@ pub use std::os::raw::{c_char, c_int};
 use vm_bindings::{LogLevel, ObjectFieldIndex, StackOffset};
 
 use chrono::Local;
-use colored::*;
 use std::sync::Mutex;
 
 #[derive(Debug)]
@@ -22,7 +21,9 @@ impl ConsoleLogger {
 }
 
 impl Logger for ConsoleLogger {
+    #[cfg(feature = "colored_terminal")]
     fn log(&mut self, log: LogSignal) {
+        use colored::*;
         println!(
             "{} {} {} - {}",
             Local::now()
@@ -31,6 +32,18 @@ impl Logger for ConsoleLogger {
                 .bright_black(),
             log.log_type.bright_black().bold(),
             format!("{}:{}", log.file_name, log.line).bright_black(),
+            log.message.trim()
+        );
+    }
+    #[cfg(not(feature = "colored_terminal"))]
+    fn log(&mut self, log: LogSignal) {
+        println!(
+            "{} {} {} - {}",
+            Local::now()
+                .format("%Y-%m-%d %H:%M:%S")
+                .to_string(),
+            log.log_type,
+            format!("{}:{}", log.file_name, log.line),
             log.message.trim()
         );
     }

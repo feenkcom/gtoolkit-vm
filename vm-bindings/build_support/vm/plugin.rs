@@ -1,7 +1,9 @@
-use crate::{Builder, BuilderTarget, CompilationUnit, Core, Dependency, Unit};
+use std::rc::Rc;
+
 use cc::Build;
 use serde::Serialize;
-use std::rc::Rc;
+
+use crate::{Builder, CompilationUnit, Core, Dependency, FamilyOS, Unit};
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Plugin {
@@ -47,8 +49,8 @@ impl Plugin {
             plugin.source(&common_sources);
         }
 
-        match core.builder().target() {
-            BuilderTarget::MacOS => {
+        match core.builder().target_family() {
+            FamilyOS::Apple => {
                 if osx_dir.exists() {
                     plugin.source(&osx_sources);
                     // If MacOS specific version does not exist we add unix for MacOS
@@ -56,12 +58,12 @@ impl Plugin {
                     plugin.source(&unix_sources);
                 }
             }
-            BuilderTarget::Linux => {
+            FamilyOS::Unix | FamilyOS::Other => {
                 if unix_dir.exists() {
                     plugin.source(&unix_sources);
                 }
             }
-            BuilderTarget::Windows => {
+            FamilyOS::Windows => {
                 if win_dir.exists() {
                     plugin.source(&win_sources);
                 }
@@ -112,8 +114,8 @@ impl Plugin {
             self.include(&common_sources);
         }
 
-        match self.builder().target() {
-            BuilderTarget::MacOS => {
+        match self.builder().target_family() {
+            FamilyOS::Apple => {
                 if osx_include_dir.exists() {
                     self.include(&osx_includes);
                 } else if unix_include_dir.exists() {
@@ -125,7 +127,7 @@ impl Plugin {
                     self.include(&unix_sources);
                 }
             }
-            BuilderTarget::Linux => {
+            FamilyOS::Unix | FamilyOS::Other => {
                 if unix_include_dir.exists() {
                     self.include(&unix_includes);
                 }
@@ -133,7 +135,7 @@ impl Plugin {
                     self.include(&unix_sources);
                 }
             }
-            BuilderTarget::Windows => {
+            FamilyOS::Windows => {
                 if win_include_dir.exists() {
                     self.include(&win_includes);
                 }

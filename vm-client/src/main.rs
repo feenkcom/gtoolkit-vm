@@ -1,17 +1,15 @@
 #![windows_subsystem = "windows"]
 
-extern crate dirs;
-extern crate nfd2;
-extern crate thiserror;
 #[macro_use]
 extern crate vm_bindings;
 #[macro_use]
 extern crate log;
-extern crate num;
 #[macro_use]
 extern crate num_traits;
 #[macro_use]
 extern crate lazy_static;
+#[macro_use]
+extern crate default_env;
 
 pub(crate) mod platform;
 mod runtime;

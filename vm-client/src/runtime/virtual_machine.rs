@@ -1,13 +1,3 @@
-use crate::{
-    log_signal, primitiveEnableLogSignal, primitiveEventLoopCallout, primitiveExtractReturnValue,
-    primitiveGetEnabledLogSignals, primitivePollLogger, primitiveStartBeacon,
-    primitiveStartConsoleLogger, primitiveStopLogger, should_log_signal, EventLoop,
-    EventLoopCallout, EventLoopMessage, EventLoopWaker,
-};
-use anyhow::Result;
-use libffi::high::call;
-use libffi::low::{ffi_cif, ffi_type, CodePtr};
-use libffi::middle::Cif;
 use std::cell::{BorrowError, Cell, Ref, RefCell};
 use std::mem::{size_of, transmute};
 use std::os::raw::c_void;
@@ -16,13 +6,18 @@ use std::sync::mpsc::Sender;
 use std::sync::{Arc, Mutex};
 use std::thread::JoinHandle;
 use std::time::Duration;
+
+use anyhow::Result;
+
 use vm_bindings::{
     virtual_machine_info, InterpreterConfiguration, InterpreterProxy, LogLevel, NamedPrimitive,
     ObjectFieldIndex, PharoInterpreter, StackOffset,
 };
 
 use crate::runtime::version::{app_info, app_version};
-use num_traits::FromPrimitive;
+use crate::{log_signal, primitiveEnableLogSignal, primitiveGetEnabledLogSignals, primitivePollLogger, primitiveStartBeacon, primitiveStartConsoleLogger, primitiveStopLogger, should_log_signal, ConsoleLogger, EventLoop, EventLoopMessage, EventLoopWaker, should_log_all_signals, VM_LOGGER};
+#[cfg(feature = "ffi")]
+use crate::{primitiveEventLoopCallout, primitiveExtractReturnValue};
 
 #[no_mangle]
 pub static mut VIRTUAL_MACHINE: Option<Arc<VirtualMachine>> = None;
@@ -57,8 +52,15 @@ impl VirtualMachine {
         vm.interpreter().set_logger(Some(log_signal));
         vm.interpreter().set_should_log(Some(should_log_signal));
 
+        // todo: Add a new flag to enable console logging before booting an image
+        // let mut logger = VM_LOGGER.lock().unwrap();
+        // logger.set_logger(Box::new(ConsoleLogger::new()));
+        // vm.interpreter().set_should_log(Some(should_log_all_signals));
+
         vm.add_primitive(primitive!(primitiveGetNamedPrimitives));
+        #[cfg(feature = "ffi")]
         vm.add_primitive(primitive!(primitiveEventLoopCallout));
+        #[cfg(feature = "ffi")]
         vm.add_primitive(primitive!(primitiveExtractReturnValue));
         vm.add_primitive(primitive!(primitiveGetSemaphoreSignaller));
         vm.add_primitive(primitive!(primitiveGetEventLoop));
@@ -123,6 +125,7 @@ impl VirtualMachine {
             }
         } else {
             match message {
+                #[cfg(feature = "ffi")]
                 EventLoopMessage::Call(callout) => {
                     callout.lock().unwrap().call();
                 }
@@ -233,7 +236,7 @@ pub fn primitiveSetEventLoopWaker() {
     let waker_function_ptr = proxy.read_address(waker_function_external_address);
 
     let waker_function: extern "C" fn(*const c_void, u32) -> bool =
-        unsafe { std::mem::transmute(waker_function_ptr) };
+        unsafe { transmute(waker_function_ptr) };
     let waker_thunk = proxy.read_address(waker_thunk_external_address);
 
     let waker = EventLoopWaker::new(waker_function, waker_thunk);

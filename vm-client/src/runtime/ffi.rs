@@ -1,10 +1,69 @@
-use libffi::low::{ffi_cif, ffi_type, CodePtr};
+#[cfg(not(feature = "ffi"))]
+compile_error!("\"ffi\" feature must be enabled for this module.");
+
+asdasda
+
+use std::ffi::CString;
+use std::fmt::{Debug, Formatter};
 use std::mem::{size_of, transmute};
 use std::os::raw::c_void;
 use std::sync::{Arc, Mutex};
+
+use libffi::low::{ffi_cif, ffi_type, CodePtr};
+
 use vm_bindings::{Marshallable, ObjectFieldIndex, StackOffset};
 
-use crate::{vm, EventLoopCallout, EventLoopMessage};
+use crate::{vm, EventLoopMessage};
+
+#[repr(C)]
+pub struct EventLoopCallout {
+    pub(crate) function_name: Option<CString>,
+    pub(crate) module_name: Option<CString>,
+    pub(crate) cif: *mut ffi_cif,
+    pub(crate) func: CodePtr,
+    pub(crate) args: Option<*mut *mut c_void>,
+    pub(crate) result: Option<*mut c_void>,
+    pub(crate) callback: Option<Box<dyn FnOnce()>>,
+}
+
+impl EventLoopCallout {
+    pub fn call(&mut self) {
+        unsafe {
+            libffi::raw::ffi_call(
+                self.cif,
+                Some(*unsafe { self.func.as_safe_fun() }),
+                self.result.unwrap_or(std::ptr::null_mut()),
+                self.args.unwrap_or(std::ptr::null_mut()),
+            )
+        }
+        let callback = self.callback.take().unwrap();
+        callback();
+    }
+
+    pub fn return_type(&self) -> &ffi_type {
+        let cif: &ffi_cif = unsafe { transmute(self.cif) };
+        let rtype: &ffi_type = unsafe { transmute(cif.rtype) };
+        rtype
+    }
+
+    pub fn number_of_arguments(&self) -> usize {
+        let cif: &ffi_cif = unsafe { transmute(self.cif) };
+        cif.nargs as usize
+    }
+}
+
+impl Debug for EventLoopCallout {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Callout")
+            .field("function_name", &self.function_name)
+            .field("module_name", &self.module_name)
+            .field("cif", &self.cif)
+            .field("func", &self.func)
+            .field("args", &self.args)
+            .field("result", &self.result)
+            .finish()
+    }
+}
 
 #[allow(dead_code)]
 #[repr(u16)]

@@ -1,4 +1,3 @@
-use nfd2::{dialog, Response};
 use std::fs;
 use std::path::PathBuf;
 
@@ -33,8 +32,9 @@ pub fn search_image_file_within_directories(directories: Vec<PathBuf>) -> Option
 }
 
 #[allow(dead_code)]
+#[cfg(feature = "image_picker")]
 pub fn pick_image_with_dialog(default_path: Option<PathBuf>) -> Option<PathBuf> {
-    let mut dialog = dialog();
+    let mut dialog = nfd2::dialog();
     let mut dialog_ref = &mut dialog;
     if let Some(ref default_path) = default_path {
         dialog_ref = dialog_ref.default_path(default_path);
@@ -46,7 +46,7 @@ pub fn pick_image_with_dialog(default_path: Option<PathBuf>) -> Option<PathBuf> 
     });
 
     match result {
-        Response::Okay(file_name) => {
+        nfd2::Response::Okay(file_name) => {
             let file_path = PathBuf::new().join(file_name);
             if file_path.exists() {
                 Some(file_path)
@@ -58,10 +58,15 @@ pub fn pick_image_with_dialog(default_path: Option<PathBuf>) -> Option<PathBuf> 
     }
 }
 
+#[cfg(not(feature = "image_picker"))]
+pub fn pick_image_with_dialog(_default_path: Option<PathBuf>) -> Option<PathBuf> {
+    None
+}
+
 #[allow(dead_code)]
 pub fn validate_user_image_file(image_name: Option<&str>) -> Option<PathBuf> {
     if let Some(image_file_name) = image_name {
-        let image_path = PathBuf::new().join(image_file_name);
+        let image_path = PathBuf::from(image_file_name);
         if image_path.exists() {
             return Some(image_path);
         }

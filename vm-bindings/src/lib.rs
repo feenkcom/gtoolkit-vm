@@ -17,6 +17,12 @@ pub use interpreter_config::InterpreterConfiguration;
 pub use interpreter_marshalling::Marshallable;
 pub use interpreter_proxy::{InterpreterProxy, ObjectFieldIndex, ObjectPointer, StackOffset};
 
+// re-export ffi
+#[cfg(feature = "libffi")]
+pub use libffi;
+#[cfg(feature = "libffi-sys")]
+pub use libffi_sys;
+
 pub fn virtual_machine_info() -> &'static str {
     include_str!(env!("VM_INFO"))
 }

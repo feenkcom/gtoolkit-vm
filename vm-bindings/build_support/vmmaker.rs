@@ -1,5 +1,5 @@
-use crate::{Builder, BuilderTarget, DOWNLOADING, EXTRACTING};
-use anyhow::{anyhow, bail, Result};
+use crate::{Builder, FamilyOS, HostOS, DOWNLOADING, EXTRACTING};
+use anyhow::Result;
 use commander::CommandToExecute;
 use downloader::{FileToDownload, FilesToDownload};
 use file_matcher::{FileNamed, OneEntryCopier};
@@ -95,39 +95,6 @@ impl VirtualMachineExecutable {
         }
     }
 
-    fn for_target_in_folder(target: BuilderTarget, folder: impl AsRef<Path>) -> Result<Self> {
-        let path = folder.as_ref();
-        let folder_name = path
-            .file_name()
-            .ok_or_else(|| anyhow!("Could not get the name of {}", path.display()))?
-            .to_str()
-            .ok_or_else(|| {
-                anyhow!(
-                    "Could not convert the folder name of {} to string",
-                    path.display()
-                )
-            })?;
-        match folder_name.split("-").collect::<Vec<&str>>()[..] {
-            [] => bail!(
-                "Folder name {} does not have a vm type suffix separated by `-`",
-                folder_name
-            ),
-            [_] => bail!(
-                "Folder name {} does not have a vm type suffix separated by `-`",
-                folder_name
-            ),
-            [.., vm_type] => Ok(Self::for_type(vm_type)
-                .map_err(|error| {
-                    anyhow!(
-                        "Failed to detect vm type based on folder name \"{}\": {}",
-                        &folder_name,
-                        error
-                    )
-                })?
-                .with_target(target, path)),
-        }
-    }
-
     fn path(&self) -> &Path {
         match self {
             Self::Pharo(path) => path.as_path(),
@@ -148,20 +115,20 @@ impl VirtualMachineExecutable {
         }
     }
 
-    fn with_target(&self, target: BuilderTarget, folder: impl AsRef<Path>) -> Self {
+    fn with_host(&self, host: &HostOS, folder: impl AsRef<Path>) -> Self {
         let folder = folder.as_ref();
-        match target {
-            BuilderTarget::MacOS => match self {
+        match host.family() {
+            FamilyOS::Apple => match self {
                 Self::Pharo(_) => Self::Pharo(folder.join("Pharo.app/Contents/MacOS/Pharo")),
                 Self::GToolkit(_) => Self::GToolkit(
                     folder.join("GlamorousToolkit.app/Contents/MacOS/GlamorousToolkit-cli"),
                 ),
             },
-            BuilderTarget::Linux => match self {
+            FamilyOS::Unix | FamilyOS::Other => match self {
                 Self::Pharo(_) => Self::Pharo(folder.join("pharo")),
                 Self::GToolkit(_) => Self::GToolkit(folder.join("bin/GlamorousToolkit-cli")),
             },
-            BuilderTarget::Windows => match self {
+            FamilyOS::Windows => match self {
                 Self::Pharo(_) => Self::Pharo(folder.join("PharoConsole.exe")),
                 Self::GToolkit(_) => {
                     Self::GToolkit(folder.join("bin").join("GlamorousToolkit-cli.exe"))
@@ -213,8 +180,8 @@ impl VMMaker {
             VirtualMachineExecutable::all_by_priority()
                 .into_iter()
                 .map(|each| {
-                    each.with_target(
-                        builder.target(),
+                    each.with_host(
+                        &builder.host(),
                         builder.output_directory().join(each.folder_name()),
                     )
                 })
@@ -308,7 +275,7 @@ impl VMMaker {
         });
     }
 
-    pub fn generate_sources(&self) -> Result<()> {
+    pub fn generate_sources(&self, interpreter: &str) -> Result<()> {
         if self.builder.output_directory().join("generated").exists() {
             return Ok(());
         }
@@ -316,7 +283,7 @@ impl VMMaker {
         CommandToExecute::build_command(self.vm.as_command(), |command| {
             command.arg(&self.image).arg("eval").arg(format!(
                 "PharoVMMaker generate: #'{}' outputDirectory: '{}'",
-                "CoInterpreter",
+                interpreter,
                 self.builder.output_directory().display()
             ));
         })
@@ -330,14 +297,14 @@ impl VMMaker {
     }
 
     fn download_vmmaker(source: &mut VMMakerSource, builder: Rc<dyn Builder>) -> Result<()> {
-        let url = match builder.target() {
-            BuilderTarget::MacOS => match std::env::consts::ARCH {
+        let url = match builder.host_family() {
+            FamilyOS::Apple => match std::env::consts::ARCH {
                 "aarch64" => VMMAKER_DARWIN_M1_VM_URL,
                 "x86_64" => VMMAKER_DARWIN_INTEL_VM_URL,
                 _ => bail!("Unsupported architecture: {}", std::env::consts::ARCH),
             },
-            BuilderTarget::Linux => VMMAKER_LINUX_VM_URL,
-            BuilderTarget::Windows => match std::env::consts::ARCH {
+            FamilyOS::Unix | FamilyOS::Other => VMMAKER_LINUX_VM_URL,
+            FamilyOS::Windows => match std::env::consts::ARCH {
                 "aarch64" => VMMAKER_WINDOWS_ARM64_VM_URL,
                 "x86_64" => VMMAKER_WINDOWS_AMD64_VM_URL,
                 _ => bail!("Unsupported architecture: {}", std::env::consts::ARCH),
@@ -393,7 +360,7 @@ impl VMMaker {
                 .within(&image_folder)
                 .find()?,
         );
-        source.vm = Some(vm_executable.with_target(builder.target(), vm_folder));
+        source.vm = Some(vm_executable.with_host(&builder.host(), vm_folder));
         Ok(())
     }
 

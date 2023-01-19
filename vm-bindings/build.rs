@@ -1,16 +1,14 @@
-extern crate bindgen;
-extern crate cmake;
-extern crate file_matcher;
-extern crate fs_extra;
-extern crate titlecase;
-extern crate which;
+#[macro_use]
+extern crate anyhow;
 
-mod build_support;
+use std::io::Write;
+
+use console::Emoji;
+use user_error::{UserFacingError, UFE};
 
 use crate::build_support::*;
-use console::Emoji;
-use std::io::Write;
-use user_error::{UserFacingError, UFE};
+
+mod build_support;
 
 pub static DOWNLOADING: Emoji<'_, '_> = Emoji("📥 ", "");
 pub static EXTRACTING: Emoji<'_, '_> = Emoji("📦 ", "");
@@ -20,6 +18,7 @@ pub static BUILDING: Emoji<'_, '_> = Emoji("🔨 ", "");
 pub static MACOSX_DEPLOYMENT_TARGET: &str = "11.0";
 #[cfg(not(target_arch = "aarch64"))]
 pub static MACOSX_DEPLOYMENT_TARGET: &str = "10.8";
+pub static IOS_DEPLOYMENT_TARGET: &str = "7.0";
 
 static CARGO_ENV: &str = "cargo:rustc-env=";
 

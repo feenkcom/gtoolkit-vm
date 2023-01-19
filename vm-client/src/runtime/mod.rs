@@ -3,6 +3,7 @@ mod application_options;
 mod constellation;
 mod error;
 mod event_loop;
+#[cfg(feature = "ffi")]
 mod ffi;
 mod image_finder;
 mod logger;
@@ -14,8 +15,9 @@ pub use application::Application;
 pub use application_options::{AppOptions, WorkerThreadMode, WORKER_HELP};
 pub use constellation::Constellation;
 pub use error::{ApplicationError, Result};
-pub use event_loop::{EventLoop, EventLoopCallout, EventLoopMessage, EventLoopWaker};
-pub use ffi::{primitiveEventLoopCallout, primitiveExtractReturnValue};
+pub use event_loop::{EventLoop, EventLoopMessage, EventLoopWaker};
+#[cfg(feature = "ffi")]
+pub use ffi::{primitiveEventLoopCallout, primitiveExtractReturnValue, EventLoopCallout};
 pub use image_finder::*;
 pub use logger::*;
 pub use version::{fetch_version, print_short_version, print_version};

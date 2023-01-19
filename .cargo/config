@@ -6,6 +6,21 @@ rustflags = ["-Ctarget-feature=+crt-static"]
 rustflags = ["-Ctarget-feature=+crt-static"]
 [target.x86_64-apple-darwin]
 rustflags=["-C", "link-arg=-mmacosx-version-min=10.8"]
-
+[target.wasm32-unknown-emscripten]
+rustflags=[
+    "-C", "target-feature=+atomics,+bulk-memory",
+    "-C", "link-arg=--embed-file", "-C", "link-arg=vm-client-tests/tests/images/Pharo9.0-32bit-minimal",
+    "-C", "link-arg=-s", "-C", "link-args=TOTAL_MEMORY=1024MB",
+    "-C", "link-arg=-s", "-C", "link-arg=INITIAL_MEMORY=512MB",
+    "-C", "link-arg=-s", "-C", "link-arg=FORCE_FILESYSTEM=1",
+    "-C", "link-arg=-s", "-C", "link-arg=EXIT_RUNTIME=1",
+    "-C", "link-arg=-s", "-C", "link-arg=EMULATE_FUNCTION_POINTER_CASTS",
+    "-C", "link-arg=-s", "-C", "link-arg=WASM=1",
+    "-C", "link-arg=-s", "-C", "link-arg=USE_PTHREADS",
+    "-C", "link-arg=-s", "-C", "link-arg=PTHREAD_POOL_SIZE_STRICT=2",
+    #"-C", "link-arg=-s", "-C", "link-arg=PROXY_TO_PTHREAD",
+    #"-C", "link-arg=-s", "-C", "link-arg=PTHREAD_POOL_SIZE=1",
+    #"-C", "link-arg=-s", "-C", "link-arg=ASYNCIFY"
+]
 [env]
 CARGO_WORKSPACE_DIR = { value = "", relative = true }

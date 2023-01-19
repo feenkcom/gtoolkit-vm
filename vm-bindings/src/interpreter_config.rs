@@ -55,7 +55,8 @@ impl InterpreterConfiguration {
     }
 
     pub fn create_interpreter_parameters(&self) -> InterpreterParameters {
-        let executable_path = std::env::current_exe().unwrap();
+        // Emscripten's MEMFS doesn't ave /proc/self/exe, therefore current_exe fails.
+        let executable_path = std::env::current_exe().unwrap_or_else(|_| PathBuf::from("/main"));
 
         let mut vm_args: Vec<String> = vec![];
         vm_args.push(executable_path.as_os_str().to_str().unwrap().to_owned());

@@ -92,7 +92,7 @@ impl Logger for NullLogger {
         true
     }
 
-    fn log(&mut self, log: LogSignal) {}
+    fn log(&mut self, _log: LogSignal) {}
 
     fn any(&self) -> &dyn Any {
         self
@@ -129,12 +129,12 @@ pub unsafe extern "C" fn log_signal(
 
 #[no_mangle]
 pub unsafe extern "C" fn should_log_signal(log_type: *const c_char) -> bool {
-    let mut logger = VM_LOGGER.lock().unwrap();
+    let logger = VM_LOGGER.lock().unwrap();
     logger.should_log(CStr::from_ptr(log_type))
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn should_log_all_signals(log_type: *const c_char) -> bool {
+pub unsafe extern "C" fn should_log_all_signals(_log_type: *const c_char) -> bool {
     true
 }
 

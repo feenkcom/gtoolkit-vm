@@ -1,5 +1,8 @@
 use crate::build_support::{Core, Plugin};
-use crate::{Builder, BuilderTarget, Feature, MACOSX_DEPLOYMENT_TARGET};
+use crate::{
+    ArchBits, Builder, FamilyOS, Feature, HeaderDetector, TargetOS, IOS_DEPLOYMENT_TARGET,
+    MACOSX_DEPLOYMENT_TARGET,
+};
 use anyhow::{bail, Result};
 use cc::Build;
 use file_matcher::FilesNamed;
@@ -16,25 +19,27 @@ pub trait CompilationUnit {
     fn name(&self) -> &str;
     fn builder(&self) -> Rc<dyn Builder>;
     fn binary_name(&self) -> String {
-        match self.target() {
-            BuilderTarget::Linux => format!("lib{}.so", self.name()),
-            BuilderTarget::MacOS => format!("lib{}.dylib", self.name()),
-            BuilderTarget::Windows => format!("{}.dll", self.name()),
+        match self.family() {
+            FamilyOS::Unix | FamilyOS::Other => format!("lib{}.so", self.name()),
+            FamilyOS::Apple => format!("lib{}.dylib", self.name()),
+            FamilyOS::Windows => format!("{}.dll", self.name()),
         }
     }
-    fn target(&self) -> BuilderTarget {
+
+    fn target(&self) -> TargetOS {
         self.builder().target()
+    }
+
+    fn family(&self) -> FamilyOS {
+        self.builder().target_family()
+    }
+
+    fn arch_bits(&self) -> ArchBits {
+        self.builder().arch_bits()
     }
 
     fn output_directory(&self) -> PathBuf {
         self.builder().output_directory()
-    }
-
-    fn generated_directory(&self) -> PathBuf {
-        self.builder()
-            .output_directory()
-            .join("generated")
-            .join("64")
     }
 
     fn artefact_directory(&self) -> PathBuf {
@@ -106,14 +111,7 @@ pub trait CompilationUnit {
         header_name: impl AsRef<str>,
         define: impl AsRef<str>,
     ) -> &mut Self {
-        let has_header = bindgen::Builder::default()
-            .header_contents(
-                header_name.as_ref(),
-                &format!("#include <{}>", header_name.as_ref()),
-            )
-            .generate()
-            .is_ok();
-
+        let has_header = HeaderDetector::new(header_name.as_ref()).exists();
         if has_header {
             self.define(define.as_ref(), None);
             println!("{} - found", header_name.as_ref());
@@ -236,12 +234,20 @@ impl Unit {
             .warnings(false)
             .extra_warnings(false);
 
-        if self.target().is_macos() {
-            build.flag(&format!(
-                "-mmacosx-version-min={}",
-                MACOSX_DEPLOYMENT_TARGET
-            ));
-            build.flag("-stdlib=libc++");
+        let target = self.target();
+
+        if target.is_apple() {
+            if target.is_macos() {
+                build.flag(&format!(
+                    "-mmacosx-version-min={}",
+                    MACOSX_DEPLOYMENT_TARGET
+                ));
+                build.flag("-stdlib=libc++");
+            } else if target.is_ios() {
+                build.flag(&format!("-miphoneos-version-min={}", IOS_DEPLOYMENT_TARGET));
+            } else {
+                eprintln!("Apple deployment target is not specified for {}", &target);
+            }
         }
 
         for flag in &self.flags {
@@ -325,10 +331,10 @@ impl Unit {
             let mut command = compiler.to_command();
             command.current_dir(self.output_directory());
 
-            let is_gcc = compiler.is_like_gnu() && !self.target().is_macos();
-            let is_clang = compiler.is_like_clang() || self.target().is_macos();
+            let is_gcc = compiler.is_like_gnu() && !self.target().is_apple();
+            let is_clang = compiler.is_like_clang() || self.target().is_apple();
 
-            if self.target().is_macos() {
+            if self.target().is_apple() {
                 // allows the header to be changed later on during packaging
                 command.arg("-headerpad_max_install_names");
             }
@@ -531,12 +537,7 @@ fn template_string_to_path(template_path: &str, builder: Rc<dyn Builder>) -> Pat
     let mut data = HashMap::<String, String>::new();
     data.insert(
         "generated".to_string(),
-        builder
-            .output_directory()
-            .join("generated")
-            .join("64")
-            .display()
-            .to_string(),
+        builder.generated_directory().display().to_string(),
     );
     data.insert(
         "output".to_string(),

@@ -5,13 +5,13 @@ members = [
     "vm-client",
     "vm-client-tests",
     "vm-client-test-library",
-    "vm-library-tester"
+    "vm-library-tester",
 ]
 
 exclude = ["target", "third_party", "libs"]
 
 [patch.crates-io]
-libffi-sys = { git = "https://github.com/syrel/libffi-rs", rev = "52708eac61222adc023766e7caf3836e824100e3" }
+libffi-sys = { git = "https://github.com/syrel/libffi-rs", rev = "3d01b5b4455c0db4db4d4015dd5353e8389aa5e3" }
 
 [profile.release]
 rpath = false

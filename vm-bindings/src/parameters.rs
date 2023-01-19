@@ -1,6 +1,6 @@
 use crate::bindings::{
     vm_parameters_destroy, vm_parameters_parse, VMParameterVector as NativeVMParameterVector,
-    VMParameters as NativeVMParameters,
+    VMParameters as NativeVMParameters, free
 };
 use crate::parameter_vector::{ImageParameters, VirtualMachineParameters};
 use crate::prelude::{Handle, NativeAccess, NativeDrop};
@@ -74,7 +74,7 @@ impl InterpreterParameters {
         }
 
         let previous_file_name = self.native().imageFileName as *mut c_void;
-        unsafe { crate::bindings::free(previous_file_name) };
+        unsafe { free(previous_file_name) };
 
         let c_str = CString::new(new_image_name).unwrap();
         self.native_mut().imageFileName = c_str.into_raw();

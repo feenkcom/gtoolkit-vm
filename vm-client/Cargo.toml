@@ -15,33 +15,49 @@ path = "src/main_cli.rs"
 
 [dependencies]
 vm-bindings = { path = "../vm-bindings", default-features = false }
-nfd2 = "0.3"
 clap = { version = "3.0", features = [ "derive"] }
 thiserror = "1.0"
 dirs = "3.0"
 log = "0.4"
-env_logger = "0.9.0"
+env_logger = "0.9"
+default-env = "0.1"
 user-error = "1.2"
 to_absolute = "0.1"
 anyhow = "1.0"
-libffi = "3.0.0"
 num = "0.4"
 num-traits = "0.2"
-lazy_static = "1.4.0"
-colored = "2"
+lazy_static = "1.4"
 chrono = "0.4"
-comfy-table = "6.0.0"
 json = "0.12"
-
-[features]
-default = ["full"]
-minimal = ["vm-bindings/minimal"]
-full = ["vm-bindings/full"]
 
 [target.'cfg(target_os="macos")'.dependencies]
 core-foundation = "0.9.1"
 libloading = "0.7"
 libc = "0.2"
+
+# pathos is used to detect home directory of the app on iOS
+[target.'cfg(target_os="ios")'.dependencies]
+pathos = "0.3"
+
+# nfd2 is only supported by desktop OS
+[target.'cfg(not(any(target_os="ios", target_arch = "wasm32")))'.dependencies]
+nfd2 = { version = "0.3", optional = true }
+comfy-table = { version = "6.0", optional = true }
+colored = { version = "2", optional = true }
+
+[features]
+default = [ "full" ]
+full = [ "jit", "full_without_jit" ]
+full_without_jit = [ "vm-bindings/full_without_jit", "ffi", "colored_terminal", "image_picker" ]
+minimal = [ "vm-bindings/minimal" ]
+ffi = [ "vm-bindings/ffi" ]
+jit = [ "vm-bindings/jit" ]
+# Prettifies terminal output by adding colors or using ascii art.
+# Only supported by desktop targets
+colored_terminal = [ "colored", "comfy-table" ]
+# Shows an .image file picker dialog.
+# Only supported by desktop targets
+image_picker = [ "nfd2" ]
 
 [build-dependencies]
 embed-resource = "1.6"

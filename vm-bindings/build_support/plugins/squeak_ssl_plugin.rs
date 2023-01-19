@@ -1,16 +1,16 @@
 #[cfg(not(feature = "squeak_ssl_plugin"))]
 compile_error!("squeak_ssl_plugin must be enabled for this crate.");
 
-use crate::{BuilderTarget, CompilationUnit, Core, Dependency, Plugin};
+use crate::{CompilationUnit, Core, Dependency, Plugin, FamilyOS};
 
 pub fn squeak_ssl_plugin(core: &Core) -> Option<Plugin> {
     let mut plugin = Plugin::extracted("SqueakSSL", core);
-    match plugin.target() {
-        BuilderTarget::MacOS => {
+    match plugin.family() {
+        FamilyOS::Apple => {
             plugin.dependency(Dependency::SystemLibrary("CoreFoundation".to_string()));
             plugin.dependency(Dependency::SystemLibrary("Security".to_string()));
         }
-        BuilderTarget::Linux => {
+        FamilyOS::Unix => {
             let openssl = pkg_config::Config::new()
                 .cargo_metadata(false)
                 .probe("openssl")
@@ -28,10 +28,11 @@ pub fn squeak_ssl_plugin(core: &Core) -> Option<Plugin> {
                 .collect();
             plugin.add_includes(includes);
         }
-        BuilderTarget::Windows => {
+        FamilyOS::Windows => {
             plugin.dependency(Dependency::SystemLibrary("Crypt32".to_string()));
             plugin.dependency(Dependency::SystemLibrary("Secur32".to_string()));
         }
+        FamilyOS::Other => {}
     }
     plugin.into()
 }

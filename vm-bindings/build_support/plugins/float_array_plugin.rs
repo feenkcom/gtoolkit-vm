@@ -5,6 +5,7 @@ use crate::{CompilationUnit, Core, Plugin};
 
 pub fn float_array_plugin(core: &Core) -> Option<Plugin> {
     if !core
+        .builder()
         .generated_directory()
         .join("plugins/src/FloatArrayPlugin")
         .exists()

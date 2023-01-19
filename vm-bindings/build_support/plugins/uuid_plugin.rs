@@ -1,7 +1,7 @@
 #[cfg(not(feature = "uuid_plugin"))]
 compile_error!("uuid_plugin must be enabled for this crate.");
 
-use crate::{BuilderTarget, CompilationUnit, Core, Dependency, Plugin};
+use crate::{CompilationUnit, Core, Dependency, Plugin, FamilyOS};
 
 pub fn uuid_plugin(core: &Core) -> Option<Plugin> {
     let mut plugin = Plugin::new("UUIDPlugin", core);
@@ -11,9 +11,9 @@ pub fn uuid_plugin(core: &Core) -> Option<Plugin> {
     plugin.define_for_header("uuid.h", "HAVE_UUID_H");
 
     plugin.source("{sources}/plugins/UUIDPlugin/common/UUIDPlugin.c");
-    match plugin.builder().target() {
-        BuilderTarget::MacOS => {}
-        BuilderTarget::Linux => {
+    match plugin.builder().target_family() {
+        FamilyOS::Apple => {}
+        FamilyOS::Unix => {
             let uuid_lib = pkg_config::probe_library("uuid").unwrap();
             let includes: Vec<String> = uuid_lib
                 .include_paths
@@ -23,9 +23,10 @@ pub fn uuid_plugin(core: &Core) -> Option<Plugin> {
             plugin.add_includes(includes);
             plugin.dependency(Dependency::Library("uuid".to_string(), vec![]));
         }
-        BuilderTarget::Windows => {
+        FamilyOS::Windows => {
             plugin.dependency(Dependency::SystemLibrary("ole32".to_string()));
         }
+        FamilyOS::Other => {}
     }
 
     plugin.into()

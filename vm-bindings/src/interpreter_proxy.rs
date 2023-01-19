@@ -1,11 +1,13 @@
 use crate::bindings::{
     calloc, exportFirstBytePointerOfDataObject as firstBytePointerOfDataObject,
     exportGetHandler as getHandler, exportInstantiateClassIsPinned as instantiateClassIsPinned,
-    exportReadAddress as readAddress, free, malloc, memcpy, sqInt, usqInt,
+    exportReadAddress as readAddress, free, malloc, sqInt, usqInt,
     VirtualMachine as sqInterpreterProxy,
 };
+use std::any::type_name;
 
 use std::ffi::CString;
+use std::fmt::Display;
 use std::mem::size_of;
 
 use crate::prelude::{Handle, NativeAccess, NativeDrop, NativeTransmutable};
@@ -170,7 +172,7 @@ impl InterpreterProxy {
 
     pub fn positive_64bit_value_of(&self, object: ObjectPointer) -> u64 {
         let function = self.native().positive64BitValueOf.unwrap();
-        unsafe { function(object.into_native()) }
+        unsafe { cast_integer(function(object.into_native())) }
     }
 
     pub fn fetch_float_at(&self, object: ObjectPointer, index: ObjectFieldIndex) -> c_double {
@@ -258,7 +260,7 @@ impl InterpreterProxy {
 
     pub fn new_positive_64bit_integer(&self, integer: u64) -> ObjectPointer {
         let function = self.native().positive64BitIntegerFor.unwrap();
-        let oop = unsafe { function(integer) };
+        let oop = unsafe { function(cast_integer(integer)) };
         ObjectPointer::from_native_c(oop)
     }
 
@@ -267,11 +269,11 @@ impl InterpreterProxy {
     }
 
     pub fn malloc(&self, bytes: usize) -> *mut c_void {
-        unsafe { malloc(bytes.try_into().unwrap()) }
+        unsafe { malloc(cast_integer(bytes)) }
     }
 
     pub fn calloc(&self, amount: usize, size: usize) -> *mut c_void {
-        unsafe { calloc(amount.try_into().unwrap(), size.try_into().unwrap()) }
+        unsafe { calloc(cast_integer(amount), cast_integer(size)) }
     }
 
     pub fn free(&self, address: *mut c_void) {
@@ -299,6 +301,17 @@ impl InterpreterProxy {
 pub(crate) fn write_value<T>(value: T, holder: *mut c_void) {
     let holder = holder as *mut T;
     unsafe { *holder = value };
+}
+
+fn cast_integer<T: Display + TryInto<R> + Copy, R: Display>(number: T) -> R {
+    number.try_into().unwrap_or_else(|_| {
+        panic!(
+            "Failed to cast {} from {} to {}",
+            number,
+            type_name::<T>(),
+            type_name::<R>()
+        )
+    })
 }
 
 #[derive(Copy, Clone, Debug)]

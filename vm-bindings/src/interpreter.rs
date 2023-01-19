@@ -1,7 +1,7 @@
 use crate::bindings::{
     exportOsCogStackPageHeadroom as osCogStackPageHeadroom,
     exportSqGetInterpreterProxy as sqGetInterpreterProxy, exportStatFullGCUsecs as statFullGCUsecs,
-    exportStatScavengeGCUsecs as statScavengeGCUsecs, free, getVMExports, installErrorHandlers,
+    exportStatScavengeGCUsecs as statScavengeGCUsecs, getVMExports, installErrorHandlers,
     registerCurrentThreadToHandleExceptions, setLogger, setProcessArguments,
     setProcessEnvironmentVector, setShouldLog, setVMExports, setVmRunOnWorkerThread, sqExport,
     sqInt, vm_init, vm_parameters_ensure_interactive_image_parameter, vm_run_interpreter,
@@ -183,12 +183,12 @@ impl PharoInterpreter {
 
     /// Return the total amount of microseconds spent on full garbage collection
     pub fn full_gc_microseconds(&self) -> u64 {
-        unsafe { statFullGCUsecs() }
+        unsafe { statFullGCUsecs().into() }
     }
 
     /// Return the total amount of microseconds spent on scavenge garbage collection
     pub fn scavenge_gc_microseconds(&self) -> u64 {
-        unsafe { statScavengeGCUsecs() }
+        unsafe { statScavengeGCUsecs().into() }
     }
 
     /// re-allocate the vm-exports memory using rust allocator so that we can modify the exports

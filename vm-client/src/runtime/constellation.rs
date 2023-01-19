@@ -19,7 +19,7 @@ impl Constellation {
     }
 
     fn run_in_worker_thread(configuration: InterpreterConfiguration) {
-        let (mut event_loop, sender) = EventLoop::new();
+        let (event_loop, sender) = EventLoop::new();
 
         let vm = Arc::new(VirtualMachine::new(
             configuration,

@@ -1,14 +1,16 @@
+#[cfg(all(feature = "jit", target_os = "ios"))]
+compile_error!("JIT is not supported by iOS");
+
+use std::rc::Rc;
+
 use anyhow::{anyhow, Result};
 use semver::Version;
 use serde::Serialize;
-use std::ffi::c_void;
-use std::mem;
-use std::os::raw::{c_int, c_long, c_longlong};
-use std::rc::Rc;
 
 use crate::*;
 
 #[derive(Debug, Clone, Serialize)]
+#[allow(dead_code)]
 pub struct VirtualMachine {
     #[serde(skip)]
     builder: Rc<dyn Builder>,
@@ -22,28 +24,50 @@ pub struct VirtualMachine {
 
 impl VirtualMachine {
     pub(crate) fn builder() -> Result<Rc<dyn Builder>> {
-        match std::env::consts::OS {
-            "linux" => Ok(LinuxBuilder::default().boxed()),
-            "macos" => Ok(MacBuilder::default().boxed()),
-            "windows" => Ok(WindowsBuilder::default().boxed()),
-            _ => Err(anyhow!(
-                "The platform you're compiling for is not supported"
-            )),
-        }
+        for_target_triplet(std::env::var("TARGET").unwrap().as_str())
     }
 
     fn build_info(builder: Rc<dyn Builder>) -> Result<BuildInfo> {
         BuildInfo::new(builder)
     }
 
+    fn size_of_int(arch: &ArchBits) -> usize {
+        match arch {
+            ArchBits::Bit32 => 4,
+            ArchBits::Bit64 => 4,
+        }
+    }
+
+    fn size_of_long(arch: &ArchBits) -> usize {
+        match arch {
+            ArchBits::Bit32 => 4,
+            ArchBits::Bit64 => 8,
+        }
+    }
+
+    fn size_of_long_long(arch: &ArchBits) -> usize {
+        match arch {
+            ArchBits::Bit32 => 8,
+            ArchBits::Bit64 => 8,
+        }
+    }
+
+    fn size_of_void_pointer(arch: &ArchBits) -> usize {
+        match arch {
+            ArchBits::Bit32 => 4,
+            ArchBits::Bit64 => 8,
+        }
+    }
+
     /// Sets up the core configuration of the vm such as its name, the size of basic types, version and the build timestamp
     fn config(builder: Rc<dyn Builder>, info: &BuildInfo) -> Result<ConfigTemplate> {
         let mut config = ConfigTemplate::new(builder.clone());
+        let arch_bits = builder.arch_bits();
 
-        let size_of_int = mem::size_of::<c_int>();
-        let size_of_long = mem::size_of::<c_long>();
-        let size_of_long_long = mem::size_of::<c_longlong>();
-        let size_of_void_p = mem::size_of::<*const c_void>();
+        let size_of_int = Self::size_of_int(&arch_bits);
+        let size_of_long = Self::size_of_long(&arch_bits);
+        let size_of_long_long = Self::size_of_long_long(&arch_bits);
+        let size_of_void_p = Self::size_of_void_pointer(&arch_bits);
         let squeak_int64_type = if size_of_long == 8 {
             "long"
         } else {
@@ -54,16 +78,16 @@ impl VirtualMachine {
             }
         };
 
-        let os_type = match builder.target() {
-            BuilderTarget::MacOS => "Mac OS",
-            BuilderTarget::Linux => "unix",
-            BuilderTarget::Windows => "Win32",
+        let os_type = match builder.target_family() {
+            FamilyOS::Apple => "Mac OS",
+            FamilyOS::Unix | FamilyOS::Other => "unix",
+            FamilyOS::Windows => "Win32",
         };
 
-        let target_os = match builder.target() {
-            BuilderTarget::MacOS => "1000",
-            BuilderTarget::Linux => "linux-gnu",
-            BuilderTarget::Windows => "Win64",
+        let target_os = match builder.target_family() {
+            FamilyOS::Apple => "1000",
+            FamilyOS::Unix | FamilyOS::Other => "linux-gnu",
+            FamilyOS::Windows => "Win64",
         };
 
         config
@@ -88,20 +112,35 @@ impl VirtualMachine {
         Ok(config)
     }
 
-    fn vmmaker(builder: Rc<dyn Builder>) -> Result<VMMaker> {
-        let vmmaker = VMMaker::prepare(builder)?;
-        vmmaker.generate_sources()?;
-        Ok(vmmaker)
+    /// Return the name of the interpreter that should be generated.
+    /// This basically boils down to choosing between faster JIT-enabled or
+    /// slower stack interpreter
+    fn interpreter(_builder: Rc<dyn Builder>) -> &'static str {
+        if cfg!(feature = "jit") {
+            "CoInterpreter"
+        } else {
+            "StackVM"
+        }
     }
 
-    fn sources(target: &BuilderTarget, build_info: &BuildInfo) -> Vec<&'static str> {
-        let mut sources = [
-            // generated interpreter sources
-            "{generated}/vm/src/cogit.c",
-            #[cfg(not(feature = "gnuisation"))]
-            "{generated}/vm/src/cointerp.c",
-            #[cfg(feature = "gnuisation")]
-            "{generated}/vm/src/gcc3x-cointerp.c",
+    fn interpreter_sources() -> Vec<&'static str> {
+        if cfg!(feature = "jit") {
+            vec![
+                // generated interpreter sources
+                "{generated}/vm/src/cogit.c",
+                #[cfg(not(feature = "gnuisation"))]
+                "{generated}/vm/src/cointerp.c",
+                #[cfg(feature = "gnuisation")]
+                "{generated}/vm/src/gcc3x-cointerp.c",
+            ]
+        } else {
+            vec!["{generated}/vm/src/interp.c"]
+        }
+    }
+
+    fn sources(target: &TargetOS, build_info: &BuildInfo) -> Vec<&'static str> {
+        let mut sources = Self::interpreter_sources();
+        sources.extend([
             // support sources
             "{crate}/extra/debug.c",
             "{sources}/src/utils.c",
@@ -127,11 +166,10 @@ impl VirtualMachine {
             // Re-exports of private VM functions
             "{crate}/extra/sqExport.c",
             "{crate}/extra/exported.c",
-        ]
-        .to_vec();
+        ]);
 
-        match target {
-            BuilderTarget::MacOS => {
+        match target.family() {
+            FamilyOS::Apple => {
                 sources.extend([
                     // Platform sources
                     "{sources}/extracted/vm/src/osx/aioOSX.c",
@@ -142,7 +180,7 @@ impl VirtualMachine {
                     "{sources}/src/memoryUnix.c",
                 ])
             }
-            BuilderTarget::Linux => {
+            FamilyOS::Unix | FamilyOS::Other => {
                 sources.extend([
                     // Platform sources
                     "{sources}/extracted/vm/src/unix/aio.c",
@@ -153,7 +191,7 @@ impl VirtualMachine {
                     "{sources}/src/memoryUnix.c",
                 ])
             }
-            BuilderTarget::Windows => {
+            FamilyOS::Windows => {
                 sources.extend([
                     // Platform sources
                     "{sources}/extracted/vm/src/win/sqWin32SpurAlloc.c",
@@ -190,9 +228,11 @@ impl VirtualMachine {
     }
 
     /// Return a list of include directories for a given build target platform
-    fn includes(target: &BuilderTarget) -> Vec<String> {
+    fn includes(target: &TargetOS) -> Vec<String> {
         let mut includes = [
             "{crate}/extra".to_owned(),
+            "{crate}/extra/include".to_owned(),
+            "{crate}/extra/include/pharovm".to_owned(),
             "{sources}/extracted/vm/include/common".to_owned(),
             "{sources}/include".to_owned(),
             "{sources}/include/pharovm".to_owned(),
@@ -200,15 +240,15 @@ impl VirtualMachine {
         ]
         .to_vec();
 
-        match target {
-            BuilderTarget::MacOS => {
+        match target.family() {
+            FamilyOS::Apple => {
                 includes.push("{sources}/extracted/vm/include/osx".to_owned());
                 includes.push("{sources}/extracted/vm/include/unix".to_owned());
             }
-            BuilderTarget::Linux => {
+            FamilyOS::Unix | FamilyOS::Other => {
                 includes.push("{sources}/extracted/vm/include/unix".to_owned());
             }
-            BuilderTarget::Windows => {
+            FamilyOS::Windows => {
                 includes.push("{crate}/extra/extracted/vm/include/win".to_owned());
                 includes.push("{sources}/extracted/vm/include/win".to_owned());
                 includes.push(format!(
@@ -227,11 +267,11 @@ impl VirtualMachine {
         core.includes(Self::includes(&core.target()));
 
         core.define_for_header("dirent.h", "HAVE_DIRENT_H");
-        core.define_for_header("features.h", "HAVE_FEATURES_H");
-        core.define_for_header("unistd.h", "HAVE_UNISTD_H");
         core.define_for_header("ndir.h", "HAVE_NDIR_H");
         core.define_for_header("sys/ndir.h", "HAVE_SYS_NDIR_H");
         core.define_for_header("sys/dir.h", "HAVE_SYS_DIR_H");
+        core.define_for_header("features.h", "HAVE_FEATURES_H");
+        core.define_for_header("unistd.h", "HAVE_UNISTD_H");
         core.define_for_header("sys/filio.h", "HAVE_SYS_FILIO_H");
         core.define_for_header("sys/time.h", "HAVE_SYS_TIME_H");
         core.define_for_header("execinfo.h", "HAVE_EXECINFO_H");
@@ -257,19 +297,30 @@ impl VirtualMachine {
         core.define("IMMUTABILITY", "1");
         #[cfg(feature = "inline_memory_accessors")]
         core.define("USE_INLINE_MEMORY_ACCESSORS", "1");
-        core.define("COGMTVM", "0");
-        core.define("STACKVM", "0");
+
+        #[cfg(feature = "jit")]
+        {
+            core.define("COGVM", "1");
+            core.define("COGMTVM", "0");
+        }
+
         core.define("PharoVM", "1");
-        core.define("SPURVM", "1");
-        core.define("COGVM", "1");
         core.define("ASYNC_FFI_QUEUE", "1");
-        core.define("ARCH", "64");
+
+        match core.arch_bits() {
+            ArchBits::Bit32 => {
+                core.define("ARCH", "32");
+            }
+            ArchBits::Bit64 => {
+                core.define("ARCH", "64");
+            }
+        }
         core.define("VM_LABEL(foo)", "0");
-        core.define("SOURCE_PATH_SIZE", "80");
+        core.define("SOURCE_PATH_SIZE", "40");
 
         core.define("PHARO_VM_IN_WORKER_THREAD", "1");
 
-        // let's never build phar-vm in debug mode because it enables assertions
+        // let's never build pharo-vm in debug mode because it enables assertions
         // and the whole thing becomes too slow
         core.define("NDEBUG", None);
         core.define("DEBUGVM", "0");
@@ -278,14 +329,20 @@ impl VirtualMachine {
             core.define("LSB_FIRST", "1");
             core.define("UNIX", "1");
             core.define("HAVE_TM_GMTOFF", None);
+            core.dependency(Dependency::Library("pthread".to_string(), vec![]));
         }
 
-        if core.target().is_macos() {
+        if core.target().is_apple() {
             core.define("OSX", "1");
-            // In Apple Silicon machines the code zone is read-only, and requires special operations
-            #[cfg(target_arch = "aarch64")]
-            core.define("READ_ONLY_CODE_ZONE", "1");
-            core.dependency(Dependency::SystemLibrary("AppKit".to_string()));
+            if core.target().is_macos() {
+                core.dependency(Dependency::SystemLibrary("AppKit".to_string()));
+                // On Apple Silicon machines the code zone is read-only, and requires special operations.
+                // Enabling READ_ONLY_CODE_ZONE makes the VM use pthread_jit_write_protect_np()
+                // which is only available on MacOS. We should not enable it on other apple device.
+                #[cfg(target_arch = "aarch64")]
+                core.define("READ_ONLY_CODE_ZONE", "1");
+            }
+            core.dependency(Dependency::SystemLibrary("Foundation".to_string()));
         }
 
         if core.target().is_windows() {
@@ -349,12 +406,18 @@ impl VirtualMachine {
         .collect()
     }
 
+    fn vmmaker(builder: Rc<dyn Builder>, interpreter: &str) -> Result<VMMaker> {
+        let vmmaker = VMMaker::prepare(builder)?;
+        vmmaker.generate_sources(interpreter)?;
+        Ok(vmmaker)
+    }
+
     pub fn new() -> Result<Self> {
         let builder = Self::builder()?;
         builder.prepare_environment();
         let build_info = Self::build_info(builder.clone())?;
         let config = Self::config(builder.clone(), &build_info)?;
-        let vmmaker = Self::vmmaker(builder.clone())?;
+        let vmmaker = Self::vmmaker(builder.clone(), Self::interpreter(builder.clone()))?;
         let core = Self::core(builder.clone(), &build_info);
         let plugins = Self::plugins(&core);
 

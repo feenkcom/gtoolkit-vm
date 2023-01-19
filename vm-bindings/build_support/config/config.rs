@@ -72,11 +72,7 @@ impl ConfigTemplate {
             .join("pharovm")
             .join("config.h.in");
         let output = builder
-            .output_directory()
-            .join("generated")
-            .join("64")
-            .join("vm")
-            .join("include")
+            .generated_include_directory()
             .join("config.h");
         Self {
             config,

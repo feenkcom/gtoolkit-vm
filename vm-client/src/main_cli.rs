@@ -1,22 +1,26 @@
 #![windows_subsystem = "console"]
+
 #[macro_use]
-extern crate vm_bindings;
-extern crate num;
-#[macro_use]
-extern crate num_traits;
+extern crate default_env;
 #[macro_use]
 extern crate lazy_static;
 #[macro_use]
 extern crate log;
+#[macro_use]
+extern crate num_traits;
+#[macro_use]
+extern crate vm_bindings;
+
+use std::env;
+use std::env::Args;
+use std::path::Path;
+use clap::{arg, App, AppSettings, Arg, ArgEnum};
+
+pub use runtime::*;
+use vm_bindings::InterpreterConfiguration;
 
 pub(crate) mod platform;
 mod runtime;
-pub use runtime::*;
-
-use clap::{arg, App, AppSettings, Arg, ArgEnum, PossibleValue};
-use std::sync::mpsc::channel;
-use std::sync::Arc;
-use vm_bindings::InterpreterConfiguration;
 
 fn main() {
     env_logger::init();
@@ -78,12 +82,28 @@ fn main() {
         return;
     }
 
-    let image_path = match validate_user_image_file(matches.value_of("image")) {
+    // iOS sandboxes applications and does not allow developers
+    // to write inside of the application folder.
+    // In addition, the app is executed with `/` as the current_dir.
+    #[cfg(target_os = "ios")]
+    {
+        let home_dir = pathos::user::home_dir().unwrap();
+        let documents_dir = home_dir.join("Documents");
+        std::env::set_current_dir(documents_dir).unwrap();
+    }
+
+    let image_path_string = matches.value_of("image");
+    let current_dir = std::env::current_dir().unwrap();
+    let image_path = match validate_user_image_file(image_path_string) {
         None => {
-            eprintln!("Could not find an .image file");
+            eprintln!(
+                "Could not find an .image file {:?} in {}",
+                &image_path_string,
+                current_dir.display()
+            );
             return;
         }
-        Some(path) => path,
+        Some(path) => current_dir.join(path),
     };
 
     let mut extra_args: Vec<String> = vec![];
