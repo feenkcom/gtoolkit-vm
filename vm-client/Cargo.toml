@@ -29,6 +29,7 @@ num-traits = "0.2"
 lazy_static = "1.4"
 chrono = "0.4"
 json = "0.12"
+libffi = { version = "3.1", optional = true }
 
 [target.'cfg(target_os="macos")'.dependencies]
 core-foundation = "0.9.1"
@@ -50,7 +51,7 @@ default = [ "full" ]
 full = [ "jit", "full_without_jit" ]
 full_without_jit = [ "vm-bindings/full_without_jit", "ffi", "colored_terminal", "image_picker" ]
 minimal = [ "vm-bindings/minimal" ]
-ffi = [ "vm-bindings/ffi" ]
+ffi = [ "vm-bindings/ffi", "libffi" ]
 jit = [ "vm-bindings/jit" ]
 # Prettifies terminal output by adding colors or using ascii art.
 # Only supported by desktop targets

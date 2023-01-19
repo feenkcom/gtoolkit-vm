@@ -1,15 +1,12 @@
-use crate::{vm, LogSignal, Logger, NullLogger, VM_LOGGER};
-use num_traits::FromPrimitive;
 use std::any::Any;
 use std::collections::HashSet;
-use std::ffi::{c_void, CStr, CString};
-use std::mem;
-use std::mem::size_of;
 pub use std::os::raw::{c_char, c_int};
-use vm_bindings::{LogLevel, ObjectFieldIndex, StackOffset};
+use std::sync::Mutex;
 
 use chrono::Local;
-use std::sync::Mutex;
+use num_traits::FromPrimitive;
+
+use crate::{vm, LogSignal, Logger, NullLogger, VM_LOGGER};
 
 #[derive(Debug)]
 pub struct ConsoleLogger;
@@ -39,9 +36,7 @@ impl Logger for ConsoleLogger {
     fn log(&mut self, log: LogSignal) {
         println!(
             "{} {} {} - {}",
-            Local::now()
-                .format("%Y-%m-%d %H:%M:%S")
-                .to_string(),
+            Local::now().format("%Y-%m-%d %H:%M:%S").to_string(),
             log.log_type,
             format!("{}:{}", log.file_name, log.line),
             log.message.trim()

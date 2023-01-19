@@ -60,8 +60,8 @@ pub fn fetch_version() -> String {
 
     #[cfg(feature = "colored_terminal")]
     {
-        use comfy_table::Table;
         use colored::Colorize;
+        use comfy_table::Table;
 
         let intro = intro.green().bold();
 

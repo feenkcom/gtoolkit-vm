@@ -71,9 +71,7 @@ impl ConfigTemplate {
             .join("include")
             .join("pharovm")
             .join("config.h.in");
-        let output = builder
-            .generated_include_directory()
-            .join("config.h");
+        let output = builder.generated_include_directory().join("config.h");
         Self {
             config,
             output,

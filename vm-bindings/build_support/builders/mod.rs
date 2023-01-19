@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use platforms::platform::Platform;
 
-pub use builder::{Builder, FamilyOS, TargetOS, HostOS, ArchBits};
+pub use builder::{ArchBits, Builder, FamilyOS, HostOS, TargetOS};
 pub(crate) use windows::WindowsBuilder;
 
 mod builder;

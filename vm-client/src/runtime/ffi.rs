@@ -1,8 +1,3 @@
-#[cfg(not(feature = "ffi"))]
-compile_error!("\"ffi\" feature must be enabled for this module.");
-
-asdasda
-
 use std::ffi::CString;
 use std::fmt::{Debug, Formatter};
 use std::mem::{size_of, transmute};
@@ -14,6 +9,9 @@ use libffi::low::{ffi_cif, ffi_type, CodePtr};
 use vm_bindings::{Marshallable, ObjectFieldIndex, StackOffset};
 
 use crate::{vm, EventLoopMessage};
+
+#[cfg(not(feature = "ffi"))]
+compile_error!("\"ffi\" feature must be enabled for this module.");
 
 #[repr(C)]
 pub struct EventLoopCallout {
@@ -31,7 +29,7 @@ impl EventLoopCallout {
         unsafe {
             libffi::raw::ffi_call(
                 self.cif,
-                Some(*unsafe { self.func.as_safe_fun() }),
+                Some(*(self.func.as_safe_fun())),
                 self.result.unwrap_or(std::ptr::null_mut()),
                 self.args.unwrap_or(std::ptr::null_mut()),
             )
@@ -141,7 +139,7 @@ pub fn primitiveEventLoopCallout() {
     };
 
     if parameters.is_some() {
-        let mut parameters_slice =
+        let parameters_slice =
             unsafe { std::slice::from_raw_parts_mut(parameters.unwrap(), argument_size) };
 
         for argument_index in 0..argument_size {
@@ -211,7 +209,7 @@ pub fn primitiveExtractReturnValue() {
             return proxy.primitive_fail();
         }
 
-        let mut callout = Arc::from_raw(callout_address);
+        let callout = Arc::from_raw(callout_address);
 
         let mut locked_callout = callout.lock().unwrap();
 

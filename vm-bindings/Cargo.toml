@@ -7,8 +7,8 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0"
 log = "0.4"
-libffi = { version = "3.0.0", optional = true }
-libffi-sys = { version = "2.0.0", optional = true }
+libffi = { version = "3.1", optional = true }
+libffi-sys = { version = "2.1", optional = true }
 num = "0.4"
 num-derive = "0.3"
 num-traits = "0.2"
@@ -79,7 +79,7 @@ platforms = "3.0"
 bindgen = "0.60"
 fs_extra = "1.1"
 to_absolute = "0.1"
-cmake = { git = "https://github.com/syrel/cmake-rs", rev = "cce9d58d87bd5dd95afb9183fdbbf4cb5d4b2255" }
+#cmake = { git = "https://github.com/syrel/cmake-rs", rev = "cce9d58d87bd5dd95afb9183fdbbf4cb5d4b2255" }
 which = "4.1"
 titlecase = "1.1"
 file-matcher = "0.5"

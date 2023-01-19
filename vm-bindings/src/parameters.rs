@@ -1,6 +1,6 @@
 use crate::bindings::{
-    vm_parameters_destroy, vm_parameters_parse, VMParameterVector as NativeVMParameterVector,
-    VMParameters as NativeVMParameters, free
+    free, vm_parameters_destroy, vm_parameters_parse, VMParameterVector as NativeVMParameterVector,
+    VMParameters as NativeVMParameters,
 };
 use crate::parameter_vector::{ImageParameters, VirtualMachineParameters};
 use crate::prelude::{Handle, NativeAccess, NativeDrop};

@@ -1,11 +1,11 @@
-use std::{env, fmt};
 use std::fmt::{Debug, Display, Formatter};
 use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
+use std::{env, fmt};
 
-use platforms::{Platform, PointerWidth};
 use platforms::target::OS;
+use platforms::{Platform, PointerWidth};
 
 pub const SOURCES_DIRECTORY: &str = "pharo-vm";
 

@@ -1,7 +1,7 @@
 #[cfg(not(feature = "uuid_plugin"))]
 compile_error!("uuid_plugin must be enabled for this crate.");
 
-use crate::{CompilationUnit, Core, Dependency, Plugin, FamilyOS};
+use crate::{CompilationUnit, Core, Dependency, FamilyOS, Plugin};
 
 pub fn uuid_plugin(core: &Core) -> Option<Plugin> {
     let mut plugin = Plugin::new("UUIDPlugin", core);

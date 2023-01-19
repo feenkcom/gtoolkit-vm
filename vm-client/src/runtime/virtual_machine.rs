@@ -1,11 +1,10 @@
-use std::cell::{BorrowError, Cell, Ref, RefCell};
-use std::mem::{size_of, transmute};
+use std::cell::RefCell;
+use std::mem::transmute;
 use std::os::raw::c_void;
 use std::process::exit;
 use std::sync::mpsc::Sender;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use std::thread::JoinHandle;
-use std::time::Duration;
 
 use anyhow::Result;
 
@@ -15,7 +14,11 @@ use vm_bindings::{
 };
 
 use crate::runtime::version::{app_info, app_version};
-use crate::{log_signal, primitiveEnableLogSignal, primitiveGetEnabledLogSignals, primitivePollLogger, primitiveStartBeacon, primitiveStartConsoleLogger, primitiveStopLogger, should_log_signal, ConsoleLogger, EventLoop, EventLoopMessage, EventLoopWaker, should_log_all_signals, VM_LOGGER};
+use crate::{
+    log_signal, primitiveEnableLogSignal, primitiveGetEnabledLogSignals, primitivePollLogger,
+    primitiveStartBeacon, primitiveStartConsoleLogger, primitiveStopLogger, should_log_all_signals,
+    should_log_signal, ConsoleLogger, EventLoop, EventLoopMessage, EventLoopWaker, VM_LOGGER,
+};
 #[cfg(feature = "ffi")]
 use crate::{primitiveEventLoopCallout, primitiveExtractReturnValue};
 

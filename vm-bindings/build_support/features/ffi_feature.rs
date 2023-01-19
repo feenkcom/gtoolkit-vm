@@ -6,7 +6,7 @@ use std::{
 
 use clang_sys::support::Clang;
 
-use crate::{CompilationUnit, Core, Dependency, Feature, FamilyOS, WindowsBuilder};
+use crate::{CompilationUnit, Core, Dependency, FamilyOS, Feature, WindowsBuilder};
 
 #[cfg(not(feature = "ffi"))]
 compile_error!("ffi must be enabled for this crate.");

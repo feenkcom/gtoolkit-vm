@@ -224,14 +224,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cmake"
-version = "0.1.45"
-source = "git+https://github.com/syrel/cmake-rs?rev=cce9d58d87bd5dd95afb9183fdbbf4cb5d4b2255#cce9d58d87bd5dd95afb9183fdbbf4cb5d4b2255"
-dependencies = [
- "cc 1.0.78",
-]
-
-[[package]]
 name = "codespan-reporting"
 version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -969,8 +961,7 @@ checksum = "201de327520df007757c1f0adce6e827fe8562fbc28bfd9c15571c66ca1f5f79"
 [[package]]
 name = "libffi"
 version = "3.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6cb06d5b4c428f3cd682943741c39ed4157ae989fffe1094a08eaf7c4014cf60"
+source = "git+https://github.com/syrel/libffi-rs?rev=fd31055ed09845b55c95c4415560e70170e30eae#fd31055ed09845b55c95c4415560e70170e30eae"
 dependencies = [
  "libc",
  "libffi-sys",
@@ -979,8 +970,7 @@ dependencies = [
 [[package]]
 name = "libffi-sys"
 version = "2.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "11c6f11e063a27ffe040a9d15f0b661bf41edc2383b7ae0e0ad5a7e7d53d9da3"
+source = "git+https://github.com/syrel/libffi-rs?rev=fd31055ed09845b55c95c4415560e70170e30eae#fd31055ed09845b55c95c4415560e70170e30eae"
 dependencies = [
  "cc 1.0.78",
 ]
@@ -2143,7 +2133,6 @@ dependencies = [
  "cc 1.0.72",
  "chrono",
  "clang-sys",
- "cmake",
  "commander",
  "console",
  "downloader",
@@ -2192,6 +2181,7 @@ dependencies = [
  "json",
  "lazy_static",
  "libc",
+ "libffi",
  "libloading",
  "log",
  "nfd2",
@@ -2474,8 +2464,3 @@ dependencies = [
  "thiserror",
  "time",
 ]
-
-[[patch.unused]]
-name = "libffi-sys"
-version = "2.0.0"
-source = "git+https://github.com/syrel/libffi-rs?rev=3d01b5b4455c0db4db4d4015dd5353e8389aa5e3#3d01b5b4455c0db4db4d4015dd5353e8389aa5e3"

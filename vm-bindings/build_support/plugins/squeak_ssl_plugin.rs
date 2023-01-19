@@ -1,7 +1,7 @@
 #[cfg(not(feature = "squeak_ssl_plugin"))]
 compile_error!("squeak_ssl_plugin must be enabled for this crate.");
 
-use crate::{CompilationUnit, Core, Dependency, Plugin, FamilyOS};
+use crate::{CompilationUnit, Core, Dependency, FamilyOS, Plugin};
 
 pub fn squeak_ssl_plugin(core: &Core) -> Option<Plugin> {
     let mut plugin = Plugin::extracted("SqueakSSL", core);

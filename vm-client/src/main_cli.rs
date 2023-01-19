@@ -11,10 +11,10 @@ extern crate num_traits;
 #[macro_use]
 extern crate vm_bindings;
 
+use clap::{arg, App, AppSettings, Arg, ArgEnum};
 use std::env;
 use std::env::Args;
 use std::path::Path;
-use clap::{arg, App, AppSettings, Arg, ArgEnum};
 
 pub use runtime::*;
 use vm_bindings::InterpreterConfiguration;

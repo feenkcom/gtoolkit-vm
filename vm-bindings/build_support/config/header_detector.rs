@@ -1,5 +1,5 @@
-use std::{env, fs};
 use std::path::Path;
+use std::{env, fs};
 
 #[derive(Debug, Clone)]
 pub struct HeaderDetector {
@@ -38,7 +38,10 @@ impl HeaderDetector {
             .try_compile("main")
             .map(|_| true)
             .unwrap_or_else(|error| {
-                println!("Trying to detect header {} resulted in {}", &self.header, error);
+                println!(
+                    "Trying to detect header {} resulted in {}",
+                    &self.header, error
+                );
                 false
             })
     }

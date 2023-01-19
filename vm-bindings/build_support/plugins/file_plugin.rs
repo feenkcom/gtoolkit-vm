@@ -1,7 +1,7 @@
 #[cfg(not(feature = "file_plugin"))]
 compile_error!("file_plugin must be enabled for this crate.");
 
-use crate::{CompilationUnit, Core, Dependency, Plugin, FamilyOS};
+use crate::{CompilationUnit, Core, Dependency, FamilyOS, Plugin};
 
 pub fn file_plugin(core: &Core) -> Option<Plugin> {
     let target = core.target();
