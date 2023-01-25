@@ -7,7 +7,7 @@
   "Phlow": "v0.1.0",
   "Process": "v0.20.0",
   "Skia": "v0.14.0",
-  "Winit": "v0.19.0",
+  "Winit": "v0.22.0",
   "Cairo": "v0.3.0",
   "Crypto": "v0.3.0",
   "Freetype": "v0.5.0",
