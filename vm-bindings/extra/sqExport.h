@@ -1,13 +1,12 @@
+#ifndef SQ_EXPORT_H_
+#define SQ_EXPORT_H_
+
 #include "exportDefinition.h"
+#include "pharovm/sqNamedPrims.h"
 
 #define NULL 0
 
-typedef struct {
-  char *pluginName;
-  char *primitiveName; /* N.B. On Spur the accessorDepth is hidden after this */
-  void *primitiveAddress;
-} sqExport;
-
-sqExport *pluginExports[];
 EXPORT(sqExport*) getVMExports();
 EXPORT(void) setVMExports(sqExport *exports);
+
+#endif // SQ_EXPORT_H_
