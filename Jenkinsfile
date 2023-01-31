@@ -351,7 +351,7 @@ pipeline {
                                 --identifier ${APP_IDENTIFIER} `
                                 --author ${APP_AUTHOR} `
                                 --version ${APP_VERSION} `
-                                --libraries boxer clipboard gleam pixels process skia winit test-library cairo crypto freetype git sdl2 ssl `
+                                --libraries boxer clipboard gleam pixels process skia winit test-library crypto freetype git sdl2 ssl `
                                 --libraries-versions ${APP_LIBRARIES_VERSIONS} `
                                 --icons icons/GlamorousToolkit.ico `
                                 --release `
