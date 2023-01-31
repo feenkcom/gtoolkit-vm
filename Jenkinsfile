@@ -18,7 +18,7 @@ pipeline {
 
         APP_NAME = 'GlamorousToolkit'
         APP_IDENTIFIER = 'com.gtoolkit'
-        APP_LIBRARIES = 'boxer cairo clipboard crypto freetype git gleam glutin pixels phlow process sdl2 skia ssl winit test-library'
+        APP_LIBRARIES = 'boxer clipboard gleam glutin pixels process skia winit test-library cairo crypto freetype git sdl2 ssl'
         APP_LIBRARIES_VERSIONS = 'libraries.version'
         APP_AUTHOR = '"feenk gmbh <contact@feenk.com>"'
 
@@ -247,7 +247,7 @@ pipeline {
                                 --identifier ${APP_IDENTIFIER} \
                                 --author ${APP_AUTHOR} \
                                 --version ${APP_VERSION} \
-                                --libraries clipboard gleam process skia winit pixels test-library \
+                                --libraries clipboard gleam glutin pixels process skia winit test-library crypto freetype git ssl \
                                 --libraries-versions ${APP_LIBRARIES_VERSIONS} \
                                 --release \
                                 --verbose """
@@ -351,7 +351,7 @@ pipeline {
                                 --identifier ${APP_IDENTIFIER} `
                                 --author ${APP_AUTHOR} `
                                 --version ${APP_VERSION} `
-                                --libraries boxer clipboard crypto freetype git gleam process sdl2 skia ssl winit pixels test-library `
+                                --libraries boxer clipboard gleam pixels process skia winit test-library cairo crypto freetype git sdl2 ssl `
                                 --libraries-versions ${APP_LIBRARIES_VERSIONS} `
                                 --icons icons/GlamorousToolkit.ico `
                                 --release `

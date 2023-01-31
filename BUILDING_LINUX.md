@@ -25,7 +25,7 @@ sudo apt install libssl-dev
 ### LLVM / CLang / Automake / Ninja
 The native libraries are such as Skia and Pharo are compiled using CLang. Install it according to the Linux distribution. In case of Ubuntu:
 ```
-sudo apt install clang llvm lld autoconf automake libtool libtool-bin ninja-build
+sudo apt install clang llvm lld autoconf automake libtool libtool-bin ninja-build make build-essential
 ```
 
 You may need to override the default compiler and linker:
