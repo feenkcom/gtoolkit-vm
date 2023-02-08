@@ -4,7 +4,7 @@
   "Gleam": "v0.8.0",
   "Glutin": "v0.13.0",
   "Pixels": "v0.15.0",
-  "Process": "v0.24.0",
+  "Process": "v0.25.0",
   "Skia": "v0.23.0",
   "Winit": "v0.27.0",
   "Cairo": "v0.3.0",
