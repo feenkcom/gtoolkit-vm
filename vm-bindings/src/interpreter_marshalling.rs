@@ -232,7 +232,10 @@ impl Marshallable for InterpreterProxy {
                 bail!("FFI_TYPE_SINT32 return type is not supported",);
             }
             FFI_TYPE_UINT64 => {
-                bail!("FFI_TYPE_UINT64 return type is not supported",);
+                self.pop_then_push(
+                    primitive_arguments_and_receiver_count,
+                    self.new_positive_64bit_integer(unsafe { *(return_holder as *const u64) }),
+                );
             }
             FFI_TYPE_SINT64 => {
                 bail!("FFI_TYPE_SINT64 return type is not supported",);
