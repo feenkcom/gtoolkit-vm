@@ -1,0 +1,40 @@
+[package]
+name = "vm-client-desktop"
+version = "0.5.0"
+authors = ["feenk gmbh. contact@feenk.com>"]
+edition = "2021"
+description = "GToolkit VM"
+
+[[bin]]
+name = "vm_client"
+path = "src/main.rs"
+
+[dependencies]
+vm-runtime = { path = "../vm-runtime" }
+clap = { version = "4.1", features = [ "derive", "string", "color" ] }
+env_logger = "0.10"
+log = "0.4"
+user-error = "1.2"
+to_absolute = "0.1"
+
+[target.'cfg(target_os="macos")'.dependencies]
+core-foundation = "0.9.1"
+libloading = "0.7"
+libc = "0.2"
+
+# pathos is used to detect home directory of the app on iOS
+[target.'cfg(target_os="ios")'.dependencies]
+pathos = "0.3"
+
+# nfd2 is only supported by desktop OS
+[target.'cfg(not(any(target_os="ios", target_os="android", target_arch = "wasm32")))'.dependencies]
+nfd2 = { version = "0.3", optional = true }
+
+[features]
+default = [ "image_picker" ]
+# Shows an .image file picker dialog.
+# Only supported by desktop targets
+image_picker = [ "nfd2" ]
+
+[build-dependencies]
+embed-resource = "1.6"

@@ -1,24 +1,18 @@
 #![windows_subsystem = "windows"]
 
 #[macro_use]
-extern crate vm_bindings;
-#[macro_use]
 extern crate log;
-#[macro_use]
-extern crate num_traits;
-#[macro_use]
-extern crate lazy_static;
-#[macro_use]
-extern crate default_env;
-
-pub(crate) mod platform;
-mod runtime;
-
-pub use runtime::*;
 
 use clap::Parser;
 
-use user_error::{UserFacingError, UFE};
+use user_error::{UFE, UserFacingError};
+use vm_runtime::{print_version, Result, ApplicationError};
+use crate::application::Application;
+use crate::application_options::AppOptions;
+
+mod platform;
+mod application;
+mod application_options;
 
 fn run() -> Result<()> {
     // we should read options and canonicalize the image path before changing current directory

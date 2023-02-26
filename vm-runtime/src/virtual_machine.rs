@@ -13,7 +13,7 @@ use vm_bindings::{
     ObjectFieldIndex, PharoInterpreter, StackOffset,
 };
 
-use crate::runtime::version::{app_info, app_version};
+use crate::version::{app_info, app_version};
 use crate::{
     log_signal, primitiveEnableLogSignal, primitiveGetEnabledLogSignals, primitivePollLogger,
     primitiveStartBeacon, primitiveStartConsoleLogger, primitiveStopLogger, should_log_all_signals,

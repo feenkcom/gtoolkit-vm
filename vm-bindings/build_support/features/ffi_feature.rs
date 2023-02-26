@@ -121,13 +121,6 @@ fn build_and_link(core: &Core, feature: &mut Feature) -> anyhow::Result<()> {
 }
 
 pub fn configure_libffi(prefix: PathBuf, build_dir: &Path) {
-    if !build_dir.join("configure").exists() {
-        run_command(
-            "Create configure",
-            Command::new("sh").arg("autogen.sh").current_dir(build_dir),
-        );
-    }
-
     let mut command = Command::new("sh");
 
     command
@@ -136,8 +129,8 @@ pub fn configure_libffi(prefix: PathBuf, build_dir: &Path) {
         .arg("--disable-shared")
         .arg("--disable-docs");
 
-    let target = std::env::var("TARGET").unwrap();
-    let host = std::env::var("HOST").unwrap();
+    let target = env::var("TARGET").unwrap();
+    let host = env::var("HOST").unwrap();
     if target != host {
         let cross_host = match target.as_str() {
             // Autoconf uses riscv64 while Rust uses riscv64gc for the architecture

@@ -2,7 +2,10 @@
 
 members = [
     "vm-bindings",
-    "vm-client",
+    "vm-runtime",
+    "vm-client-desktop",
+    "vm-client-desktop-cli",
+    "vm-client-android",
     "vm-client-tests",
     "vm-client-test-library",
     "vm-library-tester",

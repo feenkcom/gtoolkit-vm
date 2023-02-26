@@ -505,6 +505,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "dunce"
+version = "1.0.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0bd4b30a6560bbd9b4620f4de34c3f14f60848e58a9b7216801afcb4c7b31c3c"
+
+[[package]]
 name = "eieio"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1156,9 +1162,10 @@ dependencies = [
 [[package]]
 name = "libopenssl-library"
 version = "0.1.0"
-source = "git+https://github.com/feenkcom/libopenssl.git#4c08b515639643bbe10840a90468b42fa6f71602"
+source = "git+https://github.com/feenkcom/libopenssl.git#f712d5f10243dcd62f10c80923bd9db03097a037"
 dependencies = [
  "cc 1.0.79",
+ "ndk-build",
  "serde",
  "shared-library-builder",
  "typetag",
@@ -1300,6 +1307,20 @@ dependencies = [
  "num_enum",
  "raw-window-handle",
  "thiserror",
+]
+
+[[package]]
+name = "ndk-build"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a1c3df171aaf0f60b9d771d74830ce6abc3cacfe2a5cbcf4e50e0f16f699c531"
+dependencies = [
+ "dirs",
+ "dunce",
+ "quick-xml",
+ "serde",
+ "thiserror",
+ "which",
 ]
 
 [[package]]
@@ -1684,6 +1705,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5d727cae5b39d21da60fa540906919ad737832fe0b1c165da3a34d6548c849d6"
 dependencies = [
  "unicode-ident",
+]
+
+[[package]]
+name = "quick-xml"
+version = "0.26.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7f50b1c63b38611e7d4d7f68b82d3ad0cc71a2ad2e7f61fc10f1328d917c93cd"
+dependencies = [
+ "memchr",
+ "serde",
 ]
 
 [[package]]
@@ -2424,35 +2455,41 @@ dependencies = [
 ]
 
 [[package]]
-name = "vm-client"
-version = "0.4.0"
+name = "vm-client-android"
+version = "0.1.0"
 dependencies = [
- "android-activity",
  "android_logger",
- "anyhow",
- "chrono",
+ "log",
+ "vm-runtime",
+]
+
+[[package]]
+name = "vm-client-desktop"
+version = "0.5.0"
+dependencies = [
  "clap 4.1.6",
- "colored",
- "comfy-table",
  "core-foundation",
- "default-env",
- "dirs",
  "embed-resource",
  "env_logger",
- "json",
- "lazy_static",
  "libc",
- "libffi",
  "libloading",
  "log",
  "nfd2",
- "num",
- "num-traits",
  "pathos",
- "thiserror",
  "to_absolute",
  "user-error",
- "vm-bindings",
+ "vm-runtime",
+]
+
+[[package]]
+name = "vm-client-desktop-cli"
+version = "0.5.0"
+dependencies = [
+ "clap 4.1.6",
+ "embed-resource",
+ "env_logger",
+ "log",
+ "vm-runtime",
 ]
 
 [[package]]
@@ -2469,6 +2506,31 @@ version = "0.1.0"
 dependencies = [
  "clap 3.2.23",
  "libloading",
+]
+
+[[package]]
+name = "vm-runtime"
+version = "0.1.0"
+dependencies = [
+ "android-activity",
+ "anyhow",
+ "chrono",
+ "colored",
+ "comfy-table",
+ "core-foundation",
+ "default-env",
+ "dirs",
+ "json",
+ "lazy_static",
+ "libc",
+ "libffi",
+ "libloading",
+ "log",
+ "num",
+ "num-traits",
+ "thiserror",
+ "to_absolute",
+ "vm-bindings",
 ]
 
 [[package]]

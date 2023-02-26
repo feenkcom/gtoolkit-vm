@@ -1,19 +1,21 @@
-use crate::build_support::{Core, Plugin};
-use crate::{
-    ArchBits, Builder, FamilyOS, Feature, HeaderDetector, TargetOS, IOS_DEPLOYMENT_TARGET,
-    MACOSX_DEPLOYMENT_TARGET,
-};
-use anyhow::{bail, Result};
-use cc::Build;
-use file_matcher::FilesNamed;
-use new_string_template::template::Template;
-use serde::{Serialize, Serializer};
 use std::collections::HashMap;
 use std::env;
 use std::ffi::OsStr;
 use std::path::PathBuf;
 use std::rc::Rc;
+
+use anyhow::{bail, Result};
+use cc::Build;
+use file_matcher::FilesNamed;
+use new_string_template::template::Template;
+use serde::{Serialize, Serializer};
 use to_absolute::canonicalize;
+
+use crate::build_support::{Core, Plugin};
+use crate::{
+    ArchBits, Builder, FamilyOS, Feature, HeaderDetector, TargetOS, IOS_DEPLOYMENT_TARGET,
+    MACOSX_DEPLOYMENT_TARGET,
+};
 
 pub trait CompilationUnit {
     fn name(&self) -> &str;
@@ -223,7 +225,7 @@ impl Unit {
 
         let includes = find_all_includes(&self.includes, self.builder.clone());
 
-        let mut build = cc::Build::new();
+        let mut build = Build::new();
         build
             .cargo_metadata(false)
             .static_crt(true)

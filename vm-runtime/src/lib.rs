@@ -1,5 +1,15 @@
-mod application;
-mod application_options;
+#[macro_use]
+pub extern crate vm_bindings;
+#[macro_use]
+extern crate default_env;
+#[macro_use]
+extern crate lazy_static;
+#[macro_use]
+extern crate log;
+
+#[cfg(target_os = "android")]
+pub extern crate android_activity;
+
 mod constellation;
 mod error;
 mod event_loop;
@@ -11,8 +21,6 @@ mod version;
 mod virtual_machine;
 mod working_directory;
 
-pub use application::Application;
-pub use application_options::{AppOptions, WorkerThreadMode};
 pub use constellation::Constellation;
 pub use error::{ApplicationError, Result};
 pub use event_loop::{EventLoop, EventLoopMessage, EventLoopWaker};

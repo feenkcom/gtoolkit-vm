@@ -5,7 +5,7 @@ use std::rc::Rc;
 use std::{env, fmt};
 
 use platforms::target::OS;
-use platforms::{Arch, Platform, PointerWidth};
+use platforms::{Platform, PointerWidth};
 
 pub const SOURCES_DIRECTORY: &str = "pharo-vm";
 
@@ -173,7 +173,7 @@ pub trait Builder: Debug {
     }
 
     fn host(&self) -> HostOS {
-        Platform::find(std::env::var("HOST").unwrap().as_str())
+        Platform::find(env::var("HOST").unwrap().as_str())
             .unwrap()
             .into()
     }
@@ -204,27 +204,17 @@ pub trait Builder: Debug {
 
     fn artefact_directory(&self) -> PathBuf {
         let dir = self.output_directory();
-        let dir = dir
-            .parent()
+        dir.parent()
             .unwrap()
             .parent()
             .unwrap()
             .parent()
             .unwrap()
-            .to_path_buf();
-
-        if self.target().is_android() {
-            match self.platform().target_arch {
-                Arch::AArch64 => dir.parent().unwrap().join("arm64-v8a"),
-                _ => panic!("Unsupported arch: {}", self.platform().target_arch),
-            }
-        } else {
-            dir
-        }
+            .to_path_buf()
     }
 
     fn vm_sources_directory(&self) -> PathBuf {
-        std::env::current_dir()
+        env::current_dir()
             .unwrap()
             .parent()
             .unwrap()
@@ -379,7 +369,7 @@ pub trait Builder: Debug {
         );
     }
 
-    fn print_directories(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn print_directories(&self, f: &mut Formatter<'_>) -> fmt::Result {
         f.debug_map()
             .entry(
                 &"output_directory".to_string(),

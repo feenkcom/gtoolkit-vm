@@ -1,31 +1,17 @@
-#[macro_use]
-extern crate default_env;
-#[macro_use]
-extern crate lazy_static;
+#![windows_subsystem = "console"]
+
 #[macro_use]
 extern crate log;
-#[macro_use]
-extern crate num_traits;
-#[macro_use]
-extern crate vm_bindings;
 
 use std::env;
-use std::env::Args;
-use std::ffi::{c_int, c_long, c_longlong, c_void, CString};
-use std::mem::size_of;
-use std::path::{Path, PathBuf};
-use std::time::Duration;
 
-use clap::builder::OsStr;
-use clap::{arg, value_parser, Arg, ArgMatches, ColorChoice, Command, ValueEnum};
+use clap::{arg, Arg, Command, value_parser, ValueEnum};
+use clap::builder::PossibleValue;
 
-pub use runtime::*;
-use vm_bindings::InterpreterConfiguration;
+use vm_runtime::{Constellation, print_short_version, print_version, validate_user_image_file};
+use vm_runtime::vm_bindings::InterpreterConfiguration;
 
-pub(crate) mod platform;
-mod runtime;
-
-pub fn main_cli() {
+fn main() {
     env_logger::init();
 
     let app = Command::new("Virtual Machine")
@@ -64,6 +50,7 @@ pub fn main_cli() {
                 .long("worker")
                 .required(false)
                 .value_parser(value_parser!(WorkerThreadMode))
+                .help("Choose whether to run Pharo in a worker thread")
                 .default_value(
                     WorkerThreadMode::Auto
                         .to_possible_value()
@@ -138,58 +125,30 @@ pub fn main_cli() {
     Constellation::new().run(configuration);
 }
 
-#[cfg(target_os = "android")]
-#[no_mangle]
-fn android_main(app: android_activity::AndroidApp) {
-    env::set_var("RUST_LOG", "error");
 
-    std::thread::sleep(Duration::from_secs(1));
-    android_logger::init_once(
-        android_logger::Config::default().with_max_level(log::LevelFilter::Error),
-    );
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
+pub enum WorkerThreadMode {
+    /// Run the pharo interpreter in a worker thread freeing the main thread.
+    Yes,
+    /// Run the pharo interpreter on the main application thread.
+    No,
+    /// Automatically decide whether pharo interpreter should be run in a worker thread based on the current platform and support.
+    Auto,
+}
 
-    let current_exe = env::current_exe().expect("Get current exe");
-    let current_dir = env::current_dir().expect("Get current dir");
-    let internal_path = app.internal_data_path().expect("Get internal data path");
-    let external_path = app.external_data_path().expect("Get external data path");
-
-    println!("current_exe: {}", current_exe.display());
-    println!("current_dir: {}", current_dir.display());
-    println!("internal_path: {}", internal_path.display());
-    println!("external_path: {}", external_path.display());
-
-    let image_path = external_path
-        .join("glamoroustoolkit")
-        .join("GlamorousToolkit.image");
-
-    {
-        let new_current_dir = image_path.parent().expect("Get parent directory");
-        if !new_current_dir.exists() {
-            panic!(".image directory does not exist");
+impl WorkerThreadMode {
+    pub fn should_run_in_worker_thread(&self) -> bool {
+        match self {
+            WorkerThreadMode::Yes => true,
+            WorkerThreadMode::No => false,
+            WorkerThreadMode::Auto => cfg!(target_os = "macos") || cfg!(target_os = "windows"),
         }
-        env::set_current_dir(new_current_dir).unwrap_or_else(|error| {
-            panic!(
-                "Set current dir to {}: {}",
-                new_current_dir.display(),
-                error
-            )
-        });
     }
 
-    println!("image_path exists: {:?}", image_path.exists());
-    println!(
-        "image_path metadata: {:?}",
-        std::fs::metadata(&image_path).unwrap()
-    );
 
-    let mut extra_args = vec![];
-    extra_args.push("--event-fetcher=winit".to_string());
-
-    let mut configuration = InterpreterConfiguration::new(image_path);
-    configuration.set_interactive_session(true);
-    configuration.set_is_worker_thread(true);
-    configuration.set_should_handle_errors(true);
-    configuration.set_extra_arguments(extra_args);
-    Constellation::for_android(app).run(configuration);
-    std::thread::sleep(Duration::from_secs(1));
+    pub fn possible_values() -> impl Iterator<Item = PossibleValue> {
+        Self::value_variants()
+            .iter()
+            .filter_map(ValueEnum::to_possible_value)
+    }
 }

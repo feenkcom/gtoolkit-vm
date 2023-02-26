@@ -1,11 +1,9 @@
 use std::path::{Path, PathBuf};
 
-use vm_bindings::InterpreterConfiguration;
+use vm_runtime::{ApplicationError, Constellation, executable_working_directory, Result, search_image_file_within_directories};
+use vm_runtime::vm_bindings::InterpreterConfiguration;
 
-use crate::{
-    executable_working_directory, pick_image_with_dialog, search_image_file_within_directories,
-    AppOptions, ApplicationError, Constellation, Result,
-};
+use crate::application_options::AppOptions;
 
 #[derive(Debug, Clone)]
 pub struct Application {
@@ -86,4 +84,42 @@ impl Application {
     pub fn process_arguments(&self) -> Vec<String> {
         std::env::args().collect()
     }
+}
+
+#[allow(dead_code)]
+#[cfg(all(
+feature = "image_picker",
+not(any(target_os = "ios", target_os = "android", target_arch = "wasm32"))
+))]
+pub fn pick_image_with_dialog(default_path: Option<PathBuf>) -> Option<PathBuf> {
+    let mut dialog = nfd2::dialog();
+    let mut dialog_ref = &mut dialog;
+    if let Some(ref default_path) = default_path {
+        dialog_ref = dialog_ref.default_path(default_path);
+    }
+    dialog_ref = dialog_ref.filter("image");
+
+    let result = dialog_ref.open().unwrap_or_else(|e| {
+        panic!("{}", e);
+    });
+
+    match result {
+        nfd2::Response::Okay(file_name) => {
+            let file_path = PathBuf::new().join(file_name);
+            if file_path.exists() {
+                Some(file_path)
+            } else {
+                None
+            }
+        }
+        _ => None,
+    }
+}
+
+#[cfg(not(all(
+feature = "image_picker",
+not(any(target_os = "ios", target_os = "android", target_arch = "wasm32"))
+)))]
+pub fn pick_image_with_dialog(_default_path: Option<PathBuf>) -> Option<PathBuf> {
+    None
 }
