@@ -69,25 +69,20 @@ uuid_plugin = []
 # Clang does not require gnuisation
 gnuisation = []
 
-[target.'cfg(target_os = "android")'.dependencies]
-ndk = "0.1.0"
-ndk-sys = "0.1.0"
-ndk-glue = "0.1.0"
-
 [build-dependencies]
 platforms = "3.0"
-bindgen = "0.60"
+bindgen = "0.64"
 fs_extra = "1.1"
 to_absolute = "0.1"
 which = "4.1"
-titlecase = "1.1"
-file-matcher = "0.5"
+titlecase = "2.1"
+file-matcher = "0.7"
 cc = { git = "https://github.com/syrel/cc-rs", rev = "2794bd456cd7ecf75e5bc79c2499a8eb9920f0a2" }
 new_string_template = "1.0"
 regex = "1.5"
 pkg-config = "0.3"
-strum = { version = "0.23", features = ["derive"] }
-git2 = "0.13"
+strum = { version = "0.24", features = ["derive"] }
+git2 = "0.16"
 anyhow = "1.0"
 chrono = "0.4"
 semver = { version = "1", features = [ "serde" ] }
@@ -103,3 +98,5 @@ commander = { git = "https://github.com/feenkcom/build-helpers-rs" }
 #downloader = { path = "../../build-helpers-rs/downloader" }
 #unzipper = { path = "../../build-helpers-rs/unzipper" }
 #commander = { path = "../../build-helpers-rs/commander" }
+libopenssl-library = { git = "https://github.com/feenkcom/libopenssl.git" }
+shared-library-builder = { git = "https://github.com/feenkcom/shared-library-builder-rs" }

@@ -5,6 +5,10 @@
 #include "debug.h"
 #include "beacon.h"
 
+#ifdef __ANDROID__
+#include <android/log.h>
+#endif
+
 #ifdef _WIN32
 
 #else
@@ -32,7 +36,9 @@ int isLogDebug() {
 
 void error(char *errorMessage){
     logError(errorMessage);
+    #ifndef __EMSCRIPTEN__
 	printStatusAfterError();
+	#endif
     abort();
 }
 
@@ -59,6 +65,7 @@ static void logTypedMessage_impl(const char* type, const char* fileName, const c
     char * buffer;
     int max_buffer_len;
 
+    #if !defined(__EMSCRIPTEN__) && !defined(__ANDROID__)
     if (!shouldLog) {
         return;
     }
@@ -68,6 +75,7 @@ static void logTypedMessage_impl(const char* type, const char* fileName, const c
     if (!shouldLog(type)) {
         return;
     }
+    #endif
 
     format = va_arg(args, char*);
     max_buffer_len = 250;
@@ -75,7 +83,13 @@ static void logTypedMessage_impl(const char* type, const char* fileName, const c
 
     vsnprintf(buffer, max_buffer_len, format, args);
 
-    logger(type, fileName, functionName, line, buffer);
+    #if defined(__EMSCRIPTEN__)
+        printf("%s %s:%d - %s\n", type, fileName, line, buffer);
+    #elif defined(__ANDROID__)
+        __android_log_print(ANDROID_LOG_DEBUG, "PHARO_VM", "%s %s:%d - %s\n", type, fileName, line, buffer);
+    #else
+        logger(type, fileName, functionName, line, buffer);
+    #endif
 
     free(buffer);
 }

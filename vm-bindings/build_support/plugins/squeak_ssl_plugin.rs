@@ -1,7 +1,10 @@
-#[cfg(not(feature = "squeak_ssl_plugin"))]
-compile_error!("squeak_ssl_plugin must be enabled for this crate.");
+use libopenssl_library::libopenssl;
+use shared_library_builder::{Library, LibraryCompilationContext, LibraryTarget};
 
 use crate::{CompilationUnit, Core, Dependency, FamilyOS, Plugin};
+
+#[cfg(not(feature = "squeak_ssl_plugin"))]
+compile_error!("squeak_ssl_plugin must be enabled for this crate.");
 
 pub fn squeak_ssl_plugin(core: &Core) -> Option<Plugin> {
     let mut plugin = Plugin::extracted("SqueakSSL", core);
@@ -11,22 +14,40 @@ pub fn squeak_ssl_plugin(core: &Core) -> Option<Plugin> {
             plugin.dependency(Dependency::SystemLibrary("Security".to_string()));
         }
         FamilyOS::Unix => {
-            let openssl = pkg_config::Config::new()
-                .cargo_metadata(false)
-                .probe("openssl")
-                .unwrap();
-            for lib in &openssl.libs {
-                plugin.dependency(Dependency::Library(
-                    lib.to_string(),
-                    openssl.link_paths.clone(),
-                ));
+            let library_target =
+                LibraryTarget::try_from(core.builder().platform().to_string().as_str()).unwrap();
+            let debug = match std::env::var("PROFILE").unwrap().as_str() {
+                "debug" => true,
+                _ => false,
+            };
+            let src_dir = core.output_directory().join("openssl");
+            if !src_dir.exists() {
+                std::fs::create_dir_all(&src_dir).expect("Create scr dir");
             }
-            let includes: Vec<String> = openssl
-                .include_paths
-                .iter()
-                .map(|each| each.display().to_string())
-                .collect();
-            plugin.add_includes(includes);
+            let build_dir = core.output_directory().join("openssl-build");
+            if !build_dir.exists() {
+                std::fs::create_dir_all(&build_dir).expect("Create build dir");
+            }
+            let context =
+                LibraryCompilationContext::new(&src_dir, &build_dir, library_target, debug);
+
+            let openssl_version: Option<String> = None;
+
+            let mut openssl = libopenssl(openssl_version);
+            openssl.be_static();
+
+            let ssl = openssl.be_ssl();
+            ssl.just_compile(&context).expect("Failed to build openssl");
+
+            plugin.dependency(Dependency::Library(
+                "ssl".to_string(),
+                vec![build_dir.join("ssl").join("build").join("lib")],
+            ));
+            plugin.dependency(Dependency::Library(
+                "crypto".to_string(),
+                vec![build_dir.join("ssl").join("build").join("lib")],
+            ));
+            plugin.add_include("{output}/openssl-build/ssl/build/include");
         }
         FamilyOS::Windows => {
             plugin.dependency(Dependency::SystemLibrary("Crypt32".to_string()));

@@ -1,20 +1,17 @@
 use crate::{ApplicationError, Result};
-use clap::{AppSettings, ArgEnum, Parser, PossibleValue};
+use clap::builder::{PossibleValue, StyledStr};
+use clap::{Parser, ValueEnum};
 use std::fmt::format;
 use std::path::{Path, PathBuf};
 
-lazy_static! {
-    pub static ref WORKER_HELP: String = WorkerThreadMode::long_help();
-}
-
 #[derive(Parser, Clone, Debug)]
-#[clap(author = "feenk gmbh <contact@feenk.com>")]
-#[clap(global_setting(AppSettings::NoAutoVersion))]
+#[command(author, about, long_about = None)]
 pub struct AppOptions {
     /// A path to a custom Pharo .image to use instead of automatically detecting one
-    #[clap(long, parse(from_os_str))]
+    #[clap(long)]
     image: Option<PathBuf>,
-    #[clap(long, value_name = "MODE", arg_enum, default_value_t = WorkerThreadMode::Auto, long_help = WorkerThreadMode::long_help_str())]
+    #[clap(long, value_name = "MODE", value_enum, default_value_t = WorkerThreadMode::Auto, long_help)]
+    /// Choose whether to run Pharo in a worker thread
     worker: WorkerThreadMode,
     /// Print the version information of the executable.
     #[clap(long, short = 'V')]
@@ -41,7 +38,7 @@ impl AppOptions {
     }
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ArgEnum)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
 pub enum WorkerThreadMode {
     /// Run the pharo interpreter in a worker thread freeing the main thread.
     Yes,
@@ -60,28 +57,10 @@ impl WorkerThreadMode {
         }
     }
 
-    pub fn possible_values() -> impl Iterator<Item = PossibleValue<'static>> {
+    pub fn possible_values() -> impl Iterator<Item = PossibleValue> {
         Self::value_variants()
             .iter()
-            .filter_map(ArgEnum::to_possible_value)
-    }
-
-    pub fn long_help() -> String {
-        let values = Self::possible_values()
-            .map(|each| format!("   {}: {}.", each.get_name(), each.get_help().unwrap_or("")))
-            .collect::<Vec<String>>()
-            .join("\n");
-
-        format!(
-            "Select if the pharo interpreter should be run in a worker thread.\n\n\
-            It can be configured with the following options:\n\
-            {}\n",
-            values
-        )
-    }
-
-    pub fn long_help_str() -> &'static str {
-        WORKER_HELP.as_str()
+            .filter_map(ValueEnum::to_possible_value)
     }
 }
 

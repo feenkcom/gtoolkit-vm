@@ -94,10 +94,6 @@ impl WindowsBuilder {
         "pthreads"
     }
 
-    pub fn pthreads_include() -> PathBuf {
-        Self::pthreads_directory().join("include")
-    }
-
     pub fn pthreads_lib() -> PathBuf {
         Self::pthreads_directory().join("lib")
     }

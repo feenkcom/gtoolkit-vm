@@ -4,6 +4,9 @@ compile_error!("uuid_plugin must be enabled for this crate.");
 use crate::{CompilationUnit, Core, Dependency, FamilyOS, Plugin};
 
 pub fn uuid_plugin(core: &Core) -> Option<Plugin> {
+    if core.target().is_android() {
+        return None;
+    }
     let mut plugin = Plugin::new("UUIDPlugin", core);
 
     plugin.define_for_header("sys/uuid.h", "HAVE_SYS_UUID_H");

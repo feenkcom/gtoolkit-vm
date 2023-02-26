@@ -219,11 +219,11 @@ impl VMMaker {
                 .arg("save")
                 .arg(vmmaker_image_dir.join("VMMaker"));
         })
-            .with_name("Save image as VMMaker")
-            .with_verbose(true)
-            .without_log_prefix()
-            .into_commands()
-            .execute()?;
+        .with_name("Save image as VMMaker")
+        .with_verbose(true)
+        .without_log_prefix()
+        .into_commands()
+        .execute()?;
 
         FileNamed::wildmatch("*.sources")
             .within(source_image.parent().unwrap())
@@ -245,11 +245,11 @@ impl VMMaker {
                 .arg(builder.vm_sources_directory())
                 .arg("scpUrl");
         })
-            .with_name("Installing VMMaker")
-            .with_verbose(true)
-            .without_log_prefix()
-            .into_commands()
-            .execute()?;
+        .with_name("Installing VMMaker")
+        .with_verbose(true)
+        .without_log_prefix()
+        .into_commands()
+        .execute()?;
 
         CommandToExecute::build_command(vmmaker_vm.as_command(), |command| {
             command
@@ -263,11 +263,11 @@ impl VMMaker {
                         .join("vmmaker-patch.st"),
                 );
         })
-            .with_name("Patch VMMaker")
-            .with_verbose(true)
-            .without_log_prefix()
-            .into_commands()
-            .execute()?;
+        .with_name("Patch VMMaker")
+        .with_verbose(true)
+        .without_log_prefix()
+        .into_commands()
+        .execute()?;
 
         return Ok(VMMaker {
             vm: vmmaker_vm,
@@ -288,11 +288,11 @@ impl VMMaker {
                 self.builder.output_directory().display()
             ));
         })
-            .with_name("Generating sources")
-            .with_verbose(true)
-            .without_log_prefix()
-            .into_commands()
-            .execute()?;
+        .with_name("Generating sources")
+        .with_verbose(true)
+        .without_log_prefix()
+        .into_commands()
+        .execute()?;
 
         Ok(())
     }

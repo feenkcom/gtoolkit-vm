@@ -34,6 +34,8 @@ pub struct VirtualMachine {
     event_loop: Option<EventLoop>,
     event_loop_sender: Option<Sender<EventLoopMessage>>,
     event_loop_waker: RefCell<Option<EventLoopWaker>>,
+    #[cfg(target_os = "android")]
+    android_app: android_activity::AndroidApp,
 }
 
 impl VirtualMachine {
@@ -44,12 +46,15 @@ impl VirtualMachine {
         configuration: InterpreterConfiguration,
         event_loop: Option<EventLoop>,
         event_loop_sender: Option<Sender<EventLoopMessage>>,
+        #[cfg(target_os = "android")] android_app: android_activity::AndroidApp,
     ) -> Self {
         let vm = Self {
             interpreter: Arc::new(PharoInterpreter::new(configuration)),
             event_loop,
             event_loop_sender,
             event_loop_waker: RefCell::new(None),
+            #[cfg(target_os = "android")]
+            android_app,
         };
 
         vm.interpreter().set_logger(Some(log_signal));
@@ -58,7 +63,8 @@ impl VirtualMachine {
         // todo: Add a new flag to enable console logging before booting an image
         // let mut logger = VM_LOGGER.lock().unwrap();
         // logger.set_logger(Box::new(ConsoleLogger::new()));
-        // vm.interpreter().set_should_log(Some(should_log_all_signals));
+        // vm.interpreter()
+        //     .set_should_log(Some(should_log_all_signals));
 
         vm.add_primitive(primitive!(primitiveGetNamedPrimitives));
         #[cfg(feature = "ffi")]
@@ -82,6 +88,10 @@ impl VirtualMachine {
         vm.add_primitive(primitive!(primitiveVirtualMachineInfo));
         vm.add_primitive(primitive!(primitiveAppInfo));
         vm.add_primitive(primitive!(primitiveAppVersion));
+        #[cfg(target_os = "android")]
+        vm.add_primitive(primitive!(primitiveGetAndroidApp));
+        #[cfg(target_os = "android")]
+        vm.add_primitive(primitive!(primitiveGetAndroidNativeWindow));
         vm
     }
 
@@ -212,6 +222,36 @@ pub fn primitiveGetEventLoopReceiver() {
     let proxy = vm().proxy();
     let receiver = proxy.new_external_address(try_receive_events as *const c_void);
     proxy.method_return_value(receiver);
+}
+
+#[no_mangle]
+#[allow(non_snake_case)]
+#[cfg(target_os = "android")]
+/// Returns a reference to a clone of the AndroidApp.
+/// Users are responsible for managing the memory
+pub fn primitiveGetAndroidApp() {
+    let vm = vm();
+    let proxy = vm.proxy();
+
+    let android_app = Box::into_raw(Box::new(vm.android_app.clone()));
+    proxy.method_return_value(proxy.new_external_address(android_app));
+}
+
+#[no_mangle]
+#[allow(non_snake_case)]
+#[cfg(target_os = "android")]
+/// Returns a pointer to the NativeWindow
+pub fn primitiveGetAndroidNativeWindow() {
+    let vm = vm();
+    let proxy = vm.proxy();
+
+    let native_window = vm
+        .android_app
+        .native_window()
+        .map(|native_window| native_window.ptr().as_ptr())
+        .unwrap_or(std::ptr::null_mut());
+
+    proxy.method_return_value(proxy.new_external_address(native_window));
 }
 
 #[no_mangle]

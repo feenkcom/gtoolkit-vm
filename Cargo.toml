@@ -11,8 +11,9 @@ members = [
 exclude = ["target", "third_party", "libs"]
 
 [patch.crates-io]
-libffi = { git = "https://github.com/syrel/libffi-rs", rev = "fd31055ed09845b55c95c4415560e70170e30eae" }
-libffi-sys = { git = "https://github.com/syrel/libffi-rs", rev = "fd31055ed09845b55c95c4415560e70170e30eae" }
+# TODO: remove patch as soon a libffi v3.2.0 is released
+libffi = { git = "https://github.com/tov/libffi-rs", rev = "90ee020dd9ed7290fd588bf7a3adccc3e43f4b75" }
+libffi-sys = { git = "https://github.com/tov/libffi-rs", rev = "90ee020dd9ed7290fd588bf7a3adccc3e43f4b75" }
 
 [profile.release]
 rpath = false

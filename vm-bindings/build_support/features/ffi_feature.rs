@@ -85,19 +85,19 @@ fn run_command(which: &'static str, cmd: &mut Command) {
 }
 
 fn build_and_link(core: &Core, feature: &mut Feature) -> anyhow::Result<()> {
-    let ffi_sources = core.output_directory().join("libffi");
+    let ffi_sources = core.output_directory().join("libffi-rs");
     if !ffi_sources.exists() {
         Command::new("git")
             .current_dir(core.output_directory())
             .arg("clone")
-            .arg("https://github.com/libffi/libffi.git")
+            .arg("https://github.com/tov/libffi-rs.git")
             .arg("--branch")
-            .arg("v3.4.4")
+            .arg("libffi-sys-v2.1.0")
             .status()?;
     }
 
     let out_dir = core.output_directory();
-    let build_dir = Path::new(&out_dir).join("libffi");
+    let build_dir = Path::new(&out_dir).join("libffi-rs/libffi-sys-rs/libffi");
     let prefix = Path::new(&out_dir).join("libffi-root");
 
     // Generate configure, run configure, make, make install

@@ -5,7 +5,7 @@ use std::rc::Rc;
 use std::{env, fmt};
 
 use platforms::target::OS;
-use platforms::{Platform, PointerWidth};
+use platforms::{Arch, Platform, PointerWidth};
 
 pub const SOURCES_DIRECTORY: &str = "pharo-vm";
 
@@ -46,6 +46,9 @@ impl<T> OperatingSystem<T> {
     }
     pub fn is_emscripten(&self) -> bool {
         self.0 == OS::Emscripten
+    }
+    pub fn is_android(&self) -> bool {
+        self.0 == OS::Android
     }
 }
 
@@ -201,13 +204,23 @@ pub trait Builder: Debug {
 
     fn artefact_directory(&self) -> PathBuf {
         let dir = self.output_directory();
-        dir.parent()
-            .unwrap()
+        let dir = dir
             .parent()
             .unwrap()
             .parent()
             .unwrap()
-            .to_path_buf()
+            .parent()
+            .unwrap()
+            .to_path_buf();
+
+        if self.target().is_android() {
+            match self.platform().target_arch {
+                Arch::AArch64 => dir.parent().unwrap().join("arm64-v8a"),
+                _ => panic!("Unsupported arch: {}", self.platform().target_arch),
+            }
+        } else {
+            dir
+        }
     }
 
     fn vm_sources_directory(&self) -> PathBuf {

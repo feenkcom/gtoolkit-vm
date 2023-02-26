@@ -5,6 +5,9 @@ authors = ["feenk gmbh. contact@feenk.com>"]
 edition = "2021"
 description = "GToolkit VM"
 
+[lib]
+crate-type = ["lib", "cdylib"]
+
 [[bin]]
 name = "vm_client"
 path = "src/main.rs"
@@ -15,11 +18,11 @@ path = "src/main_cli.rs"
 
 [dependencies]
 vm-bindings = { path = "../vm-bindings", default-features = false }
-clap = { version = "3.0", features = [ "derive"] }
+clap = { version = "4.1", features = [ "derive", "string", "color" ] }
 thiserror = "1.0"
-dirs = "3.0"
+dirs = "4.0"
 log = "0.4"
-env_logger = "0.9"
+env_logger = "0.10"
 default-env = "0.1"
 user-error = "1.2"
 to_absolute = "0.1"
@@ -41,10 +44,18 @@ libc = "0.2"
 pathos = "0.3"
 
 # nfd2 is only supported by desktop OS
-[target.'cfg(not(any(target_os="ios", target_arch = "wasm32")))'.dependencies]
+[target.'cfg(not(any(target_os="ios", target_os="android", target_arch = "wasm32")))'.dependencies]
 nfd2 = { version = "0.3", optional = true }
+
+# wasm does not support colored terminal and tables
+[target.'cfg(not(any(target_arch = "wasm32")))'.dependencies]
 comfy-table = { version = "6.0", optional = true }
 colored = { version = "2", optional = true }
+
+# This dependency will only be included when targeting Android
+[target.'cfg(target_os = "android")'.dependencies]
+android_logger = "0.13"
+android-activity = { version = "0.4.1", features = [ "native-activity" ] }
 
 [features]
 default = [ "full" ]

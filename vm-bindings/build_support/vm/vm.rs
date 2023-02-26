@@ -89,15 +89,17 @@ impl VirtualMachine {
 
         let os_type = match builder.target_family() {
             FamilyOS::Apple => "Mac OS",
-            FamilyOS::Unix | FamilyOS::Other => "unix",
+            FamilyOS::Unix | FamilyOS::Other => {
+                if builder.target().is_android() {
+                    "android"
+                } else {
+                    "unix"
+                }
+            }
             FamilyOS::Windows => "Win32",
         };
 
-        let target_os = match builder.target_family() {
-            FamilyOS::Apple => "1000",
-            FamilyOS::Unix | FamilyOS::Other => "linux-gnu",
-            FamilyOS::Windows => "Win64",
-        };
+        let target_os = builder.target().os().as_str();
 
         config
             .var(Config::VM_NAME("Pharo".to_string()))
@@ -338,7 +340,14 @@ impl VirtualMachine {
             core.define("LSB_FIRST", "1");
             core.define("UNIX", "1");
             core.define("HAVE_TM_GMTOFF", None);
-            core.dependency(Dependency::Library("pthread".to_string(), vec![]));
+
+            // Android has its own pthread implementation
+            if !core.target().is_android() {
+                core.dependency(Dependency::Library("pthread".to_string(), vec![]));
+            }
+            if core.target().is_android() {
+                core.dependency(Dependency::Library("m".to_string(), vec![]));
+            }
         }
 
         if core.target().is_apple() {

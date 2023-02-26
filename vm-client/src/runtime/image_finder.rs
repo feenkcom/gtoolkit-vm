@@ -32,7 +32,10 @@ pub fn search_image_file_within_directories(directories: Vec<PathBuf>) -> Option
 }
 
 #[allow(dead_code)]
-#[cfg(feature = "image_picker")]
+#[cfg(all(
+    feature = "image_picker",
+    not(any(target_os = "ios", target_os = "android", target_arch = "wasm32"))
+))]
 pub fn pick_image_with_dialog(default_path: Option<PathBuf>) -> Option<PathBuf> {
     let mut dialog = nfd2::dialog();
     let mut dialog_ref = &mut dialog;
@@ -58,7 +61,10 @@ pub fn pick_image_with_dialog(default_path: Option<PathBuf>) -> Option<PathBuf> 
     }
 }
 
-#[cfg(not(feature = "image_picker"))]
+#[cfg(not(all(
+    feature = "image_picker",
+    not(any(target_os = "ios", target_os = "android", target_arch = "wasm32"))
+)))]
 pub fn pick_image_with_dialog(_default_path: Option<PathBuf>) -> Option<PathBuf> {
     None
 }

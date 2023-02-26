@@ -170,6 +170,11 @@ impl InterpreterProxy {
         unsafe { function(object.into_native()) as u32 }
     }
 
+    pub fn signed_32bit_value_of(&self, object: ObjectPointer) -> i32 {
+        let function = self.native().signed32BitValueOf.unwrap();
+        unsafe { function(object.into_native()) as i32 }
+    }
+
     pub fn positive_64bit_value_of(&self, object: ObjectPointer) -> u64 {
         let function = self.native().positive64BitValueOf.unwrap();
         unsafe { cast_integer(function(object.into_native())) }

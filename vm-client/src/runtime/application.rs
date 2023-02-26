@@ -57,7 +57,7 @@ impl Application {
         configuration.set_should_handle_errors(true);
         configuration.set_is_worker_thread(self.options.should_run_in_worker_thread());
 
-        Constellation::run(configuration);
+        Constellation::new().run(configuration);
         Ok(())
     }
 

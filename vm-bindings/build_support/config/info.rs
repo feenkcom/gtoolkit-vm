@@ -27,9 +27,13 @@ impl BuildInfo {
 
         let time = commit.time();
         let author_date = if time.sign() == '-' {
-            FixedOffset::west(time.offset_minutes() * 60).timestamp(time.seconds(), 0)
+            FixedOffset::west_opt(time.offset_minutes() * 60)
+                .and_then(|offset| offset.timestamp_opt(time.seconds(), 0).single())
+                .unwrap()
         } else {
-            FixedOffset::east(time.offset_minutes() * 60).timestamp(time.seconds(), 0)
+            FixedOffset::east_opt(time.offset_minutes() * 60)
+                .and_then(|offset| offset.timestamp_opt(time.seconds(), 0).single())
+                .unwrap()
         };
 
         let commit_object = commit.into_object();
@@ -62,10 +66,6 @@ impl BuildInfo {
             tag,
             version,
         })
-    }
-
-    pub fn long_hash(&self) -> &str {
-        self.long_hash.as_str()
     }
 
     pub fn short_hash(&self) -> &str {

@@ -344,7 +344,13 @@ impl Unit {
                 command.arg("-Wl,--whole-archive");
             }
             if is_clang {
-                command.arg("-Wl,-all_load");
+                // Android's clang does not support -all_load
+                if self.target().is_android() {
+                    command.arg("-Wl,--whole-archive");
+                    command.arg("-Wl,--allow-multiple-definition");
+                } else {
+                    command.arg("-Wl,-all_load");
+                }
             }
             command.arg(format!("lib{}.a", self.name()));
 
@@ -386,6 +392,10 @@ impl Unit {
             if !command.status().unwrap().success() {
                 panic!("Failed to create {}", self.binary_name());
             }
+        }
+
+        if !self.artefact_directory().exists() {
+            std::fs::create_dir_all(self.artefact_directory()).unwrap();
         }
 
         std::fs::copy(
