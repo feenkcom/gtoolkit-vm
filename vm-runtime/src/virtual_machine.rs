@@ -1,4 +1,5 @@
 use std::cell::RefCell;
+use std::ffi::CString;
 use std::mem::transmute;
 use std::os::raw::c_void;
 use std::process::exit;
@@ -38,18 +39,29 @@ pub struct VirtualMachine {
     android_app: android_activity::AndroidApp,
 }
 
+#[derive(Debug)]
+pub struct VirtualMachineConfiguration {
+    pub interpreter_configuration: InterpreterConfiguration,
+    /// When None - log nothing.
+    /// When Some with an empty list - log everything.
+    /// When Some with a list of signal name - log only those
+    pub log_signals: Option<Vec<String>>,
+}
+
 impl VirtualMachine {
     /// Create a Virtual Machine for given interpreter parameters.
     /// If event loop sender is `None` - start the virtual machine
     /// in the main thread rather than the worker thread
     pub fn new(
-        configuration: InterpreterConfiguration,
+        configuration: VirtualMachineConfiguration,
         event_loop: Option<EventLoop>,
         event_loop_sender: Option<Sender<EventLoopMessage>>,
         #[cfg(target_os = "android")] android_app: android_activity::AndroidApp,
     ) -> Self {
         let vm = Self {
-            interpreter: Arc::new(PharoInterpreter::new(configuration)),
+            interpreter: Arc::new(PharoInterpreter::new(
+                configuration.interpreter_configuration,
+            )),
             event_loop,
             event_loop_sender,
             event_loop_waker: RefCell::new(None),
@@ -57,14 +69,23 @@ impl VirtualMachine {
             android_app,
         };
 
-        vm.interpreter().set_logger(Some(log_signal));
-        vm.interpreter().set_should_log(Some(should_log_signal));
+        if let Some(signals) = configuration.log_signals {
+            let mut logger = VM_LOGGER.lock().unwrap();
+            logger.set_logger(Box::new(ConsoleLogger::new()));
 
-        // todo: Add a new flag to enable console logging before booting an image
-        // let mut logger = VM_LOGGER.lock().unwrap();
-        // logger.set_logger(Box::new(ConsoleLogger::new()));
-        // vm.interpreter()
-        //     .set_should_log(Some(should_log_all_signals));
+            // this one configures Pharo VM to log via our `VM_LOGGER`
+            vm.interpreter().set_logger(Some(log_signal));
+
+            if signals.is_empty() {
+                vm.interpreter()
+                    .set_should_log(Some(should_log_all_signals));
+            } else {
+                vm.interpreter().set_should_log(Some(should_log_signal));
+                for signal in signals {
+                    logger.enable_type(CString::new(signal).unwrap());
+                }
+            }
+        }
 
         vm.add_primitive(primitive!(primitiveGetNamedPrimitives));
         #[cfg(feature = "ffi")]

@@ -5,14 +5,14 @@ extern crate log;
 
 use clap::Parser;
 
-use user_error::{UFE, UserFacingError};
-use vm_runtime::{print_version, Result, ApplicationError};
 use crate::application::Application;
 use crate::application_options::AppOptions;
+use user_error::{UserFacingError, UFE};
+use vm_runtime::{print_version, ApplicationError, Result};
 
-mod platform;
 mod application;
 mod application_options;
+mod platform;
 
 fn run() -> Result<()> {
     // we should read options and canonicalize the image path before changing current directory

@@ -13,7 +13,7 @@ use std::ffi::OsStr;
 #[cfg(unix)]
 use std::os::unix::ffi::OsStrExt;
 
-use crate::{Result, ApplicationError};
+use crate::{ApplicationError, Result};
 
 /// Try to change the working directory back to the original location
 pub fn un_translocate() -> Result<()> {

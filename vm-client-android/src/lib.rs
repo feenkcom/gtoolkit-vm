@@ -1,7 +1,7 @@
 use std::env;
 use std::time::Duration;
 use vm_runtime::vm_bindings::InterpreterConfiguration;
-use vm_runtime::{android_activity, Constellation};
+use vm_runtime::{android_activity, Constellation, VirtualMachineConfiguration};
 
 #[no_mangle]
 pub extern "C" fn android_main(app: android_activity::AndroidApp) {
@@ -43,11 +43,14 @@ pub extern "C" fn android_main(app: android_activity::AndroidApp) {
     let mut extra_args = vec![];
     extra_args.push("--event-fetcher=winit".to_string());
 
-    let mut configuration = InterpreterConfiguration::new(image_path);
-    configuration.set_interactive_session(true);
-    configuration.set_is_worker_thread(true);
-    configuration.set_should_handle_errors(true);
-    configuration.set_extra_arguments(extra_args);
-    Constellation::for_android(app).run(configuration);
+    let mut interpreter_configuration = InterpreterConfiguration::new(image_path);
+    interpreter_configuration.set_interactive_session(true);
+    interpreter_configuration.set_is_worker_thread(true);
+    interpreter_configuration.set_should_handle_errors(true);
+    interpreter_configuration.set_extra_arguments(extra_args);
+    Constellation::for_android(app).run(VirtualMachineConfiguration {
+        interpreter_configuration,
+        log_signals: None,
+    });
     std::thread::sleep(Duration::from_secs(1));
 }

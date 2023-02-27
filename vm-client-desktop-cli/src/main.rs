@@ -4,12 +4,16 @@
 extern crate log;
 
 use std::env;
+use std::ffi::OsString;
 
-use clap::{arg, Arg, Command, value_parser, ValueEnum};
 use clap::builder::PossibleValue;
+use clap::{arg, value_parser, Arg, Command, ValueEnum};
 
-use vm_runtime::{Constellation, print_short_version, print_version, validate_user_image_file};
 use vm_runtime::vm_bindings::InterpreterConfiguration;
+use vm_runtime::{
+    print_short_version, print_version, validate_user_image_file, Constellation,
+    VirtualMachineConfiguration,
+};
 
 fn main() {
     env_logger::init();
@@ -33,17 +37,18 @@ fn main() {
                 .help("Start image in the interactive (UI) mode"),
         )
         .arg(
-            Arg::new("version")
-                .long("version")
-                .short('V')
-                .action(clap::ArgAction::SetTrue)
-                .help("Print the version information of the executable."),
+            Arg::new("log")
+                .long("log")
+                .short('l')
+                .action(clap::ArgAction::Append)
+                .conflicts_with("log-all")
+                .help("Enable VM signals to be logged to the console"),
         )
         .arg(
-            Arg::new("short-version")
-                .long("short-version")
+            Arg::new("log-all")
+                .long("log-all")
                 .action(clap::ArgAction::SetTrue)
-                .help("Print just the version of the executable."),
+                .help("Enable logging of all signals to the console"),
         )
         .arg(
             arg!(<MODE>)
@@ -64,6 +69,19 @@ fn main() {
                 .long("no-error-handling")
                 .action(clap::ArgAction::SetTrue)
                 .help("Disable error handling by the virtual machine"),
+        )
+        .arg(
+            Arg::new("version")
+                .long("version")
+                .short('V')
+                .action(clap::ArgAction::SetTrue)
+                .help("Print the version information of the executable."),
+        )
+        .arg(
+            Arg::new("short-version")
+                .long("short-version")
+                .action(clap::ArgAction::SetTrue)
+                .help("Print just the version of the executable."),
         );
 
     let matches = app.get_matches();
@@ -106,9 +124,9 @@ fn main() {
     let mut extra_args: Vec<String> = vec![];
     if let Some((external, sub_m)) = matches.subcommand() {
         extra_args.push(external.to_owned());
-        if let Some(values) = sub_m.get_many::<String>("") {
+        if let Some(values) = sub_m.get_many::<OsString>("") {
             for each in values {
-                extra_args.push(each.to_owned());
+                extra_args.push(each.to_str().unwrap().to_string());
             }
         }
     }
@@ -117,12 +135,27 @@ fn main() {
         .get_one::<WorkerThreadMode>("MODE")
         .unwrap_or_else(|| &WorkerThreadMode::Auto);
 
-    let mut configuration = InterpreterConfiguration::new(image_path);
-    configuration.set_interactive_session(matches.get_flag("interactive"));
-    configuration.set_is_worker_thread(worker_mode.should_run_in_worker_thread());
-    configuration.set_should_handle_errors(!matches.get_flag("no-error-handling"));
-    configuration.set_extra_arguments(extra_args);
-    Constellation::new().run(configuration);
+    let mut interpreter_configuration = InterpreterConfiguration::new(image_path);
+    interpreter_configuration.set_interactive_session(matches.get_flag("interactive"));
+    interpreter_configuration.set_is_worker_thread(worker_mode.should_run_in_worker_thread());
+    interpreter_configuration.set_should_handle_errors(!matches.get_flag("no-error-handling"));
+    interpreter_configuration.set_extra_arguments(extra_args);
+
+    let log_signals = matches
+        .get_many::<String>("log")
+        .map(|values| values.map(|each| each.clone()).collect::<Vec<String>>())
+        .or_else(|| {
+            if matches.get_flag("log-all") {
+                Some(vec![])
+            } else {
+                None
+            }
+        });
+
+    Constellation::new().run(VirtualMachineConfiguration {
+        interpreter_configuration,
+        log_signals,
+    });
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
@@ -143,7 +176,6 @@ impl WorkerThreadMode {
             WorkerThreadMode::Auto => cfg!(target_os = "macos") || cfg!(target_os = "windows"),
         }
     }
-
 
     pub fn possible_values() -> impl Iterator<Item = PossibleValue> {
         Self::value_variants()

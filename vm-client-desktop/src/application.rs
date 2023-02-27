@@ -1,7 +1,10 @@
 use std::path::{Path, PathBuf};
 
-use vm_runtime::{ApplicationError, Constellation, executable_working_directory, Result, search_image_file_within_directories};
 use vm_runtime::vm_bindings::InterpreterConfiguration;
+use vm_runtime::{
+    executable_working_directory, search_image_file_within_directories, ApplicationError,
+    Constellation, Result, VirtualMachineConfiguration,
+};
 
 use crate::application_options::AppOptions;
 
@@ -50,12 +53,15 @@ impl Application {
     pub fn start(&self) -> Result<()> {
         std::env::set_current_dir(self.working_directory.as_path())?;
 
-        let mut configuration = InterpreterConfiguration::new(self.image.clone());
-        configuration.set_interactive_session(true);
-        configuration.set_should_handle_errors(true);
-        configuration.set_is_worker_thread(self.options.should_run_in_worker_thread());
+        let mut interpreter_configuration = InterpreterConfiguration::new(self.image.clone());
+        interpreter_configuration.set_interactive_session(true);
+        interpreter_configuration.set_should_handle_errors(true);
+        interpreter_configuration.set_is_worker_thread(self.options.should_run_in_worker_thread());
 
-        Constellation::new().run(configuration);
+        Constellation::new().run(VirtualMachineConfiguration {
+            interpreter_configuration,
+            log_signals: None,
+        });
         Ok(())
     }
 
@@ -88,8 +94,8 @@ impl Application {
 
 #[allow(dead_code)]
 #[cfg(all(
-feature = "image_picker",
-not(any(target_os = "ios", target_os = "android", target_arch = "wasm32"))
+    feature = "image_picker",
+    not(any(target_os = "ios", target_os = "android", target_arch = "wasm32"))
 ))]
 pub fn pick_image_with_dialog(default_path: Option<PathBuf>) -> Option<PathBuf> {
     let mut dialog = nfd2::dialog();
@@ -117,8 +123,8 @@ pub fn pick_image_with_dialog(default_path: Option<PathBuf>) -> Option<PathBuf> 
 }
 
 #[cfg(not(all(
-feature = "image_picker",
-not(any(target_os = "ios", target_os = "android", target_arch = "wasm32"))
+    feature = "image_picker",
+    not(any(target_os = "ios", target_os = "android", target_arch = "wasm32"))
 )))]
 pub fn pick_image_with_dialog(_default_path: Option<PathBuf>) -> Option<PathBuf> {
     None

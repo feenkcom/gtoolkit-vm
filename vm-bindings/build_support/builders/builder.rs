@@ -298,7 +298,10 @@ pub trait Builder: Debug {
             env::set_var("CLANG_PATH", ndk.clang().unwrap().0);
             env::set_var(
                 format!("BINDGEN_EXTRA_CLANG_ARGS_{}", self.platform().target_triple),
-                format!("--sysroot={}", ndk.toolchain_dir().unwrap().join("sysroot").display()),
+                format!(
+                    "--sysroot={}",
+                    ndk.toolchain_dir().unwrap().join("sysroot").display()
+                ),
             );
         }
 

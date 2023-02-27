@@ -29,5 +29,5 @@ pub use ffi::{primitiveEventLoopCallout, primitiveExtractReturnValue, EventLoopC
 pub use image_finder::*;
 pub use logger::*;
 pub use version::{fetch_version, print_short_version, print_version};
-pub use virtual_machine::{vm, VirtualMachine};
+pub use virtual_machine::{vm, VirtualMachine, VirtualMachineConfiguration};
 pub use working_directory::executable_working_directory;

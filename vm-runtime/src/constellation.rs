@@ -1,4 +1,4 @@
-use crate::{EventLoop, VirtualMachine};
+use crate::{EventLoop, VirtualMachine, VirtualMachineConfiguration};
 use std::sync::Arc;
 use vm_bindings::InterpreterConfiguration;
 
@@ -23,15 +23,15 @@ impl Constellation {
         }
     }
 
-    pub fn run(self, configuration: InterpreterConfiguration) {
-        if configuration.is_worker_thread() {
+    pub fn run(self, configuration: VirtualMachineConfiguration) {
+        if configuration.interpreter_configuration.is_worker_thread() {
             self.run_in_worker_thread(configuration);
         } else {
             self.run_in_main_thread(configuration);
         }
     }
 
-    fn run_in_main_thread(self, configuration: InterpreterConfiguration) {
+    fn run_in_main_thread(self, configuration: VirtualMachineConfiguration) {
         let vm = Arc::new(VirtualMachine::new(
             configuration,
             None,
@@ -43,7 +43,7 @@ impl Constellation {
         vm.start().unwrap();
     }
 
-    fn run_in_worker_thread(self, configuration: InterpreterConfiguration) {
+    fn run_in_worker_thread(self, configuration: VirtualMachineConfiguration) {
         let (event_loop, sender) = EventLoop::new();
 
         let vm = Arc::new(VirtualMachine::new(
