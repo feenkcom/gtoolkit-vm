@@ -98,6 +98,7 @@ pipeline {
                         sh 'git clean -fdx'
                         sh 'git submodule update --init --recursive'
 
+                        sh "rm -rf gtoolkit-vm-builder"
                         sh "curl -o gtoolkit-vm-builder -LsS https://github.com/feenkcom/gtoolkit-vm-builder/releases/download/${VM_BUILDER_VERSION}/gtoolkit-vm-builder-${TARGET}"
                         sh 'chmod +x gtoolkit-vm-builder'
 
@@ -150,6 +151,7 @@ pipeline {
                         sh 'git clean -fdx'
                         sh 'git submodule update --init --recursive'
 
+                        sh "rm -rf gtoolkit-vm-builder"
                         sh "curl -o gtoolkit-vm-builder -LsS https://github.com/feenkcom/gtoolkit-vm-builder/releases/download/${VM_BUILDER_VERSION}/gtoolkit-vm-builder-${TARGET}"
                         sh 'chmod +x gtoolkit-vm-builder'
 
@@ -199,6 +201,7 @@ pipeline {
                         sh 'git clean -fdx'
                         sh 'git submodule update --init --recursive'
 
+                        sh "rm -rf gtoolkit-vm-builder"
                         sh "curl -o gtoolkit-vm-builder -LsS https://github.com/feenkcom/gtoolkit-vm-builder/releases/download/${VM_BUILDER_VERSION}/gtoolkit-vm-builder-${TARGET}"
                         sh 'chmod +x gtoolkit-vm-builder'
 
@@ -242,6 +245,7 @@ pipeline {
                         sh 'git clean -fdx'
                         sh 'git submodule update --init --recursive'
 
+                        sh "rm -rf gtoolkit-vm-builder"
                         sh "curl -o gtoolkit-vm-builder -LsS https://github.com/feenkcom/gtoolkit-vm-builder/releases/download/${VM_BUILDER_VERSION}/gtoolkit-vm-builder-${TARGET}"
                         sh 'chmod +x gtoolkit-vm-builder'
 
@@ -299,6 +303,7 @@ pipeline {
                         powershell 'git clean -fdx'
                         powershell 'git submodule update --init --recursive'
 
+                        powershell "Remove-Item gtoolkit-vm-builder.exe -ErrorAction Ignore"
                         powershell "curl -o gtoolkit-vm-builder.exe https://github.com/feenkcom/gtoolkit-vm-builder/releases/download/${VM_BUILDER_VERSION}/gtoolkit-vm-builder-${TARGET}.exe"
 
                         powershell """
@@ -347,6 +352,7 @@ pipeline {
                         powershell 'git clean -fdx'
                         powershell 'git submodule update --init --recursive'
 
+                        powershell "Remove-Item gtoolkit-vm-builder.exe -ErrorAction Ignore"
                         powershell "curl -o gtoolkit-vm-builder.exe https://github.com/feenkcom/gtoolkit-vm-builder/releases/download/${VM_BUILDER_VERSION}/gtoolkit-vm-builder-${HOST}.exe"
 
                         powershell """

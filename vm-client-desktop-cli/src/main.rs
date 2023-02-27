@@ -68,11 +68,11 @@ fn main() {
 
     let matches = app.get_matches();
 
-    if matches.contains_id("version") {
+    if matches.get_flag("version") {
         print_version();
         return;
     }
-    if matches.contains_id("short-version") {
+    if matches.get_flag("short-version") {
         print_short_version();
         return;
     }
@@ -118,13 +118,12 @@ fn main() {
         .unwrap_or_else(|| &WorkerThreadMode::Auto);
 
     let mut configuration = InterpreterConfiguration::new(image_path);
-    configuration.set_interactive_session(matches.contains_id("interactive"));
+    configuration.set_interactive_session(matches.get_flag("interactive"));
     configuration.set_is_worker_thread(worker_mode.should_run_in_worker_thread());
-    configuration.set_should_handle_errors(!matches.contains_id("no-error-handling"));
+    configuration.set_should_handle_errors(!matches.get_flag("no-error-handling"));
     configuration.set_extra_arguments(extra_args);
     Constellation::new().run(configuration);
 }
-
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
 pub enum WorkerThreadMode {
