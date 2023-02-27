@@ -100,3 +100,4 @@ commander = { git = "https://github.com/feenkcom/build-helpers-rs" }
 #commander = { path = "../../build-helpers-rs/commander" }
 libopenssl-library = { git = "https://github.com/feenkcom/libopenssl.git" }
 shared-library-builder = { git = "https://github.com/feenkcom/shared-library-builder-rs" }
+ndk-build = "0.9"

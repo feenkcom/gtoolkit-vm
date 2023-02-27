@@ -4,7 +4,7 @@ use vm_runtime::vm_bindings::InterpreterConfiguration;
 use vm_runtime::{android_activity, Constellation};
 
 #[no_mangle]
-fn android_main(app: android_activity::AndroidApp) {
+pub extern "C" fn android_main(app: android_activity::AndroidApp) {
     env::set_var("RUST_LOG", "error");
 
     std::thread::sleep(Duration::from_secs(1));

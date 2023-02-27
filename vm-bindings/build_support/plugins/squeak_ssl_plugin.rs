@@ -28,16 +28,21 @@ pub fn squeak_ssl_plugin(core: &Core) -> Option<Plugin> {
             if !build_dir.exists() {
                 std::fs::create_dir_all(&build_dir).expect("Create build dir");
             }
-            let context =
-                LibraryCompilationContext::new(&src_dir, &build_dir, library_target, debug);
 
-            let openssl_version: Option<String> = None;
+            let marker_file = build_dir.join("compiled.marker");
+            if !marker_file.exists() {
+                let context =
+                    LibraryCompilationContext::new(&src_dir, &build_dir, library_target, debug);
 
-            let mut openssl = libopenssl(openssl_version);
-            openssl.be_static();
+                let openssl_version: Option<String> = None;
 
-            let ssl = openssl.be_ssl();
-            ssl.just_compile(&context).expect("Failed to build openssl");
+                let mut openssl = libopenssl(openssl_version);
+                openssl.be_static();
+
+                let ssl = openssl.be_ssl();
+                ssl.just_compile(&context).expect("Failed to build openssl");
+                std::fs::File::create(marker_file.as_path()).expect("Marker creation failed");
+            }
 
             plugin.dependency(Dependency::Library(
                 "ssl".to_string(),

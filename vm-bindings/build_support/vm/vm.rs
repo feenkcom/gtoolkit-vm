@@ -285,7 +285,11 @@ impl VirtualMachine {
         core.define_for_header("unistd.h", "HAVE_UNISTD_H");
         core.define_for_header("sys/filio.h", "HAVE_SYS_FILIO_H");
         core.define_for_header("sys/time.h", "HAVE_SYS_TIME_H");
-        core.define_for_header("execinfo.h", "HAVE_EXECINFO_H");
+
+        // android does not support execinfo.h
+        if !core.target().is_android() {
+            core.define_for_header("execinfo.h", "HAVE_EXECINFO_H");
+        }
         core.define_for_header("dlfcn.h", "HAVE_DLFCN_H");
 
         core.flag("-Wno-error=implicit-function-declaration");

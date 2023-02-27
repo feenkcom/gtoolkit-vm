@@ -5,7 +5,7 @@ use std::rc::Rc;
 use std::{env, fmt};
 
 use platforms::target::OS;
-use platforms::{Platform, PointerWidth};
+use platforms::{Arch, Platform, PointerWidth};
 
 pub const SOURCES_DIRECTORY: &str = "pharo-vm";
 
@@ -281,6 +281,26 @@ pub trait Builder: Debug {
             "Extra headers directory must exist: {:?}",
             extra_headers.display()
         );
+
+        // cargo-apk does not configure environment for the bindgen.
+        // we should configure CLANG_PATH and BINDGEN_EXTRA_CLANG_ARGS_{TARGET} variables
+        if self.target().is_android() {
+            let ndk = ndk_build::ndk::Ndk::from_env().unwrap();
+            use ndk_build::target::Target as AndroidTarget;
+            let target = match self.platform().target_arch {
+                Arch::AArch64 => AndroidTarget::Arm64V8a,
+                Arch::Arm => AndroidTarget::ArmV7a,
+                Arch::X86 => AndroidTarget::X86,
+                Arch::X86_64 => AndroidTarget::X86_64,
+                _ => panic!("Unsupported arch: {}", self.platform().target_arch),
+            };
+
+            env::set_var("CLANG_PATH", ndk.clang().unwrap().0);
+            env::set_var(
+                format!("BINDGEN_EXTRA_CLANG_ARGS_{}", self.platform().target_triple),
+                format!("--sysroot={}", ndk.toolchain_dir().unwrap().join("sysroot").display()),
+            );
+        }
 
         let mut builder = bindgen::Builder::default();
         builder = builder

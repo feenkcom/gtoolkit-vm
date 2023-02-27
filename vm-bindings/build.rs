@@ -27,7 +27,7 @@ static CARGO_ENV: &str = "cargo:rustc-env=";
 ///  - VM_CLIENT_VMMAKER to use a specific VM to run a VM Maker image
 fn build() -> anyhow::Result<()> {
     let vm = VirtualMachine::new()?;
-    // vm.compile();
+    vm.compile();
 
     // export the vm info to json
     let json = serde_json::to_string_pretty(&vm)?;
@@ -36,9 +36,9 @@ fn build() -> anyhow::Result<()> {
     writeln!(&mut file, "{}", json).unwrap();
     println!("{}VM_INFO={}", CARGO_ENV, file_path.display());
 
-    let builder = VirtualMachine::builder()?;
-    builder.link_libraries();
-    builder.generate_bindings();
+    // let builder = VirtualMachine::builder()?;
+    // builder.link_libraries();
+    // builder.generate_bindings();
 
     Ok(())
 }
