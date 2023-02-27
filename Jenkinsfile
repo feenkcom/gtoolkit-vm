@@ -116,7 +116,9 @@ pipeline {
                         sh "curl -o feenk-signer -LsS https://github.com/feenkcom/feenk-signer/releases/download/${FEENK_SIGNER_VERSION}/feenk-signer-${TARGET}"
                         sh "chmod +x feenk-signer"
 
-                        sh "./feenk-signer target/${TARGET}/release/bundle/${APP_NAME}.app"
+                        withCredentials([file(credentialsId: 'feenk-apple-developer-certificate', variable: 'CERT')]) {
+                            sh "./feenk-signer mac target/${TARGET}/release/bundle/${APP_NAME}.app"
+                        }
 
                         sh "ditto -c -k --sequesterRsrc --keepParent target/${TARGET}/release/bundle/${APP_NAME}.app ${APP_NAME}-${TARGET}.app.zip"
 
@@ -166,7 +168,9 @@ pipeline {
                         sh "curl -o feenk-signer -LsS  https://github.com/feenkcom/feenk-signer/releases/download/${FEENK_SIGNER_VERSION}/feenk-signer-${TARGET}"
                         sh "chmod +x feenk-signer"
 
-                        sh "./feenk-signer target/${TARGET}/release/bundle/${APP_NAME}.app"
+                        withCredentials([file(credentialsId: 'feenk-apple-developer-certificate', variable: 'CERT')]) {
+                            sh "./feenk-signer mac target/${TARGET}/release/bundle/${APP_NAME}.app"
+                        }
 
                         sh "ditto -c -k --sequesterRsrc --keepParent target/${TARGET}/release/bundle/${APP_NAME}.app ${APP_NAME}-${TARGET}.app.zip"
 
