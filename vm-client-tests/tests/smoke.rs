@@ -134,7 +134,11 @@ pub fn minimal_worker_auto() {
     let stdout = String::from_utf8(output.stdout).unwrap();
     let stderr = String::from_utf8(output.stderr).unwrap();
 
-    let expected = if cfg!(target_os = "macos") || cfg!(target_os = "windows") {
+    let expected = if cfg!(target_os = "macos")
+        || cfg!(target_os = "windows")
+        || cfg!(target_os = "linux")
+        || cfg!(target_os = "android")
+    {
         "true"
     } else {
         "false"
