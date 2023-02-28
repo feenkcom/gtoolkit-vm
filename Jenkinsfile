@@ -303,7 +303,7 @@ pipeline {
                                 --version ${APP_VERSION} \
                                 --icons icons/android \
                                 --executables android \
-                                --target aarch64-linux-android \
+                                --target ${TARGET} \
                                 --libraries clipboard pixels process skia winit crypto git ssl \
                                 --libraries-versions ${APP_LIBRARIES_VERSIONS} \
                                 --release \
