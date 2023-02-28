@@ -37,18 +37,17 @@ fn main() {
                 .help("Start image in the interactive (UI) mode"),
         )
         .arg(
-            Arg::new("log")
-                .long("log")
-                .short('l')
+            Arg::new("beacon")
+                .long("beacon")
                 .action(clap::ArgAction::Append)
-                .conflicts_with("log-all")
-                .help("Enable VM signals to be logged to the console"),
+                .conflicts_with("beacon-all")
+                .help("Enable Beacon VM signals to be logged to the console"),
         )
         .arg(
-            Arg::new("log-all")
-                .long("log-all")
+            Arg::new("beacon-all")
+                .long("beacon-all")
                 .action(clap::ArgAction::SetTrue)
-                .help("Enable logging of all signals to the console"),
+                .help("Enable logging of all Beacon signals to the console"),
         )
         .arg(
             arg!(<MODE>)
@@ -142,10 +141,18 @@ fn main() {
     interpreter_configuration.set_extra_arguments(extra_args);
 
     let log_signals = matches
-        .get_many::<String>("log")
-        .map(|values| values.map(|each| each.clone()).collect::<Vec<String>>())
+        .get_many::<String>("beacon")
+        .map(|values| {
+            let mut signals = values
+                .map(|each| each.split_whitespace())
+                .flatten()
+                .map(|each| each.to_string())
+                .collect::<Vec<String>>();
+            signals.dedup();
+            signals
+        })
         .or_else(|| {
-            if matches.get_flag("log-all") {
+            if matches.get_flag("beacon-all") {
                 Some(vec![])
             } else {
                 None

@@ -34,6 +34,8 @@ pipeline {
         LINUX_AMD64_TARGET = 'x86_64-unknown-linux-gnu'
         LINUX_ARM64_SERVER_NAME = 'peter-pan'
         LINUX_ARM64_TARGET = 'aarch64-unknown-linux-gnu'
+
+        ANDROID_ARM64_TARGET = 'aarch64-linux-android'
     }
 
     stages {
@@ -272,6 +274,46 @@ pipeline {
                         stash includes: "${APP_NAME}-${TARGET}.zip", name: "${TARGET}"
                     }
                 }
+                stage ('Android arm64') {
+                    agent {
+                        label "${MACOS_M1_TARGET}"
+                    }
+                    environment {
+                        HOST = "${MACOS_M1_TARGET}"
+                        TARGET = "${ANDROID_ARM64_TARGET}"
+                        PATH = "$HOME/.cargo/bin:/opt/homebrew/bin:$PATH"
+                    }
+
+                    steps {
+                        sh 'if [ -d target ]; then rm -Rf target; fi'
+                        sh 'if [ -d third_party ]; then rm -Rf third_party; fi'
+                        sh 'if [ -d libs ]; then rm -Rf libs; fi'
+                        sh 'git clean -fdx'
+                        sh 'git submodule update --init --recursive'
+
+                        sh "rm -rf gtoolkit-vm-builder"
+                        sh "curl -o gtoolkit-vm-builder -LsS https://github.com/feenkcom/gtoolkit-vm-builder/releases/download/${VM_BUILDER_VERSION}/gtoolkit-vm-builder-${HOST}"
+                        sh 'chmod +x gtoolkit-vm-builder'
+
+                        sh """
+                            ./gtoolkit-vm-builder \
+                                --app-name ${APP_NAME} \
+                                --identifier ${APP_IDENTIFIER} \
+                                --author ${APP_AUTHOR} \
+                                --version ${APP_VERSION} \
+                                --icons icons/android \
+                                --executables android \
+                                --target aarch64-linux-android \
+                                --libraries clipboard pixels process skia winit crypto git ssl \
+                                --libraries-versions ${APP_LIBRARIES_VERSIONS} \
+                                --release \
+                                --verbose """
+
+                        sh "mv target/${TARGET}/release/bundle/${APP_NAME}.apk ./${APP_NAME}-${TARGET}.apk"
+
+                        stash includes: "${APP_NAME}-${TARGET}.apk", name: "${TARGET}"
+                    }
+                }
                 stage ('Windows x86_64') {
                     agent {
                         node {
@@ -392,6 +434,7 @@ pipeline {
                 unstash "${LINUX_ARM64_TARGET}"
                 unstash "${MACOS_INTEL_TARGET}"
                 unstash "${MACOS_M1_TARGET}"
+                unstash "${ANDROID_ARM64_TARGET}"
                 unstash "${WINDOWS_AMD64_TARGET}"
                 unstash "${WINDOWS_ARM64_TARGET}"
 
@@ -411,6 +454,7 @@ pipeline {
                         ${APP_NAME}-${LINUX_ARM64_TARGET}.zip \
                         ${APP_NAME}-${MACOS_INTEL_TARGET}.app.zip \
                         ${APP_NAME}-${MACOS_M1_TARGET}.app.zip \
+                        ${APP_NAME}-${ANDROID_ARM64_TARGET}.apk \
                         ${APP_NAME}-${WINDOWS_AMD64_TARGET}.zip \
                         ${APP_NAME}-${WINDOWS_ARM64_TARGET}.zip """
             }
