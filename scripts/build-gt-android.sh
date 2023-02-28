@@ -38,6 +38,7 @@ fi
   --identifier 'com.gtoolkit' \
   --author "feenk gmbh <contact@feenk.com>" \
   --libraries-versions libraries.version \
+  --icons "icons/android" \
   --executables android \
   --target aarch64-linux-android \
   -vvvv \
