@@ -53,7 +53,12 @@ impl WorkerThreadMode {
         match self {
             WorkerThreadMode::Yes => true,
             WorkerThreadMode::No => false,
-            WorkerThreadMode::Auto => cfg!(target_os = "macos") || cfg!(target_os = "windows"),
+            WorkerThreadMode::Auto => {
+                cfg!(target_os = "macos")
+                    || cfg!(target_os = "windows")
+                    || cfg!(target_os = "linux")
+                    || cfg!(target_os = "android")
+            }
         }
     }
 

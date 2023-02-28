@@ -50,6 +50,12 @@ fn main() {
                 .help("Enable logging of all Beacon signals to the console"),
         )
         .arg(
+            Arg::new("beacon-all")
+                .long("beacon-all")
+                .action(clap::ArgAction::SetTrue)
+                .help("Enable logging of all Beacon signals to the console"),
+        )
+        .arg(
             arg!(<MODE>)
                 .long("worker")
                 .required(false)
@@ -180,7 +186,12 @@ impl WorkerThreadMode {
         match self {
             WorkerThreadMode::Yes => true,
             WorkerThreadMode::No => false,
-            WorkerThreadMode::Auto => cfg!(target_os = "macos") || cfg!(target_os = "windows"),
+            WorkerThreadMode::Auto => {
+                cfg!(target_os = "macos")
+                    || cfg!(target_os = "windows")
+                    || cfg!(target_os = "linux")
+                    || cfg!(target_os = "android")
+            }
         }
     }
 
