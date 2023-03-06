@@ -50,12 +50,6 @@ fn main() {
                 .help("Enable logging of all Beacon signals to the console"),
         )
         .arg(
-            Arg::new("beacon-all")
-                .long("beacon-all")
-                .action(clap::ArgAction::SetTrue)
-                .help("Enable logging of all Beacon signals to the console"),
-        )
-        .arg(
             arg!(<MODE>)
                 .long("worker")
                 .required(false)
@@ -89,6 +83,14 @@ fn main() {
                 .help("Print just the version of the executable."),
         );
 
+    #[cfg(target_os = "linux")]
+    let app = app.arg(
+        Arg::new("enable-wayland")
+            .long("enable-wayland")
+            .action(clap::ArgAction::SetTrue)
+            .help("Enable wayland support. In the future, this may be enabled by default"),
+    );
+
     let matches = app.get_matches();
 
     if matches.get_flag("version") {
@@ -98,6 +100,13 @@ fn main() {
     if matches.get_flag("short-version") {
         print_short_version();
         return;
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        if !matches.get_flag("enable-wayland") {
+            env::remove_var("WAYLAND_DISPLAY");
+        }
     }
 
     // iOS sandboxes applications and does not allow developers

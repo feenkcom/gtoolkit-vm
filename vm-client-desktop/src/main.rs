@@ -29,6 +29,11 @@ fn run() -> Result<()> {
         error!("Failed to un-translocate the app due to {}", error);
     }
 
+    #[cfg(target_os = "linux")]
+    {
+        std::env::remove_var("WAYLAND_DISPLAY");
+    }
+
     let application = Application::new(options)?;
     application.start()?;
 
