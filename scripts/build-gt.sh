@@ -41,4 +41,4 @@ fi
   --icons icons/GlamorousToolkit.icns \
   --executables app cli \
   -vvvv \
-  --libraries clipboard pixels process skia winit cairo crypto freetype git sdl2 ssl test-library
+  --libraries boxer cairo clipboard crypto freetype git gleam glutin process sdl2 skia winit pixels test-library

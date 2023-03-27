@@ -29,11 +29,6 @@ impl InterpreterProxy {
         unsafe { function() as usize }
     }
 
-    pub fn get_stack_pointer(&self) -> *mut sqInt {
-        let function = self.native().getStackPointer.unwrap();
-        unsafe { function() }
-    }
-
     pub fn true_object(&self) -> ObjectPointer {
         let function = self.native().trueObject.unwrap();
         unsafe { ObjectPointer::from_native_c(function()) }
