@@ -98,6 +98,7 @@ pipeline {
                         sh 'if [ -d libs ]; then rm -Rf libs; fi'
 
                         sh 'git clean -fdx'
+                        sh 'git submodule foreach --recursive \'git fetch --tags\''
                         sh 'git submodule update --init --recursive'
 
                         sh "rm -rf gtoolkit-vm-builder"
@@ -150,7 +151,9 @@ pipeline {
                         sh 'if [ -d target ]; then rm -Rf target; fi'
                         sh 'if [ -d third_party ]; then rm -Rf third_party; fi'
                         sh 'if [ -d libs ]; then rm -Rf libs; fi'
+
                         sh 'git clean -fdx'
+                        sh 'git submodule foreach --recursive \'git fetch --tags\''
                         sh 'git submodule update --init --recursive'
 
                         sh "rm -rf gtoolkit-vm-builder"
@@ -200,7 +203,9 @@ pipeline {
                         sh 'if [ -d target ]; then rm -Rf target; fi'
                         sh 'if [ -d third_party ]; then rm -Rf third_party; fi'
                         sh 'if [ -d libs ]; then rm -Rf libs; fi'
+
                         sh 'git clean -fdx'
+                        sh 'git submodule foreach --recursive \'git fetch --tags\''
                         sh 'git submodule update --init --recursive'
 
                         sh "rm -rf gtoolkit-vm-builder"
@@ -244,7 +249,9 @@ pipeline {
                         sh 'if [ -d target ]; then rm -Rf target; fi'
                         sh 'if [ -d third_party ]; then rm -Rf third_party; fi'
                         sh 'if [ -d libs ]; then rm -Rf libs; fi'
+
                         sh 'git clean -fdx'
+                        sh 'git submodule foreach --recursive \'git fetch --tags\''
                         sh 'git submodule update --init --recursive'
 
                         sh "rm -rf gtoolkit-vm-builder"
@@ -288,7 +295,9 @@ pipeline {
                         sh 'if [ -d target ]; then rm -Rf target; fi'
                         sh 'if [ -d third_party ]; then rm -Rf third_party; fi'
                         sh 'if [ -d libs ]; then rm -Rf libs; fi'
+
                         sh 'git clean -fdx'
+                        sh 'git submodule foreach --recursive \'git fetch --tags\''
                         sh 'git submodule update --init --recursive'
 
                         sh "rm -rf gtoolkit-vm-builder"
@@ -342,7 +351,9 @@ pipeline {
                         powershell 'Remove-Item -Force -Recurse -Path target -ErrorAction Ignore'
                         powershell 'Remove-Item -Force -Recurse -Path third_party -ErrorAction Ignore'
                         powershell 'Remove-Item -Force -Recurse -Path libs -ErrorAction Ignore'
+
                         powershell 'git clean -fdx'
+                        powershell 'git submodule foreach --recursive \'git fetch --tags\''
                         powershell 'git submodule update --init --recursive'
 
                         powershell "Remove-Item gtoolkit-vm-builder.exe -ErrorAction Ignore"
@@ -391,7 +402,9 @@ pipeline {
                         powershell 'Remove-Item -Force -Recurse -Path target -ErrorAction Ignore'
                         powershell 'Remove-Item -Force -Recurse -Path third_party -ErrorAction Ignore'
                         powershell 'Remove-Item -Force -Recurse -Path libs -ErrorAction Ignore'
+
                         powershell 'git clean -fdx'
+                        powershell 'git submodule foreach --recursive \'git fetch --tags\''
                         powershell 'git submodule update --init --recursive'
 
                         powershell "Remove-Item gtoolkit-vm-builder.exe -ErrorAction Ignore"
