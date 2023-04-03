@@ -10,6 +10,4 @@ SpurMemoryManager compile: 'getStatScavengeGCUsecs
     <api>
     ^ statScavengeGCUsecs'.
 
-(AbstractImageAccess class >> #implicitReturnTypeFor:) removeFromSystem.
-
 Smalltalk snapshot: true andQuit: true
