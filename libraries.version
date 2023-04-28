@@ -1,6 +1,7 @@
 {
   "Boxer": "v0.3.0",
   "Clipboard": "v0.9.0",
+  "Filewatcher": "v0.1.0",
   "Gleam": "v0.8.0",
   "Glutin": "v0.13.0",
   "Pixels": "v0.18.0",
