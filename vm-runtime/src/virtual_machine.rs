@@ -377,7 +377,8 @@ pub fn primitiveAppVersion() {
 #[allow(non_snake_case)]
 pub fn primitiveFcntl() {
     let proxy = vm().proxy();
-    if cfg!(unix){
+    #[cfg(unix)]
+    {
         match proxy.method_argument_count() {
             2 => {
                 let file_descriptor = proxy.stack_integer_value(StackOffset::new(1)) as c_int;
@@ -385,7 +386,7 @@ pub fn primitiveFcntl() {
 
                 let result = unsafe { libc::fcntl(file_descriptor, command) };
                 proxy.method_return_value(proxy.new_integer(result));
-            },
+            }
             3 => {
                 let file_descriptor = proxy.stack_integer_value(StackOffset::new(2)) as c_int;
                 let command = proxy.stack_integer_value(StackOffset::new(1)) as c_int;
@@ -393,10 +394,12 @@ pub fn primitiveFcntl() {
 
                 let result = unsafe { libc::fcntl(file_descriptor, command, argument) };
                 proxy.method_return_value(proxy.new_integer(result));
-            },
-            _ => { proxy.primitive_fail() }
+            }
+            _ => proxy.primitive_fail(),
         }
-    } else {
+    }
+    #[cfg(not(unix))]
+    {
         proxy.primitive_fail();
     }
 }
