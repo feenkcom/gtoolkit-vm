@@ -1,5 +1,5 @@
 use std::cell::RefCell;
-use std::ffi::CString;
+use std::ffi::{c_int, CString};
 use std::mem::transmute;
 use std::os::raw::c_void;
 use std::process::exit;
@@ -106,6 +106,7 @@ impl VirtualMachine {
         vm.add_primitive(primitive!(primitiveScavengeGarbageCollectorMicroseconds));
         vm.add_primitive(primitive!(primitiveFirstBytePointerOfDataObject));
         vm.add_primitive(primitive!(primitivePointerAtPointer));
+        vm.add_primitive(primitive!(primitiveFcntl));
         vm.add_primitive(primitive!(primitiveVirtualMachineInfo));
         vm.add_primitive(primitive!(primitiveAppInfo));
         vm.add_primitive(primitive!(primitiveAppVersion));
@@ -370,4 +371,32 @@ pub fn primitiveAppVersion() {
     let proxy = vm().proxy();
     let version = app_version();
     proxy.method_return_value(proxy.new_string(version));
+}
+
+#[no_mangle]
+#[allow(non_snake_case)]
+pub fn primitiveFcntl() {
+    let proxy = vm().proxy();
+    if cfg!(unix){
+        match proxy.method_argument_count() {
+            2 => {
+                let file_descriptor = proxy.stack_integer_value(StackOffset::new(1)) as c_int;
+                let command = proxy.stack_integer_value(StackOffset::new(0)) as c_int;
+
+                let result = unsafe { libc::fcntl(file_descriptor, command) };
+                proxy.method_return_value(proxy.new_integer(result));
+            },
+            3 => {
+                let file_descriptor = proxy.stack_integer_value(StackOffset::new(2)) as c_int;
+                let command = proxy.stack_integer_value(StackOffset::new(1)) as c_int;
+                let argument = proxy.stack_integer_value(StackOffset::new(0)) as c_int;
+
+                let result = unsafe { libc::fcntl(file_descriptor, command, argument) };
+                proxy.method_return_value(proxy.new_integer(result));
+            },
+            _ => { proxy.primitive_fail() }
+        }
+    } else {
+        proxy.primitive_fail();
+    }
 }

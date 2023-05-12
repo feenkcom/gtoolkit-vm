@@ -64,6 +64,11 @@ impl InterpreterProxy {
         unsafe { function(offset.into_native()) }
     }
 
+    pub fn method_argument_count(&self) -> usize {
+        let function = self.native().methodArgumentCount.unwrap();
+        unsafe { function() as usize }
+    }
+
     pub fn pop(&self, amount_of_stack_items: usize) {
         let function = self.native().pop.unwrap();
         unsafe {
