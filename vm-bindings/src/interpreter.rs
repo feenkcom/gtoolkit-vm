@@ -86,9 +86,13 @@ impl PharoInterpreter {
         let vm = self.clone();
         std::thread::Builder::new()
             .name("PharoVM".to_string())
-            .stack_size(512 * 1024 * 1024)
+            .stack_size(self.guess_stack_size())
             .spawn(move || vm.run(parameters))
             .map_err(|error| error.into())
+    }
+
+    fn guess_stack_size(&self) -> usize {
+        32 * 1024 * 1024
     }
 
     fn prepare_environment(&self, parameters: &InterpreterParameters) {

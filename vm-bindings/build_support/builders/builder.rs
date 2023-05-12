@@ -202,6 +202,10 @@ pub trait Builder: Debug {
         Path::new(env::var("OUT_DIR").unwrap().as_str()).to_path_buf()
     }
 
+    fn image_format(&self) -> &str {
+        "SpurFormat"
+    }
+
     fn artefact_directory(&self) -> PathBuf {
         let dir = self.output_directory();
         dir.parent()
