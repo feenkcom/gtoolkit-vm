@@ -369,6 +369,7 @@ impl VirtualMachine {
 
         if core.target().is_windows() {
             core.define("WIN", "1");
+            core.define("WIN32", "1");
             core.dependency(Dependency::SystemLibrary("User32".to_string()));
             core.dependency(Dependency::SystemLibrary("Ws2_32".to_string()));
             core.dependency(Dependency::SystemLibrary("DbgHelp".to_string()));
