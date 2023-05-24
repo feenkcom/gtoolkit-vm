@@ -209,6 +209,7 @@ impl VirtualMachine {
                     "{sources}/extracted/vm/src/win/aioWin.c",
                     // Support sources
                     "{sources}/src/fileDialogWin32.c",
+                    "{crate}/extra/getpagesizeWin32.c",
                 ]);
 
                 let target_arch = std::env::var("CARGO_CFG_TARGET_ARCH").unwrap();
