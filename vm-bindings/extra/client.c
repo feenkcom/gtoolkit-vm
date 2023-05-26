@@ -1,4 +1,3 @@
-#include <sys/stat.h>
 #include "pharovm/pharo.h"
 #include "pharovm/pharoClient.h"
 #include "pharovm/pathUtilities.h"
@@ -88,14 +87,6 @@ vm_run_interpreter()
 static int
 loadPharoImage(const char* fileName)
 {
-    struct stat sb;
-
-    /* Check image exists */
-    if (stat(fileName, &sb) == -1) {
-        logErrorFromErrno("Image file not found");
-        return false;
-    }
-
     readImageNamed(fileName);
 
     char* fullImageName = alloca(FILENAME_MAX);
