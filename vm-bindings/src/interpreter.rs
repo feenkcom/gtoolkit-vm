@@ -97,7 +97,7 @@ impl PharoInterpreter {
 
     fn prepare_environment(&self, parameters: &InterpreterParameters) {
         unsafe { vm_parameters_ensure_interactive_image_parameter(parameters.native_mut_force()) };
-        if self.configuration.should_handle_errors() {
+        if self.configuration.should_print_stack_on_signals() {
             unsafe { installErrorHandlers() };
         }
         unsafe {

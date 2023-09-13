@@ -64,10 +64,12 @@ fn main() {
                 ),
         )
         .arg(
-            Arg::new("no-error-handling")
-                .long("no-error-handling")
+            Arg::new("print-stack-on-signals")
+                .long("print-stack-on-signals")
                 .action(clap::ArgAction::SetTrue)
-                .help("Disable error handling by the virtual machine"),
+                .help(
+                    "Enable virtual machine stack printing when encountering OS platform signals",
+                ),
         )
         .arg(
             Arg::new("version")
@@ -152,7 +154,8 @@ fn main() {
     let mut interpreter_configuration = InterpreterConfiguration::new(image_path);
     interpreter_configuration.set_interactive_session(matches.get_flag("interactive"));
     interpreter_configuration.set_is_worker_thread(worker_mode.should_run_in_worker_thread());
-    interpreter_configuration.set_should_handle_errors(!matches.get_flag("no-error-handling"));
+    interpreter_configuration
+        .set_should_print_stack_on_signals(matches.get_flag("print-stack-on-signals"));
     interpreter_configuration.set_extra_arguments(extra_args);
 
     let log_signals = matches

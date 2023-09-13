@@ -6,7 +6,7 @@ use std::path::{Path, PathBuf};
 pub struct InterpreterConfiguration {
     image: PathBuf,
     interactive_session: bool,
-    handle_errors: bool,
+    should_print_stack_on_signals: bool,
     worker_thread: bool,
     arguments: Vec<String>,
 }
@@ -16,7 +16,7 @@ impl InterpreterConfiguration {
         Self {
             image: image.into(),
             interactive_session: false,
-            handle_errors: true,
+            should_print_stack_on_signals: false,
             worker_thread: false,
             arguments: vec![],
         }
@@ -30,8 +30,8 @@ impl InterpreterConfiguration {
         self.worker_thread
     }
 
-    pub fn should_handle_errors(&self) -> bool {
-        self.handle_errors
+    pub fn should_print_stack_on_signals(&self) -> bool {
+        self.should_print_stack_on_signals
     }
 
     pub fn set_is_worker_thread(&mut self, worker_thread: bool) -> &mut Self {
@@ -44,8 +44,8 @@ impl InterpreterConfiguration {
         self
     }
 
-    pub fn set_should_handle_errors(&mut self, handle_errors: bool) -> &mut Self {
-        self.handle_errors = handle_errors;
+    pub fn set_should_print_stack_on_signals(&mut self, should_print_stack_on_signals: bool) -> &mut Self {
+        self.should_print_stack_on_signals = should_print_stack_on_signals;
         self
     }
 

@@ -46,7 +46,7 @@ pub extern "C" fn android_main(app: android_activity::AndroidApp) {
     let mut interpreter_configuration = InterpreterConfiguration::new(image_path);
     interpreter_configuration.set_interactive_session(true);
     interpreter_configuration.set_is_worker_thread(true);
-    interpreter_configuration.set_should_handle_errors(true);
+    interpreter_configuration.set_should_print_stack_on_signals(false);
     interpreter_configuration.set_extra_arguments(extra_args);
     Constellation::for_android(app).run(VirtualMachineConfiguration {
         interpreter_configuration,

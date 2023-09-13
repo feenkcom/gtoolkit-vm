@@ -55,7 +55,7 @@ impl Application {
 
         let mut interpreter_configuration = InterpreterConfiguration::new(self.image.clone());
         interpreter_configuration.set_interactive_session(true);
-        interpreter_configuration.set_should_handle_errors(true);
+        interpreter_configuration.set_should_print_stack_on_signals(false);
         interpreter_configuration.set_is_worker_thread(self.options.should_run_in_worker_thread());
 
         Constellation::new().run(VirtualMachineConfiguration {
