@@ -129,8 +129,18 @@ pipeline {
                         sh "cargo test --package vm-client-tests"
 
                         sh """
-                           xcrun altool -t osx -f ${APP_NAME}-${TARGET}.app.zip -itc_provider "77664ZXL29" --primary-bundle-id "com.feenk.gtoolkit-vm-x86-64" --notarize-app --verbose  --username "notarization@feenk.com" --password "${APPLEPASSWORD}"
+                           /Library/Developer/CommandLineTools/usr/bin/notarytool submit \
+                                --verbose \
+                                --apple-id "notarization@feenk.com" \
+                                --password "${APPLEPASSWORD}" \
+                                --team-id "77664ZXL29" \
+                                --wait \
+                                ${APP_NAME}-${TARGET}.app.zip
                            """
+
+//                        sh """
+//                           xcrun altool -t osx -f ${APP_NAME}-${TARGET}.app.zip -itc_provider "77664ZXL29" --primary-bundle-id "com.feenk.gtoolkit-vm-x86-64" --notarize-app --verbose  --username "notarization@feenk.com" --password "${APPLEPASSWORD}"
+//                           """
                         stash includes: "${APP_NAME}-${TARGET}.app.zip", name: "${TARGET}"
                     }
                 }
@@ -184,8 +194,18 @@ pipeline {
                         sh "cargo test --package vm-client-tests"
 
                         sh """
-                           xcrun altool -t osx -f ${APP_NAME}-${TARGET}.app.zip -itc_provider "77664ZXL29" --primary-bundle-id "com.feenk.gtoolkit-vm-aarch64" --notarize-app --verbose  --username "notarization@feenk.com" --password "${APPLEPASSWORD}"
+                           /Library/Developer/CommandLineTools/usr/bin/notarytool submit \
+                                --verbose \
+                                --apple-id "notarization@feenk.com" \
+                                --password "${APPLEPASSWORD}" \
+                                --team-id "77664ZXL29" \
+                                --wait \
+                                ${APP_NAME}-${TARGET}.app.zip
                            """
+
+//                        sh """
+//                           xcrun altool -t osx -f ${APP_NAME}-${TARGET}.app.zip -itc_provider "77664ZXL29" --primary-bundle-id "com.feenk.gtoolkit-vm-aarch64" --notarize-app --verbose  --username "notarization@feenk.com" --password "${APPLEPASSWORD}"
+//                           """
                         stash includes: "${APP_NAME}-${TARGET}.app.zip", name: "${TARGET}"
                     }
                 }
