@@ -32,6 +32,8 @@ if [[ ! -f "$BUILDER" ]]; then
   chmod +x "$BUILDER"
 fi
 
+export CARGO_LOG=cargo::core::compiler::fingerprint=info
+
 "./$BUILDER" \
   --release \
   --app-name 'GlamorousToolkit' \

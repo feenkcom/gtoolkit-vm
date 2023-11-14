@@ -87,6 +87,11 @@ impl ConfigTemplate {
     }
 
     pub fn render(&self) {
+        // do nothing if config.h already exists
+        if self.output.exists() {
+            return;
+        }
+
         let keys: Vec<String> = Config::VARIANTS
             .iter()
             .map(|each| each.to_string())

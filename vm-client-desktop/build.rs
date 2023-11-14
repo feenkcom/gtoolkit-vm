@@ -4,7 +4,7 @@ fn main() {
     match std::env::var("VM_CLIENT_EMBED_RESOURCES") {
         Ok(resources) => {
             for resource in resources.split(",") {
-                embed_resource::compile(resource);
+                embed_resource::compile(resource, embed_resource::NONE);
                 println!("cargo:rerun-if-changed={}", resource);
             }
         }
