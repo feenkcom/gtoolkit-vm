@@ -29,9 +29,12 @@ pathos = "0.3"
 # nfd2 is only supported by desktop OS
 [target.'cfg(not(any(target_os="ios", target_os="android", target_arch = "wasm32")))'.dependencies]
 nfd2 = { version = "0.3", optional = true }
+native-dialog = { version = "0.7", optional = true }
 
 [features]
-default = [ "image_picker" ]
+default = [ "image_picker", "error-dialog" ]
+# Shows an error message on Error, rather than just printing to stderrr
+error-dialog = [ "dep:native-dialog" ]
 # Shows an .image file picker dialog.
 # Only supported by desktop targets
 image_picker = [ "nfd2" ]

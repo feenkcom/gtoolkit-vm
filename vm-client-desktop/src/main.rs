@@ -44,8 +44,37 @@ fn main() {
     env_logger::init();
 
     if let Err(error) = run() {
-        let error: Box<dyn std::error::Error> = Box::new(error);
-        let user_facing_error: UserFacingError = error.into();
-        user_facing_error.print_and_exit();
+        handle_application_error(error)
     }
+}
+
+#[allow(dead_code)]
+#[cfg(all(
+    feature = "error-dialog",
+    not(any(target_os = "ios", target_os = "android", target_arch = "wasm32"))
+))]
+pub fn handle_application_error(error: ApplicationError) {
+    use native_dialog::{MessageDialog, MessageType};
+
+    let error: Box<dyn std::error::Error> = Box::new(error);
+    let user_facing_error: UserFacingError = error.into();
+
+    MessageDialog::new()
+        .set_type(MessageType::Error)
+        .set_title(user_facing_error.summary().as_str())
+        .set_text(user_facing_error.to_string().as_str())
+        .show_alert()
+        .unwrap();
+
+    std::process::exit(1)
+}
+
+#[cfg(not(all(
+    feature = "error-dialog",
+    not(any(target_os = "ios", target_os = "android", target_arch = "wasm32"))
+)))]
+pub fn handle_application_error(error: ApplicationError) {
+    let error: Box<dyn std::error::Error> = Box::new(error);
+    let user_facing_error: UserFacingError = error.into();
+    user_facing_error.print_and_exit();
 }

@@ -44,7 +44,10 @@ impl InterpreterConfiguration {
         self
     }
 
-    pub fn set_should_print_stack_on_signals(&mut self, should_print_stack_on_signals: bool) -> &mut Self {
+    pub fn set_should_print_stack_on_signals(
+        &mut self,
+        should_print_stack_on_signals: bool,
+    ) -> &mut Self {
         self.should_print_stack_on_signals = should_print_stack_on_signals;
         self
     }
