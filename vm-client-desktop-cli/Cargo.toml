@@ -3,6 +3,7 @@ name = "vm-client-desktop-cli"
 version = "0.5.0"
 authors = ["feenk gmbh. contact@feenk.com>"]
 edition = "2021"
+description = "GToolkit VM CLI"
 
 [[bin]]
 name = "vm_client-cli"
@@ -15,4 +16,4 @@ log = "0.4"
 env_logger = "0.10"
 
 [build-dependencies]
-embed-resource = "1.6"
+embed-resource = "2.4"

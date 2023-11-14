@@ -1,9 +1,10 @@
+use std::fmt::{Display, Formatter};
 use crate::{Builder, FamilyOS, HostOS, DOWNLOADING, EXTRACTING};
 use anyhow::Result;
 use commander::CommandToExecute;
 use downloader::{FileToDownload, FilesToDownload};
 use file_matcher::{FileNamed, OneEntryCopier};
-use serde::Serialize;
+use serde::{Serialize, Serializer};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::rc::Rc;
@@ -166,12 +167,12 @@ impl VMMaker {
         // the definitive location of the vmmaker image
         let vmmaker_image = vmmaker_image_dir.join("VMMaker.image");
         // let's see if the vm is provided by the user
-        let vmmaker_vm = Self::custom_vmmaker_vm()?;
+        let custom_vmmaker_vm = Self::custom_vmmaker_vm()?;
 
         // if both the image and vm exist, we are done and can return the vmmaker
-        if vmmaker_image.exists() && vmmaker_vm.is_some() {
+        if vmmaker_image.exists() && custom_vmmaker_vm.is_some() {
             return Ok(VMMaker {
-                vm: vmmaker_vm.unwrap(),
+                vm: custom_vmmaker_vm.clone().unwrap(),
                 image: vmmaker_image,
                 builder: builder.clone(),
             });
@@ -197,6 +198,10 @@ impl VMMaker {
                 builder: builder.clone(),
             });
         }
+
+        println!("VMMaker.image at {} exists: {}", vmmaker_image.display(), vmmaker_image.exists());
+        println!("Custom VMMaker VM {:?}", &custom_vmmaker_vm);
+        println!("Potential VMMaker VMs: {:?}", &existing_vmmaker_vms);
 
         // at this point we have neither a ready vmmaker image nor a vm.
         // we should download a new image if there is no custom one and get a vm

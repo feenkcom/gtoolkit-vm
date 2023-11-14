@@ -3,6 +3,7 @@ use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use std::{env, fmt};
+use bindgen::CargoCallbacks;
 
 use platforms::target::OS;
 use platforms::{Arch, Platform, PointerWidth};
@@ -291,14 +292,6 @@ pub trait Builder: Debug {
         if self.target().is_android() {
             let ndk = ndk_build::ndk::Ndk::from_env().unwrap();
             use ndk_build::target::Target as AndroidTarget;
-            let target = match self.platform().target_arch {
-                Arch::AArch64 => AndroidTarget::Arm64V8a,
-                Arch::Arm => AndroidTarget::ArmV7a,
-                Arch::X86 => AndroidTarget::X86,
-                Arch::X86_64 => AndroidTarget::X86_64,
-                _ => panic!("Unsupported arch: {}", self.platform().target_arch),
-            };
-
             env::set_var("CLANG_PATH", ndk.clang().unwrap().0);
             env::set_var(
                 format!("BINDGEN_EXTRA_CLANG_ARGS_{}", self.platform().target_triple),
@@ -359,7 +352,7 @@ pub trait Builder: Debug {
             .clang_arg("-D_NO_CRT_STDIO_INLINE")
             // Tell cargo to invalidate the built crate whenever any of the
             // included header files changed.
-            .parse_callbacks(Box::new(bindgen::CargoCallbacks));
+            .parse_callbacks(Box::new(CargoCallbacks::new()));
 
         builder = builder.layout_tests(false);
 

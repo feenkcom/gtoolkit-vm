@@ -12,14 +12,14 @@ path = "src/main.rs"
 [dependencies]
 vm-runtime = { path = "../vm-runtime" }
 clap = { version = "4.1", features = [ "derive", "string", "color" ] }
-env_logger = "0.10"
 log = "0.4"
+env_logger = "0.10"
 user-error = "1.2"
 to_absolute = "0.1"
 
 [target.'cfg(target_os="macos")'.dependencies]
-core-foundation = "0.9.1"
-libloading = "0.7"
+core-foundation = "0.9"
+libloading = "0.8"
 libc = "0.2"
 
 # pathos is used to detect home directory of the app on iOS
@@ -40,4 +40,4 @@ error-dialog = [ "dep:native-dialog" ]
 image_picker = [ "nfd2" ]
 
 [build-dependencies]
-embed-resource = "1.6"
+embed-resource = "2.4"

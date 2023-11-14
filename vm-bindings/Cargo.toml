@@ -7,10 +7,10 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0"
 log = "0.4"
-libffi = { version = "3.1", optional = true }
-libffi-sys = { version = "2.1", optional = true }
+libffi = { version = "3.2", optional = true }
+libffi-sys = { version = "2.3", optional = true }
 num = "0.4"
-num-derive = "0.3"
+num-derive = "0.4"
 num-traits = "0.2"
 
 [features]
@@ -71,18 +71,18 @@ gnuisation = []
 
 [build-dependencies]
 platforms = "3.0"
-bindgen = "0.64"
+bindgen = "0.69"
 fs_extra = "1.1"
 to_absolute = "0.1"
-which = "4.1"
+which = "5.0"
 titlecase = "2.1"
 file-matcher = "0.7"
 cc = { git = "https://github.com/syrel/cc-rs", rev = "2794bd456cd7ecf75e5bc79c2499a8eb9920f0a2" }
 new_string_template = "1.0"
 regex = "1.5"
 pkg-config = "0.3"
-strum = { version = "0.24", features = ["derive"] }
-git2 = "0.16"
+strum = { version = "0.25", features = ["derive"] }
+git2 = "0.18"
 anyhow = "1.0"
 chrono = "0.4"
 semver = { version = "1", features = [ "serde" ] }

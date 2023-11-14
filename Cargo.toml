@@ -1,4 +1,5 @@
 [workspace]
+resolver = "2"
 
 members = [
     "vm-bindings",
@@ -12,11 +13,6 @@ members = [
 ]
 
 exclude = ["target", "third_party", "libs"]
-
-[patch.crates-io]
-# TODO: remove patch as soon a libffi v3.2.0 is released
-libffi = { git = "https://github.com/tov/libffi-rs", rev = "90ee020dd9ed7290fd588bf7a3adccc3e43f4b75" }
-libffi-sys = { git = "https://github.com/tov/libffi-rs", rev = "90ee020dd9ed7290fd588bf7a3adccc3e43f4b75" }
 
 [profile.release]
 rpath = false
