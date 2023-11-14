@@ -26,7 +26,7 @@ pub enum ApplicationError {
     FailedToGetFileName(PathBuf),
     #[error("Failed to convert `{0:?}` from OsString to String")]
     FailedToConvertOsString(OsString),
-    #[error("Provided image does not exist `{0}`")]
+    #[error("Provided image does not exist: `{0}`")]
     ImageFileDoesNotExist(PathBuf),
     #[error("Could not find any .image file")]
     ImageFileNotFound,

@@ -59,10 +59,18 @@ pub fn handle_application_error(error: ApplicationError) {
     let error: Box<dyn std::error::Error> = Box::new(error);
     let user_facing_error: UserFacingError = error.into();
 
+    let dialog_text = user_facing_error
+        .reasons()
+        .map_or_else(
+            || user_facing_error.helptext(),
+            |reasons| Some(reasons.join("\n")),
+        )
+        .unwrap_or_else(|| "".to_string());
+
     MessageDialog::new()
         .set_type(MessageType::Error)
         .set_title(user_facing_error.summary().as_str())
-        .set_text(user_facing_error.to_string().as_str())
+        .set_text(dialog_text.as_str())
         .show_alert()
         .unwrap();
 
