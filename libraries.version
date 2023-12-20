@@ -6,7 +6,7 @@
   "Glutin": "v0.13.0",
   "Pixels": "v0.18.0",
   "Process": "v0.28.0",
-  "Skia": "v0.29.0",
+  "Skia": "v0.30.0",
   "Winit": "v0.35.0",
   "Cairo": "v0.3.0",
   "Crypto": "v0.5.0",
