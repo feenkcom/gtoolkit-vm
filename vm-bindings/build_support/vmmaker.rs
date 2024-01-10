@@ -1,10 +1,10 @@
-use std::fmt::{Display, Formatter};
 use crate::{Builder, FamilyOS, HostOS, DOWNLOADING, EXTRACTING};
 use anyhow::Result;
 use commander::CommandToExecute;
 use downloader::{FileToDownload, FilesToDownload};
 use file_matcher::{FileNamed, OneEntryCopier};
 use serde::{Serialize, Serializer};
+use std::fmt::{Display, Formatter};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::rc::Rc;
@@ -199,7 +199,11 @@ impl VMMaker {
             });
         }
 
-        println!("VMMaker.image at {} exists: {}", vmmaker_image.display(), vmmaker_image.exists());
+        println!(
+            "VMMaker.image at {} exists: {}",
+            vmmaker_image.display(),
+            vmmaker_image.exists()
+        );
         println!("Custom VMMaker VM {:?}", &custom_vmmaker_vm);
         println!("Potential VMMaker VMs: {:?}", &existing_vmmaker_vms);
 

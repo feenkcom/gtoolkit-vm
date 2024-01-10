@@ -1,9 +1,9 @@
+use bindgen::CargoCallbacks;
 use std::fmt::{Debug, Display, Formatter};
 use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use std::{env, fmt};
-use bindgen::CargoCallbacks;
 
 use platforms::target::OS;
 use platforms::{Arch, Platform, PointerWidth};
