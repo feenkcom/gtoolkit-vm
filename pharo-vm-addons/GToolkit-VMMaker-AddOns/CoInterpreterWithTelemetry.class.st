@@ -157,7 +157,8 @@ CoInterpreterWithTelemetry >> ceInterpretMethodFromPIC: aMethodObj receiver: rcv
 			pic := self cCoerceSimple: self stackTop - cogit interpretOffset to: #'CogMethod *'.
 			self
 				emitSendSignal: pic selector
-				receiver: rcvr ].
+				receiver: rcvr
+				sourceId: 3 ].
 	
 	super ceInterpretMethodFromPIC: aMethodObj receiver: rcvr
 ]
@@ -208,7 +209,8 @@ CoInterpreterWithTelemetry >> ceSendFromInLineCacheMiss: cogMethodOrPIC [
 			rcvr := self stackValue: numArgs + 1. "skip return pc"
 			self
 				emitSendSignal: cogMethodOrPIC selector
-				receiver: rcvr ].
+				receiver: rcvr
+				sourceId: 2 ].
 	
 	super ceSendFromInLineCacheMiss: cogMethodOrPIC
 ]
@@ -278,6 +280,16 @@ CoInterpreterWithTelemetry >> emitReturnStackSignalFromBaseFrame [
 CoInterpreterWithTelemetry >> emitSendSignal: selector receiver: rcvr [
 	<inline: true>
 
+	self
+		emitSendSignal: selector
+		receiver: rcvr
+		sourceId: 0
+]
+
+{ #category : #'bytecode - send' }
+CoInterpreterWithTelemetry >> emitSendSignal: selector receiver: rcvr sourceId: sourceId [
+	<inline: true>
+
 	telemetryEnabled
 		ifTrue: [
 			(objectMemory isImmediate: rcvr)
@@ -286,12 +298,14 @@ CoInterpreterWithTelemetry >> emitSendSignal: selector receiver: rcvr [
 						telemetrySignalSend: selector
 						toInstanceOf: rcvr
 						isImmediate: true
+						sourceId: sourceId
 						framePointer: framePointer ]
 				ifFalse: [
 					telemetry
 						telemetrySignalSend: selector
 						toInstanceOf: (objectMemory fetchClassTagOf: rcvr)
 						isImmediate: false
+						sourceId: sourceId
 						framePointer: framePointer ] ]
 ]
 
@@ -453,7 +467,7 @@ CoInterpreterWithTelemetry >> returnTopFromBlock [
 CoInterpreterWithTelemetry >> sendBreakpoint: selector receiver: rcvr [
 	<inline: true>
 
-	self emitSendSignal: selector receiver: rcvr.
+	self emitSendSignal: selector receiver: rcvr sourceId: 4.
 	super sendBreakpoint: selector receiver: rcvr
 ]
 
@@ -525,7 +539,8 @@ CoInterpreterWithTelemetry >> telemetryEmitLinkedSend: theReceiver [
 
 			self
 				emitSendSignal: cogMethod selector
-				receiver: theReceiver ]
+				receiver: theReceiver
+				sourceId: 1 ]
 ]
 
 { #category : #'bytecode - context switch' }
