@@ -499,7 +499,7 @@ CoInterpreterWithTelemetry >> telemetryEmitBlockActivation [
 ]
 
 { #category : #'bytecode - send' }
-CoInterpreterWithTelemetry >> telemetryEmitLinkedReturn [
+CoInterpreterWithTelemetry >> telemetryEmitLinkedReturn: aFramePointer [
 	<api>
 
 	telemetryEnabled
@@ -508,7 +508,7 @@ CoInterpreterWithTelemetry >> telemetryEmitLinkedReturn [
 				telemetrySignalReturn: objectMemory nilObject
 				from: 22
 				in: MachineCode
-				framePointer: framePointer ]
+				framePointer: aFramePointer ]
 ]
 
 { #category : #'bytecode - send' }
