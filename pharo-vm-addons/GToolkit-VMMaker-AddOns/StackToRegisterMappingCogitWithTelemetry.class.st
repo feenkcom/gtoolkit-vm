@@ -69,7 +69,7 @@ StackToRegisterMappingCogitWithTelemetry >> generateTracingTrampolines [
 	telemetryLinkedReturnTrampoline :=
 		self genTrampolineFor: #telemetryEmitLinkedReturn:
 			called: 'telemetryLinkedReturnTrampoline'
-			arg: SPReg
+			arg: ClassReg
 			regsToSave: CallerSavedRegisterMask.
 
 	telemetryBlockActivationTrampoline :=

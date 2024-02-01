@@ -134,16 +134,93 @@ CoInterpreterWithTelemetry class >> shouldGenerateTypedefFor: aStructClass [
 	  and: [ ({ CoInterpreterTelemetry } includes: aStructClass) not ]
 ]
 
-{ #category : #accessing }
-CoInterpreterWithTelemetry >> activateNewFullClosure: blockClosure method: theMethod numArgs: numArgs mayContextSwitch: mayContextSwitch [
-	"telemetryEnabled
-		ifTrue: [
-			telemetry
-				telemetrySignalSend: 0
-				toInstanceOf: 0
-				isImmediate: 0
-				framePointer: framePointer ]."
-	super activateNewFullClosure: blockClosure method: theMethod numArgs: numArgs mayContextSwitch: mayContextSwitch
+{ #category : #'bytecode - return' }
+CoInterpreterWithTelemetry >> ceBaseFrameReturn: returnValue [
+	"Return across a page boundary.  The context to return to (which may be married)
+	 is stored in the first word of the stack.  We get here when a return instruction jumps
+	 to the ceBaseFrameReturn: address that is the return pc for base frames.  A consequence
+	 of this is that the current frame is no longer valid since an interrupt may have overwritten
+	 its state as soon as the stack pointer has been cut-back beyond the return pc.  So to have
+	 a context to send the cannotReturn: message to we also store the base frame's context
+	 in the second word of the stack page."
+	<api>
+	| contextToReturnTo contextToReturnFrom isAContext thePage newPage frameAbove |
+	<var: #thePage type: #'StackPage *'>
+	<var: #newPage type: #'StackPage *'>
+	<var: #frameAbove type: #'char *'>
+	self assert: (stackPages stackPageFor: stackPointer) = stackPage.
+	self assert: stackPages mostRecentlyUsedPage = stackPage.
+	cogit assertCStackWellAligned.
+	self assert: framePointer = 0.
+	self assert: stackPointer <= (stackPage baseAddress - objectMemory wordSize).
+	self assert: stackPage baseFP + (2 * objectMemory wordSize) < stackPage baseAddress.
+	"We would like to use the following assert but we can't since the stack pointer will be above the
+	 base frame pointer in the base frame return and hence the 0 a base frame pointer points at could
+	 be overwritten which will cause the isBaseFrame assert in frameCallerContext: to fail."
+	"self assert: (self frameCallerContext: stackPage baseFP) = (stackPages longAt: stackPage baseAddress)."
+	self assert: ((objectMemory addressCouldBeObj: (stackPages longAt: stackPage baseAddress - objectMemory wordSize))
+				and: [objectMemory isContext: (stackPages longAt: stackPage baseAddress - objectMemory wordSize)]).
+	contextToReturnTo := stackPages longAt: stackPage baseAddress.
+	self assert: (objectMemory addressCouldBeObj: contextToReturnTo).
+
+	"The stack page is effectively free now, so free it.  We must free it to be
+	 correct in determining if contextToReturnTo is still married, and in case
+	 makeBaseFrameFor: cogs a method, which may cause a code compaction,
+	 in which case the frame must be free to avoid the relocation machinery
+	 tracing the dead frame.  Since freeing now temporarily violates the page-list
+	 ordering invariant, use the assert-free version."
+	stackPages freeStackPageNoAssert: stackPage.
+	isAContext := objectMemory isContext: contextToReturnTo.
+	(isAContext
+	 and: [self isStillMarriedContext: contextToReturnTo])
+		ifTrue:
+			[framePointer := self frameOfMarriedContext: contextToReturnTo.
+			 thePage := stackPages stackPageFor: framePointer.
+			 framePointer = thePage headFP
+				ifTrue:
+					[stackPointer := thePage headSP]
+				ifFalse:
+					["Returning to some interior frame, presumably because of a sender assignment.
+					  Move the frames above to another page (they may be in use, e.g. via coroutining).
+					  Make the interior frame the top frame."
+					 frameAbove := self findFrameAbove: framePointer inPage: thePage.
+					 "Since we've just deallocated a page we know that newStackPage won't deallocate an existing one."
+					 newPage := stackPages newStackPage.
+					 self assert: newPage = stackPage.
+					 self moveFramesIn: thePage through: frameAbove toPage: newPage.
+					 stackPages markStackPageMostRecentlyUsed: newPage.
+					 self setStackPointersFromPage: thePage]]
+		ifFalse:
+			[(isAContext
+			  and: [objectMemory isIntegerObject: (objectMemory fetchPointer: InstructionPointerIndex ofObject: contextToReturnTo)]) ifFalse:
+				[contextToReturnFrom := stackPages longAt: stackPage baseAddress - objectMemory wordSize.
+				 self tearDownAndRebuildFrameForCannotReturnBaseFrameReturnFrom: contextToReturnFrom
+					to: contextToReturnTo
+					returnValue: returnValue.
+				^self externalCannotReturn: returnValue from: contextToReturnFrom].
+			 "void the instructionPointer to stop it being incorrectly updated in a code
+			 compaction in makeBaseFrameFor:."
+			 instructionPointer := 0.
+			 thePage := self makeBaseFrameFor: contextToReturnTo.
+			 self setStackPointersFromPage: thePage].
+	self setStackPageAndLimit: thePage.
+	self assert: (stackPages stackPageFor: framePointer) = stackPage.
+	(self isMachineCodeFrame: framePointer) ifTrue:
+		[
+		self emitReturnMachineSignalFromBaseFrame.
+		self push: returnValue.
+		 self callEnilopmart: #ceEnterCogCodePopReceiverReg.
+		 "NOTREACHED"].
+	instructionPointer := self stackTop.
+	instructionPointer = cogit ceReturnToInterpreterPC ifTrue:
+		[instructionPointer := self iframeSavedIP: framePointer].
+	self setMethod: (self iframeMethod: framePointer).
+	self emitReturnStackSignalFromBaseFrame.
+	self stackTopPut: returnValue. "a.k.a. pop saved ip then push result"
+	self assert: (self checkIsStillMarriedContext: contextToReturnTo currentFP: framePointer).
+	self siglong: reenterInterpreter jmp: ReturnToInterpreter.
+	"NOTREACHED"
+	^nil
 ]
 
 { #category : #accessing }
@@ -169,8 +246,8 @@ CoInterpreterWithTelemetry >> ceNonLocalReturn: returnValue [
 	
 	telemetryEnabled ifTrue: [
 		telemetry
-			telemetrySignalReturn: objectMemory nilObject
-			from: BaseFrameReturnSignal
+			telemetrySignalReturn: (self frameSelector: framePointer)
+			from: NonLocalReturnSignal
 			in: MachineCode
 			framePointer: framePointer ].
 
@@ -188,7 +265,7 @@ CoInterpreterWithTelemetry >> ceReturnToInterpreter: anOop [
 	telemetryEnabled
 		ifTrue: [
 			telemetry
-				telemetrySignalReturn: (self iframeMethod: framePointer)
+				telemetrySignalReturn: (self frameSelector: framePointer)
 				from: ReturnToInterpreterSignal
 				in: MachineToInterpreterCode
 				framePointer: framePointer ].
@@ -196,7 +273,7 @@ CoInterpreterWithTelemetry >> ceReturnToInterpreter: anOop [
 	super ceReturnToInterpreter: anOop
 ]
 
-{ #category : #accessing }
+{ #category : #'bytecode - send' }
 CoInterpreterWithTelemetry >> ceSend: selector above: methodClass to: rcvr numArgs: numArgs [
 	<api>
 	<option: #BytecodeSetHasDirectedSuperSend>
@@ -212,7 +289,7 @@ CoInterpreterWithTelemetry >> ceSend: selector above: methodClass to: rcvr numAr
 	super ceSend: selector above: methodClass to: rcvr numArgs: numArgs
 ]
 
-{ #category : #accessing }
+{ #category : #'bytecode - send' }
 CoInterpreterWithTelemetry >> ceSend: selector super: superNormalBar to: rcvr numArgs: numArgs [
 	<api>
 	<inline: false>
@@ -227,7 +304,7 @@ CoInterpreterWithTelemetry >> ceSend: selector super: superNormalBar to: rcvr nu
 	super ceSend: selector super: superNormalBar to: rcvr numArgs: numArgs
 ]
 
-{ #category : #accessing }
+{ #category : #'bytecode - send' }
 CoInterpreterWithTelemetry >> ceSendFromInLineCacheMiss: cogMethodOrPIC [
 	<api>
 	<var: #cogMethodOrPIC type: #'CogMethod *'>
@@ -251,7 +328,7 @@ CoInterpreterWithTelemetry >> commonCallerReturn [
 	telemetryEnabled
 		ifTrue: [
 			telemetry
-				telemetrySignalReturn: objectMemory nilObject
+				telemetrySignalReturn: (self frameSelector: framePointer)
 				from: 20
 				in: InterpreterCode
 				framePointer: framePointer ].
@@ -259,7 +336,7 @@ CoInterpreterWithTelemetry >> commonCallerReturn [
 	super commonCallerReturn
 ]
 
-{ #category : #accessing }
+{ #category : #'bytecode - send' }
 CoInterpreterWithTelemetry >> commonSendOrdinary [
 	telemetryEnabled
 		ifTrue: [
@@ -300,10 +377,8 @@ CoInterpreterWithTelemetry >> emitReturnMachineSignalFromBaseFrame [
 	<var: #cogMethod type: #'CogMethod *'>
 	
 	telemetryEnabled ifTrue: [
-		| cogMethod |
-		cogMethod := self mframeCogMethod: framePointer.
 		telemetry
-			telemetrySignalReturn: cogMethod methodObject
+			telemetrySignalReturn: (self frameSelector: framePointer)
 			from: BaseFrameReturnSignal
 			in: MachineCode
 			framePointer: framePointer ]
@@ -313,7 +388,7 @@ CoInterpreterWithTelemetry >> emitReturnMachineSignalFromBaseFrame [
 CoInterpreterWithTelemetry >> emitReturnStackSignalFromBaseFrame [
 	telemetryEnabled ifTrue: [
 		telemetry
-			telemetrySignalReturn: (self iframeMethod: framePointer)
+			telemetrySignalReturn: (self frameSelector: framePointer)
 			from: BaseFrameReturnSignal
 			in: MachineToInterpreterCode
 			framePointer: framePointer ]
@@ -375,12 +450,31 @@ CoInterpreterWithTelemetry >> externalAboutToReturn: resultOop through: aContext
 	telemetryEnabled
 		ifTrue: [
 			telemetry
-				telemetrySignalReturn: objectMemory nilObject
+				telemetrySignalReturn: (self frameSelector: framePointer)
 				from: ExternalAboutToReturnThroughSignal
 				in: MachineCode
 				framePointer: framePointer ].
 	
 	super externalAboutToReturn: resultOop through: aContext
+]
+
+{ #category : #accessing }
+CoInterpreterWithTelemetry >> frameSelector: theFP [
+	<api>
+	<var: #cogMethod type: #'CogMethod *'>
+
+	(self isMachineCodeFrame: theFP)
+	 ifTrue: [
+	 	| cogMethod |
+	 	(self mframeIsBlockActivation: theFP)
+	 		ifTrue: [ cogMethod := self mframeHomeMethod: theFP ]
+	 		ifFalse: [ cogMethod := self mframeMethod: theFP ].
+	 	^ cogMethod selector ]
+	 ifFalse: [
+	 	| aMethod |
+	 	
+	 	aMethod := self iframeMethod: theFP.
+	 	^ self findSelectorOfMethod: aMethod ]
 ]
 
 { #category : #'bytecode - send' }
@@ -397,7 +491,7 @@ CoInterpreterWithTelemetry >> maybeReturnToMachineCodeFrame [
 	telemetryEnabled
 		ifTrue: [
 			telemetry
-				telemetrySignalReturn: (self iframeMethod: framePointer)
+				telemetrySignalReturn: (self frameSelector: framePointer)
 				from: MaybeReturnToMachineCodeFrameSignal
 				in: InterpreterCode
 				framePointer: framePointer ]
@@ -410,16 +504,14 @@ CoInterpreterWithTelemetry >> return: returnValue toExecutive: inInterpreter [
 	telemetryEnabled ifTrue: [
 		(self isMachineCodeFrame: framePointer)
 			ifTrue: [
-				| cogMethod |
-				cogMethod := self mframeCogMethod: framePointer.
 				telemetry
-					telemetrySignalReturn: cogMethod methodObject
+					telemetrySignalReturn: (self frameSelector: framePointer)
 					from: ReturnToExecutiveSignal
 					in: MachineCode
 					framePointer: framePointer ]
 			ifFalse: [
 				telemetry
-					telemetrySignalReturn: (self iframeMethod: framePointer)
+					telemetrySignalReturn: (self frameSelector: framePointer)
 					from: ReturnToExecutiveSignal
 					in: InterpreterCode
 					framePointer: framePointer ] ].
@@ -441,7 +533,7 @@ CoInterpreterWithTelemetry >> returnToExecutive: inInterpreter postContextSwitch
 	
 	"seems like it is not necessary to emit return here"
 	
-	"telemetryEnabled ifTrue: [
+	telemetryEnabled ifTrue: [
 		| switchType |
 		
 		switchedContext
@@ -450,20 +542,17 @@ CoInterpreterWithTelemetry >> returnToExecutive: inInterpreter postContextSwitch
 		
 		(self isMachineCodeFrame: framePointer)
 			ifTrue: [
-				| cogMethod |
-				
-				cogMethod := self mframeCogMethod: framePointer.
 				telemetry
-					telemetrySignalReturn: cogMethod methodObject
+					telemetrySignalReturn: (self frameSelector: framePointer)
 					from: switchType
 					in: MachineCode
 					framePointer: framePointer ]
 			ifFalse: [
 				telemetry
-					telemetrySignalReturn: (self iframeMethod: framePointer)
+					telemetrySignalReturn: (self frameSelector: framePointer)
 					from: switchType
 					in: InterpreterCode
-					framePointer: framePointer ] ]."
+					framePointer: framePointer ] ].
 
 	super returnToExecutive: inInterpreter postContextSwitch: switchedContext
 ]
@@ -482,7 +571,7 @@ CoInterpreterWithTelemetry >> returnToMachineCodeFrame [
 			 - self mframeHomeMethod: framePointer.
 			 - method'.
 			telemetry
-				telemetrySignalReturn: objectMemory nilObject
+				telemetrySignalReturn: (self frameSelector: framePointer)
 				from: ReturnToMachineCodeFrameSignal
 				in: InterpreterToMachineCode
 				framePointer: framePointer ].
@@ -555,17 +644,17 @@ CoInterpreterWithTelemetry >> telemetryEmitBlockActivation [
 				receiver: (self frameReceiver: framePointer) ]"
 ]
 
-{ #category : #'bytecode - send' }
-CoInterpreterWithTelemetry >> telemetryEmitLinkedReturn: aFramePointer [
+{ #category : #'bytecode - return' }
+CoInterpreterWithTelemetry >> telemetryEmitLinkedReturn: aSelector [
 	<api>
 
 	telemetryEnabled
 		ifTrue: [
 			telemetry
-				telemetrySignalReturn: objectMemory nilObject
+				telemetrySignalReturn: aSelector
 				from: 22
 				in: MachineCode
-				framePointer: aFramePointer ]
+				framePointer: framePointer ]
 ]
 
 { #category : #'bytecode - send' }
