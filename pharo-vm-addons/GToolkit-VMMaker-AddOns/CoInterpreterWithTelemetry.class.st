@@ -473,7 +473,7 @@ CoInterpreterWithTelemetry >> returnToExecutive: inInterpreter postContextSwitch
 	
 	"seems like it is not necessary to emit return here"
 	
-	telemetryEnabled ifTrue: [
+	"telemetryEnabled ifTrue: [
 		| switchType |
 		
 		switchedContext
@@ -495,7 +495,7 @@ CoInterpreterWithTelemetry >> returnToExecutive: inInterpreter postContextSwitch
 					telemetrySignalReturn: (self iframeMethod: framePointer)
 					from: switchType
 					in: InterpreterCode
-					framePointer: framePointer ] ].
+					framePointer: framePointer ] ]."
 
 	super returnToExecutive: inInterpreter postContextSwitch: switchedContext
 ]
@@ -590,7 +590,7 @@ CoInterpreterWithTelemetry >> telemetryEmitBlockActivation [
 { #category : #'bytecode - send' }
 CoInterpreterWithTelemetry >> telemetryEmitLinkedReturn [
 	<api>
-	
+
 	telemetryEnabled
 		ifTrue: [
 			telemetry
