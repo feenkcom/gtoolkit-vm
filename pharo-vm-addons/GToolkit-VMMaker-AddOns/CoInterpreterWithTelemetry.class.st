@@ -197,6 +197,22 @@ CoInterpreterWithTelemetry >> ceReturnToInterpreter: anOop [
 ]
 
 { #category : #accessing }
+CoInterpreterWithTelemetry >> ceSend: selector above: methodClass to: rcvr numArgs: numArgs [
+	<api>
+	<option: #BytecodeSetHasDirectedSuperSend>
+	<inline: false>
+	
+	telemetryEnabled
+		ifTrue: [
+			self
+				emitSendSignal: selector
+				receiver: rcvr
+				sourceId: 6 ].
+	
+	super ceSend: selector above: methodClass to: rcvr numArgs: numArgs
+]
+
+{ #category : #accessing }
 CoInterpreterWithTelemetry >> ceSendFromInLineCacheMiss: cogMethodOrPIC [
 	<api>
 	<var: #cogMethodOrPIC type: #'CogMethod *'>
