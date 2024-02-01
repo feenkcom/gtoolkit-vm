@@ -128,10 +128,14 @@ impl VirtualMachine {
     /// slower stack interpreter
     fn interpreter(_builder: Rc<dyn Builder>) -> &'static str {
         if cfg!(feature = "jit") {
-            "CoInterpreter"
+            "CoInterpreterWithTelemetry"
         } else {
             "StackVM"
         }
+    }
+
+    fn cogit_compiler(_builder: Rc<dyn Builder>) -> &'static str {
+        "StackToRegisterMappingCogitWithTelemetry"
     }
 
     fn interpreter_sources() -> Vec<&'static str> {
@@ -430,9 +434,9 @@ impl VirtualMachine {
         .collect()
     }
 
-    fn vmmaker(builder: Rc<dyn Builder>, interpreter: &str) -> Result<VMMaker> {
+    fn vmmaker(builder: Rc<dyn Builder>, interpreter: &str, compiler: &str) -> Result<VMMaker> {
         let vmmaker = VMMaker::prepare(builder)?;
-        vmmaker.generate_sources(interpreter)?;
+        vmmaker.generate_sources(interpreter, compiler)?;
         Ok(vmmaker)
     }
 
@@ -441,7 +445,11 @@ impl VirtualMachine {
         builder.prepare_environment();
         let build_info = Self::build_info(builder.clone())?;
         let config = Self::config(builder.clone(), &build_info)?;
-        let vmmaker = Self::vmmaker(builder.clone(), Self::interpreter(builder.clone()))?;
+        let vmmaker = Self::vmmaker(
+            builder.clone(),
+            Self::interpreter(builder.clone()),
+            Self::cogit_compiler(builder.clone()),
+        )?;
         let core = Self::core(builder.clone(), &build_info);
         let plugins = Self::plugins(&core);
 

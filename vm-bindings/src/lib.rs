@@ -11,11 +11,13 @@ mod parameter_vector;
 mod parameters;
 mod prelude;
 
+pub use bindings::{sqInt, InterpreterTelemetry};
 pub use export::NamedPrimitive;
 pub use interpreter::{LogLevel, PharoInterpreter};
 pub use interpreter_config::InterpreterConfiguration;
 pub use interpreter_marshalling::Marshallable;
 pub use interpreter_proxy::{InterpreterProxy, ObjectFieldIndex, ObjectPointer, StackOffset};
+pub use prelude::NativeTransmutable;
 
 // re-export ffi
 #[cfg(feature = "libffi")]

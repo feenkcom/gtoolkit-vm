@@ -1,11 +1,11 @@
 use crate::bindings::{
-    exportOsCogStackPageHeadroom as osCogStackPageHeadroom,
+    disableTelemetry, enableTelemetry, exportOsCogStackPageHeadroom as osCogStackPageHeadroom,
     exportSqGetInterpreterProxy as sqGetInterpreterProxy, exportStatFullGCUsecs as statFullGCUsecs,
     exportStatScavengeGCUsecs as statScavengeGCUsecs, getVMExports, installErrorHandlers,
     registerCurrentThreadToHandleExceptions, setLogger, setProcessArguments,
-    setProcessEnvironmentVector, setShouldLog, setVMExports, setVmRunOnWorkerThread, sqExport,
-    sqInt, vm_init, vm_parameters_ensure_interactive_image_parameter, vm_run_interpreter,
-    VirtualMachine,
+    setProcessEnvironmentVector, setShouldLog, setTelemetry, setVMExports, setVmRunOnWorkerThread,
+    sqExport, sqInt, takeTelemetry, vm_init, vm_parameters_ensure_interactive_image_parameter,
+    vm_run_interpreter, InterpreterTelemetry, VirtualMachine,
 };
 use crate::parameters::InterpreterParameters;
 use crate::prelude::NativeAccess;
@@ -55,6 +55,27 @@ impl PharoInterpreter {
         should_log: Option<unsafe extern "C" fn(log_type: *const c_char) -> bool>,
     ) {
         unsafe { setShouldLog(should_log) };
+    }
+
+    pub fn set_telemetry(&self, interpreter_telemetry: InterpreterTelemetry) {
+        unsafe { setTelemetry(Box::into_raw(Box::new(interpreter_telemetry))) };
+    }
+
+    pub fn take_telemetry(&self) -> Option<InterpreterTelemetry> {
+        let telemetry = unsafe { takeTelemetry() };
+        if telemetry.is_null() {
+            None
+        } else {
+            Some(unsafe { *Box::from_raw(telemetry) })
+        }
+    }
+
+    pub fn enable_telemetry(&self) {
+        unsafe { enableTelemetry() };
+    }
+
+    pub fn disable_telemetry(&self) {
+        unsafe { disableTelemetry() };
     }
 
     /// Launch the vm according to the configuration

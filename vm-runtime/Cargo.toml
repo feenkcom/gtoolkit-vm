@@ -19,6 +19,7 @@ dirs = "5.0"
 log = "0.4"
 libc = "0.2"
 libffi = { version = "3.1", optional = true }
+phf = { version = "0.11" }
 
 [target.'cfg(target_os="macos")'.dependencies]
 core-foundation = "0.9.1"
@@ -31,6 +32,9 @@ android-activity = { version = "0.4.1", features = [ "native-activity" ] }
 [target.'cfg(not(any(target_arch = "wasm32")))'.dependencies]
 comfy-table = { version = "7.1", optional = true }
 colored = { version = "2", optional = true }
+
+[build-dependencies]
+phf_codegen = "0.11"
 
 [features]
 default = [ "full" ]

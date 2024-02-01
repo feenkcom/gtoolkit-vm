@@ -10,15 +10,18 @@ use std::thread::JoinHandle;
 use anyhow::Result;
 
 use vm_bindings::{
-    virtual_machine_info, InterpreterConfiguration, InterpreterProxy, LogLevel, NamedPrimitive,
+    virtual_machine_info, InterpreterConfiguration, InterpreterProxy, NamedPrimitive,
     ObjectFieldIndex, PharoInterpreter, StackOffset,
 };
 
 use crate::version::{app_info, app_version};
 use crate::{
-    log_signal, primitiveEnableLogSignal, primitiveGetEnabledLogSignals, primitivePollLogger,
-    primitiveStartBeacon, primitiveStartConsoleLogger, primitiveStopLogger, should_log_all_signals,
-    should_log_signal, ConsoleLogger, EventLoop, EventLoopMessage, EventLoopWaker, VM_LOGGER,
+    log_signal, primitiveAmountOfTelemetrySignals, primitiveDisableTelemetry,
+    primitiveDropTelemetry, primitiveEnableLogSignal, primitiveGetEnabledLogSignals,
+    primitivePollLogger, primitiveReifyTelemetrySignalAt, primitiveStartBeacon,
+    primitiveStartConsoleLogger, primitiveStartTelemetry, primitiveStopLogger,
+    primitiveStopTelemetry, should_log_all_signals, should_log_signal, ConsoleLogger, EventLoop,
+    EventLoopMessage, EventLoopWaker, VM_LOGGER,
 };
 #[cfg(feature = "ffi")]
 use crate::{primitiveEventLoopCallout, primitiveExtractReturnValue};
@@ -95,12 +98,21 @@ impl VirtualMachine {
         vm.add_primitive(primitive!(primitiveGetSemaphoreSignaller));
         vm.add_primitive(primitive!(primitiveGetEventLoop));
         vm.add_primitive(primitive!(primitiveGetEventLoopReceiver));
+        // telemetry
+        vm.add_primitive(primitive!(primitiveStartTelemetry));
+        vm.add_primitive(primitive!(primitiveStopTelemetry));
+        vm.add_primitive(primitive!(primitiveDisableTelemetry));
+        vm.add_primitive(primitive!(primitiveAmountOfTelemetrySignals));
+        vm.add_primitive(primitive!(primitiveReifyTelemetrySignalAt));
+        vm.add_primitive(primitive!(primitiveDropTelemetry));
+        // logger
         vm.add_primitive(primitive!(primitiveStopLogger));
         vm.add_primitive(primitive!(primitivePollLogger));
         vm.add_primitive(primitive!(primitiveEnableLogSignal));
         vm.add_primitive(primitive!(primitiveGetEnabledLogSignals));
         vm.add_primitive(primitive!(primitiveStartBeacon));
         vm.add_primitive(primitive!(primitiveStartConsoleLogger));
+
         vm.add_primitive(primitive!(primitiveSetEventLoopWaker));
         vm.add_primitive(primitive!(primitiveFullGarbageCollectorMicroseconds));
         vm.add_primitive(primitive!(primitiveScavengeGarbageCollectorMicroseconds));

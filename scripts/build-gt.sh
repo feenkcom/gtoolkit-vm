@@ -43,4 +43,4 @@ export CARGO_LOG=cargo::core::compiler::fingerprint=info
   --icons icons/GlamorousToolkit.icns \
   --executables app cli \
   -vvvv \
-  --libraries boxer cairo clipboard crypto freetype git gleam glutin process sdl2 skia winit pixels test-library
+  --libraries boxer cairo clipboard crypto filewatcher freetype git gleam glutin process sdl2 skia winit pixels test-library
