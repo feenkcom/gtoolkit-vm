@@ -273,13 +273,13 @@ CoInterpreterWithTelemetry >> ceReturnToInterpreter: anOop [
 	<api>
 
 	"we return from machine code to interpreter"
-	telemetryEnabled
+	"telemetryEnabled
 		ifTrue: [
 			telemetry
 				telemetrySignalReturn: (self iframeMethod: framePointer)
 				from: ReturnToInterpreterSignal
 				in: MachineToInterpreterCode
-				framePointer: framePointer ].
+				framePointer: framePointer ]."
 
 	super ceReturnToInterpreter: anOop
 ]
