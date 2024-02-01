@@ -32,6 +32,16 @@ StackToRegisterMappingCogitWithTelemetry >> compileFullBlockEntry [
 ]
 
 { #category : #accessing }
+StackToRegisterMappingCogitWithTelemetry >> compileMethodBody [
+	"quick primitives"
+	endPC < initialPC ifTrue: [
+		backEnd saveAndRestoreLinkRegAround: [ self CallRT: telemetryLinkedReturnTrampoline ].
+		^0].
+	
+	^ super compileMethodBody
+]
+
+{ #category : #accessing }
 StackToRegisterMappingCogitWithTelemetry >> genBlockReturn [
 	super genBlockReturn.
 	
