@@ -32,19 +32,17 @@ StackToRegisterMappingCogitWithTelemetry >> compileFullBlockEntry [
 ]
 
 { #category : #accessing }
-StackToRegisterMappingCogitWithTelemetry >> compileMethodBody [
-	<inline: true>
-	| result |
-	"Compile the top-level method body."
-	endPC < initialPC ifTrue: [ ^ 0 ].	"quick primitives"	"When compiling, skip any initial CallPrimitive and optional StorePrimErrCode bytecodes.
-	 These are dealt with in compileFrameBuild."
-	result := self
-			compileAbstractInstructionsFrom: initialPC
-					+ (self deltaToSkipPrimAndErrorStoreIn: methodObj header: methodHeader)
-			through: endPC.
+StackToRegisterMappingCogitWithTelemetry >> genBlockReturn [
 	backEnd
 		saveAndRestoreLinkRegAround: [ self CallRT: telemetryLinkedReturnTrampoline ].
-	^ result
+	^ super genBlockReturn
+]
+
+{ #category : #accessing }
+StackToRegisterMappingCogitWithTelemetry >> genUpArrowReturn [
+	backEnd
+		saveAndRestoreLinkRegAround: [ self CallRT: telemetryLinkedReturnTrampoline ].
+	^ super genUpArrowReturn
 ]
 
 { #category : #accessing }
