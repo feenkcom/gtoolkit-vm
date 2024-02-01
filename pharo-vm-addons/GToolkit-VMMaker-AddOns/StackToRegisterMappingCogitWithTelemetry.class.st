@@ -33,16 +33,28 @@ StackToRegisterMappingCogitWithTelemetry >> compileFullBlockEntry [
 
 { #category : #accessing }
 StackToRegisterMappingCogitWithTelemetry >> genBlockReturn [
-	backEnd
-		saveAndRestoreLinkRegAround: [ self CallRT: telemetryLinkedReturnTrampoline ].
-	^ super genBlockReturn
+	super genBlockReturn.
+	
+	"emit signal after framePointer is set"
+	backEnd saveAndRestoreLinkRegAround: [ self CallRT: telemetryLinkedReturnTrampoline ].
+
+	^ 0
 ]
 
 { #category : #accessing }
 StackToRegisterMappingCogitWithTelemetry >> genUpArrowReturn [
-	backEnd
-		saveAndRestoreLinkRegAround: [ self CallRT: telemetryLinkedReturnTrampoline ].
-	^ super genUpArrowReturn
+	"We should emit return signal only after the framePointer is set. Therefore
+		- when returning from block emit the signal before generator
+		- and after when returning from a method"
+	inBlock > 0 ifTrue: [
+		backEnd saveAndRestoreLinkRegAround: [ self CallRT: telemetryLinkedReturnTrampoline ] ].
+
+	super genUpArrowReturn.
+
+	inBlock > 0 ifFalse: [
+		backEnd saveAndRestoreLinkRegAround: [ self CallRT: telemetryLinkedReturnTrampoline ] ].
+
+	^ 0
 ]
 
 { #category : #accessing }
