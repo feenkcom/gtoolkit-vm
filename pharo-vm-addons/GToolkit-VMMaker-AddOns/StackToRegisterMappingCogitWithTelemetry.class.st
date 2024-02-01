@@ -43,12 +43,10 @@ StackToRegisterMappingCogitWithTelemetry >> compileMethodBody [
 
 { #category : #accessing }
 StackToRegisterMappingCogitWithTelemetry >> genBlockReturn [
-	super genBlockReturn.
-	
 	"emit signal after framePointer is set"
 	backEnd saveAndRestoreLinkRegAround: [ self CallRT: telemetryLinkedReturnTrampoline ].
-
-	^ 0
+	
+	^ super genBlockReturn
 ]
 
 { #category : #accessing }
