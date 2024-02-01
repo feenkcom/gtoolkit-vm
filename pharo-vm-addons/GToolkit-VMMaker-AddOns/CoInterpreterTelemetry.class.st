@@ -83,7 +83,7 @@ CoInterpreterTelemetry >> telemetrySignalMethodSwitch: aMethod framePointer: aFP
 ]
 
 { #category : #signalling }
-CoInterpreterTelemetry >> telemetrySignalReturn: aMethod from: sourceId in: executionLocation framePointer: aFP [
+CoInterpreterTelemetry >> telemetrySignalReturn: aSelector from: sourceId in: executionLocation framePointer: aFP [
 	<inline: false>
 	<var: #sourceId type: 'uint8_t'>
 	<var: #executionLocation type: 'uint8_t'>
@@ -92,7 +92,7 @@ CoInterpreterTelemetry >> telemetrySignalReturn: aMethod from: sourceId in: exec
 	self
 		perform: self returnFn
 		with: self payload
-		with: aMethod
+		with: aSelector
 		with: sourceId
 		with: executionLocation
 		with: aFP

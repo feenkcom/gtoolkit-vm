@@ -100,7 +100,7 @@ CoInterpreterWithTelemetry class >> generate [
 		stopOnErrors: false;
 		internal: #() external: #();
 		generateInterpreterFile
-		;generateCogitFiles ] valueSupplyingAnswer: true.
+		";generateCogitFiles" ] valueSupplyingAnswer: true.
 
 	^ platformDirectory
 ]
@@ -243,15 +243,17 @@ CoInterpreterWithTelemetry >> ceInterpretMethodFromPIC: aMethodObj receiver: rcv
 { #category : #'bytecode - return' }
 CoInterpreterWithTelemetry >> ceNonLocalReturn: returnValue [
 	<api>
+	<var: #returnValue type: #'sqInt'>
+	<returnTypeC: #'sqInt'>
 	
 	telemetryEnabled ifTrue: [
 		telemetry
-			telemetrySignalReturn: (self frameSelector: framePointer)
+			telemetrySignalReturn: 0"(self frameSelector: framePointer)"
 			from: NonLocalReturnSignal
 			in: MachineCode
 			framePointer: framePointer ].
 
-	super ceNonLocalReturn: returnValue
+	^ super ceNonLocalReturn: returnValue
 ]
 
 { #category : #'bytecode - return' }
@@ -265,7 +267,7 @@ CoInterpreterWithTelemetry >> ceReturnToInterpreter: anOop [
 	telemetryEnabled
 		ifTrue: [
 			telemetry
-				telemetrySignalReturn: (self frameSelector: framePointer)
+				telemetrySignalReturn: 0"(self frameSelector: framePointer)"
 				from: ReturnToInterpreterSignal
 				in: MachineToInterpreterCode
 				framePointer: framePointer ].
@@ -323,12 +325,13 @@ CoInterpreterWithTelemetry >> ceSendFromInLineCacheMiss: cogMethodOrPIC [
 	super ceSendFromInLineCacheMiss: cogMethodOrPIC
 ]
 
-{ #category : #accessing }
+{ #category : #'bytecode - return' }
 CoInterpreterWithTelemetry >> commonCallerReturn [
+	<returnTypeC: #void>
 	telemetryEnabled
 		ifTrue: [
 			telemetry
-				telemetrySignalReturn: (self frameSelector: framePointer)
+				telemetrySignalReturn: 0
 				from: 20
 				in: InterpreterCode
 				framePointer: framePointer ].
@@ -374,11 +377,11 @@ CoInterpreterWithTelemetry >> doRecordContextSwitchTo: aNewProc [
 
 { #category : #'bytecode - return' }
 CoInterpreterWithTelemetry >> emitReturnMachineSignalFromBaseFrame [
-	<var: #cogMethod type: #'CogMethod *'>
+	<inline: true>
 	
 	telemetryEnabled ifTrue: [
 		telemetry
-			telemetrySignalReturn: (self frameSelector: framePointer)
+			telemetrySignalReturn: 0"(self frameSelector: framePointer)"
 			from: BaseFrameReturnSignal
 			in: MachineCode
 			framePointer: framePointer ]
@@ -386,9 +389,11 @@ CoInterpreterWithTelemetry >> emitReturnMachineSignalFromBaseFrame [
 
 { #category : #'bytecode - return' }
 CoInterpreterWithTelemetry >> emitReturnStackSignalFromBaseFrame [
+	<inline: true>
+
 	telemetryEnabled ifTrue: [
 		telemetry
-			telemetrySignalReturn: (self frameSelector: framePointer)
+			telemetrySignalReturn: 0"(self frameSelector: framePointer)"
 			from: BaseFrameReturnSignal
 			in: MachineToInterpreterCode
 			framePointer: framePointer ]
@@ -450,7 +455,7 @@ CoInterpreterWithTelemetry >> externalAboutToReturn: resultOop through: aContext
 	telemetryEnabled
 		ifTrue: [
 			telemetry
-				telemetrySignalReturn: (self frameSelector: framePointer)
+				telemetrySignalReturn: 0"(self frameSelector: framePointer)"
 				from: ExternalAboutToReturnThroughSignal
 				in: MachineCode
 				framePointer: framePointer ].
@@ -460,8 +465,10 @@ CoInterpreterWithTelemetry >> externalAboutToReturn: resultOop through: aContext
 
 { #category : #accessing }
 CoInterpreterWithTelemetry >> frameSelector: theFP [
-	<api>
 	<var: #cogMethod type: #'CogMethod *'>
+	<var: #theFP type: #'char *'>
+	<var: #theMethod type: #'sqInt'>
+	<returnTypeC: #'sqInt'>
 
 	(self isMachineCodeFrame: theFP)
 	 ifTrue: [
@@ -471,10 +478,10 @@ CoInterpreterWithTelemetry >> frameSelector: theFP [
 	 		ifFalse: [ cogMethod := self mframeMethod: theFP ].
 	 	^ cogMethod selector ]
 	 ifFalse: [
-	 	| aMethod |
+	 	| theMethod |
 	 	
-	 	aMethod := self iframeMethod: theFP.
-	 	^ self findSelectorOfMethod: aMethod ]
+	 	theMethod := self iframeMethod: theFP.
+	 	^ self findSelectorOfMethod: theMethod ]
 ]
 
 { #category : #'bytecode - send' }
@@ -491,7 +498,7 @@ CoInterpreterWithTelemetry >> maybeReturnToMachineCodeFrame [
 	telemetryEnabled
 		ifTrue: [
 			telemetry
-				telemetrySignalReturn: (self frameSelector: framePointer)
+				telemetrySignalReturn: 0"(self frameSelector: framePointer)"
 				from: MaybeReturnToMachineCodeFrameSignal
 				in: InterpreterCode
 				framePointer: framePointer ]
@@ -505,13 +512,13 @@ CoInterpreterWithTelemetry >> return: returnValue toExecutive: inInterpreter [
 		(self isMachineCodeFrame: framePointer)
 			ifTrue: [
 				telemetry
-					telemetrySignalReturn: (self frameSelector: framePointer)
+					telemetrySignalReturn: 0"(self frameSelector: framePointer)"
 					from: ReturnToExecutiveSignal
 					in: MachineCode
 					framePointer: framePointer ]
 			ifFalse: [
 				telemetry
-					telemetrySignalReturn: (self frameSelector: framePointer)
+					telemetrySignalReturn: 0"(self frameSelector: framePointer)"
 					from: ReturnToExecutiveSignal
 					in: InterpreterCode
 					framePointer: framePointer ] ].
@@ -543,13 +550,13 @@ CoInterpreterWithTelemetry >> returnToExecutive: inInterpreter postContextSwitch
 		(self isMachineCodeFrame: framePointer)
 			ifTrue: [
 				telemetry
-					telemetrySignalReturn: (self frameSelector: framePointer)
+					telemetrySignalReturn: 0"(self frameSelector: framePointer)"
 					from: switchType
 					in: MachineCode
 					framePointer: framePointer ]
 			ifFalse: [
 				telemetry
-					telemetrySignalReturn: (self frameSelector: framePointer)
+					telemetrySignalReturn: 0"(self frameSelector: framePointer)"
 					from: switchType
 					in: InterpreterCode
 					framePointer: framePointer ] ].
@@ -571,7 +578,7 @@ CoInterpreterWithTelemetry >> returnToMachineCodeFrame [
 			 - self mframeHomeMethod: framePointer.
 			 - method'.
 			telemetry
-				telemetrySignalReturn: (self frameSelector: framePointer)
+				telemetrySignalReturn: 0"(self frameSelector: framePointer)"
 				from: ReturnToMachineCodeFrameSignal
 				in: InterpreterToMachineCode
 				framePointer: framePointer ].
@@ -579,14 +586,15 @@ CoInterpreterWithTelemetry >> returnToMachineCodeFrame [
 	super returnToMachineCodeFrame
 ]
 
-{ #category : #accessing }
+{ #category : #'bytecode - return' }
 CoInterpreterWithTelemetry >> returnTopFromBlock [
 	"Return top-of-stack to the caller of the current block activation."
-
+	<returnTypeC: #void>
+	
 	telemetryEnabled
 		ifTrue: [
 			telemetry
-				telemetrySignalReturn: objectMemory nilObject
+				telemetrySignalReturn: 0"(self frameSelector: framePointer)"
 				from: 21
 				in: InterpreterCode
 				framePointer: framePointer ].
