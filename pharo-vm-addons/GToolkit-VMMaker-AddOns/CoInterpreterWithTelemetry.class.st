@@ -213,6 +213,21 @@ CoInterpreterWithTelemetry >> ceSend: selector above: methodClass to: rcvr numAr
 ]
 
 { #category : #accessing }
+CoInterpreterWithTelemetry >> ceSend: selector super: superNormalBar to: rcvr numArgs: numArgs [
+	<api>
+	<inline: false>
+	
+	telemetryEnabled
+		ifTrue: [
+			self
+				emitSendSignal: selector
+				receiver: rcvr
+				sourceId: 7 ].
+	
+	super ceSend: selector super: superNormalBar to: rcvr numArgs: numArgs
+]
+
+{ #category : #accessing }
 CoInterpreterWithTelemetry >> ceSendFromInLineCacheMiss: cogMethodOrPIC [
 	<api>
 	<var: #cogMethodOrPIC type: #'CogMethod *'>
