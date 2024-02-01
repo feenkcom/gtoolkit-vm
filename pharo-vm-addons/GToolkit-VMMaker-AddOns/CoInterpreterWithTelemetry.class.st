@@ -185,13 +185,13 @@ CoInterpreterWithTelemetry >> ceReturnToInterpreter: anOop [
 	<api>
 
 	"we return from machine code to interpreter"
-	"telemetryEnabled
+	telemetryEnabled
 		ifTrue: [
 			telemetry
 				telemetrySignalReturn: (self iframeMethod: framePointer)
 				from: ReturnToInterpreterSignal
 				in: MachineToInterpreterCode
-				framePointer: framePointer ]."
+				framePointer: framePointer ].
 
 	super ceReturnToInterpreter: anOop
 ]
@@ -226,6 +226,18 @@ CoInterpreterWithTelemetry >> commonCallerReturn [
 				framePointer: framePointer ].
 
 	super commonCallerReturn
+]
+
+{ #category : #accessing }
+CoInterpreterWithTelemetry >> commonSendOrdinary [
+	telemetryEnabled
+		ifTrue: [
+			self
+				emitSendSignal: messageSelector
+				receiver: (self stackValue: argumentCount)
+				sourceId: 5 ].
+
+	super commonSendOrdinary
 ]
 
 { #category : #'accessing - telemetry' }
@@ -467,7 +479,7 @@ CoInterpreterWithTelemetry >> returnTopFromBlock [
 CoInterpreterWithTelemetry >> sendBreakpoint: selector receiver: rcvr [
 	<inline: true>
 
-	self emitSendSignal: selector receiver: rcvr sourceId: 4.
+	"self emitSendSignal: selector receiver: rcvr sourceId: 4."
 	super sendBreakpoint: selector receiver: rcvr
 ]
 
