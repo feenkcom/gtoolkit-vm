@@ -30,7 +30,7 @@ StackToRegisterMappingCogitWithTelemetry class >> initializePrimitiveTable [
 	
 	toOverride := #(
 		(198 genPrimitiveMarkUnwindMethodWithTelemetry)
-		(199 genPrimitiveMarkHandlerMethodWithTelemetry).
+		(199 genPrimitiveMarkHandlerMethodWithTelemetry)
 
 		(207 genPrimitiveFullClosureValueWithTelemetry) "value[:value:value:value:] et al"
 		(209 genPrimitiveFullClosureValueWithTelemetry) "valueNoContextSwitch[:value:] et al"
