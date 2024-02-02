@@ -48,18 +48,6 @@ StackToRegisterMappingCogitWithTelemetry >> compileMethodBody [
 ]
 
 { #category : #accessing }
-StackToRegisterMappingCogitWithTelemetry >> compilePrimitive [
-	"quick primitives"
-	
-	primitiveIndex = 0
-		ifTrue: [ ^ 0 ].
-	
-	backEnd saveAndRestoreLinkRegAround: [ self CallRT: telemetryPrimReturnTrampoline ].
-
-	^ super compilePrimitive
-]
-
-{ #category : #accessing }
 StackToRegisterMappingCogitWithTelemetry >> genBlockReturn [
 	backEnd saveAndRestoreLinkRegAround: [ self CallRT: telemetryBlockReturnTrampoline ].
 	
@@ -75,7 +63,7 @@ StackToRegisterMappingCogitWithTelemetry >> genEnilopmartReturn: forCall [
 
 { #category : #accessing }
 StackToRegisterMappingCogitWithTelemetry >> genPrimReturn [
-	"backEnd saveAndRestoreLinkRegAround: [ self CallRT: telemetryPrimReturnTrampoline ]."
+	backEnd saveAndRestoreLinkRegAround: [ self CallRT: telemetryPrimReturnTrampoline ].
 	
 	^ super genPrimReturn
 ]
@@ -92,8 +80,7 @@ StackToRegisterMappingCogitWithTelemetry >> genPrimitiveHashMultiply [
 	self MulR: TempReg R: ReceiverResultReg.
 	self AndCq: HashMultiplyMask R: ReceiverResultReg.
 	objectRepresentation genConvertIntegerToSmallIntegerInReg: ReceiverResultReg.
-	backEnd saveAndRestoreLinkRegAround: [ self CallRT: telemetryPrimReturnTrampoline ].
-	self RetN: 0.
+	self genPrimReturn.
 
 	jmpNotSmallInt jmpTarget: self Label.
 	jmpFailImm := objectRepresentation genJumpImmediate: ReceiverResultReg.
