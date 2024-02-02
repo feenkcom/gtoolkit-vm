@@ -12,7 +12,8 @@ Class {
 		'telemetryInterpreterPrimitiveReturnTrampoline',
 		'telemetryMachineCodePrimitiveReturnTrampoline',
 		'telemetryPrimitiveActivationTrampoline',
-		'telemetryPrimitiveMayCallMethodsTrampoline'
+		'telemetryPrimitiveMayCallMethodsTrampoline',
+		'telemetryPrimitiveDeactivationTrampoline'
 	],
 	#category : #'GToolkit-VMMaker-AddOns-Telemetry'
 }
@@ -75,12 +76,17 @@ StackToRegisterMappingCogitWithTelemetry >> compileMethodBody [
 { #category : #accessing }
 StackToRegisterMappingCogitWithTelemetry >> compilePrimitive [
 	<inline: false>
+	| result |
 	primitiveIndex = 0
 		ifTrue: [ ^ 0 ].
 
 	backEnd saveAndRestoreLinkRegAround: [ self CallRT: telemetryPrimitiveActivationTrampoline ].
 
-	^ super compilePrimitive
+	result := super compilePrimitive.
+
+	backEnd saveAndRestoreLinkRegAround: [ self CallRT: telemetryPrimitiveDeactivationTrampoline ].
+
+	^ result
 ]
 
 { #category : #accessing }
@@ -186,6 +192,11 @@ StackToRegisterMappingCogitWithTelemetry >> generateTracingTrampolines [
 	telemetryPrimitiveActivationTrampoline :=
 		self genTrampolineFor: #telemetryTrampolineEmitPrimitiveActivation
 			called: 'telemetryPrimitiveActivationTrampoline'
+			regsToSave: CallerSavedRegisterMask.
+
+	telemetryPrimitiveDeactivationTrampoline :=
+		self genTrampolineFor: #telemetryTrampolineEmitPrimitiveDeactivation
+			called: 'telemetryPrimitiveDeactivationTrampoline'
 			regsToSave: CallerSavedRegisterMask.
 	
 	telemetryPrimitiveMayCallMethodsTrampoline :=

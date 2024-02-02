@@ -710,6 +710,14 @@ CoInterpreterWithTelemetry >> telemetryTrampolineEmitPrimitiveActivation [
 ]
 
 { #category : #'emitting signals' }
+CoInterpreterWithTelemetry >> telemetryTrampolineEmitPrimitiveDeactivation [
+	<api>
+	
+	telemetryEnabled
+		ifTrue: [ telemetry telemetrySignalPrimitiveDeactivation ]
+]
+
+{ #category : #'emitting signals' }
 CoInterpreterWithTelemetry >> telemetryTrampolineEmitPrimitiveMayCallMethods [
 	<api>
 	telemetryEnabled

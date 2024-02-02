@@ -82,6 +82,17 @@ CoInterpreterTelemetry >> telemetrySignalPrimitiveActivation [
 ]
 
 { #category : #signalling }
+CoInterpreterTelemetry >> telemetrySignalPrimitiveDeactivation [
+	<inline: false>
+	<returnTypeC:'void'>
+	
+	self
+		perform: self primitiveActivationFn
+		with: self payload
+		with: 0
+]
+
+{ #category : #signalling }
 CoInterpreterTelemetry >> telemetrySignalPrimitiveMayCallMethods [
 	<inline: false>
 	<returnTypeC:'void'>
