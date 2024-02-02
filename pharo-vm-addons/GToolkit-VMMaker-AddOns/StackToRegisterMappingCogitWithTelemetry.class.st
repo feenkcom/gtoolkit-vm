@@ -51,6 +51,7 @@ StackToRegisterMappingCogitWithTelemetry >> compileMethodBody [
 
 { #category : #accessing }
 StackToRegisterMappingCogitWithTelemetry >> compilePrimitive [
+	<inline: false>
 	primitiveIndex = 0
 		ifTrue: [ ^ 0 ].
 
@@ -76,7 +77,6 @@ StackToRegisterMappingCogitWithTelemetry >> genEnilopmartReturn: forCall [
 { #category : #accessing }
 StackToRegisterMappingCogitWithTelemetry >> genPrimReturn [
 	backEnd saveAndRestoreLinkRegAround: [ self CallRT: telemetryPrimReturnTrampoline ].
-	
 	^ super genPrimReturn
 ]
 
@@ -89,7 +89,7 @@ StackToRegisterMappingCogitWithTelemetry >> genPrimitiveFullClosureValue [
 { #category : #accessing }
 StackToRegisterMappingCogitWithTelemetry >> genPrimitivePerform [
 	backEnd saveAndRestoreLinkRegAround: [ self CallRT: telemetryPrimitiveMayCallMethodsTrampoline ].
-	^ super genPrimitiveFullClosureValue
+	^ super genPrimitivePerform
 ]
 
 { #category : #accessing }

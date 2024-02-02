@@ -109,7 +109,7 @@ CoInterpreterWithTelemetry class >> generate [
 		stopOnErrors: false;
 		internal: #() external: #();
 		generateInterpreterFile
-		";generateCogitFiles" ] valueSupplyingAnswer: true.
+		;generateCogitFiles ] valueSupplyingAnswer: true.
 
 	^ platformDirectory
 ]
