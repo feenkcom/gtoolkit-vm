@@ -24,6 +24,21 @@ StackToRegisterMappingCogitWithTelemetry class >> declareCVarsIn: aCCodeGenerato
 ]
 
 { #category : #accessing }
+StackToRegisterMappingCogitWithTelemetry class >> initializePrimitiveTable [
+	| toOverride |
+	super initializePrimitiveTable.
+	
+	toOverride := #(
+		(207 genPrimitiveFullClosureValueWithTelemetry) "value[:value:value:value:] et al"
+		(209 genPrimitiveFullClosureValueWithTelemetry) "valueNoContextSwitch[:value:] et al"
+	).
+	
+	toOverride do: [ :each | primitiveTable at: each first put: nil ].
+	
+	self table: primitiveTable from: toOverride
+]
+
+{ #category : #accessing }
 StackToRegisterMappingCogitWithTelemetry class >> numTrampolines [
 	^ super numTrampolines + (self instVarNames select: [ :each | each endsWith: #'Trampoline' ]) size
 ]
@@ -81,15 +96,18 @@ StackToRegisterMappingCogitWithTelemetry >> genEnilopmartReturn: forCall [
 
 { #category : #accessing }
 StackToRegisterMappingCogitWithTelemetry >> genPrimReturn [
+	<inline: true>
 	backEnd saveAndRestoreLinkRegAround: [ self CallRT: telemetryPrimReturnTrampoline ].
 	^ super genPrimReturn
 ]
 
 { #category : #accessing }
-StackToRegisterMappingCogitWithTelemetry >> genPrimitiveFullClosureValue [
+StackToRegisterMappingCogitWithTelemetry >> genPrimitiveFullClosureValueWithTelemetry [
+	| code |
 	<option: #SistaV1BytecodeSet>
 	backEnd saveAndRestoreLinkRegAround: [ self CallRT: telemetryPrimitiveMayCallMethodsTrampoline ].
-	^ super genPrimitiveFullClosureValue
+	code := self genPrimitiveFullClosureValue.
+	^ code
 ]
 
 { #category : #accessing }
