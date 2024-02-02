@@ -26,6 +26,7 @@ Class {
 		'MachineToInterpreterCode',
 		'MaybeReturnToMachineCodeFrameSignal',
 		'NonLocalReturnSignal',
+		'PrimReturnTrampolineSignal',
 		'QuickPrimitiveReturnTrampolineSignal',
 		'ReturnToExecutivePostContextWithSwitchSignal',
 		'ReturnToExecutivePostContextWithoutSwitchSignal',
@@ -136,6 +137,7 @@ CoInterpreterWithTelemetry class >> initialize [
 	BlockReturnTrampolineSignal := 22.
 	EnilopmartReturnTrampolineSignal := 23.
 	QuickPrimitiveReturnTrampolineSignal := 24.
+	PrimReturnTrampolineSignal := 25
 ]
 
 { #category : #accessing }
@@ -652,7 +654,7 @@ CoInterpreterWithTelemetry >> telemetryEmitLinkedSend: theReceiver [
 				sourceId: 1 ]
 ]
 
-{ #category : #'bytecode - return' }
+{ #category : #'emitting signals' }
 CoInterpreterWithTelemetry >> telemetryTrampolineEmitArrowReturn [
 	<api>
 	telemetryEnabled
@@ -662,7 +664,7 @@ CoInterpreterWithTelemetry >> telemetryTrampolineEmitArrowReturn [
 				framePointer: framePointer ]
 ]
 
-{ #category : #'bytecode - return' }
+{ #category : #'emitting signals' }
 CoInterpreterWithTelemetry >> telemetryTrampolineEmitBlockReturn [
 	<api>
 	telemetryEnabled
@@ -672,7 +674,7 @@ CoInterpreterWithTelemetry >> telemetryTrampolineEmitBlockReturn [
 				framePointer: framePointer ]
 ]
 
-{ #category : #'bytecode - return' }
+{ #category : #'emitting signals' }
 CoInterpreterWithTelemetry >> telemetryTrampolineEmitEnilopmartReturn [
 	<api>
 	telemetryEnabled
@@ -682,12 +684,22 @@ CoInterpreterWithTelemetry >> telemetryTrampolineEmitEnilopmartReturn [
 				framePointer: framePointer ]
 ]
 
-{ #category : #'bytecode - return' }
+{ #category : #'emitting signals' }
 CoInterpreterWithTelemetry >> telemetryTrampolineEmitQuickPrimitiveReturn [
 	<api>
 	telemetryEnabled
 		ifTrue: [ telemetry
 				telemetrySignalReturnFrom: QuickPrimitiveReturnTrampolineSignal
+				in: MachineCode
+				framePointer: framePointer ]
+]
+
+{ #category : #'emitting signals' }
+CoInterpreterWithTelemetry >> telemetryTrampolinePrimReturn [
+	<api>
+	telemetryEnabled
+		ifTrue: [ telemetry
+				telemetrySignalReturnFrom: PrimReturnTrampolineSignal
 				in: MachineCode
 				framePointer: framePointer ]
 ]
