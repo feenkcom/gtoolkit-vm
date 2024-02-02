@@ -187,7 +187,6 @@ StackToRegisterMappingCogitWithTelemetry >> compileMachineCodeInterpreterPrimiti
 	 on the Smalltalk stack, assuming it consumes little or no stack space."
 	<var: #primitiveRoutine declareC: 'void (*primitiveRoutine)(void)'>
 	| jmpFail liveRegsMask |
-	
 
 	"for now handle functions with less than 4 arguments; our C call marshalling machinery
 	 extends up to 4 arguments only, and the first argument of an mcprim is the receiver."
@@ -212,7 +211,7 @@ StackToRegisterMappingCogitWithTelemetry >> compileMachineCodeInterpreterPrimiti
 		 self shouldBeImplemented].
 
 	backEnd prepareStackToCallCFunctionInSmalltalkStack: methodOrBlockNumArgs + 1.
-	
+
 	backEnd
 		genMarshallNArgs: methodOrBlockNumArgs + 1
 		arg: ReceiverResultReg
@@ -274,6 +273,33 @@ StackToRegisterMappingCogitWithTelemetry >> genPrimReturn [
 	backEnd saveAndRestoreLinkRegAround: [ self CallRT: telemetryPrimReturnTrampoline ].
 	
 	^ super genPrimReturn
+]
+
+{ #category : #accessing }
+StackToRegisterMappingCogitWithTelemetry >> genPrimitiveHashMultiply [
+	"Implement 28-bit hashMultiply for SmallInteger and LargePositiveInteger receivers."
+	| jmpFailImm jmpFailNonImm jmpNotSmallInt reenter |
+	jmpNotSmallInt := objectRepresentation genJumpNotSmallInteger: ReceiverResultReg.
+
+	objectRepresentation genConvertSmallIntegerToIntegerInReg: ReceiverResultReg.
+	reenter :=
+	self MoveCq: HashMultiplyConstant R: TempReg.
+	self MulR: TempReg R: ReceiverResultReg.
+	self AndCq: HashMultiplyMask R: ReceiverResultReg.
+	objectRepresentation genConvertIntegerToSmallIntegerInReg: ReceiverResultReg.
+	backEnd saveAndRestoreLinkRegAround: [ self CallRT: telemetryPrimReturnTrampoline ].
+	self RetN: 0.
+
+	jmpNotSmallInt jmpTarget: self Label.
+	jmpFailImm := objectRepresentation genJumpImmediate: ReceiverResultReg.
+	objectRepresentation genGetCompactClassIndexNonImmOf: ReceiverResultReg into: ClassReg.
+	self CmpCq: ClassLargePositiveIntegerCompactIndex R: ClassReg.
+	jmpFailNonImm := self JumpNonZero: 0.
+	objectRepresentation genLoadSlot: 0 sourceReg: ReceiverResultReg destReg: ReceiverResultReg.
+	self Jump: reenter.
+
+	jmpFailImm jmpTarget: (jmpFailNonImm jmpTarget: self Label).
+	^0
 ]
 
 { #category : #accessing }
