@@ -109,7 +109,7 @@ StackToRegisterMappingCogitWithTelemetry >> generateTracingTrampolines [
 
 	telemetryPrimReturnTrampoline :=
 		self genTrampolineFor: #telemetryTrampolinePrimReturn
-			called: 'telemetryEnilopmartReturnTrampoline'
+			called: 'telemetryPrimReturnTrampoline'
 			arg: NoReg
 			regsToSave: CallerSavedRegisterMask.
 
