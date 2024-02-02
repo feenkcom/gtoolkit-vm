@@ -7,3 +7,15 @@ CogObjectRepresentation >> genPrimitiveFullClosureValueWithTelemetry [
 	<option: #SistaV1BytecodeSet>
 	^cogit genPrimitiveFullClosureValueWithTelemetry
 ]
+
+{ #category : #'*GToolkit-VMMaker-AddOns' }
+CogObjectRepresentation >> genPrimitiveMarkHandlerMethodWithTelemetry [
+	<doNotGenerate>
+	^cogit genPrimitiveMarkHandlerMethodWithTelemetry
+]
+
+{ #category : #'*GToolkit-VMMaker-AddOns' }
+CogObjectRepresentation >> genPrimitiveMarkUnwindMethodWithTelemetry [
+	<doNotGenerate>
+	^cogit genPrimitiveMarkUnwindMethodWithTelemetry
+]
