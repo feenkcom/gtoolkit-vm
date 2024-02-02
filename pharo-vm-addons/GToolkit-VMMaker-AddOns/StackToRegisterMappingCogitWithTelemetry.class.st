@@ -24,6 +24,11 @@ StackToRegisterMappingCogitWithTelemetry class >> declareCVarsIn: aCCodeGenerato
 ]
 
 { #category : #accessing }
+StackToRegisterMappingCogitWithTelemetry class >> numTrampolines [
+	^ super numTrampolines + (self instVarNames select: [ :each | each endsWith: #'Trampoline' ]) size
+]
+
+{ #category : #accessing }
 StackToRegisterMappingCogitWithTelemetry >> compileEntry [
 	super compileEntry.
 	
@@ -82,6 +87,7 @@ StackToRegisterMappingCogitWithTelemetry >> genPrimReturn [
 
 { #category : #accessing }
 StackToRegisterMappingCogitWithTelemetry >> genPrimitiveFullClosureValue [
+	<option: #SistaV1BytecodeSet>
 	backEnd saveAndRestoreLinkRegAround: [ self CallRT: telemetryPrimitiveMayCallMethodsTrampoline ].
 	^ super genPrimitiveFullClosureValue
 ]
