@@ -32,7 +32,8 @@ Class {
 		'ReturnToExecutivePostContextWithoutSwitchSignal',
 		'ReturnToExecutiveSignal',
 		'ReturnToInterpreterSignal',
-		'ReturnToMachineCodeFrameSignal'
+		'ReturnToMachineCodeFrameSignal',
+		'SlowPrimitiveReturnSignal'
 	],
 	#category : #'GToolkit-VMMaker-AddOns-Telemetry'
 }
@@ -132,6 +133,7 @@ CoInterpreterWithTelemetry class >> initialize [
 	ReturnToExecutivePostContextWithoutSwitchSignal := 8.
 	NonLocalReturnSignal := 9.
 	CommonCallerReturnSignal := 10.
+	SlowPrimitiveReturnSignal := 11.
 	
 	ArrowReturnTrampolineSignal := 21.
 	BlockReturnTrampolineSignal := 22.
@@ -602,6 +604,20 @@ CoInterpreterWithTelemetry >> setTelemetry: interpreterTelemetry [
 	<var: #interpreterTelemetry type: #'CoInterpreterTelemetry *'>
 	
 	telemetry := interpreterTelemetry
+]
+
+{ #category : #'bytecode - return' }
+CoInterpreterWithTelemetry >> slowPrimitiveResponse [
+	| result |
+	<returnTypeC: #void>
+
+	result := super slowPrimitiveResponse.
+	telemetryEnabled
+		ifTrue: [ telemetry
+				telemetrySignalReturnFrom: SlowPrimitiveReturnSignal
+				in: InterpreterCode
+				framePointer: framePointer ].
+	^ result
 ]
 
 { #category : #'accessing - telemetry' }
