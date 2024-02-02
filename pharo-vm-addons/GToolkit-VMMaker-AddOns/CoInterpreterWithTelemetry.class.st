@@ -21,8 +21,10 @@ Class {
 		'EnilopmartReturnTrampolineSignal',
 		'ExternalAboutToReturnThroughSignal',
 		'InterpreterCode',
+		'InterpreterPrimitiveReturnTrampolineSignal',
 		'InterpreterToMachineCode',
 		'MachineCode',
+		'MachineCodePrimitiveReturnTrampolineSignal',
 		'MachineToInterpreterCode',
 		'MaybeReturnToMachineCodeFrameSignal',
 		'NonLocalReturnSignal',
@@ -705,6 +707,26 @@ CoInterpreterWithTelemetry >> telemetryTrampolineEmitQuickPrimitiveReturn [
 	telemetryEnabled
 		ifTrue: [ telemetry
 				telemetrySignalReturnFrom: QuickPrimitiveReturnTrampolineSignal
+				in: MachineCode
+				framePointer: framePointer ]
+]
+
+{ #category : #'emitting signals' }
+CoInterpreterWithTelemetry >> telemetryTrampolineInterpreterPrimitiveReturn [
+	<api>
+	telemetryEnabled
+		ifTrue: [ telemetry
+				telemetrySignalReturnFrom: InterpreterPrimitiveReturnTrampolineSignal
+				in: MachineCode
+				framePointer: framePointer ]
+]
+
+{ #category : #'emitting signals' }
+CoInterpreterWithTelemetry >> telemetryTrampolineMachineCodePrimitiveReturn [
+	<api>
+	telemetryEnabled
+		ifTrue: [ telemetry
+				telemetrySignalReturnFrom: MachineCodePrimitiveReturnTrampolineSignal
 				in: MachineCode
 				framePointer: framePointer ]
 ]
