@@ -609,7 +609,6 @@ CoInterpreterWithTelemetry >> setTelemetry: interpreterTelemetry [
 { #category : #'bytecode - return' }
 CoInterpreterWithTelemetry >> slowPrimitiveResponse [
 	| result |
-	<returnTypeC: #void>
 
 	result := super slowPrimitiveResponse.
 	telemetryEnabled
