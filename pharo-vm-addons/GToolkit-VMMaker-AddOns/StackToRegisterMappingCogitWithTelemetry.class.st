@@ -29,6 +29,9 @@ StackToRegisterMappingCogitWithTelemetry class >> initializePrimitiveTable [
 	super initializePrimitiveTable.
 	
 	toOverride := #(
+		(198 genPrimitiveMarkUnwindMethodWithTelemetry)
+		(199 genPrimitiveMarkHandlerMethodWithTelemetry).
+
 		(207 genPrimitiveFullClosureValueWithTelemetry) "value[:value:value:value:] et al"
 		(209 genPrimitiveFullClosureValueWithTelemetry) "valueNoContextSwitch[:value:] et al"
 	).
@@ -108,6 +111,18 @@ StackToRegisterMappingCogitWithTelemetry >> genPrimitiveFullClosureValueWithTele
 	backEnd saveAndRestoreLinkRegAround: [ self CallRT: telemetryPrimitiveMayCallMethodsTrampoline ].
 	code := self genPrimitiveFullClosureValue.
 	^ code
+]
+
+{ #category : #accessing }
+StackToRegisterMappingCogitWithTelemetry >> genPrimitiveMarkHandlerMethodWithTelemetry [
+	backEnd saveAndRestoreLinkRegAround: [ self CallRT: telemetryPrimitiveMayCallMethodsTrampoline ].
+	^ self genFastPrimFail
+]
+
+{ #category : #accessing }
+StackToRegisterMappingCogitWithTelemetry >> genPrimitiveMarkUnwindMethodWithTelemetry [
+	backEnd saveAndRestoreLinkRegAround: [ self CallRT: telemetryPrimitiveMayCallMethodsTrampoline ].
+	^ self genFastPrimFail
 ]
 
 { #category : #accessing }
