@@ -48,6 +48,32 @@ StackToRegisterMappingCogitWithTelemetry class >> numTrampolines [
 ]
 
 { #category : #accessing }
+StackToRegisterMappingCogitWithTelemetry >> compileEntireMethod [
+	"Compile the abstract instructions for the entire method, including blocks."
+	| result activationTrampoline|
+	self preenMethodLabel.
+	self compileAbort.
+	self compileEntry.
+	
+	activationTrampoline := 0.
+	primitiveIndex = 0
+		ifFalse: [
+			backEnd saveAndRestoreLinkRegAround: [ self CallRT: telemetryPrimitiveActivationTrampoline ].
+			activationTrampoline := 1 ].
+	
+	(result := self compilePrimitive) < 0
+		ifTrue: [
+			backEnd saveAndRestoreLinkRegAround: [ self CallRT: telemetryPrimitiveDeactivationTrampoline ].
+			^ result ].
+			
+	activationTrampoline = 1
+		ifTrue: [ backEnd saveAndRestoreLinkRegAround: [ self CallRT: telemetryPrimitiveDeactivationTrampoline ]. ].
+
+	self compileFrameBuild.
+	^ self compileMethodBody
+]
+
+{ #category : #accessing }
 StackToRegisterMappingCogitWithTelemetry >> compileEntry [
 	super compileEntry.
 	
@@ -71,22 +97,6 @@ StackToRegisterMappingCogitWithTelemetry >> compileMethodBody [
 		^0].
 	
 	^ super compileMethodBody
-]
-
-{ #category : #accessing }
-StackToRegisterMappingCogitWithTelemetry >> compilePrimitive [
-	<inline: false>
-	| result |
-	primitiveIndex = 0
-		ifTrue: [ ^ 0 ].
-
-	backEnd saveAndRestoreLinkRegAround: [ self CallRT: telemetryPrimitiveActivationTrampoline ].
-
-	result := super compilePrimitive.
-
-	backEnd saveAndRestoreLinkRegAround: [ self CallRT: telemetryPrimitiveDeactivationTrampoline ].
-
-	^ result
 ]
 
 { #category : #accessing }
