@@ -50,6 +50,20 @@ StackToRegisterMappingCogitWithTelemetry >> genBlockReturn [
 ]
 
 { #category : #accessing }
+StackToRegisterMappingCogitWithTelemetry >> genEnilopmartReturn: forCall [
+	backEnd saveAndRestoreLinkRegAround: [ self CallRT: telemetryLinkedReturnTrampoline ].
+	
+	^ super genEnilopmartReturn: forCall
+]
+
+{ #category : #accessing }
+StackToRegisterMappingCogitWithTelemetry >> genPrimReturn [
+	backEnd saveAndRestoreLinkRegAround: [ self CallRT: telemetryLinkedReturnTrampoline ].
+	
+	^ super genPrimReturn
+]
+
+{ #category : #accessing }
 StackToRegisterMappingCogitWithTelemetry >> genUpArrowReturn [
 	backEnd saveAndRestoreLinkRegAround: [ self CallRT: telemetryLinkedReturnTrampoline ].
 
