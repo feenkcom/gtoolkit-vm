@@ -14,7 +14,11 @@ Class {
 		'telemetrySendSelector'
 	],
 	#classVars : [
+		'ArrowReturnTrampolineSignal',
 		'BaseFrameReturnSignal',
+		'BlockReturnTrampolineSignal',
+		'CommonCallerReturnSignal',
+		'EnilopmartReturnTrampolineSignal',
 		'ExternalAboutToReturnThroughSignal',
 		'InterpreterCode',
 		'InterpreterToMachineCode',
@@ -22,6 +26,7 @@ Class {
 		'MachineToInterpreterCode',
 		'MaybeReturnToMachineCodeFrameSignal',
 		'NonLocalReturnSignal',
+		'QuickPrimitiveReturnTrampolineSignal',
 		'ReturnToExecutivePostContextWithSwitchSignal',
 		'ReturnToExecutivePostContextWithoutSwitchSignal',
 		'ReturnToExecutiveSignal',
@@ -124,7 +129,13 @@ CoInterpreterWithTelemetry class >> initialize [
 	BaseFrameReturnSignal := 6.
 	ReturnToExecutivePostContextWithSwitchSignal := 7.
 	ReturnToExecutivePostContextWithoutSwitchSignal := 8.
-	NonLocalReturnSignal := 9
+	NonLocalReturnSignal := 9.
+	CommonCallerReturnSignal := 10.
+	
+	ArrowReturnTrampolineSignal := 21.
+	BlockReturnTrampolineSignal := 22.
+	EnilopmartReturnTrampolineSignal := 23.
+	QuickPrimitiveReturnTrampolineSignal := 24.
 ]
 
 { #category : #accessing }
@@ -243,15 +254,13 @@ CoInterpreterWithTelemetry >> ceInterpretMethodFromPIC: aMethodObj receiver: rcv
 { #category : #'bytecode - return' }
 CoInterpreterWithTelemetry >> ceNonLocalReturn: returnValue [
 	<api>
-	<var: #returnValue type: #'sqInt'>
-	<returnTypeC: #'sqInt'>
-	
-	telemetryEnabled ifTrue: [
-		telemetry
-			telemetrySignalReturn: 0"(self frameSelector: framePointer)"
-			from: NonLocalReturnSignal
-			in: MachineCode
-			framePointer: framePointer ].
+	<var: #returnValue type: #sqInt>
+	<returnTypeC: #sqInt>
+	telemetryEnabled
+		ifTrue: [ telemetry
+				telemetrySignalReturnFrom: NonLocalReturnSignal
+				in: MachineCode
+				framePointer: framePointer	"(self frameSelector: framePointer)" ].
 
 	^ super ceNonLocalReturn: returnValue
 ]
@@ -261,16 +270,15 @@ CoInterpreterWithTelemetry >> ceReturnToInterpreter: anOop [
 	"Perform a return from a machine code frame to an interpreted frame.
 	 The machine code has executed a return instruction when the return address
 	 is set to ceReturnToInterpreterPC.  Return the result and switch to the interpreter."
-	<api>
 
 	"we return from machine code to interpreter"
+
+	<api>
 	telemetryEnabled
-		ifTrue: [
-			telemetry
-				telemetrySignalReturn: 0"(self frameSelector: framePointer)"
-				from: ReturnToInterpreterSignal
+		ifTrue: [ telemetry
+				telemetrySignalReturnFrom: ReturnToInterpreterSignal
 				in: MachineToInterpreterCode
-				framePointer: framePointer ].
+				framePointer: framePointer	"(self frameSelector: framePointer)" ].
 
 	super ceReturnToInterpreter: anOop
 ]
@@ -329,10 +337,8 @@ CoInterpreterWithTelemetry >> ceSendFromInLineCacheMiss: cogMethodOrPIC [
 CoInterpreterWithTelemetry >> commonCallerReturn [
 	<returnTypeC: #void>
 	telemetryEnabled
-		ifTrue: [
-			telemetry
-				telemetrySignalReturn: 0
-				from: 20
+		ifTrue: [ telemetry
+				telemetrySignalReturnFrom: CommonCallerReturnSignal
 				in: InterpreterCode
 				framePointer: framePointer ].
 
@@ -378,25 +384,21 @@ CoInterpreterWithTelemetry >> doRecordContextSwitchTo: aNewProc [
 { #category : #'bytecode - return' }
 CoInterpreterWithTelemetry >> emitReturnMachineSignalFromBaseFrame [
 	<inline: true>
-	
-	telemetryEnabled ifTrue: [
-		telemetry
-			telemetrySignalReturn: 0"(self frameSelector: framePointer)"
-			from: BaseFrameReturnSignal
-			in: MachineCode
-			framePointer: framePointer ]
+	telemetryEnabled
+		ifTrue: [ telemetry
+				telemetrySignalReturnFrom: BaseFrameReturnSignal
+				in: MachineCode
+				framePointer: framePointer	"(self frameSelector: framePointer)" ]
 ]
 
 { #category : #'bytecode - return' }
 CoInterpreterWithTelemetry >> emitReturnStackSignalFromBaseFrame [
 	<inline: true>
-
-	telemetryEnabled ifTrue: [
-		telemetry
-			telemetrySignalReturn: 0"(self frameSelector: framePointer)"
-			from: BaseFrameReturnSignal
-			in: MachineToInterpreterCode
-			framePointer: framePointer ]
+	telemetryEnabled
+		ifTrue: [ telemetry
+				telemetrySignalReturnFrom: BaseFrameReturnSignal
+				in: MachineToInterpreterCode
+				framePointer: framePointer	"(self frameSelector: framePointer)" ]
 ]
 
 { #category : #'bytecode - send' }
@@ -451,15 +453,12 @@ CoInterpreterWithTelemetry >> executeNewMethod: eagerlyCompile [
 { #category : #'bytecode - return' }
 CoInterpreterWithTelemetry >> externalAboutToReturn: resultOop through: aContext [
 	<inline: true>
-	
 	telemetryEnabled
-		ifTrue: [
-			telemetry
-				telemetrySignalReturn: 0"(self frameSelector: framePointer)"
-				from: ExternalAboutToReturnThroughSignal
+		ifTrue: [ telemetry
+				telemetrySignalReturnFrom: ExternalAboutToReturnThroughSignal
 				in: MachineCode
-				framePointer: framePointer ].
-	
+				framePointer: framePointer	"(self frameSelector: framePointer)" ].
+
 	super externalAboutToReturn: resultOop through: aContext
 ]
 
@@ -492,36 +491,27 @@ CoInterpreterWithTelemetry >> interpretMethodFromMachineCode [
 
 { #category : #'bytecode - return' }
 CoInterpreterWithTelemetry >> maybeReturnToMachineCodeFrame [
-	super maybeReturnToMachineCodeFrame.
-	
-	"we return from interpreter to interpreter"
+	super maybeReturnToMachineCodeFrame.	"we return from interpreter to interpreter"
 	telemetryEnabled
-		ifTrue: [
-			telemetry
-				telemetrySignalReturn: 0"(self frameSelector: framePointer)"
-				from: MaybeReturnToMachineCodeFrameSignal
+		ifTrue: [ telemetry
+				telemetrySignalReturnFrom: MaybeReturnToMachineCodeFrameSignal
 				in: InterpreterCode
-				framePointer: framePointer ]
+				framePointer: framePointer	"(self frameSelector: framePointer)" ]
 ]
 
 { #category : #'bytecode - return' }
 CoInterpreterWithTelemetry >> return: returnValue toExecutive: inInterpreter [
 	<var: #cogMethod type: #'CogMethod *'>
-
-	telemetryEnabled ifTrue: [
-		(self isMachineCodeFrame: framePointer)
-			ifTrue: [
-				telemetry
-					telemetrySignalReturn: 0"(self frameSelector: framePointer)"
-					from: ReturnToExecutiveSignal
-					in: MachineCode
-					framePointer: framePointer ]
-			ifFalse: [
-				telemetry
-					telemetrySignalReturn: 0"(self frameSelector: framePointer)"
-					from: ReturnToExecutiveSignal
-					in: InterpreterCode
-					framePointer: framePointer ] ].
+	telemetryEnabled
+		ifTrue: [ (self isMachineCodeFrame: framePointer)
+				ifTrue: [ telemetry
+						telemetrySignalReturnFrom: ReturnToExecutiveSignal
+						in: MachineCode
+						framePointer: framePointer	"(self frameSelector: framePointer)" ]
+				ifFalse: [ telemetry
+						telemetrySignalReturnFrom: ReturnToExecutiveSignal
+						in: InterpreterCode
+						framePointer: framePointer	"(self frameSelector: framePointer)" ] ].
 
 	super return: returnValue toExecutive: inInterpreter
 ]
@@ -535,53 +525,47 @@ CoInterpreterWithTelemetry >> returnToExecutive: inInterpreter postContextSwitch
 	 machine code.  The instructionPointer tells us where from.  If it is above startOfMemory we're
 	 in the interpreter.  If it is below, then we are in machine-code unless it is ceReturnToInterpreterPC,
 	 in which case we're in a machine-code primitive called from the interpreter."
+
+	"seems like it is not necessary to emit return here"
+
 	<inline: false>
 	<var: #cogMethod type: #'CogMethod *'>
-	
-	"seems like it is not necessary to emit return here"
-	
-	telemetryEnabled ifTrue: [
-		| switchType |
-		
-		switchedContext
-			ifTrue: [ switchType := ReturnToExecutivePostContextWithSwitchSignal ]
-			ifFalse: [ switchType := ReturnToExecutivePostContextWithoutSwitchSignal ].
-		
-		(self isMachineCodeFrame: framePointer)
-			ifTrue: [
-				telemetry
-					telemetrySignalReturn: 0"(self frameSelector: framePointer)"
-					from: switchType
-					in: MachineCode
-					framePointer: framePointer ]
-			ifFalse: [
-				telemetry
-					telemetrySignalReturn: 0"(self frameSelector: framePointer)"
-					from: switchType
-					in: InterpreterCode
-					framePointer: framePointer ] ].
+	telemetryEnabled
+		ifTrue: [ | switchType |
+			switchedContext
+				ifTrue: [ switchType := ReturnToExecutivePostContextWithSwitchSignal ]
+				ifFalse: [ switchType := ReturnToExecutivePostContextWithoutSwitchSignal ].
+
+			(self isMachineCodeFrame: framePointer)
+				ifTrue: [ telemetry
+						telemetrySignalReturnFrom: switchType
+						in: MachineCode
+						framePointer: framePointer	"(self frameSelector: framePointer)" ]
+				ifFalse: [ telemetry
+						telemetrySignalReturnFrom: switchType
+						in: InterpreterCode
+						framePointer: framePointer	"(self frameSelector: framePointer)" ] ].
 
 	super returnToExecutive: inInterpreter postContextSwitch: switchedContext
 ]
 
 { #category : #'bytecode - return' }
 CoInterpreterWithTelemetry >> returnToMachineCodeFrame [
-	<inline: true>
-	
 	"we return from interpreter to machine code"
+
+	<inline: true>
 	telemetryEnabled
-		ifTrue: [
-			self flag: 'How do we detect a method to return too?
+		ifTrue: [ self
+				flag: 'How do we detect a method to return too?
 			I tried:
 			 - self mframeCogMethod: framePointer
 			 - self iframeMethod: framePointer.
 			 - self mframeHomeMethod: framePointer.
 			 - method'.
 			telemetry
-				telemetrySignalReturn: 0"(self frameSelector: framePointer)"
-				from: ReturnToMachineCodeFrameSignal
+				telemetrySignalReturnFrom: ReturnToMachineCodeFrameSignal
 				in: InterpreterToMachineCode
-				framePointer: framePointer ].
+				framePointer: framePointer	"(self frameSelector: framePointer)" ].
 
 	super returnToMachineCodeFrame
 ]
@@ -589,15 +573,13 @@ CoInterpreterWithTelemetry >> returnToMachineCodeFrame [
 { #category : #'bytecode - return' }
 CoInterpreterWithTelemetry >> returnTopFromBlock [
 	"Return top-of-stack to the caller of the current block activation."
+
 	<returnTypeC: #void>
-	
 	telemetryEnabled
-		ifTrue: [
-			telemetry
-				telemetrySignalReturn: 0"(self frameSelector: framePointer)"
-				from: 21
+		ifTrue: [ telemetry
+				telemetrySignalReturnFrom: 21
 				in: InterpreterCode
-				framePointer: framePointer ].
+				framePointer: framePointer	"(self frameSelector: framePointer)" ].
 
 	localReturnValue := self stackTop.
 	self commonCallerReturn
@@ -652,19 +634,6 @@ CoInterpreterWithTelemetry >> telemetryEmitBlockActivation [
 				receiver: (self frameReceiver: framePointer) ]"
 ]
 
-{ #category : #'bytecode - return' }
-CoInterpreterWithTelemetry >> telemetryEmitLinkedReturn: aSelector [
-	<api>
-
-	telemetryEnabled
-		ifTrue: [
-			telemetry
-				telemetrySignalReturn: aSelector
-				from: 22
-				in: MachineCode
-				framePointer: framePointer ]
-]
-
 { #category : #'bytecode - send' }
 CoInterpreterWithTelemetry >> telemetryEmitLinkedSend: theReceiver [
 	| cogMethod |
@@ -681,6 +650,46 @@ CoInterpreterWithTelemetry >> telemetryEmitLinkedSend: theReceiver [
 				emitSendSignal: cogMethod selector
 				receiver: theReceiver
 				sourceId: 1 ]
+]
+
+{ #category : #'bytecode - return' }
+CoInterpreterWithTelemetry >> telemetryTrampolineEmitArrowReturn [
+	<api>
+	telemetryEnabled
+		ifTrue: [ telemetry
+				telemetrySignalReturnFrom: ArrowReturnTrampolineSignal
+				in: MachineCode
+				framePointer: framePointer ]
+]
+
+{ #category : #'bytecode - return' }
+CoInterpreterWithTelemetry >> telemetryTrampolineEmitBlockReturn [
+	<api>
+	telemetryEnabled
+		ifTrue: [ telemetry
+				telemetrySignalReturnFrom: BlockReturnTrampolineSignal
+				in: MachineCode
+				framePointer: framePointer ]
+]
+
+{ #category : #'bytecode - return' }
+CoInterpreterWithTelemetry >> telemetryTrampolineEmitEnilopmartReturn [
+	<api>
+	telemetryEnabled
+		ifTrue: [ telemetry
+				telemetrySignalReturnFrom: EnilopmartReturnTrampolineSignal
+				in: MachineCode
+				framePointer: framePointer ]
+]
+
+{ #category : #'bytecode - return' }
+CoInterpreterWithTelemetry >> telemetryTrampolineEmitQuickPrimitiveReturn [
+	<api>
+	telemetryEnabled
+		ifTrue: [ telemetry
+				telemetrySignalReturnFrom: QuickPrimitiveReturnTrampolineSignal
+				in: MachineCode
+				framePointer: framePointer ]
 ]
 
 { #category : #'bytecode - context switch' }

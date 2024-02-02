@@ -23,7 +23,7 @@ CoInterpreterTelemetry class >> instVarNamesAndTypesForTranslationDo: aBinaryBlo
 	aBinaryBlock
 		value: 'payload' value: 'void*';
 		value: 'sendFn' value: #('void (*' ')(void*, sqInt, sqInt, uint8_t, uint8_t, void*)');
-		value: 'returnFn' value: #('void (*' ')(void*, sqInt, uint8_t, uint8_t, void*)');
+		value: 'returnFn' value: #('void (*' ')(void*, uint8_t, uint8_t, void*)');
 		value: 'methodSwitchFn' value: #('void (*' ')(void*, sqInt, void*)');
 		value: 'contextSwitchFn' value: #('void (*' ')(void*, sqInt, sqInt)')
 ]
@@ -83,7 +83,7 @@ CoInterpreterTelemetry >> telemetrySignalMethodSwitch: aMethod framePointer: aFP
 ]
 
 { #category : #signalling }
-CoInterpreterTelemetry >> telemetrySignalReturn: aSelector from: sourceId in: executionLocation framePointer: aFP [
+CoInterpreterTelemetry >> telemetrySignalReturnFrom: sourceId in: executionLocation framePointer: aFP [
 	<inline: false>
 	<var: #sourceId type: 'uint8_t'>
 	<var: #executionLocation type: 'uint8_t'>
@@ -92,7 +92,6 @@ CoInterpreterTelemetry >> telemetrySignalReturn: aSelector from: sourceId in: ex
 	self
 		perform: self returnFn
 		with: self payload
-		with: aSelector
 		with: sourceId
 		with: executionLocation
 		with: aFP

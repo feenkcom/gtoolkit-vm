@@ -4,7 +4,10 @@ Class {
 	#instVars : [
 		'telemetryLinkedSendTrampoline',
 		'telemetryBlockActivationTrampoline',
-		'telemetryLinkedReturnTrampoline'
+		'telemetryBlockReturnTrampoline',
+		'telemetryArrowReturnTrampoline',
+		'telemetryQuickPrimitiveReturnTrampoline',
+		'telemetryEnilopmartReturnTrampoline'
 	],
 	#category : #'GToolkit-VMMaker-AddOns-Telemetry'
 }
@@ -35,7 +38,7 @@ StackToRegisterMappingCogitWithTelemetry >> compileFullBlockEntry [
 StackToRegisterMappingCogitWithTelemetry >> compileMethodBody [
 	"quick primitives"
 	endPC < initialPC ifTrue: [
-		backEnd saveAndRestoreLinkRegAround: [ self CallRT: telemetryLinkedReturnTrampoline ].
+		backEnd saveAndRestoreLinkRegAround: [ self CallRT: telemetryQuickPrimitiveReturnTrampoline ].
 		^0].
 	
 	^ super compileMethodBody
@@ -44,28 +47,21 @@ StackToRegisterMappingCogitWithTelemetry >> compileMethodBody [
 { #category : #accessing }
 StackToRegisterMappingCogitWithTelemetry >> genBlockReturn [
 	"emit signal after framePointer is set"
-	backEnd saveAndRestoreLinkRegAround: [ self CallRT: telemetryLinkedReturnTrampoline ].
+	backEnd saveAndRestoreLinkRegAround: [ self CallRT: telemetryBlockReturnTrampoline ].
 	
 	^ super genBlockReturn
 ]
 
 { #category : #accessing }
 StackToRegisterMappingCogitWithTelemetry >> genEnilopmartReturn: forCall [
-	backEnd saveAndRestoreLinkRegAround: [ self CallRT: telemetryLinkedReturnTrampoline ].
+	backEnd saveAndRestoreLinkRegAround: [ self CallRT: telemetryEnilopmartReturnTrampoline ].
 	
 	^ super genEnilopmartReturn: forCall
 ]
 
 { #category : #accessing }
-StackToRegisterMappingCogitWithTelemetry >> genPrimReturn [
-	backEnd saveAndRestoreLinkRegAround: [ self CallRT: telemetryLinkedReturnTrampoline ].
-	
-	^ super genPrimReturn
-]
-
-{ #category : #accessing }
 StackToRegisterMappingCogitWithTelemetry >> genUpArrowReturn [
-	backEnd saveAndRestoreLinkRegAround: [ self CallRT: telemetryLinkedReturnTrampoline ].
+	backEnd saveAndRestoreLinkRegAround: [ self CallRT: telemetryArrowReturnTrampoline ].
 
 	^ super genUpArrowReturn
 ]
@@ -79,11 +75,29 @@ StackToRegisterMappingCogitWithTelemetry >> generateTracingTrampolines [
 			called: 'telemetryLinkedSendTrampoline'
 			arg: ReceiverResultReg
 			regsToSave: CallerSavedRegisterMask.
+
+	telemetryArrowReturnTrampoline :=
+		self genTrampolineFor: #telemetryTrampolineEmitArrowReturn
+			called: 'telemetryArrowReturnTrampoline'
+			arg: NoReg
+			regsToSave: CallerSavedRegisterMask.
+
+	telemetryBlockReturnTrampoline :=
+		self genTrampolineFor: #telemetryTrampolineEmitBlockReturn
+			called: 'telemetryBlockReturnTrampoline'
+			arg: NoReg
+			regsToSave: CallerSavedRegisterMask.
 			
-	telemetryLinkedReturnTrampoline :=
-		self genTrampolineFor: #telemetryEmitLinkedReturn:
-			called: 'telemetryLinkedReturnTrampoline'
-			arg: ClassReg
+	telemetryQuickPrimitiveReturnTrampoline :=
+		self genTrampolineFor: #telemetryTrampolineEmitQuickPrimitiveReturn
+			called: 'telemetryQuickPrimitiveReturnTrampoline'
+			arg: NoReg
+			regsToSave: CallerSavedRegisterMask.
+
+	telemetryEnilopmartReturnTrampoline :=
+		self genTrampolineFor: #telemetryTrampolineEmitEnilopmartReturn
+			called: 'telemetryEnilopmartReturnTrampoline'
+			arg: NoReg
 			regsToSave: CallerSavedRegisterMask.
 
 	telemetryBlockActivationTrampoline :=
