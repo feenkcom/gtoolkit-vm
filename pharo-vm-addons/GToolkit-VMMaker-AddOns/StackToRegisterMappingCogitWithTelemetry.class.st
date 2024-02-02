@@ -10,7 +10,9 @@ Class {
 		'telemetryEnilopmartReturnTrampoline',
 		'telemetryPrimReturnTrampoline',
 		'telemetryInterpreterPrimitiveReturnTrampoline',
-		'telemetryMachineCodePrimitiveReturnTrampoline'
+		'telemetryMachineCodePrimitiveReturnTrampoline',
+		'telemetryPrimitiveActivationTrampoline',
+		'telemetryPrimitiveMayCallMethodsTrampoline'
 	],
 	#category : #'GToolkit-VMMaker-AddOns-Telemetry'
 }
@@ -48,6 +50,16 @@ StackToRegisterMappingCogitWithTelemetry >> compileMethodBody [
 ]
 
 { #category : #accessing }
+StackToRegisterMappingCogitWithTelemetry >> compilePrimitive [
+	primitiveIndex = 0
+		ifTrue: [ ^ 0 ].
+
+	backEnd saveAndRestoreLinkRegAround: [ self CallRT: telemetryPrimitiveActivationTrampoline ].
+
+	^ super compilePrimitive
+]
+
+{ #category : #accessing }
 StackToRegisterMappingCogitWithTelemetry >> genBlockReturn [
 	backEnd saveAndRestoreLinkRegAround: [ self CallRT: telemetryBlockReturnTrampoline ].
 	
@@ -69,29 +81,15 @@ StackToRegisterMappingCogitWithTelemetry >> genPrimReturn [
 ]
 
 { #category : #accessing }
-StackToRegisterMappingCogitWithTelemetry >> genPrimitiveHashMultiply [
-	"Implement 28-bit hashMultiply for SmallInteger and LargePositiveInteger receivers."
-	| jmpFailImm jmpFailNonImm jmpNotSmallInt reenter |
-	jmpNotSmallInt := objectRepresentation genJumpNotSmallInteger: ReceiverResultReg.
+StackToRegisterMappingCogitWithTelemetry >> genPrimitiveFullClosureValue [
+	backEnd saveAndRestoreLinkRegAround: [ self CallRT: telemetryPrimitiveMayCallMethodsTrampoline ].
+	^ super genPrimitiveFullClosureValue
+]
 
-	objectRepresentation genConvertSmallIntegerToIntegerInReg: ReceiverResultReg.
-	reenter :=
-	self MoveCq: HashMultiplyConstant R: TempReg.
-	self MulR: TempReg R: ReceiverResultReg.
-	self AndCq: HashMultiplyMask R: ReceiverResultReg.
-	objectRepresentation genConvertIntegerToSmallIntegerInReg: ReceiverResultReg.
-	self genPrimReturn.
-
-	jmpNotSmallInt jmpTarget: self Label.
-	jmpFailImm := objectRepresentation genJumpImmediate: ReceiverResultReg.
-	objectRepresentation genGetCompactClassIndexNonImmOf: ReceiverResultReg into: ClassReg.
-	self CmpCq: ClassLargePositiveIntegerCompactIndex R: ClassReg.
-	jmpFailNonImm := self JumpNonZero: 0.
-	objectRepresentation genLoadSlot: 0 sourceReg: ReceiverResultReg destReg: ReceiverResultReg.
-	self Jump: reenter.
-
-	jmpFailImm jmpTarget: (jmpFailNonImm jmpTarget: self Label).
-	^0
+{ #category : #accessing }
+StackToRegisterMappingCogitWithTelemetry >> genPrimitivePerform [
+	backEnd saveAndRestoreLinkRegAround: [ self CallRT: telemetryPrimitiveMayCallMethodsTrampoline ].
+	^ super genPrimitiveFullClosureValue
 ]
 
 { #category : #accessing }
@@ -114,44 +112,48 @@ StackToRegisterMappingCogitWithTelemetry >> generateTracingTrampolines [
 	telemetryArrowReturnTrampoline :=
 		self genTrampolineFor: #telemetryTrampolineEmitArrowReturn
 			called: 'telemetryArrowReturnTrampoline'
-			arg: NoReg
 			regsToSave: CallerSavedRegisterMask.
 
 	telemetryBlockReturnTrampoline :=
 		self genTrampolineFor: #telemetryTrampolineEmitBlockReturn
 			called: 'telemetryBlockReturnTrampoline'
-			arg: NoReg
 			regsToSave: CallerSavedRegisterMask.
 
 	telemetryQuickPrimitiveReturnTrampoline :=
 		self genTrampolineFor: #telemetryTrampolineEmitQuickPrimitiveReturn
 			called: 'telemetryQuickPrimitiveReturnTrampoline'
-			arg: NoReg
 			regsToSave: CallerSavedRegisterMask.
 
 	telemetryEnilopmartReturnTrampoline :=
 		self genTrampolineFor: #telemetryTrampolineEmitEnilopmartReturn
 			called: 'telemetryEnilopmartReturnTrampoline'
-			arg: NoReg
 			regsToSave: CallerSavedRegisterMask.
 
 	telemetryPrimReturnTrampoline :=
 		self genTrampolineFor: #telemetryTrampolinePrimReturn
 			called: 'telemetryPrimReturnTrampoline'
-			arg: NoReg
 			regsToSave: CallerSavedRegisterMask.
 			
 	telemetryInterpreterPrimitiveReturnTrampoline :=
 		self genTrampolineFor: #telemetryTrampolineInterpreterPrimitiveReturn
 			called: 'telemetryInterpreterPrimitiveReturnTrampoline'
-			arg: NoReg
 			regsToSave: CallerSavedRegisterMask.
 			
 	telemetryMachineCodePrimitiveReturnTrampoline :=
 		self genTrampolineFor: #telemetryTrampolineMachineCodePrimitiveReturn
 			called: 'telemetryMachineCodePrimitiveReturnTrampoline'
-			arg: NoReg
 			regsToSave: CallerSavedRegisterMask.
+			
+	telemetryPrimitiveActivationTrampoline :=
+		self genTrampolineFor: #telemetryTrampolineEmitPrimitiveActivation
+			called: 'telemetryPrimitiveActivationTrampoline'
+			regsToSave: CallerSavedRegisterMask.
+	
+	telemetryPrimitiveMayCallMethodsTrampoline :=
+		self genTrampolineFor: #telemetryTrampolineEmitPrimitiveMayCallMethods
+			called: 'telemetryPrimitiveMayCallMethodsTrampoline'
+			regsToSave: CallerSavedRegisterMask.
+
 
 	telemetryBlockActivationTrampoline :=
 		self genTrampolineFor: #telemetryEmitBlockActivation

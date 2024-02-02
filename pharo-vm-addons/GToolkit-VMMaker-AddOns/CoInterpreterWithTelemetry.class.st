@@ -702,6 +702,21 @@ CoInterpreterWithTelemetry >> telemetryTrampolineEmitEnilopmartReturn [
 ]
 
 { #category : #'emitting signals' }
+CoInterpreterWithTelemetry >> telemetryTrampolineEmitPrimitiveActivation [
+	<api>
+	
+	telemetryEnabled
+		ifTrue: [ telemetry telemetrySignalPrimitiveActivation ]
+]
+
+{ #category : #'emitting signals' }
+CoInterpreterWithTelemetry >> telemetryTrampolineEmitPrimitiveMayCallMethods [
+	<api>
+	telemetryEnabled
+		ifTrue: [ telemetry telemetrySignalPrimitiveMayCallMethods ]
+]
+
+{ #category : #'emitting signals' }
 CoInterpreterWithTelemetry >> telemetryTrampolineEmitQuickPrimitiveReturn [
 	<api>
 	telemetryEnabled

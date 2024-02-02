@@ -5,8 +5,8 @@ Class {
 		'payload',
 		'sendFn',
 		'returnFn',
-		'methodSwitchFn',
-		'contextSwitchFn'
+		'contextSwitchFn',
+		'primitiveActivationFn'
 	],
 	#category : #'GToolkit-VMMaker-AddOns-Telemetry'
 }
@@ -24,7 +24,7 @@ CoInterpreterTelemetry class >> instVarNamesAndTypesForTranslationDo: aBinaryBlo
 		value: 'payload' value: 'void*';
 		value: 'sendFn' value: #('void (*' ')(void*, sqInt, sqInt, uint8_t, uint8_t, void*)');
 		value: 'returnFn' value: #('void (*' ')(void*, uint8_t, uint8_t, void*)');
-		value: 'methodSwitchFn' value: #('void (*' ')(void*, sqInt, void*)');
+		value: 'primitiveActivationFn' value: #('void (*' ')(void*, uint8_t)');
 		value: 'contextSwitchFn' value: #('void (*' ')(void*, sqInt, sqInt)')
 ]
 
@@ -39,13 +39,13 @@ CoInterpreterTelemetry >> contextSwitchFn [
 ]
 
 { #category : #accessing }
-CoInterpreterTelemetry >> methodSwitchFn [
-	^ methodSwitchFn
+CoInterpreterTelemetry >> payload [
+	^ payload
 ]
 
 { #category : #accessing }
-CoInterpreterTelemetry >> payload [
-	^ payload
+CoInterpreterTelemetry >> primitiveActivationFn [
+	^ primitiveActivationFn
 ]
 
 { #category : #accessing }
@@ -71,15 +71,25 @@ CoInterpreterTelemetry >> telemetrySignalContextSwitchFrom: anOldProc to: aNewPr
 ]
 
 { #category : #signalling }
-CoInterpreterTelemetry >> telemetrySignalMethodSwitch: aMethod framePointer: aFP [
+CoInterpreterTelemetry >> telemetrySignalPrimitiveActivation [
 	<inline: false>
 	<returnTypeC:'void'>
 	
 	self
-		perform: self methodSwitchFn
+		perform: self primitiveActivationFn
 		with: self payload
-		with: aMethod
-		with: aFP
+		with: 1
+]
+
+{ #category : #signalling }
+CoInterpreterTelemetry >> telemetrySignalPrimitiveMayCallMethods [
+	<inline: false>
+	<returnTypeC:'void'>
+	
+	self
+		perform: self primitiveActivationFn
+		with: self payload
+		with: 2
 ]
 
 { #category : #signalling }
