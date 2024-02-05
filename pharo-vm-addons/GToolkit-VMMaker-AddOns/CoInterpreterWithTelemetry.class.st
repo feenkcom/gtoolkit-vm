@@ -666,7 +666,7 @@ CoInterpreterWithTelemetry >> telemetryEmitLinkedSend: theReceiver [
 				to: #'CogMethod *'.
 
 			self
-				emitSendSignal: 0
+				emitSendSignal: cogMethod selector
 				receiver: theReceiver
 				sourceId: 1 ]
 ]

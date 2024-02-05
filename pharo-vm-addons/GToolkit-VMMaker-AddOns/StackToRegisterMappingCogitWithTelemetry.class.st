@@ -239,5 +239,5 @@ StackToRegisterMappingCogitWithTelemetry >> generateTracingTrampolines [
 
 { #category : #accessing }
 StackToRegisterMappingCogitWithTelemetry >> traceLinkedSendOffset [
-	^ super traceLinkedSendOffset + backEnd jumpLongConditionalByteSize
+	^ super traceLinkedSendOffset" + backEnd jumpLongConditionalByteSize"
 ]
