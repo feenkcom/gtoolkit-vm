@@ -239,5 +239,5 @@ StackToRegisterMappingCogitWithTelemetry >> generateTracingTrampolines [
 
 { #category : #accessing }
 StackToRegisterMappingCogitWithTelemetry >> traceLinkedSendOffset [
-	^ super traceLinkedSendOffset + (4 * 4)
+	^ super traceLinkedSendOffset + (3 * 4)
 ]
