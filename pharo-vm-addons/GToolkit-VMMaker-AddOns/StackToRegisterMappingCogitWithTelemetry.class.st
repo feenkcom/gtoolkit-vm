@@ -228,13 +228,13 @@ StackToRegisterMappingCogitWithTelemetry >> generateTracingTrampolines [
 	telemetryPrimitiveMayCallMethodsTrampoline :=
 		self genTrampolineFor: #telemetryTrampolineEmitPrimitiveMayCallMethods
 			called: 'telemetryPrimitiveMayCallMethodsTrampoline'
-			regsToSave: self emptyRegisterMask.
+			regsToSave: CallerSavedRegisterMask.
 
 
 	telemetryBlockActivationTrampoline :=
 		self genTrampolineFor: #telemetryEmitBlockActivation
 			called: 'telemetryBlockActivationTrampoline'
-			regsToSave: self emptyRegisterMask
+			regsToSave: CallerSavedRegisterMask
 ]
 
 { #category : #accessing }
