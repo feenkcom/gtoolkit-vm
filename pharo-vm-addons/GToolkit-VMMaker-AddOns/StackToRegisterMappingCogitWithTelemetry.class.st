@@ -182,47 +182,47 @@ StackToRegisterMappingCogitWithTelemetry >> generateTracingTrampolines [
 	telemetryArrowReturnTrampoline :=
 		self genTrampolineFor: #telemetryTrampolineEmitArrowReturn
 			called: 'telemetryArrowReturnTrampoline'
-			regsToSave: self emptyRegisterMask.
+			regsToSave: CallerSavedRegisterMask.
 
 	telemetryBlockReturnTrampoline :=
 		self genTrampolineFor: #telemetryTrampolineEmitBlockReturn
 			called: 'telemetryBlockReturnTrampoline'
-			regsToSave: self emptyRegisterMask.
+			regsToSave: CallerSavedRegisterMask.
 
 	telemetryQuickPrimitiveReturnTrampoline :=
 		self genTrampolineFor: #telemetryTrampolineEmitQuickPrimitiveReturn
 			called: 'telemetryQuickPrimitiveReturnTrampoline'
-			regsToSave: self emptyRegisterMask.
+			regsToSave: CallerSavedRegisterMask.
 
 	telemetryEnilopmartReturnTrampoline :=
 		self genTrampolineFor: #telemetryTrampolineEmitEnilopmartReturn
 			called: 'telemetryEnilopmartReturnTrampoline'
-			regsToSave: self emptyRegisterMask.
+			regsToSave: CallerSavedRegisterMask.
 
 	telemetryPrimReturnTrampoline :=
 		self genTrampolineFor: #telemetryTrampolinePrimReturn
 			called: 'telemetryPrimReturnTrampoline'
-			regsToSave: self emptyRegisterMask.
+			regsToSave: CallerSavedRegisterMask.
 
 	telemetryInterpreterPrimitiveReturnTrampoline :=
 		self genTrampolineFor: #telemetryTrampolineInterpreterPrimitiveReturn
 			called: 'telemetryInterpreterPrimitiveReturnTrampoline'
-			regsToSave: self emptyRegisterMask.
+			regsToSave: CallerSavedRegisterMask.
 			
 	telemetryMachineCodePrimitiveReturnTrampoline :=
 		self genTrampolineFor: #telemetryTrampolineMachineCodePrimitiveReturn
 			called: 'telemetryMachineCodePrimitiveReturnTrampoline'
-			regsToSave: self emptyRegisterMask.
+			regsToSave: CallerSavedRegisterMask.
 			
 	telemetryPrimitiveActivationTrampoline :=
 		self genTrampolineFor: #telemetryTrampolineEmitPrimitiveActivation
 			called: 'telemetryPrimitiveActivationTrampoline'
-			regsToSave: self emptyRegisterMask.
+			regsToSave: CallerSavedRegisterMask.
 
 	telemetryPrimitiveDeactivationTrampoline :=
 		self genTrampolineFor: #telemetryTrampolineEmitPrimitiveDeactivation
 			called: 'telemetryPrimitiveDeactivationTrampoline'
-			regsToSave: self emptyRegisterMask.
+			regsToSave: CallerSavedRegisterMask.
 	
 	telemetryPrimitiveMayCallMethodsTrampoline :=
 		self genTrampolineFor: #telemetryTrampolineEmitPrimitiveMayCallMethods
