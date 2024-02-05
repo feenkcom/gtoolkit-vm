@@ -61,42 +61,16 @@ StackToRegisterMappingCogitWithTelemetry >> compileEntireMethod [
 	activationTrampoline := 0.
 	primitiveIndex = 0
 		ifFalse: [
-			backEnd saveAndRestoreLinkRegAround: [ self CallRT: telemetryPrimitiveActivationTrampoline ].
+			self genTelemetryTrampolineCall: telemetryPrimitiveActivationTrampoline.
 			activationTrampoline := 1 ].
 	
 	(result := self compilePrimitive) < 0
 		ifTrue: [
-			backEnd saveAndRestoreLinkRegAround: [ self CallRT: telemetryPrimitiveDeactivationTrampoline ].
+			self genTelemetryTrampolineCall: telemetryPrimitiveDeactivationTrampoline.
 			^ result ].
 			
 	activationTrampoline = 1
-		ifTrue: [ backEnd saveAndRestoreLinkRegAround: [ self CallRT: telemetryPrimitiveDeactivationTrampoline ]. ].
-
-	self compileFrameBuild.
-	^ self compileMethodBody
-]
-
-{ #category : #accessing }
-StackToRegisterMappingCogitWithTelemetry >> compileEntireMethod2 [
-	"Compile the abstract instructions for the entire method, including blocks."
-	| result activationTrampoline|
-	self preenMethodLabel.
-	self compileAbort.
-	self compileEntry.
-	
-	activationTrampoline := 0.
-	primitiveIndex = 0
-		ifFalse: [
-			backEnd saveAndRestoreLinkRegAround: [ self CallRT: telemetryPrimitiveActivationTrampoline ].
-			activationTrampoline := 1 ].
-	
-	(result := self compilePrimitive) < 0
-		ifTrue: [
-			backEnd saveAndRestoreLinkRegAround: [ self CallRT: telemetryPrimitiveDeactivationTrampoline ].
-			^ result ].
-			
-	activationTrampoline = 1
-		ifTrue: [ backEnd saveAndRestoreLinkRegAround: [ self CallRT: telemetryPrimitiveDeactivationTrampoline ]. ].
+		ifTrue: [ self genTelemetryTrampolineCall: telemetryPrimitiveDeactivationTrampoline ].
 
 	self compileFrameBuild.
 	^ self compileMethodBody
@@ -113,15 +87,14 @@ StackToRegisterMappingCogitWithTelemetry >> compileEntry [
 StackToRegisterMappingCogitWithTelemetry >> compileFullBlockEntry [
 	super compileFullBlockEntry.
 	
-	backEnd saveAndRestoreLinkRegAround: [
-		self CallRT: telemetryBlockActivationTrampoline ]
+	self genTelemetryTrampolineCall: telemetryBlockActivationTrampoline
 ]
 
 { #category : #accessing }
 StackToRegisterMappingCogitWithTelemetry >> compileMethodBody [
 	"quick primitives"
 	endPC < initialPC ifTrue: [
-		backEnd saveAndRestoreLinkRegAround: [ self CallRT: telemetryQuickPrimitiveReturnTrampoline ].
+		self genTelemetryTrampolineCall: telemetryQuickPrimitiveReturnTrampoline.
 		^0].
 	
 	^ super compileMethodBody
@@ -129,14 +102,14 @@ StackToRegisterMappingCogitWithTelemetry >> compileMethodBody [
 
 { #category : #accessing }
 StackToRegisterMappingCogitWithTelemetry >> genBlockReturn [
-	backEnd saveAndRestoreLinkRegAround: [ self CallRT: telemetryBlockReturnTrampoline ].
+	self genTelemetryTrampolineCall: telemetryBlockReturnTrampoline.
 	
 	^ super genBlockReturn
 ]
 
 { #category : #accessing }
 StackToRegisterMappingCogitWithTelemetry >> genEnilopmartReturn: forCall [
-	backEnd saveAndRestoreLinkRegAround: [ self CallRT: telemetryEnilopmartReturnTrampoline ].
+	self genTelemetryTrampolineCall: telemetryEnilopmartReturnTrampoline.
 	
 	^ super genEnilopmartReturn: forCall
 ]
@@ -144,7 +117,7 @@ StackToRegisterMappingCogitWithTelemetry >> genEnilopmartReturn: forCall [
 { #category : #accessing }
 StackToRegisterMappingCogitWithTelemetry >> genPrimReturn [
 	<inline: true>
-	backEnd saveAndRestoreLinkRegAround: [ self CallRT: telemetryPrimReturnTrampoline ].
+	self genTelemetryTrampolineCall: telemetryPrimReturnTrampoline.
 	^ super genPrimReturn
 ]
 
@@ -152,26 +125,26 @@ StackToRegisterMappingCogitWithTelemetry >> genPrimReturn [
 StackToRegisterMappingCogitWithTelemetry >> genPrimitiveFullClosureValueWithTelemetry [
 	| code |
 	<option: #SistaV1BytecodeSet>
-	backEnd saveAndRestoreLinkRegAround: [ self CallRT: telemetryPrimitiveMayCallMethodsTrampoline ].
+	self genTelemetryTrampolineCall: telemetryPrimitiveMayCallMethodsTrampoline.
 	code := self genPrimitiveFullClosureValue.
 	^ code
 ]
 
 { #category : #accessing }
 StackToRegisterMappingCogitWithTelemetry >> genPrimitiveMarkHandlerMethodWithTelemetry [
-	backEnd saveAndRestoreLinkRegAround: [ self CallRT: telemetryPrimitiveMayCallMethodsTrampoline ].
+	self genTelemetryTrampolineCall: telemetryPrimitiveMayCallMethodsTrampoline.
 	^ self genFastPrimFail
 ]
 
 { #category : #accessing }
 StackToRegisterMappingCogitWithTelemetry >> genPrimitiveMarkUnwindMethodWithTelemetry [
-	backEnd saveAndRestoreLinkRegAround: [ self CallRT: telemetryPrimitiveMayCallMethodsTrampoline ].
+	self genTelemetryTrampolineCall: telemetryPrimitiveMayCallMethodsTrampoline.
 	^ self genFastPrimFail
 ]
 
 { #category : #accessing }
 StackToRegisterMappingCogitWithTelemetry >> genPrimitivePerform [
-	backEnd saveAndRestoreLinkRegAround: [ self CallRT: telemetryPrimitiveMayCallMethodsTrampoline ].
+	self genTelemetryTrampolineCall: telemetryPrimitiveMayCallMethodsTrampoline.
 	^ super genPrimitivePerform
 ]
 
@@ -191,7 +164,7 @@ StackToRegisterMappingCogitWithTelemetry >> genTelemetryTrampolineCall: aTrampol
 
 { #category : #accessing }
 StackToRegisterMappingCogitWithTelemetry >> genUpArrowReturn [
-	backEnd saveAndRestoreLinkRegAround: [ self CallRT: telemetryArrowReturnTrampoline ].
+	self genTelemetryTrampolineCall: telemetryArrowReturnTrampoline.
 
 	^ super genUpArrowReturn
 ]
@@ -209,56 +182,56 @@ StackToRegisterMappingCogitWithTelemetry >> generateTracingTrampolines [
 	telemetryArrowReturnTrampoline :=
 		self genTrampolineFor: #telemetryTrampolineEmitArrowReturn
 			called: 'telemetryArrowReturnTrampoline'
-			regsToSave: CallerSavedRegisterMask.
+			regsToSave: self emptyRegisterMask.
 
 	telemetryBlockReturnTrampoline :=
 		self genTrampolineFor: #telemetryTrampolineEmitBlockReturn
 			called: 'telemetryBlockReturnTrampoline'
-			regsToSave: CallerSavedRegisterMask.
+			regsToSave: self emptyRegisterMask.
 
 	telemetryQuickPrimitiveReturnTrampoline :=
 		self genTrampolineFor: #telemetryTrampolineEmitQuickPrimitiveReturn
 			called: 'telemetryQuickPrimitiveReturnTrampoline'
-			regsToSave: CallerSavedRegisterMask.
+			regsToSave: self emptyRegisterMask.
 
 	telemetryEnilopmartReturnTrampoline :=
 		self genTrampolineFor: #telemetryTrampolineEmitEnilopmartReturn
 			called: 'telemetryEnilopmartReturnTrampoline'
-			regsToSave: CallerSavedRegisterMask.
+			regsToSave: self emptyRegisterMask.
 
 	telemetryPrimReturnTrampoline :=
 		self genTrampolineFor: #telemetryTrampolinePrimReturn
 			called: 'telemetryPrimReturnTrampoline'
-			regsToSave: CallerSavedRegisterMask.
-			
+			regsToSave: self emptyRegisterMask.
+
 	telemetryInterpreterPrimitiveReturnTrampoline :=
 		self genTrampolineFor: #telemetryTrampolineInterpreterPrimitiveReturn
 			called: 'telemetryInterpreterPrimitiveReturnTrampoline'
-			regsToSave: CallerSavedRegisterMask.
+			regsToSave: self emptyRegisterMask.
 			
 	telemetryMachineCodePrimitiveReturnTrampoline :=
 		self genTrampolineFor: #telemetryTrampolineMachineCodePrimitiveReturn
 			called: 'telemetryMachineCodePrimitiveReturnTrampoline'
-			regsToSave: CallerSavedRegisterMask.
+			regsToSave: self emptyRegisterMask.
 			
 	telemetryPrimitiveActivationTrampoline :=
 		self genTrampolineFor: #telemetryTrampolineEmitPrimitiveActivation
 			called: 'telemetryPrimitiveActivationTrampoline'
-			regsToSave: CallerSavedRegisterMask.
+			regsToSave: self emptyRegisterMask.
 
 	telemetryPrimitiveDeactivationTrampoline :=
 		self genTrampolineFor: #telemetryTrampolineEmitPrimitiveDeactivation
 			called: 'telemetryPrimitiveDeactivationTrampoline'
-			regsToSave: CallerSavedRegisterMask.
+			regsToSave: self emptyRegisterMask.
 	
 	telemetryPrimitiveMayCallMethodsTrampoline :=
 		self genTrampolineFor: #telemetryTrampolineEmitPrimitiveMayCallMethods
 			called: 'telemetryPrimitiveMayCallMethodsTrampoline'
-			regsToSave: CallerSavedRegisterMask.
+			regsToSave: self emptyRegisterMask.
 
 
 	telemetryBlockActivationTrampoline :=
 		self genTrampolineFor: #telemetryEmitBlockActivation
 			called: 'telemetryBlockActivationTrampoline'
-			regsToSave: CallerSavedRegisterMask
+			regsToSave: self emptyRegisterMask
 ]
