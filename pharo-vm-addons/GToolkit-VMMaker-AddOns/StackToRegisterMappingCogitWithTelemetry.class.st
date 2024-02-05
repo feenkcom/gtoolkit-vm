@@ -235,3 +235,8 @@ StackToRegisterMappingCogitWithTelemetry >> generateTracingTrampolines [
 			called: 'telemetryBlockActivationTrampoline'
 			regsToSave: self emptyRegisterMask
 ]
+
+{ #category : #accessing }
+StackToRegisterMappingCogitWithTelemetry >> traceLinkedSendOffset [
+	^ super traceLinkedSendOffset + backEnd jumpLongConditionalByteSize
+]
