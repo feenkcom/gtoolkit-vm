@@ -266,7 +266,7 @@ CoInterpreterWithTelemetry >> ceNonLocalReturn: returnValue [
 		ifTrue: [ telemetry
 				telemetrySignalReturnFrom: NonLocalReturnSignal
 				in: MachineCode
-				framePointer: framePointer	"(self frameSelector: framePointer)" ].
+				framePointer: framePointer ].
 
 	^ super ceNonLocalReturn: returnValue
 ]
@@ -284,7 +284,7 @@ CoInterpreterWithTelemetry >> ceReturnToInterpreter: anOop [
 		ifTrue: [ telemetry
 				telemetrySignalReturnFrom: ReturnToInterpreterSignal
 				in: MachineToInterpreterCode
-				framePointer: framePointer	"(self frameSelector: framePointer)" ].
+				framePointer: framePointer ].
 
 	super ceReturnToInterpreter: anOop
 ]

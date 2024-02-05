@@ -156,6 +156,7 @@ StackToRegisterMappingCogitWithTelemetry >> genTelemetryTrampolineCall: aTrampol
 	self MoveAw: coInterpreter telemetryEnabledAddress R: TempReg.
 	self CmpCq: 0 R: TempReg.
 
+	"will generate a short jump"
 	jumpNoTelemetry := self JumpZero: 0.
 
 	backEnd saveAndRestoreLinkRegAround: [ self CallRT: aTrampoline ].
@@ -239,5 +240,8 @@ StackToRegisterMappingCogitWithTelemetry >> generateTracingTrampolines [
 
 { #category : #accessing }
 StackToRegisterMappingCogitWithTelemetry >> traceLinkedSendOffset [
-	^ super traceLinkedSendOffset + (3 * 4)
+	^ super traceLinkedSendOffset
+		+ backEnd jumpShortByteSize
+		+ backEnd loadLiteralByteSize
+		+ backEnd compareQuickConstantByteSize
 ]
