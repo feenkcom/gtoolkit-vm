@@ -48,7 +48,7 @@ StackToRegisterMappingCogitWithTelemetry class >> numTrampolines [
 ]
 
 { #category : #accessing }
-StackToRegisterMappingCogitWithTelemetry >> compileEntireMethod [
+StackToRegisterMappingCogitWithTelemetry >> compileEntireMethod2 [
 	"Compile the abstract instructions for the entire method, including blocks."
 	| result activationTrampoline|
 	self preenMethodLabel.
