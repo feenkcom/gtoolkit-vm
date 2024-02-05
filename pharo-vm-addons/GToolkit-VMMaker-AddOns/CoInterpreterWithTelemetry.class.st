@@ -671,6 +671,14 @@ CoInterpreterWithTelemetry >> telemetryEmitLinkedSend: theReceiver [
 				sourceId: 1 ]
 ]
 
+{ #category : #accessing }
+CoInterpreterWithTelemetry >> telemetryEnabledAddress [
+	<api>
+	<returnTypeC: #usqInt>
+
+	^ (self addressOf: telemetryEnabled) asUnsignedInteger
+]
+
 { #category : #'emitting signals' }
 CoInterpreterWithTelemetry >> telemetryTrampolineEmitArrowReturn [
 	<api>

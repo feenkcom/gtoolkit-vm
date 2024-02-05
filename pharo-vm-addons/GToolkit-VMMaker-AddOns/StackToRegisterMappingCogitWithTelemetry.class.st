@@ -105,9 +105,8 @@ StackToRegisterMappingCogitWithTelemetry >> compileEntireMethod2 [
 { #category : #accessing }
 StackToRegisterMappingCogitWithTelemetry >> compileEntry [
 	super compileEntry.
-	
-	backEnd saveAndRestoreLinkRegAround: [
-		self CallRT: telemetryLinkedSendTrampoline ]
+
+	self genTelemetryTrampolineCall: telemetryLinkedSendTrampoline
 ]
 
 { #category : #accessing }
@@ -174,6 +173,20 @@ StackToRegisterMappingCogitWithTelemetry >> genPrimitiveMarkUnwindMethodWithTele
 StackToRegisterMappingCogitWithTelemetry >> genPrimitivePerform [
 	backEnd saveAndRestoreLinkRegAround: [ self CallRT: telemetryPrimitiveMayCallMethodsTrampoline ].
 	^ super genPrimitivePerform
+]
+
+{ #category : #accessing }
+StackToRegisterMappingCogitWithTelemetry >> genTelemetryTrampolineCall: aTrampoline [
+	| jumpNoTelemetry |
+	
+	self MoveAw: coInterpreter telemetryEnabledAddress R: TempReg.
+	self CmpCq: 0 R: TempReg.
+
+	jumpNoTelemetry := self JumpZero: 0.
+
+	backEnd saveAndRestoreLinkRegAround: [ self CallRT: aTrampoline ].
+	
+	jumpNoTelemetry jmpTarget: self Label
 ]
 
 { #category : #accessing }
