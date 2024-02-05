@@ -150,17 +150,17 @@ StackToRegisterMappingCogitWithTelemetry >> genPrimitivePerform [
 
 { #category : #accessing }
 StackToRegisterMappingCogitWithTelemetry >> genTelemetryTrampolineCall: aTrampoline [
-	"<var: #jumpNoTelemetry type: #'AbstractInstruction *'>
+	<var: #jumpNoTelemetry type: #'AbstractInstruction *'>
 	| jumpNoTelemetry |
 	
 	self MoveAw: coInterpreter telemetryEnabledAddress R: TempReg.
 	self CmpCq: 0 R: TempReg.
 
-	jumpNoTelemetry := self JumpZero: 0."
+	jumpNoTelemetry := self JumpZero: 0.
 
 	backEnd saveAndRestoreLinkRegAround: [ self CallRT: aTrampoline ].
 	
-	"jumpNoTelemetry jmpTarget: self Label"
+	jumpNoTelemetry jmpTarget: self Label
 ]
 
 { #category : #accessing }
