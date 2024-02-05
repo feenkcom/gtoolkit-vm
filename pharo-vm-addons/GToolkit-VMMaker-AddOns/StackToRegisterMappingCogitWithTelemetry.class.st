@@ -149,6 +149,27 @@ StackToRegisterMappingCogitWithTelemetry >> genPrimitivePerform [
 ]
 
 { #category : #accessing }
+StackToRegisterMappingCogitWithTelemetry >> genQuickReturnConst [
+	self genTelemetryTrampolineCall: telemetryPrimitiveDeactivationTrampoline.
+
+	^ super genQuickReturnConst
+]
+
+{ #category : #accessing }
+StackToRegisterMappingCogitWithTelemetry >> genQuickReturnInstVar [
+	self genTelemetryTrampolineCall: telemetryPrimitiveDeactivationTrampoline.
+
+	^ super genQuickReturnInstVar
+]
+
+{ #category : #accessing }
+StackToRegisterMappingCogitWithTelemetry >> genQuickReturnSelf [
+	self genTelemetryTrampolineCall: telemetryPrimitiveDeactivationTrampoline.
+
+	^ super genQuickReturnSelf
+]
+
+{ #category : #accessing }
 StackToRegisterMappingCogitWithTelemetry >> genTelemetryTrampolineCall: aTrampoline [
 	<var: #jumpNoTelemetry type: #'AbstractInstruction *'>
 	| jumpNoTelemetry |
