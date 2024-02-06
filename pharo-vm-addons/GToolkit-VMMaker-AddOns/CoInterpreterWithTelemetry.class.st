@@ -151,6 +151,18 @@ CoInterpreterWithTelemetry class >> shouldGenerateTypedefFor: aStructClass [
 	  and: [ ({ CoInterpreterTelemetry } includes: aStructClass) not ]
 ]
 
+{ #category : #'bytecode - send' }
+CoInterpreterWithTelemetry >> activateNewMethod [
+	telemetryEnabled
+		ifTrue: [
+			self
+				emitSendSignal: 0
+				receiver: 0
+				sourceId: 10 ].
+
+	super activateNewMethod
+]
+
 { #category : #accessing }
 CoInterpreterWithTelemetry >> ceInterpretMethodFromPIC: aMethodObj receiver: rcvr [
 	<api>
