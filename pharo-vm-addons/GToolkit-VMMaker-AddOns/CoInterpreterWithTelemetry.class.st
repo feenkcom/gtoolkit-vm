@@ -350,7 +350,6 @@ CoInterpreterWithTelemetry >> ceSend: selector super: superNormalBar to: rcvr nu
 						numArgs: numArgs
 						receiver: rcvr]].
 		 instructionPointer := self popStack.
-		 [
 			telemetryEnabled
 				ifTrue: [
 					 self print: 'About to send patchToOpenPICFor:numArgs:receiver'.
@@ -364,7 +363,7 @@ CoInterpreterWithTelemetry >> ceSend: selector super: superNormalBar to: rcvr nu
 					self print: 'About to send interpretMethodFromMachineCode'.
 					self cr.
 				].
-	^self interpretMethodFromMachineCode ]
+	^self interpretMethodFromMachineCode.
 	"NOTREACHED"
 ]
 
