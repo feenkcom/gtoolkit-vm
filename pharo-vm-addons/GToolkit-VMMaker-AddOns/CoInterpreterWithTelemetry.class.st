@@ -352,7 +352,7 @@ CoInterpreterWithTelemetry >> ceSend: selector super: superNormalBar to: rcvr nu
 		 instructionPointer := self popStack.
 			telemetryEnabled
 				ifTrue: [
-					 self print: 'About to send patchToOpenPICFor:numArgs:receiver'.
+					 self print: 'About to send executeNewMethod'.
 					 self cr.
 				 ].
 		 self executeNewMethod.
@@ -502,6 +502,9 @@ CoInterpreterWithTelemetry >> enableTelemetry [
 CoInterpreterWithTelemetry >> executeNewMethod [
 	telemetryEnabled
 		ifTrue: [
+			self print: 'About to emit Send from executeNewMethod'.
+			self cr.
+		
 			self
 				emitSendSignal: 0
 				receiver: 0
@@ -553,6 +556,9 @@ CoInterpreterWithTelemetry >> frameSelector: theFP [
 CoInterpreterWithTelemetry >> interpretMethodFromMachineCode [
 	telemetryEnabled
 		ifTrue: [
+			self print: 'About to emit Send from interpretMethodFromMachineCode'.
+			self cr.
+			
 			self
 				emitSendSignal: 0
 				receiver: 0
