@@ -363,6 +363,18 @@ CoInterpreterWithTelemetry >> enableTelemetry [
 ]
 
 { #category : #'bytecode - send' }
+CoInterpreterWithTelemetry >> executeNewMethod [
+	telemetryEnabled
+		ifTrue: [
+			self
+				emitSendSignal: 0
+				receiver: 0
+				sourceId: 9 ].
+
+	super executeNewMethod
+]
+
+{ #category : #'bytecode - send' }
 CoInterpreterWithTelemetry >> executeNewMethod: eagerlyCompile [	
 	"self emitSendSignal."
 	super executeNewMethod: eagerlyCompile
