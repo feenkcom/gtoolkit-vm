@@ -403,7 +403,13 @@ CoInterpreterWithTelemetry >> frameSelector: theFP [
 
 { #category : #'bytecode - send' }
 CoInterpreterWithTelemetry >> interpretMethodFromMachineCode [
-	"self emitSendSignal."
+	telemetryEnabled
+		ifTrue: [
+			self
+				emitSendSignal: 0
+				receiver: 0
+				sourceId: 8 ].
+
 	super interpretMethodFromMachineCode
 ]
 
@@ -414,7 +420,7 @@ CoInterpreterWithTelemetry >> maybeReturnToMachineCodeFrame [
 		ifTrue: [ telemetry
 				telemetrySignalReturnFrom: MaybeReturnToMachineCodeFrameSignal
 				in: InterpreterCode
-				framePointer: framePointer	"(self frameSelector: framePointer)" ]
+				framePointer: framePointer ]
 ]
 
 { #category : #'bytecode - return' }
