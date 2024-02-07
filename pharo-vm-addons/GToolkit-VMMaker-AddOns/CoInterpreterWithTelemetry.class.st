@@ -629,21 +629,27 @@ CoInterpreterWithTelemetry >> returnToExecutive: inInterpreter postContextSwitch
 
 	<inline: false>
 	<var: #cogMethod type: #'CogMethod *'>
-	"telemetryEnabled
+	telemetryEnabled
 		ifTrue: [ | switchType |
 			switchedContext
 				ifTrue: [ switchType := ReturnToExecutivePostContextWithSwitchSignal ]
 				ifFalse: [ switchType := ReturnToExecutivePostContextWithoutSwitchSignal ].
 
 			(self isMachineCodeFrame: framePointer)
-				ifTrue: [ telemetry
-						telemetrySignalReturnFrom: switchType
-						in: MachineCode
+				ifTrue: [
+					telemetry
+						telemetrySignalSend: 0
+						toInstanceOf: 0
+						isImmediate: false
+						sourceId: 12
 						framePointer: framePointer ]
-				ifFalse: [ telemetry
-						telemetrySignalReturnFrom: switchType
-						in: InterpreterCode
-						framePointer: framePointer  ] ]."
+				ifFalse: [
+					telemetry
+						telemetrySignalSend: 0
+						toInstanceOf: 0
+						isImmediate: false
+						sourceId: 13
+						framePointer: framePointer ] ].
 
 	super returnToExecutive: inInterpreter postContextSwitch: switchedContext
 ]
