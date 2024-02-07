@@ -13,7 +13,8 @@ Class {
 		'telemetryMachineCodePrimitiveReturnTrampoline',
 		'telemetryPrimitiveActivationTrampoline',
 		'telemetryPrimitiveMayCallMethodsTrampoline',
-		'telemetryPrimitiveDeactivationTrampoline'
+		'telemetryPrimitiveDeactivationTrampoline',
+		'telemetryMethodBodyTrampoline'
 	],
 	#category : #'GToolkit-VMMaker-AddOns-Telemetry'
 }
@@ -96,6 +97,8 @@ StackToRegisterMappingCogitWithTelemetry >> compileMethodBody [
 	endPC < initialPC ifTrue: [
 		self genTelemetryTrampolineCall: telemetryQuickPrimitiveReturnTrampoline.
 		^0].
+	
+	self genTelemetryTrampolineCall: telemetryMethodBodyTrampoline.
 	
 	^ super compileMethodBody
 ]
@@ -200,6 +203,11 @@ StackToRegisterMappingCogitWithTelemetry >> generateTracingTrampolines [
 		self genTrampolineFor: #telemetryEmitLinkedSend:
 			called: 'telemetryLinkedSendTrampoline'
 			arg: ReceiverResultReg
+			regsToSave: CallerSavedRegisterMask.
+			
+	telemetryMethodBodyTrampoline :=
+		self genTrampolineFor: #telemetryEmitMethodBodySend
+			called: 'telemetryMethodBodyTrampoline'
 			regsToSave: CallerSavedRegisterMask.
 
 	telemetryArrowReturnTrampoline :=

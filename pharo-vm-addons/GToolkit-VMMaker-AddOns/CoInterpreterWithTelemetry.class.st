@@ -770,6 +770,20 @@ CoInterpreterWithTelemetry >> telemetryEmitLinkedSend: theReceiver [
 				sourceId: 1 ]
 ]
 
+{ #category : #'bytecode - send' }
+CoInterpreterWithTelemetry >> telemetryEmitMethodBodySend [
+	<api>
+
+	telemetryEnabled
+		ifTrue: [
+			telemetry
+				telemetrySignalSend: 0
+				toInstanceOf: 0
+				isImmediate: false
+				sourceId: 14
+				framePointer: framePointer ]
+]
+
 { #category : #accessing }
 CoInterpreterWithTelemetry >> telemetryEnabledAddress [
 	<api>
