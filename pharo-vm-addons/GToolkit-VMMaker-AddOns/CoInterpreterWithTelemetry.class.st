@@ -154,29 +154,9 @@ CoInterpreterWithTelemetry class >> shouldGenerateTypedefFor: aStructClass [
 { #category : #'bytecode - send' }
 CoInterpreterWithTelemetry >> activateCoggedNewMethod: inInterpreter [
 	telemetryEnabled
-		ifTrue: [
-			telemetry
-				telemetrySignalSend: 0
-				toInstanceOf: 0
-				isImmediate: false
-				sourceId: 11
-				framePointer: framePointer ].
+		ifTrue: [ telemetry telemetrySignalActivateMachineMethod ].
 
 	super activateCoggedNewMethod: inInterpreter
-]
-
-{ #category : #'bytecode - send' }
-CoInterpreterWithTelemetry >> activateNewMethod [
-	telemetryEnabled
-		ifTrue: [
-			telemetry
-				telemetrySignalSend: 0
-				toInstanceOf: 0
-				isImmediate: false
-				sourceId: 10
-				framePointer: framePointer ].
-
-	super activateNewMethod
 ]
 
 { #category : #accessing }
@@ -752,38 +732,6 @@ CoInterpreterWithTelemetry >> telemetryEmitBlockActivation [
 				receiver: (self frameReceiver: framePointer) ]"
 ]
 
-{ #category : #'bytecode - send' }
-CoInterpreterWithTelemetry >> telemetryEmitLinkedSend: theReceiver [
-	| cogMethod |
-	<api>
-	<var: #cogMethod type: #'CogMethod *'>
-
-	telemetryEnabled
-		ifTrue: [
-			cogMethod := self
-				cCoerceSimple: (self stackTop - cogit traceLinkedSendOffset)
-				to: #'CogMethod *'.
-
-			self
-				emitSendSignal: cogMethod selector
-				receiver: theReceiver
-				sourceId: 1 ]
-]
-
-{ #category : #'bytecode - send' }
-CoInterpreterWithTelemetry >> telemetryEmitMethodBodySend [
-	<api>
-
-	telemetryEnabled
-		ifTrue: [
-			telemetry
-				telemetrySignalSend: 0
-				toInstanceOf: 0
-				isImmediate: false
-				sourceId: 14
-				framePointer: framePointer ]
-]
-
 { #category : #accessing }
 CoInterpreterWithTelemetry >> telemetryEnabledAddress [
 	<api>
@@ -795,11 +743,19 @@ CoInterpreterWithTelemetry >> telemetryEnabledAddress [
 { #category : #'emitting signals' }
 CoInterpreterWithTelemetry >> telemetryTrampolineEmitArrowReturn [
 	<api>
-	telemetryEnabled
-		ifTrue: [ telemetry
-				telemetrySignalReturnFrom: ArrowReturnTrampolineSignal
-				in: MachineCode
-				framePointer: framePointer ]
+	telemetry
+		telemetrySignalReturnFrom: ArrowReturnTrampolineSignal
+		in: MachineCode
+		framePointer: framePointer
+]
+
+{ #category : #'bytecode - send' }
+CoInterpreterWithTelemetry >> telemetryTrampolineEmitBeginMachineMethod [
+	<api>
+	"Trampoline will not be executed unless telemetry is enabled.
+	There is no need to check it again here"
+	
+	telemetry telemetrySignalBeginMachineMethod
 ]
 
 { #category : #'emitting signals' }
@@ -820,6 +776,22 @@ CoInterpreterWithTelemetry >> telemetryTrampolineEmitEnilopmartReturn [
 				telemetrySignalReturnFrom: EnilopmartReturnTrampolineSignal
 				in: MachineCode
 				framePointer: framePointer ]
+]
+
+{ #category : #'bytecode - send' }
+CoInterpreterWithTelemetry >> telemetryTrampolineEmitLinkedSend: theReceiver [
+	| cogMethod |
+	<api>
+	<var: #cogMethod type: #'CogMethod *'>
+
+	cogMethod := self
+		cCoerceSimple: (self stackTop - cogit traceLinkedSendOffset)
+		to: #'CogMethod *'.
+
+	self
+		emitSendSignal: cogMethod selector
+		receiver: theReceiver
+		sourceId: 1
 ]
 
 { #category : #'emitting signals' }

@@ -14,7 +14,7 @@ Class {
 		'telemetryPrimitiveActivationTrampoline',
 		'telemetryPrimitiveMayCallMethodsTrampoline',
 		'telemetryPrimitiveDeactivationTrampoline',
-		'telemetryMethodBodyTrampoline'
+		'telemetryBeginMachineMethodTrampoline'
 	],
 	#category : #'GToolkit-VMMaker-AddOns-Telemetry'
 }
@@ -96,10 +96,11 @@ StackToRegisterMappingCogitWithTelemetry >> compileMethodBody [
 	"quick primitives"
 	endPC < initialPC ifTrue: [
 		self genTelemetryTrampolineCall: telemetryQuickPrimitiveReturnTrampoline.
-		^0].
-	
-	self genTelemetryTrampolineCall: telemetryMethodBodyTrampoline.
-	
+		^ 0 ].
+
+	"This is the only reliable place to know that a method execution actually started"
+	self genTelemetryTrampolineCall: telemetryBeginMachineMethodTrampoline.
+
 	^ super compileMethodBody
 ]
 
@@ -200,14 +201,14 @@ StackToRegisterMappingCogitWithTelemetry >> generateTracingTrampolines [
 	super generateTracingTrampolines.
 	
 	telemetryLinkedSendTrampoline :=
-		self genTrampolineFor: #telemetryEmitLinkedSend:
+		self genTrampolineFor: #telemetryTrampolineEmitLinkedSend:
 			called: 'telemetryLinkedSendTrampoline'
 			arg: ReceiverResultReg
 			regsToSave: CallerSavedRegisterMask.
 			
-	telemetryMethodBodyTrampoline :=
-		self genTrampolineFor: #telemetryEmitMethodBodySend
-			called: 'telemetryMethodBodyTrampoline'
+	telemetryBeginMachineMethodTrampoline :=
+		self genTrampolineFor: #telemetryTrampolineEmitBeginMachineMethod
+			called: 'telemetryBeginMachineMethodTrampoline'
 			regsToSave: CallerSavedRegisterMask.
 
 	telemetryArrowReturnTrampoline :=
