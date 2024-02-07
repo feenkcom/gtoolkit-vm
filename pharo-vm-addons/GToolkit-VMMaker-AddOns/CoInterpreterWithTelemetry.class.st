@@ -227,12 +227,7 @@ CoInterpreterWithTelemetry >> ceSend: selector above: methodClass to: rcvr numAr
 { #category : #'bytecode - send' }
 CoInterpreterWithTelemetry >> ceSend: selector super: superNormalBar to: rcvr numArgs: numArgs [
 	<api>
-	| classTag classObj errSelIdx cogMethod |
 	<inline: false>
-	<var: #cogMethod type: #'CogMethod *'>
-	<var: #newCogMethod type: #'CogMethod *'>
-	"self printExternalHeadFrame"
-	"self printStringOf: selector"
 	
 	telemetryEnabled
 		ifTrue: [
@@ -241,126 +236,7 @@ CoInterpreterWithTelemetry >> ceSend: selector super: superNormalBar to: rcvr nu
 				receiver: rcvr
 				sourceId: 7 ].
 	
-	"Entry-point for an unlinked send in a CogMethod.  Smalltalk stack looks like
-					receiver
-					args
-		head sp ->	sender return pc
-		
-	If an MNU then defer to handleMNUInMachineCodeTo:... which will dispatch the MNU and
-	may choose to allocate a closed PIC with a fast MNU dispatch for this send.  Otherwise
-	attempt to link the send site as efficiently as possible.  All link attempts may fail; e.g.
-	because we're out of code memory.
-
-	Continue execution via either executeMethod or interpretMethodFromMachineCode:
-	depending on whether the target method is cogged or not."
-	
-	cogit assertCStackWellAligned.
-	self assert: (objectMemory addressCouldBeOop: rcvr).
-	self sendBreakpoint: selector receiver: rcvr.
-	superNormalBar = 0
-		ifTrue: [classTag := objectMemory fetchClassTagOf: rcvr]
-		ifFalse: [classTag := objectMemory classTagForClass: (self superclassOf: (self methodClassOf: (self frameMethodObject: framePointer)))].
-	argumentCount := numArgs.
-	(self lookupInMethodCacheSel: selector classTag: classTag)
-		ifTrue:"check for coggability because method is in the cache"
-			[self
-				ifAppropriateCompileToNativeCode: newMethod
-				selector: selector]
-		ifFalse:
-			[(objectMemory isOopForwarded: selector) ifTrue:
-				[^self
-					ceSend: (self handleForwardedSelectorFaultFor: selector)
-					super: superNormalBar
-					to: rcvr
-					numArgs: numArgs].
-			 (objectMemory isForwardedClassTag: classTag) ifTrue:
-				[self assert: superNormalBar = 0.
-				^self
-					ceSend: selector
-					super: superNormalBar
-					to: (self handleForwardedSendFaultForReceiver: rcvr stackDelta: 1 "skip return pc")
-					numArgs: numArgs].
-			 messageSelector := selector.
-			 classObj := objectMemory classForClassTag: classTag.
-			 (errSelIdx := self lookupOrdinaryNoMNUEtcInClass: classObj) ~= 0 ifTrue:
-				[(errSelIdx = SelectorDoesNotUnderstand
-				  and: [(cogMethod := cogit cogMNUPICSelector: messageSelector
-											receiver: rcvr
-											methodOperand: (self mnuMethodOrNilFor: rcvr)
-											numArgs: argumentCount) asUnsignedInteger
-						> cogit minCogMethodAddress]) ifTrue:
-						[cogit
-							linkSendAt: (stackPages longAt: stackPointer)
-							in: (self mframeHomeMethod: framePointer)
-							to: cogMethod
-							offset: (superNormalBar = 0
-									ifTrue: [cogit entryOffset]
-									ifFalse: [cogit noCheckEntryOffset])
-							receiver: rcvr].
-				telemetryEnabled
-				ifTrue: [
-					self print: 'About to send handleMNU:InMachineCodeTo:classForMessage'.
-					self cr.
-				].
-				self handleMNU: errSelIdx InMachineCodeTo: rcvr classForMessage: classObj.
-				self assert: false "NOTREACHED"]].
-	"Method found and has a cog method.  Attempt to link to it.  The receiver's class may be young.
-	 If the Cogit can't store young classes in inline caches we can link to an open PIC instead."
-	(self maybeMethodHasCogMethod: newMethod) ifTrue:
-		[cogMethod := self cogMethodOf: newMethod.
-		 cogMethod selector = objectMemory nilObject
-			ifTrue: [cogit setSelectorOf: cogMethod to: selector]
-			ifFalse:
-				["Deal with anonymous accessors, e.g. in Newspeak.  The cogMethod may not have the
-				  correct selector.  If not, try and compile a new method with the correct selector."
-				 cogMethod selector ~= selector ifTrue:
-					[(cogit cog: newMethod selector: selector) ifNotNil:
-						[:newCogMethod| cogMethod := newCogMethod]]].
-		 cogMethod selector = selector
-			ifTrue:
-				[
-				telemetryEnabled
-					ifTrue: [
-						self print: 'About to send linkSendAt:in:to::offset'.
-						self cr.
-				].
-				cogit
-					linkSendAt: (stackPages longAt: stackPointer)
-					in: (self mframeHomeMethod: framePointer)
-					to: cogMethod
-					offset: (superNormalBar = 0
-								ifTrue: [cogit entryOffset]
-								ifFalse: [cogit noCheckEntryOffset])
-					receiver: rcvr]
-			ifFalse: "If patchToOpenPICFor:.. returns we're out of code memory"
-				[superNormalBar = 0 ifTrue: "Open PICs perform normal sends. Can't patch if this is a super send."
-					[
-					telemetryEnabled
-					ifTrue: [
-						self print: 'About to send patchToOpenPICFor:numArgs:receiver'.
-						self cr.
-					].
-					
-					cogit
-						patchToOpenPICFor: selector
-						numArgs: numArgs
-						receiver: rcvr]].
-		 instructionPointer := self popStack.
-			telemetryEnabled
-				ifTrue: [
-					 self print: 'About to send executeNewMethod'.
-					 self cr.
-				 ].
-		 self executeNewMethod.
-		 self assert: false "NOTREACHED"].
-	instructionPointer := self popStack.
-	telemetryEnabled
-				ifTrue: [
-					self print: 'About to send interpretMethodFromMachineCode'.
-					self cr.
-				].
-	^self interpretMethodFromMachineCode.
-	"NOTREACHED"
+	super ceSend: selector super: superNormalBar to: rcvr numArgs: numArgs
 ]
 
 { #category : #'bytecode - send' }
@@ -496,7 +372,7 @@ CoInterpreterWithTelemetry >> enableTelemetry [
 
 { #category : #'bytecode - send' }
 CoInterpreterWithTelemetry >> executeNewMethod [
-	telemetryEnabled
+	"telemetryEnabled
 		ifTrue: [
 			self print: 'About to emit Send from executeNewMethod'.
 			self cr.
@@ -506,7 +382,7 @@ CoInterpreterWithTelemetry >> executeNewMethod [
 				toInstanceOf: 0
 				isImmediate: false
 				sourceId: 9
-				framePointer: framePointer ].
+				framePointer: framePointer ]."
 
 	super executeNewMethod
 ]
@@ -524,35 +400,14 @@ CoInterpreterWithTelemetry >> externalAboutToReturn: resultOop through: aContext
 		ifTrue: [ telemetry
 				telemetrySignalReturnFrom: ExternalAboutToReturnThroughSignal
 				in: MachineCode
-				framePointer: framePointer	"(self frameSelector: framePointer)" ].
+				framePointer: framePointer ].
 
 	super externalAboutToReturn: resultOop through: aContext
 ]
 
-{ #category : #accessing }
-CoInterpreterWithTelemetry >> frameSelector: theFP [
-	<var: #cogMethod type: #'CogMethod *'>
-	<var: #theFP type: #'char *'>
-	<var: #theMethod type: #'sqInt'>
-	<returnTypeC: #'sqInt'>
-
-	(self isMachineCodeFrame: theFP)
-	 ifTrue: [
-	 	| cogMethod |
-	 	(self mframeIsBlockActivation: theFP)
-	 		ifTrue: [ cogMethod := self mframeHomeMethod: theFP ]
-	 		ifFalse: [ cogMethod := self mframeMethod: theFP ].
-	 	^ cogMethod selector ]
-	 ifFalse: [
-	 	| theMethod |
-	 	
-	 	theMethod := self iframeMethod: theFP.
-	 	^ self findSelectorOfMethod: theMethod ]
-]
-
 { #category : #'bytecode - send' }
 CoInterpreterWithTelemetry >> interpretMethodFromMachineCode [
-	telemetryEnabled
+	"telemetryEnabled
 		ifTrue: [
 			self print: 'About to emit Send from interpretMethodFromMachineCode'.
 			self cr.
@@ -562,7 +417,7 @@ CoInterpreterWithTelemetry >> interpretMethodFromMachineCode [
 				toInstanceOf: 0
 				isImmediate: false
 				sourceId: 8
-				framePointer: framePointer ].
+				framePointer: framePointer ]."
 
 	super interpretMethodFromMachineCode
 ]
@@ -586,11 +441,11 @@ CoInterpreterWithTelemetry >> return: returnValue toExecutive: inInterpreter [
 				ifTrue: [ telemetry
 						telemetrySignalReturnFrom: ReturnToExecutiveSignal
 						in: MachineCode
-						framePointer: framePointer	"(self frameSelector: framePointer)" ]
+						framePointer: framePointer ]
 				ifFalse: [ telemetry
 						telemetrySignalReturnFrom: ReturnToExecutiveSignal
 						in: InterpreterCode
-						framePointer: framePointer	"(self frameSelector: framePointer)" ] ].
+						framePointer: framePointer ] ].
 
 	super return: returnValue toExecutive: inInterpreter
 ]
@@ -608,8 +463,7 @@ CoInterpreterWithTelemetry >> returnToExecutive: inInterpreter postContextSwitch
 	"seems like it is not necessary to emit return here"
 
 	<inline: false>
-	<var: #cogMethod type: #'CogMethod *'>
-	telemetryEnabled
+	"telemetryEnabled
 		ifTrue: [ | switchType |
 			switchedContext
 				ifTrue: [ switchType := ReturnToExecutivePostContextWithSwitchSignal ]
@@ -629,7 +483,7 @@ CoInterpreterWithTelemetry >> returnToExecutive: inInterpreter postContextSwitch
 						toInstanceOf: 0
 						isImmediate: false
 						sourceId: 13
-						framePointer: framePointer ] ].
+						framePointer: framePointer ] ]."
 
 	super returnToExecutive: inInterpreter postContextSwitch: switchedContext
 ]
