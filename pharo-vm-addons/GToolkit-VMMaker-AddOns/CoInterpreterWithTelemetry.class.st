@@ -504,11 +504,13 @@ CoInterpreterWithTelemetry >> executeNewMethod [
 		ifTrue: [
 			self print: 'About to emit Send from executeNewMethod'.
 			self cr.
-		
-			self
-				emitSendSignal: 0
-				receiver: 0
-				sourceId: 9 ].
+
+			telemetry
+				telemetrySignalSend: 0
+				toInstanceOf: 0
+				isImmediate: false
+				sourceId: 9
+				framePointer: framePointer ].
 
 	super executeNewMethod
 ]
@@ -558,11 +560,13 @@ CoInterpreterWithTelemetry >> interpretMethodFromMachineCode [
 		ifTrue: [
 			self print: 'About to emit Send from interpretMethodFromMachineCode'.
 			self cr.
-			
-			self
-				emitSendSignal: 0
-				receiver: 0
-				sourceId: 8 ].
+
+			telemetry
+				telemetrySignalSend: 0
+				toInstanceOf: 0
+				isImmediate: false
+				sourceId: 8
+				framePointer: framePointer ].
 
 	super interpretMethodFromMachineCode
 ]
