@@ -394,7 +394,7 @@ CoInterpreterWithTelemetry >> executeNewMethod [
 	telemetryEnabled
 		ifTrue: [
 			telemetry
-				telemetrySignalSend: 0
+				telemetrySignalSend: (objectMemory findSelectorOfMethod: newMethod)
 				toInstanceOf: 0
 				isImmediate: false
 				sourceId: 9
@@ -434,7 +434,7 @@ CoInterpreterWithTelemetry >> interpretMethodFromMachineCode [
 	telemetryEnabled
 		ifTrue: [
 			telemetry
-				telemetrySignalSend: 0
+				telemetrySignalSend: (objectMemory findSelectorOfMethod: newMethod)
 				toInstanceOf: 0
 				isImmediate: false
 				sourceId: 8
