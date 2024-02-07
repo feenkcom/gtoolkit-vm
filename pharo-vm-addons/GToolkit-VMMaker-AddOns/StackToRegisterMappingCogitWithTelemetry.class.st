@@ -14,7 +14,8 @@ Class {
 		'telemetryPrimitiveActivationTrampoline',
 		'telemetryPrimitiveMayCallMethodsTrampoline',
 		'telemetryPrimitiveDeactivationTrampoline',
-		'telemetryBeginMachineMethodTrampoline'
+		'telemetryBeginMachineMethodTrampoline',
+		'telemetrySpecialSelectorSendTrampoline'
 	],
 	#category : #'GToolkit-VMMaker-AddOns-Telemetry'
 }
@@ -174,6 +175,13 @@ StackToRegisterMappingCogitWithTelemetry >> genQuickReturnSelf [
 ]
 
 { #category : #accessing }
+StackToRegisterMappingCogitWithTelemetry >> genSpecialSelectorSend [
+	self genTelemetryTrampolineCall: telemetrySpecialSelectorSendTrampoline.
+	
+	^ super genSpecialSelectorSend
+]
+
+{ #category : #accessing }
 StackToRegisterMappingCogitWithTelemetry >> genTelemetryTrampolineCall: aTrampoline [
 	<var: #jumpNoTelemetry type: #'AbstractInstruction *'>
 	| jumpNoTelemetry |
@@ -203,6 +211,12 @@ StackToRegisterMappingCogitWithTelemetry >> generateTracingTrampolines [
 	telemetryLinkedSendTrampoline :=
 		self genTrampolineFor: #telemetryTrampolineEmitLinkedSend:
 			called: 'telemetryLinkedSendTrampoline'
+			arg: ReceiverResultReg
+			regsToSave: CallerSavedRegisterMask.
+
+	telemetrySpecialSelectorSendTrampoline :=
+		self genTrampolineFor: #telemetryTrampolineEmitSpecialSelectorSend:
+			called: 'telemetrySpecialSelectorSendTrampoline'
 			arg: ReceiverResultReg
 			regsToSave: CallerSavedRegisterMask.
 			

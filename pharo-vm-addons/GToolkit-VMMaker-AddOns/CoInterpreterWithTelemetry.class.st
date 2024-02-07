@@ -493,7 +493,7 @@ CoInterpreterWithTelemetry >> returnToExecutive: inInterpreter postContextSwitch
 	"seems like it is not necessary to emit return here"
 
 	<inline: false>
-	"telemetryEnabled
+	telemetryEnabled
 		ifTrue: [ | switchType |
 			switchedContext
 				ifTrue: [ switchType := ReturnToExecutivePostContextWithSwitchSignal ]
@@ -513,7 +513,7 @@ CoInterpreterWithTelemetry >> returnToExecutive: inInterpreter postContextSwitch
 						toInstanceOf: 0
 						isImmediate: false
 						sourceId: 13
-						framePointer: framePointer ] ]."
+						framePointer: framePointer ] ].
 
 	super returnToExecutive: inInterpreter postContextSwitch: switchedContext
 ]
@@ -718,6 +718,17 @@ CoInterpreterWithTelemetry >> telemetryTrampolineEmitQuickPrimitiveReturn [
 				telemetrySignalReturnFrom: QuickPrimitiveReturnTrampolineSignal
 				in: MachineCode
 				framePointer: framePointer ]
+]
+
+{ #category : #'bytecode - send' }
+CoInterpreterWithTelemetry >> telemetryTrampolineEmitSpecialSelectorSend: theReceiver [
+	<api>
+	<var: #cogMethod type: #'CogMethod *'>
+
+	self
+		emitSendSignal: 0
+		receiver: theReceiver
+		sourceId: 21
 ]
 
 { #category : #'emitting signals' }
