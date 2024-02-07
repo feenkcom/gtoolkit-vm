@@ -152,13 +152,29 @@ CoInterpreterWithTelemetry class >> shouldGenerateTypedefFor: aStructClass [
 ]
 
 { #category : #'bytecode - send' }
+CoInterpreterWithTelemetry >> activateCoggedNewMethod: inInterpreter [
+	telemetryEnabled
+		ifTrue: [
+			telemetry
+				telemetrySignalSend: 0
+				toInstanceOf: 0
+				isImmediate: false
+				sourceId: 11
+				framePointer: framePointer ].
+
+	super activateCoggedNewMethod: inInterpreter
+]
+
+{ #category : #'bytecode - send' }
 CoInterpreterWithTelemetry >> activateNewMethod [
 	telemetryEnabled
 		ifTrue: [
-			self
-				emitSendSignal: 0
-				receiver: 0
-				sourceId: 10 ].
+			telemetry
+				telemetrySignalSend: 0
+				toInstanceOf: 0
+				isImmediate: false
+				sourceId: 10
+				framePointer: framePointer ].
 
 	super activateNewMethod
 ]
