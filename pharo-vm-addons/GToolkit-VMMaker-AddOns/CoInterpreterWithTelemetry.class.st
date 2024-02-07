@@ -398,6 +398,20 @@ CoInterpreterWithTelemetry >> executeNewMethod: eagerlyCompile [
 	super executeNewMethod: eagerlyCompile
 ]
 
+{ #category : #accessing }
+CoInterpreterWithTelemetry >> executeQuickPrimitive [
+	telemetryEnabled
+		ifTrue: [
+			telemetry
+				telemetrySignalSend: 0
+				toInstanceOf: 0
+				isImmediate: false
+				sourceId: 14
+				framePointer: framePointer ].
+
+	super executeQuickPrimitive.
+]
+
 { #category : #'bytecode - return' }
 CoInterpreterWithTelemetry >> externalAboutToReturn: resultOop through: aContext [
 	<inline: true>
