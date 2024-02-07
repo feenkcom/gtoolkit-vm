@@ -179,6 +179,18 @@ CoInterpreterWithTelemetry >> activateNewFullClosure: blockClosure method: theMe
 ]
 
 { #category : #accessing }
+CoInterpreterWithTelemetry >> bytecodePrimValue [
+	telemetryEnabled
+		ifTrue: [
+			self
+				emitSendSignal: (self specialSelector: 25)
+				receiver: self stackTop
+				sourceId:22 ].
+
+	super bytecodePrimValue
+]
+
+{ #category : #accessing }
 CoInterpreterWithTelemetry >> ceInterpretMethodFromPIC: aMethodObj receiver: rcvr [
 	<api>
 	| pic |
