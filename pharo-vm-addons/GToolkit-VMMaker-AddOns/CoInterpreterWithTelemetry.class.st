@@ -570,7 +570,7 @@ CoInterpreterWithTelemetry >> returnTopFromBlock [
 CoInterpreterWithTelemetry >> sendBreakpoint: selector receiver: rcvr [
 	<inline: true>
 
-	"self emitSendSignal: selector receiver: rcvr sourceId: 4."
+	self emitSendSignal: selector receiver: rcvr sourceId: 4.
 	super sendBreakpoint: selector receiver: rcvr
 ]
 
