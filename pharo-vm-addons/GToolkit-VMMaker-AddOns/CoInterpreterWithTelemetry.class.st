@@ -156,7 +156,7 @@ CoInterpreterWithTelemetry class >> shouldGenerateTypedefFor: aStructClass [
 	  and: [ ({ CoInterpreterTelemetry } includes: aStructClass) not ]
 ]
 
-{ #category : #'bytecode - send' }
+{ #category : #'bytecode - send machine code' }
 CoInterpreterWithTelemetry >> activateCoggedNewMethod: inInterpreter [
 	telemetryEnabled
 		ifTrue: [ telemetry telemetrySignalActivateMachineMethod ].
@@ -164,33 +164,39 @@ CoInterpreterWithTelemetry >> activateCoggedNewMethod: inInterpreter [
 	super activateCoggedNewMethod: inInterpreter
 ]
 
-{ #category : #'bytecode - send' }
-CoInterpreterWithTelemetry >> activateNewFullClosure: blockClosure method: theMethod numArgs: numArgs mayContextSwitch: mayContextSwitch [
-	telemetryEnabled
-		ifTrue: [
-			telemetry
-				telemetrySignalSend: 0
-				toInstanceOf: (objectMemory fetchClassTagOf: blockClosure)
-				isImmediate: false
-				sourceId: 15
-				framePointer: framePointer ].
-
-	super activateNewFullClosure: blockClosure method: theMethod numArgs: numArgs mayContextSwitch: mayContextSwitch
-]
-
-{ #category : #accessing }
+{ #category : #'bytecode - send interpreter' }
 CoInterpreterWithTelemetry >> bytecodePrimValue [
 	telemetryEnabled
 		ifTrue: [
-			self
-				emitSendSignal: (self specialSelector: 25)
-				receiver: self stackTop
-				sourceId:22 ].
+			| rcvr |
+			rcvr := self stackTop.
+			(self isInstanceOfClassBlockClosure: rcvr)
+				ifTrue: [
+					self
+						emitSendSignal: (self specialSelector: 25)
+						receiver: rcvr
+						sourceId: 22 ] ].
 
 	super bytecodePrimValue
 ]
 
-{ #category : #accessing }
+{ #category : #'bytecode - send interpreter' }
+CoInterpreterWithTelemetry >> bytecodePrimValueWithArg [
+	telemetryEnabled
+		ifTrue: [
+			| rcvr |
+			rcvr := self stackValue: 1.
+			(self isInstanceOfClassBlockClosure: rcvr)
+				ifTrue: [
+					self
+						emitSendSignal: (self specialSelector: 26)
+						receiver: rcvr
+						sourceId: 22 ] ].
+
+	super bytecodePrimValueWithArg
+]
+
+{ #category : #'bytecode - send machine code' }
 CoInterpreterWithTelemetry >> ceInterpretMethodFromPIC: aMethodObj receiver: rcvr [
 	<api>
 	| pic |
@@ -239,7 +245,7 @@ CoInterpreterWithTelemetry >> ceReturnToInterpreter: anOop [
 	super ceReturnToInterpreter: anOop
 ]
 
-{ #category : #'bytecode - send' }
+{ #category : #'bytecode - send machine code' }
 CoInterpreterWithTelemetry >> ceSend: selector above: methodClass to: rcvr numArgs: numArgs [
 	<api>
 	<option: #BytecodeSetHasDirectedSuperSend>
@@ -255,7 +261,7 @@ CoInterpreterWithTelemetry >> ceSend: selector above: methodClass to: rcvr numAr
 	super ceSend: selector above: methodClass to: rcvr numArgs: numArgs
 ]
 
-{ #category : #'bytecode - send' }
+{ #category : #'bytecode - send machine code' }
 CoInterpreterWithTelemetry >> ceSend: selector super: superNormalBar to: rcvr numArgs: numArgs [
 	<api>
 	<inline: false>
@@ -270,7 +276,7 @@ CoInterpreterWithTelemetry >> ceSend: selector super: superNormalBar to: rcvr nu
 	super ceSend: selector super: superNormalBar to: rcvr numArgs: numArgs
 ]
 
-{ #category : #'bytecode - send' }
+{ #category : #'bytecode - send machine code' }
 CoInterpreterWithTelemetry >> ceSendFromInLineCacheMiss: cogMethodOrPIC [
 	<api>
 	<var: #cogMethodOrPIC type: #'CogMethod *'>
@@ -302,7 +308,7 @@ CoInterpreterWithTelemetry >> commonCallerReturn [
 	super commonCallerReturn
 ]
 
-{ #category : #'bytecode - send' }
+{ #category : #'bytecode - send interpreter' }
 CoInterpreterWithTelemetry >> commonSendOrdinary [
 	telemetryEnabled
 		ifTrue: [
@@ -338,7 +344,7 @@ CoInterpreterWithTelemetry >> doRecordContextSwitchTo: aNewProc [
 				to: aNewProc ]
 ]
 
-{ #category : #'bytecode - return' }
+{ #category : #'emitting signals' }
 CoInterpreterWithTelemetry >> emitReturnMachineSignalFromBaseFrame [
 	<inline: true>
 	telemetryEnabled
@@ -348,7 +354,7 @@ CoInterpreterWithTelemetry >> emitReturnMachineSignalFromBaseFrame [
 				framePointer: framePointer	"(self frameSelector: framePointer)" ]
 ]
 
-{ #category : #'bytecode - return' }
+{ #category : #'emitting signals' }
 CoInterpreterWithTelemetry >> emitReturnStackSignalFromBaseFrame [
 	<inline: true>
 	telemetryEnabled
@@ -358,17 +364,7 @@ CoInterpreterWithTelemetry >> emitReturnStackSignalFromBaseFrame [
 				framePointer: framePointer	"(self frameSelector: framePointer)" ]
 ]
 
-{ #category : #'bytecode - send' }
-CoInterpreterWithTelemetry >> emitSendSignal: selector receiver: rcvr [
-	<inline: true>
-
-	self
-		emitSendSignal: selector
-		receiver: rcvr
-		sourceId: 0
-]
-
-{ #category : #'bytecode - send' }
+{ #category : #'emitting signals' }
 CoInterpreterWithTelemetry >> emitSendSignal: selector receiver: rcvr sourceId: sourceId [
 	<inline: true>
 
@@ -403,28 +399,34 @@ CoInterpreterWithTelemetry >> enableTelemetry [
 
 { #category : #'bytecode - send' }
 CoInterpreterWithTelemetry >> executeNewMethod [
-	telemetryEnabled
+	
+	"Shouldn't be used for collecting telemetry signals, only for debugging purposes"
+	
+	"telemetryEnabled
 		ifTrue: [
 			telemetry
 				telemetrySignalSend: (objectMemory findSelectorOfMethod: newMethod)
 				toInstanceOf: 0
 				isImmediate: false
 				sourceId: 9
-				framePointer: framePointer ].
+				framePointer: framePointer ]."
 
 	super executeNewMethod
 ]
 
-{ #category : #accessing }
+{ #category : #'bytecode - send' }
 CoInterpreterWithTelemetry >> executeQuickPrimitive [
-	telemetryEnabled
+
+	self flag: 'Should it be used?'.
+
+	"telemetryEnabled
 		ifTrue: [
 			telemetry
 				telemetrySignalSend: 0
 				toInstanceOf: 0
 				isImmediate: false
 				sourceId: 14
-				framePointer: framePointer ].
+				framePointer: framePointer ]."
 
 	super executeQuickPrimitive.
 ]
@@ -443,14 +445,17 @@ CoInterpreterWithTelemetry >> externalAboutToReturn: resultOop through: aContext
 
 { #category : #'bytecode - send' }
 CoInterpreterWithTelemetry >> interpretMethodFromMachineCode [
-	telemetryEnabled
+
+	"Shouldn't be used for collecting telemetry signals, only for debugging purposes"
+
+	"telemetryEnabled
 		ifTrue: [
 			telemetry
 				telemetrySignalSend: (objectMemory findSelectorOfMethod: newMethod)
 				toInstanceOf: 0
 				isImmediate: false
 				sourceId: 8
-				framePointer: framePointer ].
+				framePointer: framePointer ]."
 
 	super interpretMethodFromMachineCode
 ]
@@ -505,7 +510,7 @@ CoInterpreterWithTelemetry >> returnToExecutive: inInterpreter postContextSwitch
 	"seems like it is not necessary to emit return here"
 
 	<inline: false>
-	telemetryEnabled
+	"telemetryEnabled
 		ifTrue: [ | switchType |
 			switchedContext
 				ifTrue: [ switchType := ReturnToExecutivePostContextWithSwitchSignal ]
@@ -525,7 +530,7 @@ CoInterpreterWithTelemetry >> returnToExecutive: inInterpreter postContextSwitch
 						toInstanceOf: 0
 						isImmediate: false
 						sourceId: 13
-						framePointer: framePointer ] ].
+						framePointer: framePointer ] ]."
 
 	super returnToExecutive: inInterpreter postContextSwitch: switchedContext
 ]
@@ -536,17 +541,11 @@ CoInterpreterWithTelemetry >> returnToMachineCodeFrame [
 
 	<inline: true>
 	telemetryEnabled
-		ifTrue: [ self
-				flag: 'How do we detect a method to return too?
-			I tried:
-			 - self mframeCogMethod: framePointer
-			 - self iframeMethod: framePointer.
-			 - self mframeHomeMethod: framePointer.
-			 - method'.
+		ifTrue: [
 			telemetry
 				telemetrySignalReturnFrom: ReturnToMachineCodeFrameSignal
 				in: InterpreterToMachineCode
-				framePointer: framePointer	"(self frameSelector: framePointer)" ].
+				framePointer: framePointer ].
 
 	super returnToMachineCodeFrame
 ]
@@ -560,18 +559,10 @@ CoInterpreterWithTelemetry >> returnTopFromBlock [
 		ifTrue: [ telemetry
 				telemetrySignalReturnFrom: 21
 				in: InterpreterCode
-				framePointer: framePointer	"(self frameSelector: framePointer)" ].
+				framePointer: framePointer ].
 
 	localReturnValue := self stackTop.
 	self commonCallerReturn
-]
-
-{ #category : #'bytecode - send' }
-CoInterpreterWithTelemetry >> sendBreakpoint: selector receiver: rcvr [
-	<inline: true>
-
-	self emitSendSignal: selector receiver: rcvr sourceId: 4.
-	super sendBreakpoint: selector receiver: rcvr
 ]
 
 { #category : #'accessing - telemetry' }
@@ -587,14 +578,14 @@ CoInterpreterWithTelemetry >> setTelemetry: interpreterTelemetry [
 CoInterpreterWithTelemetry >> slowPrimitiveResponse [
 	| result |
 
-	telemetryEnabled
+	"telemetryEnabled
 		ifTrue: [
 			telemetry
 				telemetrySignalSend: 0
 				toInstanceOf: 0
 				isImmediate: false
 				sourceId: 16
-				framePointer: framePointer ].
+				framePointer: framePointer ]."
 	
 	result := super slowPrimitiveResponse.
 	telemetryEnabled
@@ -617,7 +608,7 @@ CoInterpreterWithTelemetry >> takeTelemetry [
 	^ prevTelemetry
 ]
 
-{ #category : #'bytecode - send' }
+{ #category : #'emitting signals' }
 CoInterpreterWithTelemetry >> telemetryEmitBlockActivation [
 	<api>
 	<var: #cogMethod type: #'CogMethod *'>
@@ -654,7 +645,7 @@ CoInterpreterWithTelemetry >> telemetryTrampolineEmitArrowReturn [
 		framePointer: framePointer
 ]
 
-{ #category : #'bytecode - send' }
+{ #category : #'emitting signals' }
 CoInterpreterWithTelemetry >> telemetryTrampolineEmitBeginMachineMethod [
 	<api>
 	"Trampoline will not be executed unless telemetry is enabled.
@@ -683,7 +674,7 @@ CoInterpreterWithTelemetry >> telemetryTrampolineEmitEnilopmartReturn [
 				framePointer: framePointer ]
 ]
 
-{ #category : #'bytecode - send' }
+{ #category : #'emitting signals' }
 CoInterpreterWithTelemetry >> telemetryTrampolineEmitLinkedSend: theReceiver [
 	| cogMethod |
 	<api>
@@ -732,15 +723,15 @@ CoInterpreterWithTelemetry >> telemetryTrampolineEmitQuickPrimitiveReturn [
 				framePointer: framePointer ]
 ]
 
-{ #category : #'bytecode - send' }
+{ #category : #'emitting signals' }
 CoInterpreterWithTelemetry >> telemetryTrampolineEmitSpecialSelectorSend: theReceiver [
 	<api>
 	<var: #cogMethod type: #'CogMethod *'>
 
-	self
+	"self
 		emitSendSignal: 0
 		receiver: theReceiver
-		sourceId: 21
+		sourceId: 21"
 ]
 
 { #category : #'emitting signals' }
