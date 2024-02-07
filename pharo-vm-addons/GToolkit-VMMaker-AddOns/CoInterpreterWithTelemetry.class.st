@@ -11,7 +11,8 @@ Class {
 		'telemetry',
 		'telemetryEnabled',
 		'telemetryReceiverClass',
-		'telemetrySendSelector'
+		'telemetrySendSelector',
+		'skipNextOrdinarySend'
 	],
 	#classVars : [
 		'ArrowReturnTrampolineSignal',
@@ -165,17 +166,89 @@ CoInterpreterWithTelemetry >> activateCoggedNewMethod: inInterpreter [
 ]
 
 { #category : #'bytecode - send interpreter' }
+CoInterpreterWithTelemetry >> bytecodePrimAdd [
+	telemetryEnabled
+		ifTrue: [
+			self
+				emitSpecialSendSignal: 0
+				receiver: (self stackValue: 1) ].
+
+	super bytecodePrimAdd
+]
+
+{ #category : #'bytecode - send interpreter' }
+CoInterpreterWithTelemetry >> bytecodePrimAt [
+	telemetryEnabled
+		ifTrue: [
+			self
+				emitSpecialSendSignal: 16
+				receiver: (self stackValue: 1) ].
+
+	super bytecodePrimAt
+]
+
+{ #category : #'bytecode - send interpreter' }
+CoInterpreterWithTelemetry >> bytecodePrimAtPut [
+	telemetryEnabled
+		ifTrue: [
+			self
+				emitSpecialSendSignal: 17
+				receiver: (self stackValue: 2) ].
+
+	super bytecodePrimAtPut
+]
+
+{ #category : #'bytecode - send interpreter' }
+CoInterpreterWithTelemetry >> bytecodePrimMakePoint [
+	telemetryEnabled
+		ifTrue: [
+			self
+				emitSpecialSendSignal: 11
+				receiver: (self stackValue: 1) ].
+
+	super bytecodePrimMakePoint
+]
+
+{ #category : #'bytecode - send interpreter' }
+CoInterpreterWithTelemetry >> bytecodePrimPointX [
+	telemetryEnabled
+		ifTrue: [
+			self
+				emitSpecialSendSignal: 30
+				receiver: self stackTop ].
+
+	super bytecodePrimPointX
+]
+
+{ #category : #'bytecode - send interpreter' }
+CoInterpreterWithTelemetry >> bytecodePrimPointY [
+	telemetryEnabled
+		ifTrue: [
+			self
+				emitSpecialSendSignal: 31
+				receiver: self stackTop ].
+
+	super bytecodePrimPointY
+]
+
+{ #category : #'bytecode - send interpreter' }
+CoInterpreterWithTelemetry >> bytecodePrimSize [
+	telemetryEnabled
+		ifTrue: [
+			self
+				emitSpecialSendSignal: 18
+				receiver: self stackTop ].
+
+	super bytecodePrimSize
+]
+
+{ #category : #'bytecode - send interpreter' }
 CoInterpreterWithTelemetry >> bytecodePrimValue [
 	telemetryEnabled
 		ifTrue: [
-			| rcvr |
-			rcvr := self stackTop.
-			(self isInstanceOfClassBlockClosure: rcvr)
-				ifTrue: [
-					self
-						emitSendSignal: (self specialSelector: 25)
-						receiver: rcvr
-						sourceId: 22 ] ].
+			self
+				emitSpecialSendSignal: 25
+				receiver: self stackTop ].
 
 	super bytecodePrimValue
 ]
@@ -184,14 +257,9 @@ CoInterpreterWithTelemetry >> bytecodePrimValue [
 CoInterpreterWithTelemetry >> bytecodePrimValueWithArg [
 	telemetryEnabled
 		ifTrue: [
-			| rcvr |
-			rcvr := self stackValue: 1.
-			(self isInstanceOfClassBlockClosure: rcvr)
-				ifTrue: [
-					self
-						emitSendSignal: (self specialSelector: 26)
-						receiver: rcvr
-						sourceId: 22 ] ].
+			self
+				emitSpecialSendSignal: 26
+				receiver: (self stackValue: 1) ].
 
 	super bytecodePrimValueWithArg
 ]
@@ -312,10 +380,13 @@ CoInterpreterWithTelemetry >> commonCallerReturn [
 CoInterpreterWithTelemetry >> commonSendOrdinary [
 	telemetryEnabled
 		ifTrue: [
-			self
-				emitSendSignal: messageSelector
-				receiver: (self stackValue: argumentCount)
-				sourceId: 5 ].
+			skipNextOrdinarySend
+				ifTrue: [ skipNextOrdinarySend := false ]
+				ifFalse: [
+					self
+						emitSendSignal: messageSelector
+						receiver: (self stackValue: argumentCount)
+						sourceId: 5 ] ].
 
 	super commonSendOrdinary
 ]
@@ -328,6 +399,7 @@ CoInterpreterWithTelemetry >> disableTelemetry [
 	telemetryEnabled := false.
 	telemetryReceiverClass := objectMemory nilObject.
 	telemetrySendSelector := objectMemory nilObject.
+	skipNextOrdinarySend := false
 ]
 
 { #category : #'emitting signals' }
@@ -387,6 +459,17 @@ CoInterpreterWithTelemetry >> emitSendSignal: selector receiver: rcvr sourceId: 
 						framePointer: framePointer ] ]
 ]
 
+{ #category : #'emitting signals' }
+CoInterpreterWithTelemetry >> emitSpecialSendSignal: selectorIndex receiver: rcvr [
+	<inline: true>
+
+	self
+		emitSendSignal: (self specialSelector: selectorIndex)
+		receiver: rcvr
+		sourceId: 22.
+	skipNextOrdinarySend := true
+]
+
 { #category : #'accessing - telemetry' }
 CoInterpreterWithTelemetry >> enableTelemetry [
 	<api>
@@ -395,6 +478,7 @@ CoInterpreterWithTelemetry >> enableTelemetry [
 	telemetryEnabled := true.
 	telemetryReceiverClass := objectMemory nilObject.
 	telemetrySendSelector := objectMemory nilObject.
+	skipNextOrdinarySend := false
 ]
 
 { #category : #'bytecode - send' }
@@ -441,6 +525,14 @@ CoInterpreterWithTelemetry >> externalAboutToReturn: resultOop through: aContext
 				framePointer: framePointer ].
 
 	super externalAboutToReturn: resultOop through: aContext
+]
+
+{ #category : #'bytecode - send interpreter' }
+CoInterpreterWithTelemetry >> fetchNextBytecode [
+	telemetryEnabled
+		ifTrue: [ skipNextOrdinarySend := false ].
+
+	super fetchNextBytecode
 ]
 
 { #category : #'bytecode - send' }
