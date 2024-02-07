@@ -587,6 +587,15 @@ CoInterpreterWithTelemetry >> setTelemetry: interpreterTelemetry [
 CoInterpreterWithTelemetry >> slowPrimitiveResponse [
 	| result |
 
+	telemetryEnabled
+		ifTrue: [
+			telemetry
+				telemetrySignalSend: 0
+				toInstanceOf: 0
+				isImmediate: false
+				sourceId: 16
+				framePointer: framePointer ].
+	
 	result := super slowPrimitiveResponse.
 	telemetryEnabled
 		ifTrue: [ telemetry
