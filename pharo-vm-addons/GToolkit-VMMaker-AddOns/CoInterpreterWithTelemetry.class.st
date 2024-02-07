@@ -30,6 +30,8 @@ Class {
 		'NonLocalReturnSignal',
 		'PrimReturnTrampolineSignal',
 		'QuickPrimitiveReturnTrampolineSignal',
+		'ReturnToExecutiveInInterpreterSignal',
+		'ReturnToExecutiveInMachineCodeSignal',
 		'ReturnToExecutivePostContextWithSwitchSignal',
 		'ReturnToExecutivePostContextWithoutSwitchSignal',
 		'ReturnToExecutiveSignal',
@@ -141,7 +143,10 @@ CoInterpreterWithTelemetry class >> initialize [
 	BlockReturnTrampolineSignal := 22.
 	EnilopmartReturnTrampolineSignal := 23.
 	QuickPrimitiveReturnTrampolineSignal := 24.
-	PrimReturnTrampolineSignal := 25
+	PrimReturnTrampolineSignal := 25.
+	
+	ReturnToExecutiveInInterpreterSignal := 31.
+	ReturnToExecutiveInMachineCodeSignal := 32.
 ]
 
 { #category : #accessing }
@@ -437,13 +442,22 @@ CoInterpreterWithTelemetry >> maybeReturnToMachineCodeFrame [
 CoInterpreterWithTelemetry >> return: returnValue toExecutive: inInterpreter [
 	<var: #cogMethod type: #'CogMethod *'>
 	telemetryEnabled
-		ifTrue: [ (self isMachineCodeFrame: framePointer)
-				ifTrue: [ telemetry
-						telemetrySignalReturnFrom: ReturnToExecutiveSignal
+		ifTrue: [
+			| aSource |
+			
+			inInterpreter
+				ifTrue: [ aSource := ReturnToExecutiveInInterpreterSignal ]
+				ifFalse: [ aSource := ReturnToExecutiveInMachineCodeSignal ].
+			
+			(self isMachineCodeFrame: framePointer)
+				ifTrue: [
+					telemetry
+						telemetrySignalReturnFrom: aSource
 						in: MachineCode
 						framePointer: framePointer ]
-				ifFalse: [ telemetry
-						telemetrySignalReturnFrom: ReturnToExecutiveSignal
+				ifFalse: [
+					telemetry
+						telemetrySignalReturnFrom: aSource
 						in: InterpreterCode
 						framePointer: framePointer ] ].
 
