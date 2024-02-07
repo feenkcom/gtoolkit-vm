@@ -164,6 +164,20 @@ CoInterpreterWithTelemetry >> activateCoggedNewMethod: inInterpreter [
 	super activateCoggedNewMethod: inInterpreter
 ]
 
+{ #category : #'bytecode - send' }
+CoInterpreterWithTelemetry >> activateNewFullClosure: blockClosure method: theMethod numArgs: numArgs mayContextSwitch: mayContextSwitch [
+	telemetryEnabled
+		ifTrue: [
+			telemetry
+				telemetrySignalSend: 0
+				toInstanceOf: (objectMemory fetchClassTagOf: blockClosure)
+				isImmediate: false
+				sourceId: 15
+				framePointer: framePointer ].
+
+	super activateNewFullClosure: blockClosure method: theMethod numArgs: numArgs mayContextSwitch: mayContextSwitch
+]
+
 { #category : #accessing }
 CoInterpreterWithTelemetry >> ceInterpretMethodFromPIC: aMethodObj receiver: rcvr [
 	<api>
