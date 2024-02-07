@@ -391,25 +391,16 @@ CoInterpreterWithTelemetry >> enableTelemetry [
 
 { #category : #'bytecode - send' }
 CoInterpreterWithTelemetry >> executeNewMethod [
-	"telemetryEnabled
+	telemetryEnabled
 		ifTrue: [
-			self print: 'About to emit Send from executeNewMethod'.
-			self cr.
-
 			telemetry
 				telemetrySignalSend: 0
 				toInstanceOf: 0
 				isImmediate: false
 				sourceId: 9
-				framePointer: framePointer ]."
+				framePointer: framePointer ].
 
 	super executeNewMethod
-]
-
-{ #category : #'bytecode - send' }
-CoInterpreterWithTelemetry >> executeNewMethod: eagerlyCompile [	
-	"self emitSendSignal."
-	super executeNewMethod: eagerlyCompile
 ]
 
 { #category : #accessing }
@@ -440,17 +431,14 @@ CoInterpreterWithTelemetry >> externalAboutToReturn: resultOop through: aContext
 
 { #category : #'bytecode - send' }
 CoInterpreterWithTelemetry >> interpretMethodFromMachineCode [
-	"telemetryEnabled
+	telemetryEnabled
 		ifTrue: [
-			self print: 'About to emit Send from interpretMethodFromMachineCode'.
-			self cr.
-
 			telemetry
 				telemetrySignalSend: 0
 				toInstanceOf: 0
 				isImmediate: false
 				sourceId: 8
-				framePointer: framePointer ]."
+				framePointer: framePointer ].
 
 	super interpretMethodFromMachineCode
 ]
