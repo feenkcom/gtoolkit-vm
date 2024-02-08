@@ -9,7 +9,8 @@ Class {
 		'primitiveActivationFn',
 		'beginMachineMethodFn',
 		'activateMachineMethodFn',
-		'debugRecordClassFn'
+		'debugRecordClassFn',
+		'debugRecordSelectorFn'
 	],
 	#category : #'GToolkit-VMMaker-AddOns-Telemetry'
 }
@@ -31,7 +32,8 @@ CoInterpreterTelemetry class >> instVarNamesAndTypesForTranslationDo: aBinaryBlo
 		value: 'activateMachineMethodFn' value: #('void (*' ')(void*)');
 		value: 'beginMachineMethodFn' value: #('void (*' ')(void*)');
 		value: 'contextSwitchFn' value: #('void (*' ')(void*, sqInt, sqInt)');
-		value: 'debugRecordClassFn' value: #('void (*' ')(void*, sqInt, uint8_t)')
+		value: 'debugRecordClassFn' value: #('void (*' ')(void*, sqInt, uint8_t)');
+		value: 'debugRecordSelectorFn' value: #('void (*' ')(void*, sqInt)')
 ]
 
 { #category : #translation }
@@ -57,6 +59,11 @@ CoInterpreterTelemetry >> contextSwitchFn [
 { #category : #accessing }
 CoInterpreterTelemetry >> debugRecordClassFn [
 	^ debugRecordClassFn
+]
+
+{ #category : #accessing }
+CoInterpreterTelemetry >> debugRecordSelectorFn [
+	^ debugRecordSelectorFn
 ]
 
 { #category : #accessing }
@@ -126,6 +133,17 @@ CoInterpreterTelemetry >> telemetrySignalDebugClass: aClass isImmediate: isImmed
 		with: self payload
 		with: aClass
 		with: isImmediate
+]
+
+{ #category : #signalling }
+CoInterpreterTelemetry >> telemetrySignalDebugSelector: aSelector [
+	<inline: false>
+	<returnTypeC:'void'>
+
+	self
+		perform: self debugRecordSelectorFn
+		with: self payload
+		with: aSelector
 ]
 
 { #category : #signalling }

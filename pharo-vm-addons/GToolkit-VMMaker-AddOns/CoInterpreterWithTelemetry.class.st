@@ -570,6 +570,35 @@ CoInterpreterWithTelemetry >> executeNewMethod [
 	super executeNewMethod
 ]
 
+{ #category : #accessing }
+CoInterpreterWithTelemetry >> executePrimitiveFromInterpreter: inInterpreter ifFail: aBlock [
+	"For interpreter performance and to ease the objectAsMethod implementation eagerly
+	 evaluate the primtiive, i.e. if the method is cogged and has a primitive /do not/ evaluate
+	 the machine code primitive, just evaluate primitiveFunctionPointer directly."
+
+	primitiveFunctionPointer ~= 0 ifTrue: [
+		| succeeded |
+		self isPrimitiveFunctionPointerAnIndex ifTrue: [
+			self executeQuickPrimitive.
+			telemetryEnabled
+				ifTrue: [
+					telemetry telemetrySignalDebugSelector: (objectMemory findSelectorOfMethod: newMethod) ].
+			self returnToExecutive: inInterpreter.
+			^ nil ].
+		"slowPrimitiveResponse may of course context-switch. 
+		If so we must reenter the new process appropriately, returning only if we've found an interpreter frame.
+		The instructionPointer tells us from whence we came."
+		succeeded := self slowPrimitiveResponse.
+		succeeded ifTrue: [
+			telemetryEnabled
+				ifTrue: [
+					telemetry telemetrySignalDebugSelector: (objectMemory findSelectorOfMethod: newMethod) ].
+			self returnToExecutive: inInterpreter.
+			^ nil ] ].
+
+	^ aBlock value
+]
+
 { #category : #'bytecode - send' }
 CoInterpreterWithTelemetry >> executeQuickPrimitive [
 
