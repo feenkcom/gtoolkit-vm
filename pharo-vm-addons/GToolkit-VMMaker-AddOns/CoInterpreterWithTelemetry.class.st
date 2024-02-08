@@ -562,16 +562,16 @@ CoInterpreterWithTelemetry >> executeNewMethod [
 { #category : #'bytecode - send' }
 CoInterpreterWithTelemetry >> executeQuickPrimitive [
 
-	self flag: 'Should it be used?'.
+	self flag: 'Should it be used?. Maybe, because right after it, we return value to executive'.
 
-	"telemetryEnabled
+	telemetryEnabled
 		ifTrue: [
 			telemetry
 				telemetrySignalSend: 0
 				toInstanceOf: 0
 				isImmediate: false
 				sourceId: 14
-				framePointer: framePointer ]."
+				framePointer: framePointer ].
 
 	super executeQuickPrimitive.
 ]
