@@ -13,6 +13,8 @@ struct Telemetry {
     signals: LinkedList<TelemetrySignal>,
     signals_array: Vec<TelemetrySignal>,
     start_time: Instant,
+    in_machine_code_leaf_primitive: bool,
+    entering_machine_method: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -20,8 +22,9 @@ struct Telemetry {
 enum TelemetrySignal {
     Send(SendSignal),
     Return(ReturnSignal),
-    MethodSwitch(MethodSwitchSignal),
+    PrimitiveActivation(PrimitiveActivationSignal),
     ContextSwitch(ContextSwitchSignal),
+    Debug(DebugSignal),
 }
 
 impl Telemetry {
@@ -30,6 +33,8 @@ impl Telemetry {
             signals: Default::default(),
             signals_array: vec![],
             start_time: Instant::now(),
+            in_machine_code_leaf_primitive: false,
+            entering_machine_method: false,
         }
     }
 
@@ -50,8 +55,22 @@ impl Telemetry {
         class_index: sqInt,
         selector: Option<ObjectPointer>,
         is_immediate: bool,
+        source_id: u8,
         frame_pointer: *mut c_void,
     ) {
+        self.add_signal(TelemetrySignal::Debug(DebugSignal::MessageSend));
+
+        if self.entering_machine_method {
+            if source_id == 1 {
+                return;
+            }
+            self.entering_machine_method = false;
+        }
+
+        if self.in_machine_code_leaf_primitive {
+            self.return_from_leaf_primitive(frame_pointer);
+        }
+
         let selector = selector.map(|selector| PharoString::from_selector(selector));
 
         let class_index = if is_immediate {
@@ -60,37 +79,66 @@ impl Telemetry {
             ClassIndex::Class(class_index)
         };
 
-        self.add_signal(TelemetrySignal::Send(SendSignal {
+        let signal = TelemetrySignal::Send(SendSignal {
             timestamp: Instant::now().duration_since(self.start_time),
             class_index,
             selector,
+            source_id,
             frame_pointer,
-        }));
+        });
+
+        self.add_signal(signal);
+    }
+
+    pub fn receive_activate_machine_method(&mut self) {
+        self.entering_machine_method = true;
+        self.add_signal(TelemetrySignal::Debug(DebugSignal::ActivateMachineMethod));
+    }
+
+    pub fn receive_begin_machine_method(&mut self) {
+        self.entering_machine_method = false;
+        self.add_signal(TelemetrySignal::Debug(DebugSignal::BeginMachineMethod));
     }
 
     pub fn receive_return_signal(
         &mut self,
-        method: ObjectPointer,
         source_id: u8,
         execution_location: u8,
         frame_pointer: *mut c_void,
     ) {
-        let proxy = vm().proxy();
-        //proxy.pin_object(method);
+        self.entering_machine_method = false;
+
+        if source_id == 25 {
+            self.in_machine_code_leaf_primitive = false;
+        }
+
+        if self.in_machine_code_leaf_primitive {
+            self.return_from_leaf_primitive(frame_pointer);
+        }
+
         self.add_signal(TelemetrySignal::Return(ReturnSignal {
             timestamp: Instant::now().duration_since(self.start_time),
-            method: proxy.nil_object(),
             source_id,
             execution_location,
             frame_pointer,
         }));
     }
 
-    pub fn receive_method_switch_signal(
-        &mut self,
-        method: ObjectPointer,
-        frame_pointer: *mut c_void,
-    ) {
+    pub fn receive_machine_code_primitive_activation_signal(&mut self, signal_id: u8) {
+        self.in_machine_code_leaf_primitive = signal_id == 1;
+
+        match signal_id {
+            0 => self.add_signal(TelemetrySignal::Debug(
+                DebugSignal::DeactivateMachinePrimitive,
+            )),
+            1 => self.add_signal(TelemetrySignal::Debug(
+                DebugSignal::ActivateMachinePrimitive,
+            )),
+            2 => self.add_signal(TelemetrySignal::Debug(
+                DebugSignal::MachinePrimitiveMayCallMethods,
+            )),
+            _ => {}
+        };
     }
 
     pub fn receive_context_switch_signal(
@@ -103,6 +151,30 @@ impl Telemetry {
             timestamp: Instant::now().duration_since(self.start_time),
             old_process: proxy.nil_object(),
             new_process: proxy.nil_object(),
+        }));
+    }
+
+    pub fn receive_debug_class_signal(&mut self, class_index: sqInt, is_immediate: bool) {
+        let class_index = if is_immediate {
+            ClassIndex::Immediate(class_index)
+        } else {
+            ClassIndex::Class(class_index)
+        };
+        self.add_signal(TelemetrySignal::Debug(DebugSignal::Class(class_index)))
+    }
+
+    pub fn receive_debug_selector_signal(&mut self, selector: Option<ObjectPointer>) {
+        let selector = selector.map(|selector| PharoString::from_selector(selector));
+        self.add_signal(TelemetrySignal::Debug(DebugSignal::Selector(selector)))
+    }
+
+    fn return_from_leaf_primitive(&mut self, frame_pointer: *mut c_void) {
+        self.in_machine_code_leaf_primitive = false;
+        self.add_signal(TelemetrySignal::Return(ReturnSignal {
+            timestamp: Instant::now().duration_since(self.start_time),
+            source_id: 25,
+            execution_location: 2,
+            frame_pointer,
         }));
     }
 
@@ -120,8 +192,12 @@ impl Telemetry {
             payload: Box::into_raw(Box::new(self)) as *mut c_void,
             sendFn: Some(telemetry_receive_send_signal),
             returnFn: Some(telemetry_receive_return_signal),
-            methodSwitchFn: Some(telemetry_receive_method_switch_signal),
+            primitiveActivationFn: Some(telemetry_receive_primitive_activation_signal),
+            activateMachineMethodFn: Some(telemetry_receive_activate_machine_method),
+            beginMachineMethodFn: Some(telemetry_receive_begin_machine_method),
             contextSwitchFn: Some(telemetry_receive_context_switch_signal),
+            debugRecordClassFn: Some(telemetry_receive_debug_class_signal),
+            debugRecordSelectorFn: Some(telemetry_receive_debug_selector_signal),
         }
     }
 }
@@ -131,8 +207,9 @@ impl From<&TelemetrySignal> for u8 {
         match signal {
             TelemetrySignal::Send(_) => 1,
             TelemetrySignal::Return(_) => 2,
-            TelemetrySignal::MethodSwitch(_) => 3,
+            TelemetrySignal::PrimitiveActivation(_) => 3,
             TelemetrySignal::ContextSwitch(_) => 4,
+            TelemetrySignal::Debug(_) => 5,
         }
     }
 }
@@ -142,23 +219,21 @@ pub struct SendSignal {
     timestamp: Duration,
     class_index: ClassIndex,
     selector: Option<PharoString>,
+    source_id: u8,
     frame_pointer: *mut c_void,
 }
 
 #[derive(Debug, Clone)]
 pub struct ReturnSignal {
     timestamp: Duration,
-    method: ObjectPointer,
     source_id: u8,
     execution_location: u8,
     frame_pointer: *mut c_void,
 }
 
 #[derive(Debug, Clone)]
-pub struct MethodSwitchSignal {
-    timestamp: Duration,
-    method: ObjectPointer,
-    frame_pointer: *mut c_void,
+pub struct PrimitiveActivationSignal {
+    signal_id: u8,
 }
 
 #[derive(Debug, Clone)]
@@ -166,6 +241,18 @@ pub struct ContextSwitchSignal {
     timestamp: Duration,
     old_process: ObjectPointer,
     new_process: ObjectPointer,
+}
+
+#[derive(Debug, Clone)]
+pub enum DebugSignal {
+    ActivateMachineMethod,
+    BeginMachineMethod,
+    ActivateMachinePrimitive,
+    DeactivateMachinePrimitive,
+    MachinePrimitiveMayCallMethods,
+    MessageSend,
+    Class(ClassIndex),
+    Selector(Option<PharoString>),
 }
 
 #[derive(Debug, Clone)]
@@ -378,6 +465,11 @@ pub fn primitiveReifyTelemetrySignalAt() {
                             selector.as_pharo_string(),
                         );
                     }
+                    proxy.object_field_at_put(
+                        signal_oop,
+                        ObjectFieldIndex::new(4),
+                        proxy.new_integer(send_signal.source_id),
+                    );
                 }
                 TelemetrySignal::Return(return_signal) => {
                     proxy.object_field_at_put(
@@ -395,39 +487,54 @@ pub fn primitiveReifyTelemetrySignalAt() {
                     proxy.object_field_at_put(
                         signal_oop,
                         ObjectFieldIndex::new(2),
-                        return_signal.method,
-                    );
-                    proxy.object_field_at_put(
-                        signal_oop,
-                        ObjectFieldIndex::new(3),
                         proxy.new_integer(return_signal.source_id),
                     );
                     proxy.object_field_at_put(
                         signal_oop,
-                        ObjectFieldIndex::new(4),
+                        ObjectFieldIndex::new(3),
                         proxy.new_integer(return_signal.execution_location),
                     );
                 }
-                TelemetrySignal::MethodSwitch(method_switch_signal) => {
+                TelemetrySignal::PrimitiveActivation(primitive_activation_signal) => {
                     proxy.object_field_at_put(
                         signal_oop,
                         ObjectFieldIndex::new(0),
-                        proxy.new_positive_64bit_integer(
-                            telemetry.timestamp_nanos(&method_switch_signal.timestamp),
-                        ),
-                    );
-                    proxy.object_field_at_put(
-                        signal_oop,
-                        ObjectFieldIndex::new(1),
-                        proxy.new_external_address(method_switch_signal.frame_pointer),
-                    );
-                    proxy.object_field_at_put(
-                        signal_oop,
-                        ObjectFieldIndex::new(2),
-                        method_switch_signal.method,
+                        proxy.new_integer(primitive_activation_signal.signal_id),
                     );
                 }
                 TelemetrySignal::ContextSwitch(_) => {}
+                TelemetrySignal::Debug(debug_signal) => {
+                    proxy.object_field_at_put(
+                        signal_oop,
+                        ObjectFieldIndex::new(0),
+                        proxy.new_string(format!("{:?}", debug_signal)),
+                    );
+
+                    match debug_signal {
+                        DebugSignal::Class(class_index) => {
+                            proxy.object_field_at_put(
+                                signal_oop,
+                                ObjectFieldIndex::new(1),
+                                match class_index {
+                                    ClassIndex::Class(index) => proxy.class_or_nil_at_index(*index),
+                                    ClassIndex::Immediate(value) => {
+                                        ObjectPointer::from_native_c(*value)
+                                    }
+                                },
+                            );
+                        },
+                        DebugSignal::Selector(selector) => {
+                            if let Some(ref selector) = selector {
+                                proxy.object_field_at_put(
+                                    signal_oop,
+                                    ObjectFieldIndex::new(2),
+                                    selector.as_pharo_string(),
+                                );
+                            }
+                        },
+                        _ => {}
+                    }
+                }
             }
 
             signal_oop
@@ -476,6 +583,7 @@ pub unsafe extern "C" fn telemetry_receive_send_signal(
     class_index: sqInt,
     selector: sqInt,
     is_immediate: u8,
+    source_id: u8,
     frame_pointer: *mut c_void,
 ) {
     let mut telemetry = Box::from_raw(telemetry as *mut Telemetry);
@@ -485,36 +593,50 @@ pub unsafe extern "C" fn telemetry_receive_send_signal(
         Some(ObjectPointer::from_native_c(selector))
     };
 
-    telemetry.receive_send_signal(class_index, selector, is_immediate != 0, frame_pointer);
-    Box::leak(telemetry);
-}
-
-#[no_mangle]
-pub unsafe extern "C" fn telemetry_receive_return_signal(
-    telemetry: *mut c_void,
-    method: sqInt,
-    source_id: u8,
-    execution_location: u8,
-    frame_pointer: *mut c_void,
-) {
-    let mut telemetry = Box::from_raw(telemetry as *mut Telemetry);
-    telemetry.receive_return_signal(
-        ObjectPointer::from_native_c(method),
+    telemetry.receive_send_signal(
+        class_index,
+        selector,
+        is_immediate != 0,
         source_id,
-        execution_location,
         frame_pointer,
     );
     Box::leak(telemetry);
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn telemetry_receive_method_switch_signal(
+pub unsafe extern "C" fn telemetry_receive_activate_machine_method(telemetry: *mut c_void) {
+    let mut telemetry = Box::from_raw(telemetry as *mut Telemetry);
+    telemetry.receive_activate_machine_method();
+    Box::leak(telemetry);
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn telemetry_receive_begin_machine_method(telemetry: *mut c_void) {
+    let mut telemetry = Box::from_raw(telemetry as *mut Telemetry);
+    telemetry.receive_begin_machine_method();
+    Box::leak(telemetry);
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn telemetry_receive_return_signal(
     telemetry: *mut c_void,
-    method: sqInt,
+    source_id: u8,
+    execution_location: u8,
     frame_pointer: *mut c_void,
 ) {
     let mut telemetry = Box::from_raw(telemetry as *mut Telemetry);
-    telemetry.receive_method_switch_signal(ObjectPointer::from_native_c(method), frame_pointer);
+
+    telemetry.receive_return_signal(source_id, execution_location, frame_pointer);
+    Box::leak(telemetry);
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn telemetry_receive_primitive_activation_signal(
+    telemetry: *mut c_void,
+    signal_id: u8,
+) {
+    let mut telemetry = Box::from_raw(telemetry as *mut Telemetry);
+    telemetry.receive_machine_code_primitive_activation_signal(signal_id);
     Box::leak(telemetry);
 }
 
@@ -529,5 +651,33 @@ pub unsafe extern "C" fn telemetry_receive_context_switch_signal(
         ObjectPointer::from_native_c(old_process),
         ObjectPointer::from_native_c(new_process),
     );
+    Box::leak(telemetry);
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn telemetry_receive_debug_class_signal(
+    telemetry: *mut c_void,
+    class_index: sqInt,
+    is_immediate: u8,
+) {
+    let mut telemetry = Box::from_raw(telemetry as *mut Telemetry);
+
+    telemetry.receive_debug_class_signal(class_index, is_immediate != 0);
+    Box::leak(telemetry);
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn telemetry_receive_debug_selector_signal(
+    telemetry: *mut c_void,
+    selector: sqInt,
+) {
+    let mut telemetry = Box::from_raw(telemetry as *mut Telemetry);
+    let selector = if selector == 0 {
+        None
+    } else {
+        Some(ObjectPointer::from_native_c(selector))
+    };
+
+    telemetry.receive_debug_selector_signal(selector);
     Box::leak(telemetry);
 }
