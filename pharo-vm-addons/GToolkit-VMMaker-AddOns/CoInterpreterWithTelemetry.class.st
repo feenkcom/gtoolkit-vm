@@ -478,6 +478,17 @@ CoInterpreterWithTelemetry >> doRecordContextSwitchTo: aNewProc [
 ]
 
 { #category : #'emitting signals' }
+CoInterpreterWithTelemetry >> emitDebugReceiver: rcvr [
+	<inline: true>
+
+	telemetryEnabled
+		ifTrue: [
+			(objectMemory isImmediate: rcvr)
+				ifTrue: [ telemetry telemetrySignalDebugClass: rcvr isImmediate: true ]
+				ifFalse: [  telemetry telemetrySignalDebugClass: (objectMemory fetchClassTagOf: rcvr) isImmediate: false ] ]
+]
+
+{ #category : #'emitting signals' }
 CoInterpreterWithTelemetry >> emitReturnMachineSignalFromBaseFrame [
 	<inline: true>
 	telemetryEnabled
@@ -630,6 +641,8 @@ CoInterpreterWithTelemetry >> return: returnValue toExecutive: inInterpreter [
 	telemetryEnabled
 		ifTrue: [
 			| aSource |
+			
+			self emitDebugReceiver: returnValue.
 			
 			inInterpreter
 				ifTrue: [ aSource := ReturnToExecutiveInInterpreterSignal ]

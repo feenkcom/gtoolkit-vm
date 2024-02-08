@@ -8,7 +8,8 @@ Class {
 		'contextSwitchFn',
 		'primitiveActivationFn',
 		'beginMachineMethodFn',
-		'activateMachineMethodFn'
+		'activateMachineMethodFn',
+		'debugRecordClassFn'
 	],
 	#category : #'GToolkit-VMMaker-AddOns-Telemetry'
 }
@@ -29,7 +30,8 @@ CoInterpreterTelemetry class >> instVarNamesAndTypesForTranslationDo: aBinaryBlo
 		value: 'primitiveActivationFn' value: #('void (*' ')(void*, uint8_t)');
 		value: 'activateMachineMethodFn' value: #('void (*' ')(void*)');
 		value: 'beginMachineMethodFn' value: #('void (*' ')(void*)');
-		value: 'contextSwitchFn' value: #('void (*' ')(void*, sqInt, sqInt)')
+		value: 'contextSwitchFn' value: #('void (*' ')(void*, sqInt, sqInt)');
+		value: 'debugRecordClassFn' value: #('void (*' ')(void*, sqInt, uint8_t)')
 ]
 
 { #category : #translation }
@@ -50,6 +52,11 @@ CoInterpreterTelemetry >> beginMachineMethodFn [
 { #category : #accessing }
 CoInterpreterTelemetry >> contextSwitchFn [
 	^ contextSwitchFn
+]
+
+{ #category : #accessing }
+CoInterpreterTelemetry >> debugRecordClassFn [
+	^ debugRecordClassFn
 ]
 
 { #category : #accessing }
@@ -107,6 +114,18 @@ CoInterpreterTelemetry >> telemetrySignalContextSwitchFrom: anOldProc to: aNewPr
 		with: self payload
 		with: anOldProc
 		with: aNewProc
+]
+
+{ #category : #signalling }
+CoInterpreterTelemetry >> telemetrySignalDebugClass: aClass isImmediate: isImmediate [
+	<inline: false>
+	<returnTypeC:'void'>
+
+	self
+		perform: self debugRecordClassFn
+		with: self payload
+		with: aClass
+		with: isImmediate
 ]
 
 { #category : #signalling }
