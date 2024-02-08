@@ -753,9 +753,8 @@ CoInterpreterWithTelemetry >> slowPrimitiveResponse [
 	
 	result := super slowPrimitiveResponse.
 	
-	"telemetryEnabled
-				ifTrue: [
-					telemetry telemetrySignalDebugSelector: (objectMemory findSelectorOfMethod: newMethod) ]."
+	telemetryEnabled
+		ifTrue: [ telemetry telemetrySignalDebugSelector: messageSelector ].
 	
 	"telemetryEnabled
 		ifTrue: [
