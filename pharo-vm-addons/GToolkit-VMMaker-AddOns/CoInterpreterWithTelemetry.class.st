@@ -568,7 +568,7 @@ CoInterpreterWithTelemetry >> executeQuickPrimitive [
 				framePointer: framePointer ]."
 
 	telemetryEnabled
-		ifTrue: [ telemetry telemetrySignalDebugSelector: (objectMemory findSelectorOfMethod: newMethod) ].
+		ifTrue: [ telemetry telemetrySignalDebugSelector: (messageSelector) ].
 				
 	super executeQuickPrimitive.
 ]
