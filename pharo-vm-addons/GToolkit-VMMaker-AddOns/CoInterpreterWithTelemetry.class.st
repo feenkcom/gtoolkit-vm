@@ -567,8 +567,8 @@ CoInterpreterWithTelemetry >> executeQuickPrimitive [
 				sourceId: 14
 				framePointer: framePointer ]."
 
-	telemetryEnabled
-		ifTrue: [ telemetry telemetrySignalDebugSelector: (objectMemory findSelectorOfMethod: newMethod) ].
+	"telemetryEnabled
+		ifTrue: [ telemetry telemetrySignalDebugSelector: (objectMemory findSelectorOfMethod: newMethod) ]."
 				
 	super executeQuickPrimitive.
 ]
@@ -757,13 +757,13 @@ CoInterpreterWithTelemetry >> slowPrimitiveResponse [
 				ifTrue: [
 					telemetry telemetrySignalDebugSelector: (objectMemory findSelectorOfMethod: newMethod) ]."
 	
-	telemetryEnabled
+	"telemetryEnabled
 		ifTrue: [
-			"telemetry
+			telemetry
 				telemetrySignalReturnFrom: SlowPrimitiveReturnSignal
 				in: InterpreterCode
-				framePointer: framePointer."
-			telemetry telemetrySignalDebugSelector: (messageSelector"objectMemory findSelectorOfMethod: newMethod") ].
+				framePointer: framePointer.
+			telemetry telemetrySignalDebugSelector: (messageSelector) ]."
 	^ result
 ]
 
