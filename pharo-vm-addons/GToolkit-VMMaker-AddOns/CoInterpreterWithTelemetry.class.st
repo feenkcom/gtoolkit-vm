@@ -567,10 +567,10 @@ CoInterpreterWithTelemetry >> executeQuickPrimitive [
 				sourceId: 14
 				framePointer: framePointer ]."
 
-	super executeQuickPrimitive.
-	
 	telemetryEnabled
 		ifTrue: [ telemetry telemetrySignalDebugSelector: (objectMemory findSelectorOfMethod: newMethod) ].
+				
+	super executeQuickPrimitive.
 ]
 
 { #category : #'bytecode - return' }
@@ -753,15 +753,17 @@ CoInterpreterWithTelemetry >> slowPrimitiveResponse [
 	
 	result := super slowPrimitiveResponse.
 	
-	telemetryEnabled
+	"telemetryEnabled
 				ifTrue: [
-					telemetry telemetrySignalDebugSelector: (objectMemory findSelectorOfMethod: newMethod) ].
+					telemetry telemetrySignalDebugSelector: (objectMemory findSelectorOfMethod: newMethod) ]."
 	
 	telemetryEnabled
-		ifTrue: [ telemetry
+		ifTrue: [
+			"telemetry
 				telemetrySignalReturnFrom: SlowPrimitiveReturnSignal
 				in: InterpreterCode
-				framePointer: framePointer ].
+				framePointer: framePointer."
+			telemetry telemetrySignalDebugSelector: (messageSelector"objectMemory findSelectorOfMethod: newMethod") ].
 	^ result
 ]
 
