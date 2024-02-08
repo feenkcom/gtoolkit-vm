@@ -553,23 +553,6 @@ CoInterpreterWithTelemetry >> enableTelemetry [
 	skipNextOrdinarySend := false
 ]
 
-{ #category : #'bytecode - send' }
-CoInterpreterWithTelemetry >> executeNewMethod [
-	
-	"Shouldn't be used for collecting telemetry signals, only for debugging purposes"
-	
-	"telemetryEnabled
-		ifTrue: [
-			telemetry
-				telemetrySignalSend: (objectMemory findSelectorOfMethod: newMethod)
-				toInstanceOf: 0
-				isImmediate: false
-				sourceId: 9
-				framePointer: framePointer ]."
-
-	super executeNewMethod
-]
-
 { #category : #accessing }
 CoInterpreterWithTelemetry >> executePrimitiveFromInterpreter: inInterpreter ifFail: aBlock [
 	"For interpreter performance and to ease the objectAsMethod implementation eagerly
