@@ -651,6 +651,18 @@ CoInterpreterWithTelemetry >> return: returnValue toExecutive: inInterpreter [
 ]
 
 { #category : #'bytecode - return' }
+CoInterpreterWithTelemetry >> returnToExecutive: inInterpreter [
+	telemetryEnabled
+		ifTrue: [
+			telemetry
+				telemetrySignalReturnFrom: 51
+				in: InterpreterCode
+				framePointer: framePointer ].
+
+	super returnToExecutive: inInterpreter
+]
+
+{ #category : #'bytecode - return' }
 CoInterpreterWithTelemetry >> returnToExecutive: inInterpreter postContextSwitch: switchedContext [
 	"Return to the current frame, either by entering machine code, or longjmp-ing back to the
 	 interpreter or simply returning, depending on where we are. To know whether to return or
