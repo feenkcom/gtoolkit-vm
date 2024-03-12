@@ -9,6 +9,7 @@ extern sqInt instantiateClassisPinned(sqInt classObj, sqInt isPinned);
 extern void * firstBytePointerOfDataObject(sqInt objOop);
 extern usqLong getStatFullGCUsecs();
 extern usqLong getStatScavengeGCUsecs();
+extern sqInt classOrNilAtIndex(sqInt classIndex);
 
 EXPORT(void*) exportGetHandler(sqInt anOop);
 EXPORT(void*) exportReadAddress(sqInt anExternalAddress);
@@ -18,6 +19,7 @@ EXPORT(sqInt) exportInstantiateClassIsPinned(sqInt classObj, sqInt isPinned);
 EXPORT(void*) exportFirstBytePointerOfDataObject(sqInt objOop);
 EXPORT(usqLong) exportStatFullGCUsecs();
 EXPORT(usqLong) exportStatScavengeGCUsecs();
+EXPORT(sqInt) exportClassOrNilAtIndex(sqInt classIndex);
 
 extern int vmRunOnWorkerThread;
 EXPORT(void) setVmRunOnWorkerThread(int isOnWorker);

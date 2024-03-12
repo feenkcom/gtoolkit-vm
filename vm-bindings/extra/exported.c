@@ -35,3 +35,7 @@ usqLong exportStatFullGCUsecs() {
 usqLong exportStatScavengeGCUsecs() {
     return getStatScavengeGCUsecs();
 }
+
+sqInt exportClassOrNilAtIndex(sqInt classIndex) {
+    return classOrNilAtIndex(classIndex);
+}

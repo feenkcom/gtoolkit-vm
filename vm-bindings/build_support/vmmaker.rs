@@ -285,17 +285,18 @@ impl VMMaker {
         });
     }
 
-    pub fn generate_sources(&self, interpreter: &str) -> Result<()> {
+    pub fn generate_sources(&self, interpreter: &str, compiler: &str) -> Result<()> {
         if self.builder.output_directory().join("generated").exists() {
             return Ok(());
         }
 
         CommandToExecute::build_command(self.vm.as_command(), |command| {
             command.arg(&self.image).arg("eval").arg(format!(
-                "PharoVMMaker generate: #'{}' outputDirectory: '{}' imageFormat: '{}'",
-                interpreter,
+                "PharoVMMaker new imageFormatName: '{}'; outputDirectory: '{}'; generate: {} memoryManager: Spur64BitCoMemoryManager compilerClass: {}",
+                self.builder.image_format(),
                 self.builder.output_directory().display(),
-                self.builder.image_format()
+                interpreter,
+                compiler
             ));
         })
         .with_name("Generating sources")
@@ -420,5 +421,35 @@ impl VMMaker {
                 );
             }
         })
+    }
+
+    fn install_vmmaker_addons(builder: &Rc<dyn Builder>, vmmaker_image: &PathBuf, vmmaker_vm: &VirtualMachineExecutable) -> Result<(), Error> {
+        CommandToExecute::build_command(vmmaker_vm.as_command(), |command| {
+            command
+                .arg(&vmmaker_image)
+                .arg("st")
+                .arg("--no-default-preferences")
+                .arg("--save")
+                .arg("--quit")
+                .arg(
+                    builder
+                        .crate_directory()
+                        .join("scripts")
+                        .join("installVMMakerAddOns.st"),
+                )
+                .arg(builder.crate_directory())
+                .arg("scpUrl");
+        })
+            .with_name("Installing VMMaker AddOns")
+            .with_verbose(true)
+            .without_log_prefix()
+            .into_commands()
+            .execute()?;
+
+        println!(
+            "cargo:rerun-if-changed={}",
+            builder.crate_directory().join("pharo-vm-addons").display()
+        );
+        Ok(())
     }
 }

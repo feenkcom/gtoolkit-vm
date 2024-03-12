@@ -219,12 +219,11 @@ pub trait Builder: Debug {
     }
 
     fn vm_sources_directory(&self) -> PathBuf {
-        env::current_dir()
-            .unwrap()
-            .parent()
-            .unwrap()
-            .to_path_buf()
-            .join(SOURCES_DIRECTORY)
+        self.crate_directory().join(SOURCES_DIRECTORY)
+    }
+
+    fn crate_directory(&self) -> PathBuf {
+        env::current_dir().unwrap().parent().unwrap().to_path_buf()
     }
 
     fn prepare_environment(&self);
@@ -324,6 +323,7 @@ pub trait Builder: Debug {
             .allowlist_function("exportFirstBytePointerOfDataObject")
             .allowlist_function("exportStatFullGCUsecs")
             .allowlist_function("exportStatScavengeGCUsecs")
+            .allowlist_function("exportClassOrNilAtIndex")
             .allowlist_function("setVmRunOnWorkerThread")
             .allowlist_function("setLogger")
             .allowlist_function("setShouldLog")
@@ -337,7 +337,9 @@ pub trait Builder: Debug {
                     .join("pharoClient.h")
                     .display()
                     .to_string(),
-            )
+            );
+
+        builder = builder
             .header(extra_headers.join("sqExport.h").display().to_string())
             .header(extra_headers.join("exported.h").display().to_string())
             .header(extra_headers.join("setLogger.h").display().to_string())

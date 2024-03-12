@@ -1,12 +1,12 @@
 use crate::bindings::{
     calloc, exportFirstBytePointerOfDataObject as firstBytePointerOfDataObject,
     exportGetHandler as getHandler, exportInstantiateClassIsPinned as instantiateClassIsPinned,
-    exportReadAddress as readAddress, free, malloc, sqInt, usqInt,
+    exportReadAddress as readAddress, exportClassOrNilAtIndex as classOrNilAtIndex, free, malloc, sqInt, usqInt,
     VirtualMachine as sqInterpreterProxy,
 };
 use std::any::type_name;
 
-use std::ffi::CString;
+use std::ffi::{CStr, CString};
 use std::fmt::Display;
 use std::mem::size_of;
 
@@ -29,6 +29,14 @@ impl InterpreterProxy {
         unsafe { function() as usize }
     }
 
+    pub fn bool_object(&self, value: bool) -> ObjectPointer {
+        if value {
+            self.true_object()
+        } else {
+            self.false_object()
+        }
+    }
+
     pub fn true_object(&self) -> ObjectPointer {
         let function = self.native().trueObject.unwrap();
         unsafe { ObjectPointer::from_native_c(function()) }
@@ -36,6 +44,11 @@ impl InterpreterProxy {
 
     pub fn false_object(&self) -> ObjectPointer {
         let function = self.native().falseObject.unwrap();
+        unsafe { ObjectPointer::from_native_c(function()) }
+    }
+
+    pub fn nil_object(&self) -> ObjectPointer {
+        let function = self.native().nilObject.unwrap();
         unsafe { ObjectPointer::from_native_c(function()) }
     }
 
@@ -91,6 +104,12 @@ impl InterpreterProxy {
         unsafe { getHandler(object.into_native()) }
     }
 
+    /// Return the size of an indexable object
+    pub fn size_of(&self, indexable_object: ObjectPointer) -> usize {
+        let function = self.native().stSizeOf.unwrap();
+        (unsafe { function(indexable_object.into_native()) }) as usize
+    }
+
     /// Return an item at an index within the indexable object (array, string, etc.).
     /// The index must start from 1, and not 0 like in Rust
     pub fn item_at(
@@ -132,6 +151,23 @@ impl InterpreterProxy {
         // watch out! the interpreter function expects to get field index first and object second
         unsafe {
             ObjectPointer::from_native_c(function(field_index.into_native(), object.into_native()))
+        }
+    }
+
+    pub fn object_field_at_put(
+        &self,
+        object: ObjectPointer,
+        field_index: ObjectFieldIndex,
+        value: ObjectPointer,
+    ) -> ObjectPointer {
+        let function = self.native().storePointerofObjectwithValue.unwrap();
+        // watch out! the interpreter function expects to get field index first and object second
+        unsafe {
+            ObjectPointer::from_native_c(function(
+                field_index.into_native(),
+                object.into_native(),
+                value.into_native(),
+            ))
         }
     }
 
@@ -196,6 +232,12 @@ impl InterpreterProxy {
         ObjectPointer::from_native_c(oop)
     }
 
+    pub fn instantiate_class(&self, class: ObjectPointer, is_pinned: bool) -> ObjectPointer {
+        let is_pinned = if is_pinned { 1 } else { 0 };
+        let oop = unsafe { instantiateClassIsPinned(class.into_native(), is_pinned) };
+        ObjectPointer::from_native_c(oop)
+    }
+
     pub fn signal_semaphore(&self, index: usize) {
         let function = self.native().signalSemaphoreWithIndex.unwrap();
         unsafe {
@@ -218,6 +260,11 @@ impl InterpreterProxy {
         unsafe { function(boolean.into_native()) };
     }
 
+    pub fn method_return_integer(&self, value: i64) {
+        let function = self.native().methodReturnInteger.unwrap();
+        unsafe { function(value) };
+    }
+
     pub fn first_indexable_field(&self, object: ObjectPointer) -> *mut c_void {
         let function = self.native().firstIndexableField.unwrap();
         unsafe { function(object.into_native()) }
@@ -236,6 +283,10 @@ impl InterpreterProxy {
         unsafe { function(object.into_native(), class.into_native()) != 0 }
     }
 
+    pub fn class_or_nil_at_index(&self, class_index: sqInt) -> ObjectPointer {
+        unsafe { ObjectPointer::from_native_c(classOrNilAtIndex(class_index)) }
+    }
+
     pub fn new_integer(&self, number: impl Into<sqInt>) -> ObjectPointer {
         let function = self.native().integerObjectOf.unwrap();
         let oop = unsafe { function(number.into()) };
@@ -249,6 +300,17 @@ impl InterpreterProxy {
 
         let oop = unsafe { function(c_string.as_ptr() as *mut c_char) };
         ObjectPointer::from_native_c(oop)
+    }
+
+    pub fn new_string_from_cstring(&self, c_string: Option<&CStr>) -> ObjectPointer {
+        if let Some(c_string) = c_string {
+            let function = self.native().stringForCString.unwrap();
+            let oop = unsafe { function(c_string.as_ptr() as *mut c_char) };
+            ObjectPointer::from_native_c(oop)
+        }
+        else {
+            self.nil_object()
+        }
     }
 
     pub fn new_external_address<T>(&self, address: *const T) -> ObjectPointer {
@@ -271,6 +333,11 @@ impl InterpreterProxy {
 
     pub fn read_address(&self, external_address_object: ObjectPointer) -> *mut c_void {
         unsafe { readAddress(external_address_object.into_native()) }
+    }
+
+    pub fn pin_object(&self, object: ObjectPointer) {
+        let function = self.native().pinObject.unwrap();
+        unsafe { function(object.into_native()) };
     }
 
     pub fn malloc(&self, bytes: usize) -> *mut c_void {
