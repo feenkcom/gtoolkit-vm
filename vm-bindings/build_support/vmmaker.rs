@@ -291,8 +291,9 @@ impl VMMaker {
         }
 
         CommandToExecute::build_command(self.vm.as_command(), |command| {
+            // New PharoVMs don't have distinct  imageFormatName
             command.arg(&self.image).arg("eval").arg(format!(
-                "PharoVMMaker new imageFormatName: '{}'; outputDirectory: '{}'; generate: {} memoryManager: Spur64BitCoMemoryManager compilerClass: {}",
+                "PharoVMMaker new in: [ :vmMaker | (vmMaker respondsTo: #imageFormatName:) ifTrue: [ vmMaker imageFormatName: '{}' ] ]; outputDirectory: '{}'; generate: {} memoryManager: Spur64BitCoMemoryManager compilerClass: {}",
                 self.builder.image_format(),
                 self.builder.output_directory().display(),
                 interpreter,
@@ -423,7 +424,11 @@ impl VMMaker {
         })
     }
 
-    fn install_vmmaker_addons(builder: &Rc<dyn Builder>, vmmaker_image: &PathBuf, vmmaker_vm: &VirtualMachineExecutable) -> Result<(), Error> {
+    fn install_vmmaker_addons(
+        builder: &Rc<dyn Builder>,
+        vmmaker_image: &PathBuf,
+        vmmaker_vm: &VirtualMachineExecutable,
+    ) -> Result<(), Error> {
         CommandToExecute::build_command(vmmaker_vm.as_command(), |command| {
             command
                 .arg(&vmmaker_image)
@@ -440,11 +445,11 @@ impl VMMaker {
                 .arg(builder.crate_directory())
                 .arg("scpUrl");
         })
-            .with_name("Installing VMMaker AddOns")
-            .with_verbose(true)
-            .without_log_prefix()
-            .into_commands()
-            .execute()?;
+        .with_name("Installing VMMaker AddOns")
+        .with_verbose(true)
+        .without_log_prefix()
+        .into_commands()
+        .execute()?;
 
         println!(
             "cargo:rerun-if-changed={}",
