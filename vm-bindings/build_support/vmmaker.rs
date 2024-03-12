@@ -1,14 +1,15 @@
-use crate::{Builder, FamilyOS, HostOS, DOWNLOADING, EXTRACTING};
-use anyhow::Result;
-use commander::CommandToExecute;
-use downloader::{FileToDownload, FilesToDownload};
-use file_matcher::{FileNamed, OneEntryCopier};
-use serde::{Serialize, Serializer};
-use std::fmt::{Display, Formatter};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::rc::Rc;
-use unzipper::{FileToUnzip, FilesToUnzip};
+
+use anyhow::Result;
+use commander::CommandToExecute;
+use downloader::{FilesToDownload, FileToDownload};
+use file_matcher::{FileNamed, OneEntryCopier};
+use serde::Serialize;
+use unzipper::{FilesToUnzip, FileToUnzip};
+
+use crate::{Builder, DOWNLOADING, EXTRACTING, FamilyOS, HostOS};
 
 const VM_CLIENT_VMMAKER_VM_VAR: &str = "VM_CLIENT_VMMAKER";
 const VM_CLIENT_VMMAKER_IMAGE_VAR: &str = "VM_CLIENT_VMMAKER_IMAGE";
@@ -424,11 +425,12 @@ impl VMMaker {
         })
     }
 
+    #[allow(dead_code)]
     fn install_vmmaker_addons(
         builder: &Rc<dyn Builder>,
         vmmaker_image: &PathBuf,
         vmmaker_vm: &VirtualMachineExecutable,
-    ) -> Result<(), Error> {
+    ) -> Result<()> {
         CommandToExecute::build_command(vmmaker_vm.as_command(), |command| {
             command
                 .arg(&vmmaker_image)

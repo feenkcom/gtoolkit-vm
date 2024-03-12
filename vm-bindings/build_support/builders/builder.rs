@@ -1,12 +1,12 @@
-use bindgen::CargoCallbacks;
+use std::{env, fmt};
 use std::fmt::{Debug, Display, Formatter};
 use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
-use std::{env, fmt};
 
+use bindgen::CargoCallbacks;
+use platforms::{Platform, PointerWidth};
 use platforms::target::OS;
-use platforms::{Arch, Platform, PointerWidth};
 
 pub const SOURCES_DIRECTORY: &str = "pharo-vm";
 
@@ -290,7 +290,6 @@ pub trait Builder: Debug {
         // we should configure CLANG_PATH and BINDGEN_EXTRA_CLANG_ARGS_{TARGET} variables
         if self.target().is_android() {
             let ndk = ndk_build::ndk::Ndk::from_env().unwrap();
-            use ndk_build::target::Target as AndroidTarget;
             env::set_var("CLANG_PATH", ndk.clang().unwrap().0);
             env::set_var(
                 format!("BINDGEN_EXTRA_CLANG_ARGS_{}", self.platform().target_triple),
