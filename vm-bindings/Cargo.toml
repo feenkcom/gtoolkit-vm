@@ -40,7 +40,6 @@ all_plugins = [
     "socket_plugin",
     "squeak_ssl_plugin",
     "surface_plugin",
-    "unix_os_process_plugin",
     "uuid_plugin" ]
 # Include primitives to make objects readonly
 immutability = []
@@ -63,7 +62,6 @@ misc_primitive_plugin = []
 socket_plugin = []
 squeak_ssl_plugin = []
 surface_plugin = []
-unix_os_process_plugin = ["file_plugin", "socket_plugin"]
 uuid_plugin = []
 # Compile GNU processed interpreter sources.
 # Clang does not require gnuisation
