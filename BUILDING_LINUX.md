@@ -36,6 +36,12 @@ sudo ln -sf /usr/bin/clang-cpp /usr/bin/cpp
 sudo ln -sf /usr/bin/ld.lld /usr/bin/ld
 ```
 
+### patchelf
+The rpaths of the GT executables are updated by gtoolkit-vm-builder:
+```
+sudo apt install patchelf
+```
+
 ## Cloning
 ```
 git clone git@github.com:feenkcom/gtoolkit-vm.git
