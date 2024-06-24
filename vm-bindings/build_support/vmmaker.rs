@@ -261,6 +261,8 @@ impl VMMaker {
         .into_commands()
         .execute()?;
 
+        Self::install_vmmaker_addons(&builder, &vmmaker_image, &vmmaker_vm)?;
+
         CommandToExecute::build_command(vmmaker_vm.as_command(), |command| {
             command
                 .arg(&vmmaker_image)
