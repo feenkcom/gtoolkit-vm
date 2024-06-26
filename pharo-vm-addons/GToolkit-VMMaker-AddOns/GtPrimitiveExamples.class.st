@@ -116,6 +116,46 @@ GtPrimitiveExamples >> testByteArrayToExternalAddressBadArguments [
 ]
 
 { #category : #tests }
+GtPrimitiveExamples >> testByteArrayToExternalStartingAt1 [
+	<gtExample>
+	| ea ba size result |
+	size := 24.
+	ea := ExternalAddress allocate: size.
+	1 to: size do: [ :i | ea byteAt: i put: i \\ 256 ].
+	ba := ByteArray new: size.
+	result := self
+			primitiveCopyFrom: ba
+			at: 1
+			to: ea
+			at: 1
+			size: size.
+	self assert: result equals: size.
+	self assert: (ea copyFrom: 1 to: size) equals: ba.
+	ea free.
+	^ ba
+]
+
+{ #category : #tests }
+GtPrimitiveExamples >> testByteArrayToExternalStartingAt11 [
+	<gtExample>
+	| ea ba size result |
+	size := 24.
+	ea := ExternalAddress allocate: size+10.
+	ba := ByteArray new: size.
+	1 to: size do: [ :i | ba byteAt: i put: i \\ 256 ].
+	result := self
+			primitiveCopyFrom: ba
+			at: 1
+			to: ea
+			at: 11
+			size: size.
+	self assert: result equals: size.
+	self assert: (ea copyFrom: 11 to: size+10) equals: ba.
+	ea free.
+	^ ba
+]
+
+{ #category : #tests }
 GtPrimitiveExamples >> testExternalAddressToByteArrayBadArguments [
 	<gtExample>
 	| ea ba null |
@@ -219,7 +259,7 @@ GtPrimitiveExamples >> testExternalAddressToByteArrayBadArguments [
 ]
 
 { #category : #tests }
-GtPrimitiveExamples >> testExternalToObjectStartingAt1 [
+GtPrimitiveExamples >> testExternalToByteArrayStartingAt1 [
 	<gtExample>
 	| ea ba size result |
 	size := 24.
@@ -239,7 +279,7 @@ GtPrimitiveExamples >> testExternalToObjectStartingAt1 [
 ]
 
 { #category : #tests }
-GtPrimitiveExamples >> testExternalToObjectStartingAt10 [
+GtPrimitiveExamples >> testExternalToByteArrayStartingAt11 [
 	<gtExample>
 	| ea ba size result |
 	size := 24.
@@ -254,26 +294,6 @@ GtPrimitiveExamples >> testExternalToObjectStartingAt10 [
 			size: size.
 	self assert: result equals: size.
 	self assert: (ba copyFrom: 11 to: ba size) equals: (ea copyFrom: 1 to: size).
-	ea free.
-	^ ba
-]
-
-{ #category : #tests }
-GtPrimitiveExamples >> testObjectToExternalStartingAt1 [
-	<gtExample>
-	| ea ba size result |
-	size := 24.
-	ea := ExternalAddress allocate: size.
-	1 to: size do: [ :i | ea byteAt: i put: i \\ 256 ].
-	ba := ByteArray new: size.
-	result := self
-			primitiveCopyFrom: ba
-			at: 1
-			to: ea
-			at: 1
-			size: size.
-	self assert: result equals: size.
-	self assert: (ea copyFrom: 1 to: size) equals: ba.
 	ea free.
 	^ ba
 ]
