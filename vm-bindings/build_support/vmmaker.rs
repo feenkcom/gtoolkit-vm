@@ -294,7 +294,7 @@ impl VMMaker {
         }
 
         CommandToExecute::build_command(self.vm.as_command(), |command| {
-            // New PharoVMs don't have distinct  imageFormatName
+            // New PharoVMs don't have distinct imageFormatName
             command.arg(&self.image).arg("eval").arg(format!(
                 "PharoVMMaker new in: [ :vmMaker | (vmMaker respondsTo: #imageFormatName:) ifTrue: [ vmMaker imageFormatName: '{}' ] ]; outputDirectory: '{}'; generate: {} memoryManager: Spur64BitCoMemoryManager compilerClass: {}",
                 self.builder.image_format(),
@@ -397,7 +397,7 @@ impl VMMaker {
 
             let executable = match type_and_path[..] {
                 [] => bail!("The value of {} is empty", VM_CLIENT_VMMAKER_VM_VAR,),
-                [path] => VirtualMachineExecutable::Pharo(Path::new(path).to_path_buf()),
+                [path] => VirtualMachineExecutable::GToolkit(Path::new(path).to_path_buf()),
                 [vm_type, path] => VirtualMachineExecutable::for_type(vm_type)?.with_path(path),
                 _ => bail!(
                     "The value of {} is malformed: {}",
