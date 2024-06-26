@@ -208,16 +208,16 @@ impl VMMaker {
         println!("Custom VMMaker VM {:?}", &custom_vmmaker_vm);
         println!("Potential VMMaker VMs: {:?}", &existing_vmmaker_vms);
 
-        // at this point we have neither a ready vmmaker image nor a vm.
+        // at this point, we have neither a ready vmmaker image nor a vm.
         // we should download a new image if there is no custom one and get a vm
         let mut source = VMMakerSource {
-            vm: Self::custom_vmmaker_vm()?,
+            vm: custom_vmmaker_vm,
             image: Self::custom_source_image(),
         };
 
-        // if we have both source vm and the image there is nothing to download
+        // if we have both source vm and the image, there is nothing to download
         if source.vm.is_none() || source.image.is_none() {
-            Self::download_vmmaker(&mut source, builder.clone())?;
+            Self::download_vmmaker_image_or_vm(&mut source, builder.clone())?;
         }
 
         let vmmaker_vm = source.vm.unwrap();
@@ -312,7 +312,8 @@ impl VMMaker {
         Ok(())
     }
 
-    fn download_vmmaker(source: &mut VMMakerSource, builder: Rc<dyn Builder>) -> Result<()> {
+    /// Download a VMMaker VM and/or a source image if are not yet detected
+    fn download_vmmaker_image_or_vm(source: &mut VMMakerSource, builder: Rc<dyn Builder>) -> Result<()> {
         let url = match builder.host_family() {
             FamilyOS::Apple => match std::env::consts::ARCH {
                 "aarch64" => VMMAKER_DARWIN_M1_VM_URL,
@@ -375,12 +376,18 @@ impl VMMaker {
             rt.block_on(unzip.unzip())?;
         }
 
-        source.image = Some(
-            FileNamed::wildmatch("*.image")
-                .within(&image_folder)
-                .find()?,
-        );
-        source.vm = Some(vm_executable.with_host(&builder.host(), vm_folder));
+        if source.image.is_none() {
+            source.image = Some(
+                FileNamed::wildmatch("*.image")
+                    .within(&image_folder)
+                    .find()?,
+            );
+        }
+
+        if source.vm.is_none() {
+            source.vm = Some(vm_executable.with_host(&builder.host(), vm_folder));
+        }
+
         Ok(())
     }
 
