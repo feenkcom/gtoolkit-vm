@@ -6,6 +6,16 @@ Class {
 	#category : #'GToolkit-VMMaker-AddOns-Examples'
 }
 
+{ #category : #private }
+GtPrimitiveExamples >> eaCopy: anExternalAddress from: startIndex to: endIndex [
+	"Answer the equivalent of ExternalAddress>>copyFrom:to:, but avoid relying on the new primitive"
+	| result size |
+	size := endIndex - startIndex + 1.
+	result := ByteArray new: size.
+	LibC memCopy: (anExternalAddress + (startIndex - 1)) to: result size: size.
+	^ result
+]
+
 { #category : #primitives }
 GtPrimitiveExamples >> primitiveCopyFrom: src at: srcStart to: dest at: destStart size: size [
 	<primitive: 'primitiveCopyFromAtToAtSize'>
@@ -120,9 +130,9 @@ GtPrimitiveExamples >> testByteArrayToExternalStartingAt1 [
 	<gtExample>
 	| ea ba size result |
 	size := 24.
-	ea := ExternalAddress allocate: size.
-	1 to: size do: [ :i | ea byteAt: i put: i \\ 256 ].
 	ba := ByteArray new: size.
+	1 to: size do: [ :i | ba byteAt: i put: i \\ 256 ].
+	ea := ExternalAddress allocate: size.
 	result := self
 			primitiveCopyFrom: ba
 			at: 1
@@ -130,7 +140,7 @@ GtPrimitiveExamples >> testByteArrayToExternalStartingAt1 [
 			at: 1
 			size: size.
 	self assert: result equals: size.
-	self assert: (ea copyFrom: 1 to: size) equals: ba.
+	self assert: (self eaCopy: ea from: 1 to: size) equals: ba.
 	ea free.
 	^ ba
 ]
@@ -140,9 +150,9 @@ GtPrimitiveExamples >> testByteArrayToExternalStartingAt11 [
 	<gtExample>
 	| ea ba size result |
 	size := 24.
-	ea := ExternalAddress allocate: size+10.
 	ba := ByteArray new: size.
 	1 to: size do: [ :i | ba byteAt: i put: i \\ 256 ].
+	ea := ExternalAddress allocate: size+10.
 	result := self
 			primitiveCopyFrom: ba
 			at: 1
@@ -150,7 +160,7 @@ GtPrimitiveExamples >> testByteArrayToExternalStartingAt11 [
 			at: 11
 			size: size.
 	self assert: result equals: size.
-	self assert: (ea copyFrom: 11 to: size+10) equals: ba.
+	self assert: (self eaCopy: ea from: 11 to: size+10) equals: ba.
 	ea free.
 	^ ba
 ]
@@ -273,7 +283,7 @@ GtPrimitiveExamples >> testExternalToByteArrayStartingAt1 [
 			at: 1
 			size: size.
 	self assert: result equals: size.
-	self assert: ba equals: (ea copyFrom: 1 to: size).
+	self assert: ba equals: (self eaCopy: ea from: 1 to: size).
 	ea free.
 	^ ba
 ]
@@ -293,7 +303,7 @@ GtPrimitiveExamples >> testExternalToByteArrayStartingAt11 [
 			at: 11
 			size: size.
 	self assert: result equals: size.
-	self assert: (ba copyFrom: 11 to: ba size) equals: (ea copyFrom: 1 to: size).
+	self assert: (ba copyFrom: 11 to: ba size) equals: (self eaCopy: ea from: 1 to: size).
 	ea free.
 	^ ba
 ]
