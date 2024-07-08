@@ -13,7 +13,6 @@ StackInterpreterPrimitives >> cAddressOf: rcvr startingAt: byteOffset size: byte
 	
 	rcvrClass := objectMemory fetchClassOf: rcvr.
 	rcvrSize := objectMemory byteSizeOf: rcvr.
-	self cCode: 'fprintf(stderr, "cAddressOf: rcvrSize: %ld\n", rcvrSize)'.
 
 	rcvrClass = objectMemory classExternalAddress ifTrue:[
 		rcvrSize = BytesPerWord ifFalse:
