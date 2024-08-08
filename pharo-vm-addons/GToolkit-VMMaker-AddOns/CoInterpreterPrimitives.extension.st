@@ -2,38 +2,39 @@ Extension { #name : #CoInterpreterPrimitives }
 
 { #category : #'*GToolkit-VMMaker-AddOns' }
 CoInterpreterPrimitives >> primitiveCopyFromAtToAtSize [
-	"primitiveCopyFrom: src at: srcStart to: dest at: destStart size: size"
+	"primitiveCopyFrom: src at: srcStart to: dest at: destStart size: size.
+	This will copy data from word objects, e.g. WideString, but size is always in bytes."
 	| size destStart dest srcStart src |
 	<export: true>
-	
+
 	"Amount of bytes to copy must not be negative"
 	size := self stackIntegerValue: 0.
-	size >= 0
-		ifFalse: [ ^ self primitiveFailFor: PrimErrBadArgument ].
+	size >= 0 ifFalse: 
+		[ ^ self primitiveFailFor: PrimErrBadArgument ].
 
 	"one-based start index of the destination"
 	destStart := self stackIntegerValue: 1.
-	destStart >= 1
-		ifFalse: [ ^ self primitiveFailFor: PrimErrBadArgument ].
+	destStart >= 1 ifFalse: 
+		[ ^ self primitiveFailFor: PrimErrBadArgument ].
 	
 	dest := self
-		maybeExternalAddressOf: (self stackObjectValue: 2)
+		cAddressOf: (self stackObjectValue: 2)
 		startingAt: destStart
 		size: size.
-	dest = 0
-		ifTrue: [ ^ self primitiveFailFor: PrimErrBadArgument ].
+	dest = 0 ifTrue: 
+		[ ^ self primitiveFailFor: PrimErrBadArgument ].
 
 	"one-based start index of the source"
 	srcStart := self stackIntegerValue: 3.
-	srcStart >= 1
-		ifFalse: [ ^ self primitiveFailFor: PrimErrBadArgument ].
+	srcStart >= 1 ifFalse: 
+		[ ^ self primitiveFailFor: PrimErrBadArgument ].
 
 	src := self
-		maybeExternalAddressOf: (self stackObjectValue: 4)
+		cAddressOf: (self stackObjectValue: 4)
 		startingAt: srcStart
 		size: size.
-	src = 0
-		ifTrue: [ ^ self primitiveFailFor: PrimErrBadArgument ].
+	src = 0 ifTrue: 
+		[ ^ self primitiveFailFor: PrimErrBadArgument ].
 
 	self cCode: 'memcpy(dest, src, size)'.
 	self methodReturnInteger: size.
