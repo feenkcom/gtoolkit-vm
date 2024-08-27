@@ -173,7 +173,15 @@ impl InterpreterParameters {
         self.native().edenSize as usize
     }
 
-    pub fn image_parameters(&self) -> &ImageParameters {
+    pub fn avoid_searching_segments_with_pinned_objects(&self) -> bool {
+        self.native().avoidSearchingSegmentsWithPinnedObjects
+    }
+
+    pub fn set_avoid_searching_segments_with_pinned_objects(&mut self, avoid_searching_segments_with_pinned_objects: bool) {
+        self.native_mut().avoidSearchingSegmentsWithPinnedObjects = avoid_searching_segments_with_pinned_objects;
+    }
+
+     pub fn image_parameters(&self) -> &ImageParameters {
         ImageParameters::borrow_from_native(&self.native().imageParameters)
     }
 
@@ -222,6 +230,7 @@ impl Default for InterpreterParameters {
             processArgc: 0,
             processArgv: std::ptr::null_mut(),
             environmentVector: std::ptr::null_mut(),
+            avoidSearchingSegmentsWithPinnedObjects: false,
             vmParameters: NativeVMParameterVector {
                 count: 0,
                 parameters: std::ptr::null_mut(),
