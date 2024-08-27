@@ -7,6 +7,7 @@ pub struct InterpreterConfiguration {
     image: PathBuf,
     interactive_session: bool,
     should_print_stack_on_signals: bool,
+    should_avoid_searching_segments_with_pinned_objects: bool,
     worker_thread: bool,
     arguments: Vec<String>,
 }
@@ -17,6 +18,7 @@ impl InterpreterConfiguration {
             image: image.into(),
             interactive_session: false,
             should_print_stack_on_signals: false,
+            should_avoid_searching_segments_with_pinned_objects: false,
             worker_thread: false,
             arguments: vec![],
         }
@@ -39,7 +41,12 @@ impl InterpreterConfiguration {
         self
     }
 
-    pub fn set_interactive_session(&mut self, interactive_session: bool) -> &mut Self {
+    pub fn set_should_avoid_searching_segments_with_pinned_objects (&mut self, should_avoid_searching_segments_with_pinned_objects: bool) -> &mut Self {
+        self.should_avoid_searching_segments_with_pinned_objects = should_avoid_searching_segments_with_pinned_objects;
+        self
+    }
+
+     pub fn set_interactive_session(&mut self, interactive_session: bool) -> &mut Self {
         self.interactive_session = interactive_session;
         self
     }
@@ -69,6 +76,7 @@ impl InterpreterConfiguration {
         let mut parameters = InterpreterParameters::from_args(vm_args);
         parameters.set_image_file_name(self.image.as_os_str().to_str().unwrap().to_owned());
         parameters.set_is_interactive_session(self.interactive_session);
+        parameters.set_should_avoid_searching_segments_with_pinned_objects(self.should_avoid_searching_segments_with_pinned_objects);
         parameters.set_is_worker(self.worker_thread);
 
         parameters

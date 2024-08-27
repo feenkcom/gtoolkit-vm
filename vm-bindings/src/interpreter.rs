@@ -121,6 +121,7 @@ impl PharoInterpreter {
 
     /// Initializes the vm with the current parameters
     fn init(&self, parameters: InterpreterParameters) -> Result<()> {
+        dbg!(&parameters);
         if !unsafe { vm_init(parameters.native_mut_force()) != 0 } {
             return bail!(
                 "Error opening image file: {}",

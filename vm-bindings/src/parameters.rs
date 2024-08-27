@@ -173,12 +173,12 @@ impl InterpreterParameters {
         self.native().edenSize as usize
     }
 
-    pub fn avoid_searching_segments_with_pinned_objects(&self) -> bool {
+    pub fn should_avoid_searching_segments_with_pinned_objects(&self) -> bool {
         self.native().avoidSearchingSegmentsWithPinnedObjects
     }
 
-    pub fn set_avoid_searching_segments_with_pinned_objects(&mut self, avoid_searching_segments_with_pinned_objects: bool) {
-        self.native_mut().avoidSearchingSegmentsWithPinnedObjects = avoid_searching_segments_with_pinned_objects;
+    pub fn set_should_avoid_searching_segments_with_pinned_objects(&mut self, should_avoid_searching_segments_with_pinned_objects: bool) {
+        self.native_mut().avoidSearchingSegmentsWithPinnedObjects = should_avoid_searching_segments_with_pinned_objects;
     }
 
      pub fn image_parameters(&self) -> &ImageParameters {
@@ -198,6 +198,7 @@ impl fmt::Debug for InterpreterParameters {
             .field("is_default_image", &self.is_default_image())
             .field("is_default_image_found", &self.is_default_image_found())
             .field("is_interactive_session", &self.is_interactive_session())
+            .field("avoid_searching_segments_with_pinned_objects", &self.should_avoid_searching_segments_with_pinned_objects())
             .field(
                 "max_stack_frames_to_print",
                 &self.max_stack_frames_to_print(),
