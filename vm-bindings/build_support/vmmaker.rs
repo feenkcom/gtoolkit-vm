@@ -30,7 +30,7 @@ const VMMAKER_WINDOWS_ARM64_VM_URL: VirtualMachineUrl = VirtualMachineUrl::GTool
 );
 
 const VMMAKER_IMAGE_URL: &str =
-    "https://dl.feenk.com/gtvm/Pharo10.0.0-0.build.512.sha.bfb3a61.arch.64bit.zip";
+    "https://files.pharo.org/image/120/Pharo12.0-SNAPSHOT.build.1519.sha.aa50f9c.arch.64bit.zip";
 
 /// a folder prefix within $OUT_DIR in which the vm is extracted
 const VMMAKER_VM_FOLDER_PREFIX: &str = "vmmaker-vm";

@@ -1,6 +1,6 @@
-Author useAuthor: 'installVMMaker' during: [
-	path := CommandLineArguments default commandLineArguments nextToLast.
-	defaultRemoteType := CommandLineArguments default commandLineArguments last asSymbol.
+Author useAuthor: 'installVMMaker' during: [ | path defaultRemoteType |
+	path := CommandLineArguments new commandLineArguments nextToLast.
+	defaultRemoteType := CommandLineArguments new commandLineArguments last asSymbol.
 
 	Iceberg remoteTypeSelector: defaultRemoteType.
 
