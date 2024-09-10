@@ -15,7 +15,7 @@ const VM_CLIENT_VMMAKER_VM_VAR: &str = "VM_CLIENT_VMMAKER";
 const VM_CLIENT_VMMAKER_IMAGE_VAR: &str = "VM_CLIENT_VMMAKER_IMAGE";
 
 const VMMAKER_LINUX_X86_64_VM_URL: VirtualMachineUrl = VirtualMachineUrl::GToolkit("https://github.com/feenkcom/gtoolkit-vm/releases/download/v1.0.42/GlamorousToolkit-x86_64-unknown-linux-gnu.zip");
-const VMMAKER_LINUX_ARM64_VM_URL: VirtualMachineUrl = VirtualMachineUrl::Pharo("https://files.pharo.org/vm/pharo-spur64-headless/Linux-aarch64/PharoVM-9.0.15-65b32ab-Linux-aarch64-bin.zip");
+const VMMAKER_LINUX_ARM64_VM_URL: VirtualMachineUrl = VirtualMachineUrl::GToolkit("https://github.com/feenkcom/gtoolkit-vm/releases/download/v1.0.42/GlamorousToolkit-aarch64-unknown-linux-gnu.zip");
 
 const VMMAKER_DARWIN_INTEL_VM_URL: VirtualMachineUrl = VirtualMachineUrl::GToolkit("https://github.com/feenkcom/gtoolkit-vm/releases/download/v1.0.42/GlamorousToolkit-x86_64-apple-darwin.app.zip");
 const VMMAKER_DARWIN_M1_VM_URL: VirtualMachineUrl = VirtualMachineUrl::GToolkit(
@@ -30,8 +30,7 @@ const VMMAKER_WINDOWS_ARM64_VM_URL: VirtualMachineUrl = VirtualMachineUrl::GTool
 );
 
 /// the VMMaker image is a standard Pharo image patched with gt-vmmaker-patch.st
-const VMMAKER_IMAGE_URL: &str =
-    "https://dl.feenk.com/gtvm/Pharo12-VMMaker-Seed-Image.zip";
+const VMMAKER_IMAGE_URL: &str = "https://dl.feenk.com/gtvm/Pharo12-VMMaker-Seed-Image.zip";
 
 /// a folder prefix within $OUT_DIR in which the vm is extracted
 const VMMAKER_VM_FOLDER_PREFIX: &str = "vmmaker-vm";
