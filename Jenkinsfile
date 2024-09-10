@@ -19,7 +19,8 @@ pipeline {
         APP_NAME = 'GlamorousToolkit'
         APP_IDENTIFIER = 'com.gtoolkit'
         APP_LIBRARIES = 'boxer clipboard filewatcher gleam glutin pixels process skia winit webview test-library cairo crypto freetype git sdl2 ssl'
-        LINUX_APP_LIBRARIES = 'boxer clipboard filewatcher gleam glutin pixels process skia winit webview test-library cairo crypto freetype git sdl2 ssl'
+        LINUX_APP_LIBRARIES_AMD = 'boxer clipboard filewatcher gleam glutin pixels process skia webview winit test-library cairo crypto freetype git sdl2 ssl'
+        LINUX_APP_LIBRARIES_ARM = 'boxer clipboard filewatcher gleam glutin pixels process skia webview winit test-library       crypto freetype git      ssl'
         APP_LIBRARIES_VERSIONS = 'libraries.version'
         APP_AUTHOR = '"feenk gmbh <contact@feenk.com>"'
 
@@ -243,7 +244,7 @@ pipeline {
                                 --identifier ${APP_IDENTIFIER} \
                                 --author ${APP_AUTHOR} \
                                 --version ${APP_VERSION} \
-                                --libraries ${LINUX_APP_LIBRARIES} \
+                                --libraries ${LINUX_APP_LIBRARIES_AMD} \
                                 --libraries-versions ${APP_LIBRARIES_VERSIONS} \
                                 --release \
                                 --verbose """
@@ -292,7 +293,7 @@ pipeline {
                                 --identifier ${APP_IDENTIFIER} \
                                 --author ${APP_AUTHOR} \
                                 --version ${APP_VERSION} \
-                                --libraries clipboard filewatcher gleam glutin pixels process skia webview winit test-library crypto freetype git ssl \
+                                --libraries ${LINUX_APP_LIBRARIES_ARM} \
                                 --libraries-versions ${APP_LIBRARIES_VERSIONS} \
                                 --release \
                                 --verbose """
