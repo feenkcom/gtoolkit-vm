@@ -4,29 +4,29 @@ use std::rc::Rc;
 
 use anyhow::Result;
 use commander::CommandToExecute;
-use downloader::{FilesToDownload, FileToDownload};
+use downloader::{FileToDownload, FilesToDownload};
 use file_matcher::{FileNamed, OneEntryCopier};
 use serde::Serialize;
-use unzipper::{FilesToUnzip, FileToUnzip};
+use unzipper::{FileToUnzip, FilesToUnzip};
 
-use crate::{Builder, DOWNLOADING, EXTRACTING, FamilyOS, HostOS};
+use crate::{Builder, FamilyOS, HostOS, DOWNLOADING, EXTRACTING};
 
 const VM_CLIENT_VMMAKER_VM_VAR: &str = "VM_CLIENT_VMMAKER";
 const VM_CLIENT_VMMAKER_IMAGE_VAR: &str = "VM_CLIENT_VMMAKER_IMAGE";
 
-const VMMAKER_LINUX_X86_64_VM_URL: VirtualMachineUrl = VirtualMachineUrl::GToolkit("https://github.com/feenkcom/gtoolkit-vm/releases/download/v1.0.42/GlamorousToolkit-x86_64-unknown-linux-gnu.zip");
-const VMMAKER_LINUX_ARM64_VM_URL: VirtualMachineUrl = VirtualMachineUrl::GToolkit("https://github.com/feenkcom/gtoolkit-vm/releases/download/v1.0.42/GlamorousToolkit-aarch64-unknown-linux-gnu.zip");
+const VMMAKER_LINUX_X86_64_VM_URL: VirtualMachineUrl = VirtualMachineUrl::GToolkit("https://github.com/feenkcom/gtoolkit-vm/releases/download/v1.0.43/GlamorousToolkit-x86_64-unknown-linux-gnu.zip");
+const VMMAKER_LINUX_ARM64_VM_URL: VirtualMachineUrl = VirtualMachineUrl::GToolkit("https://github.com/feenkcom/gtoolkit-vm/releases/download/v1.0.43/GlamorousToolkit-aarch64-unknown-linux-gnu.zip");
 
-const VMMAKER_DARWIN_INTEL_VM_URL: VirtualMachineUrl = VirtualMachineUrl::GToolkit("https://github.com/feenkcom/gtoolkit-vm/releases/download/v1.0.42/GlamorousToolkit-x86_64-apple-darwin.app.zip");
+const VMMAKER_DARWIN_INTEL_VM_URL: VirtualMachineUrl = VirtualMachineUrl::GToolkit("https://github.com/feenkcom/gtoolkit-vm/releases/download/v1.0.43/GlamorousToolkit-x86_64-apple-darwin.app.zip");
 const VMMAKER_DARWIN_M1_VM_URL: VirtualMachineUrl = VirtualMachineUrl::GToolkit(
-    "https://github.com/feenkcom/gtoolkit-vm/releases/download/v1.0.42/GlamorousToolkit-aarch64-apple-darwin.app.zip",
+    "https://github.com/feenkcom/gtoolkit-vm/releases/download/v1.0.43/GlamorousToolkit-aarch64-apple-darwin.app.zip",
 );
 
 const VMMAKER_WINDOWS_AMD64_VM_URL: VirtualMachineUrl = VirtualMachineUrl::GToolkit(
-    "https://github.com/feenkcom/gtoolkit-vm/releases/download/v1.0.42/GlamorousToolkit-x86_64-pc-windows-msvc.zip",
+    "https://github.com/feenkcom/gtoolkit-vm/releases/download/v1.0.43/GlamorousToolkit-x86_64-pc-windows-msvc.zip",
 );
 const VMMAKER_WINDOWS_ARM64_VM_URL: VirtualMachineUrl = VirtualMachineUrl::GToolkit(
-    "https://github.com/feenkcom/gtoolkit-vm/releases/download/v1.0.42/GlamorousToolkit-aarch64-pc-windows-msvc.zip",
+    "https://github.com/feenkcom/gtoolkit-vm/releases/download/v1.0.43/GlamorousToolkit-aarch64-pc-windows-msvc.zip",
 );
 
 /// the VMMaker image is a standard Pharo image patched with gt-vmmaker-patch.st
@@ -313,7 +313,10 @@ impl VMMaker {
     }
 
     /// Download a VMMaker VM and/or a source image if are not yet detected
-    fn download_vmmaker_image_or_vm(source: &mut VMMakerSource, builder: Rc<dyn Builder>) -> Result<()> {
+    fn download_vmmaker_image_or_vm(
+        source: &mut VMMakerSource,
+        builder: Rc<dyn Builder>,
+    ) -> Result<()> {
         let url = match builder.host_family() {
             FamilyOS::Apple => match std::env::consts::ARCH {
                 "aarch64" => VMMAKER_DARWIN_M1_VM_URL,
