@@ -295,6 +295,7 @@ pipeline {
                                 --version ${APP_VERSION} \
                                 --libraries ${LINUX_APP_LIBRARIES_ARM} \
                                 --libraries-versions ${APP_LIBRARIES_VERSIONS} \
+                                --vmmaker-vm gtoolkit:/home/ubuntu/jenkins/gtvm/bin/GlamorousToolkit-cli \
                                 --release \
                                 --verbose """
 

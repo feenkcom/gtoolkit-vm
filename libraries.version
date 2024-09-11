@@ -10,9 +10,9 @@
   "Winit": "v0.39.0",
   "WebView": "v0.7.0",
   "Cairo": "v0.3.0",
-  "Crypto": "v0.5.0",
+  "Crypto": "v0.7.0",
   "Freetype": "v0.6.0",
-  "Git": "v0.5.0",
+  "Git": "v0.6.0",
   "Sdl2": "v0.3.0",
-  "Ssl": "v0.5.0"
+  "Ssl": "v0.7.0"
 }
