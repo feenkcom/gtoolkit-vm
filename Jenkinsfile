@@ -20,7 +20,7 @@ pipeline {
         APP_IDENTIFIER = 'com.gtoolkit'
         APP_LIBRARIES = 'boxer clipboard filewatcher gleam glutin pixels process skia winit webview test-library cairo crypto freetype git sdl2 ssl'
         LINUX_APP_LIBRARIES_AMD = 'boxer clipboard filewatcher gleam glutin pixels process skia webview winit test-library cairo crypto freetype git sdl2 ssl'
-        LINUX_APP_LIBRARIES_ARM = 'boxer clipboard filewatcher gleam glutin pixels process skia webview winit test-library       crypto freetype git      ssl'
+        LINUX_APP_LIBRARIES_ARM = '      clipboard filewatcher gleam glutin pixels process skia webview winit test-library       crypto freetype git      ssl'
         APP_LIBRARIES_VERSIONS = 'libraries.version'
         APP_AUTHOR = '"feenk gmbh <contact@feenk.com>"'
 
