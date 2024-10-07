@@ -218,7 +218,7 @@ pipeline {
                     }
                     environment {
                         TARGET = "${LINUX_AMD64_TARGET}"
-                        PATH = "$HOME/.cargo/bin:$PATH"
+                        PATH = "$HOME/.cargo/bin:$HOME/patchelf/bin:$PATH"
                         OPENSSL_STATIC = 1
                         OPENSSL_LIB_DIR = "/usr/lib/x86_64-linux-gnu"
                         OPENSSL_INCLUDE_DIR = "/usr/include/openssl"
@@ -237,6 +237,7 @@ pipeline {
                         sh "rm -rf gtoolkit-vm-builder"
                         sh "curl -o gtoolkit-vm-builder -LsS https://github.com/feenkcom/gtoolkit-vm-builder/releases/download/${VM_BUILDER_VERSION}/gtoolkit-vm-builder-${TARGET}"
                         sh 'chmod +x gtoolkit-vm-builder'
+                        sh 'echo "patchelf $(patchelf --version)"'
 
                         sh """
                             ./gtoolkit-vm-builder \
