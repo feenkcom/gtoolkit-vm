@@ -2922,6 +2922,7 @@ dependencies = [
  "thiserror",
  "to_absolute",
  "vm-bindings",
+ "widestring",
 ]
 
 [[package]]
@@ -3075,6 +3076,12 @@ dependencies = [
  "rustix",
  "windows-sys 0.48.0",
 ]
+
+[[package]]
+name = "widestring"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7219d36b6eac893fa81e84ebe06485e7dcbb616177469b142df14f1f4deb1311"
 
 [[package]]
 name = "wildmatch"

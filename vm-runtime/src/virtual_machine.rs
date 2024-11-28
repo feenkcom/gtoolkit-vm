@@ -8,7 +8,7 @@ use std::sync::Arc;
 use std::thread::JoinHandle;
 
 use anyhow::Result;
-
+use widestring::U32Str;
 use vm_bindings::{
     virtual_machine_info, InterpreterConfiguration, InterpreterProxy, LogLevel, NamedPrimitive,
     ObjectFieldIndex, PharoInterpreter, StackOffset,
@@ -110,6 +110,7 @@ impl VirtualMachine {
         vm.add_primitive(primitive!(primitiveVirtualMachineInfo));
         vm.add_primitive(primitive!(primitiveAppInfo));
         vm.add_primitive(primitive!(primitiveAppVersion));
+        vm.add_primitive(primitive!(primitiveWideStringByteIndexToCharIndex));
         #[cfg(target_os = "android")]
         vm.add_primitive(primitive!(primitiveGetAndroidApp));
         #[cfg(target_os = "android")]
@@ -402,4 +403,35 @@ pub fn primitiveFcntl() {
     {
         proxy.primitive_fail();
     }
+}
+
+#[no_mangle]
+#[allow(non_snake_case)]
+pub fn primitiveWideStringByteIndexToCharIndex() {
+    let proxy = vm().proxy();
+    if proxy.method_argument_count() != 1 {
+        error!("Wrong argument count, expected 1 got {}", proxy.method_argument_count());
+        proxy.primitive_fail();
+        return;
+    }
+
+    let byte_offset = proxy.stack_integer_value(StackOffset::new(0)) as usize;
+
+    let wide_string = proxy.stack_object_value(StackOffset::new(1));
+    let wide_string_size = proxy.size_of(wide_string);
+
+    let wide_string_ptr = proxy.first_indexable_field(wide_string) as *const u32;
+
+    let u32_str = unsafe { U32Str::from_ptr(wide_string_ptr, wide_string_size) };
+    let mut char_offset = 1usize;
+    let mut current_byte_offset = 0usize;
+    for each in u32_str.chars_lossy() {
+        current_byte_offset += each.len_utf8();
+        if current_byte_offset > byte_offset {
+            proxy.method_return_integer(char_offset as i64);
+            return;
+        }
+        char_offset += 1;
+    }
+    proxy.method_return_integer(char_offset.min(wide_string_size) as i64);
 }
