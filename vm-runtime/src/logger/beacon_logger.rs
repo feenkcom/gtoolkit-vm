@@ -1,14 +1,8 @@
-use crate::{vm, LogSignal, Logger, NullLogger, VM_LOGGER};
-use num_traits::FromPrimitive;
+use crate::{vm, LogSignal, Logger, VM_LOGGER};
 use std::any::Any;
-use std::collections::HashSet;
-use std::ffi::{c_void, CStr, CString};
 use std::mem;
-use std::mem::size_of;
 pub use std::os::raw::{c_char, c_int};
-use vm_bindings::{LogLevel, ObjectFieldIndex, StackOffset};
-
-use std::sync::Mutex;
+use vm_bindings::{Smalltalk, StackOffset};
 
 #[derive(Debug)]
 struct BeaconLogger {
@@ -47,13 +41,10 @@ impl Logger for BeaconLogger {
 #[no_mangle]
 #[allow(non_snake_case)]
 pub fn primitiveStartBeacon() {
-    let vm = vm();
-    let proxy = vm.proxy();
-
-    let semaphore = proxy.stack_integer_value(StackOffset::new(0)) as usize;
+    let semaphore = Smalltalk::stack_integer_value(StackOffset::new(0)) as usize;
 
     let mut logger = VM_LOGGER.lock().unwrap();
     logger.set_logger(Box::new(BeaconLogger::new(semaphore)));
 
-    proxy.method_return_boolean(true);
+    Smalltalk::method_return_boolean(true);
 }

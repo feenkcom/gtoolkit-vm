@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate num_derive;
 
-mod bindings;
+pub mod bindings;
 mod export;
 mod interpreter;
 mod interpreter_config;
@@ -10,12 +10,14 @@ mod interpreter_proxy;
 mod parameter_vector;
 mod parameters;
 mod prelude;
+mod virtual_machine;
 
 pub use export::NamedPrimitive;
 pub use interpreter::{LogLevel, PharoInterpreter};
 pub use interpreter_config::InterpreterConfiguration;
 pub use interpreter_marshalling::Marshallable;
 pub use interpreter_proxy::{InterpreterProxy, ObjectFieldIndex, ObjectPointer, StackOffset};
+pub use virtual_machine::*;
 
 // re-export ffi
 #[cfg(feature = "libffi")]

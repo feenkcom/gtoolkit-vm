@@ -1,6 +1,6 @@
-use crate::bindings::{sqInt, usqInt};
+use crate::bindings::sqInt;
 
-use crate::{InterpreterProxy, ObjectFieldIndex, ObjectPointer};
+use crate::{Smalltalk, InterpreterProxy, ObjectFieldIndex, ObjectPointer};
 
 #[cfg(feature = "ffi")]
 use libffi::low::ffi_type;
@@ -10,7 +10,7 @@ use libffi_sys::*;
 use crate::interpreter_proxy::write_value;
 use crate::prelude::NativeTransmutable;
 use anyhow::{bail, Result};
-use std::os::raw::{c_char, c_double, c_float, c_int, c_ushort, c_void};
+use std::os::raw::{c_double, c_float, c_void};
 
 pub trait Marshallable {
     #[cfg(feature = "ffi")]
@@ -357,7 +357,7 @@ impl Marshallable for InterpreterProxy {
         index: usize,
         holder: *mut c_void,
     ) -> Result<()> {
-        let object = self.object_field_at(array, ObjectFieldIndex::new(index));
+        let object = Smalltalk::object_field_at(array, ObjectFieldIndex::new(index));
         let value = if self.is_character_object(object) {
             self.character_value_of(object) as sqInt
         } else {
@@ -393,7 +393,7 @@ impl Marshallable for InterpreterProxy {
         index: usize,
         holder: *mut c_void,
     ) -> Result<()> {
-        let object = self.object_field_at(array, ObjectFieldIndex::new(index));
+        let object = Smalltalk::object_field_at(array, ObjectFieldIndex::new(index));
         let value = self.integer_value_of(object);
 
         if value > i8::MAX as sqInt {
@@ -425,7 +425,7 @@ impl Marshallable for InterpreterProxy {
         index: usize,
         holder: *mut c_void,
     ) -> Result<()> {
-        let object = self.object_field_at(array, ObjectFieldIndex::new(index));
+        let object = Smalltalk::object_field_at(array, ObjectFieldIndex::new(index));
         let value = self.integer_value_of(object);
         if value > u16::MAX as sqInt {
             bail!(
@@ -456,7 +456,7 @@ impl Marshallable for InterpreterProxy {
         index: usize,
         holder: *mut c_void,
     ) -> Result<()> {
-        let object = self.object_field_at(array, ObjectFieldIndex::new(index));
+        let object = Smalltalk::object_field_at(array, ObjectFieldIndex::new(index));
         let value = self.integer_value_of(object);
         if value > i16::MAX as sqInt {
             bail!(
@@ -487,7 +487,7 @@ impl Marshallable for InterpreterProxy {
         index: usize,
         holder: *mut c_void,
     ) -> Result<()> {
-        let object = self.object_field_at(array, ObjectFieldIndex::new(index));
+        let object = Smalltalk::object_field_at(array, ObjectFieldIndex::new(index));
         let value = self.positive_32bit_value_of(object);
         write_value(value, holder);
         Ok(())
@@ -501,7 +501,7 @@ impl Marshallable for InterpreterProxy {
         index: usize,
         holder: *mut c_void,
     ) -> Result<()> {
-        let object = self.object_field_at(array, ObjectFieldIndex::new(index));
+        let object = Smalltalk::object_field_at(array, ObjectFieldIndex::new(index));
         let value = self.signed_32bit_value_of(object);
         write_value(value, holder);
         Ok(())
@@ -515,7 +515,7 @@ impl Marshallable for InterpreterProxy {
         index: usize,
         holder: *mut c_void,
     ) -> Result<()> {
-        let object = self.object_field_at(array, ObjectFieldIndex::new(index));
+        let object = Smalltalk::object_field_at(array, ObjectFieldIndex::new(index));
         let value = self.positive_64bit_value_of(object);
         write_value(value, holder);
         Ok(())
@@ -527,7 +527,7 @@ impl Marshallable for InterpreterProxy {
         index: usize,
         holder: *mut c_void,
     ) -> Result<()> {
-        let external_address = self.object_field_at(array, ObjectFieldIndex::new(index));
+        let external_address = Smalltalk::object_field_at(array, ObjectFieldIndex::new(index));
 
         if !self.is_kind_of_class(external_address, self.class_external_address()) {
             bail!(
@@ -536,7 +536,7 @@ impl Marshallable for InterpreterProxy {
             );
         }
 
-        let address = self.object_field_at(external_address, ObjectFieldIndex::new(0));
+        let address = Smalltalk::object_field_at(external_address, ObjectFieldIndex::new(0));
         write_value(address.into_native(), holder);
         Ok(())
     }

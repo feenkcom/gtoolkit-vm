@@ -1,16 +1,14 @@
 use crate::bindings::{
-    calloc, exportFirstBytePointerOfDataObject as firstBytePointerOfDataObject,
-    exportGetHandler as getHandler, exportInstantiateClassIsPinned as instantiateClassIsPinned,
-    exportReadAddress as readAddress, exportClassOrNilAtIndex as classOrNilAtIndex, free, malloc, sqInt, usqInt,
-    VirtualMachine as sqInterpreterProxy,
+    calloc, exportClassOrNilAtIndex as classOrNilAtIndex, exportGetHandler as getHandler,
+    exportReadAddress as readAddress, free, malloc, sqInt, VirtualMachine as sqInterpreterProxy,
 };
 use std::any::type_name;
 
+use crate::prelude::{Handle, NativeAccess, NativeDrop, NativeTransmutable};
+use crate::Smalltalk;
 use std::ffi::{CStr, CString};
 use std::fmt::Display;
 use std::mem::size_of;
-
-use crate::prelude::{Handle, NativeAccess, NativeDrop, NativeTransmutable};
 use std::os::raw::{c_char, c_double, c_void};
 
 pub type InterpreterProxy = Handle<sqInterpreterProxy>;
@@ -29,29 +27,6 @@ impl InterpreterProxy {
         unsafe { function() as usize }
     }
 
-    pub fn bool_object(&self, value: bool) -> ObjectPointer {
-        if value {
-            self.true_object()
-        } else {
-            self.false_object()
-        }
-    }
-
-    pub fn true_object(&self) -> ObjectPointer {
-        let function = self.native().trueObject.unwrap();
-        unsafe { ObjectPointer::from_native_c(function()) }
-    }
-
-    pub fn false_object(&self) -> ObjectPointer {
-        let function = self.native().falseObject.unwrap();
-        unsafe { ObjectPointer::from_native_c(function()) }
-    }
-
-    pub fn nil_object(&self) -> ObjectPointer {
-        let function = self.native().nilObject.unwrap();
-        unsafe { ObjectPointer::from_native_c(function()) }
-    }
-
     pub fn class_array(&self) -> ObjectPointer {
         let function = self.native().classArray.unwrap();
         unsafe { ObjectPointer::from_native_c(function()) }
@@ -65,21 +40,6 @@ impl InterpreterProxy {
     pub fn class_string(&self) -> ObjectPointer {
         let function = self.native().classString.unwrap();
         unsafe { ObjectPointer::from_native_c(function()) }
-    }
-
-    pub fn stack_object_value(&self, offset: StackOffset) -> ObjectPointer {
-        let function = self.native().stackObjectValue.unwrap();
-        unsafe { ObjectPointer::from_native_c(function(offset.into_native())) }
-    }
-
-    pub fn stack_integer_value(&self, offset: StackOffset) -> sqInt {
-        let function = self.native().stackIntegerValue.unwrap();
-        unsafe { function(offset.into_native()) }
-    }
-
-    pub fn method_argument_count(&self) -> usize {
-        let function = self.native().methodArgumentCount.unwrap();
-        unsafe { function() as usize }
     }
 
     pub fn pop(&self, amount_of_stack_items: usize) {
@@ -97,61 +57,11 @@ impl InterpreterProxy {
     }
 
     pub fn pop_then_push_integer(&self, amount_of_stack_items: usize, number: impl Into<sqInt>) {
-        self.pop_then_push(amount_of_stack_items, self.new_integer(number));
+        self.pop_then_push(amount_of_stack_items, Smalltalk::new_integer(number));
     }
 
     pub fn get_handler(&self, object: ObjectPointer) -> *mut c_void {
         unsafe { getHandler(object.into_native()) }
-    }
-
-    /// Return the size of an indexable object
-    pub fn size_of(&self, indexable_object: ObjectPointer) -> usize {
-        let function = self.native().stSizeOf.unwrap();
-        (unsafe { function(indexable_object.into_native()) }) as usize
-    }
-
-    /// Return an item at an index within the indexable object (array, string, etc.).
-    /// The index must start from 1, and not 0 like in Rust
-    pub fn item_at(
-        &self,
-        indexable_object: ObjectPointer,
-        field_index: ObjectFieldIndex,
-    ) -> ObjectPointer {
-        let function = self.native().stObjectat.unwrap();
-        unsafe {
-            ObjectPointer::from_native_c(function(
-                indexable_object.into_native(),
-                field_index.into_native(),
-            ))
-        }
-    }
-
-    pub fn item_at_put(
-        &self,
-        indexable_object: ObjectPointer,
-        field_index: ObjectFieldIndex,
-        value_object: ObjectPointer,
-    ) -> ObjectPointer {
-        let function = self.native().stObjectatput.unwrap();
-        unsafe {
-            ObjectPointer::from_native_c(function(
-                indexable_object.into_native(),
-                field_index.into_native(),
-                value_object.into_native(),
-            ))
-        }
-    }
-
-    pub fn object_field_at(
-        &self,
-        object: ObjectPointer,
-        field_index: ObjectFieldIndex,
-    ) -> ObjectPointer {
-        let function = self.native().fetchPointerofObject.unwrap();
-        // watch out! the interpreter function expects to get field index first and object second
-        unsafe {
-            ObjectPointer::from_native_c(function(field_index.into_native(), object.into_native()))
-        }
     }
 
     pub fn object_field_at_put(
@@ -221,61 +131,11 @@ impl InterpreterProxy {
         unsafe { function(index.into_native(), object.into_native()) }
     }
 
-    pub fn instantiate_indexable_class_of_size(
-        &self,
-        class: ObjectPointer,
-        size: usize,
-    ) -> ObjectPointer {
-        let function = self.native().instantiateClassindexableSize.unwrap();
-        let oop = unsafe { function(class.into_native(), size as sqInt) };
-
-        ObjectPointer::from_native_c(oop)
-    }
-
-    pub fn instantiate_class(&self, class: ObjectPointer, is_pinned: bool) -> ObjectPointer {
-        let is_pinned = if is_pinned { 1 } else { 0 };
-        let oop = unsafe { instantiateClassIsPinned(class.into_native(), is_pinned) };
-        ObjectPointer::from_native_c(oop)
-    }
-
     pub fn signal_semaphore(&self, index: usize) {
         let function = self.native().signalSemaphoreWithIndex.unwrap();
         unsafe {
             function(index as sqInt);
         }
-    }
-
-    pub fn method_return_value(&self, value: ObjectPointer) {
-        let function = self.native().methodReturnValue.unwrap();
-        unsafe { function(value.into_native()) };
-    }
-
-    pub fn method_return_boolean(&self, value: bool) {
-        let function = self.native().methodReturnBool.unwrap();
-        let boolean = if value {
-            self.true_object()
-        } else {
-            self.false_object()
-        };
-        unsafe { function(boolean.into_native()) };
-    }
-
-    pub fn method_return_integer(&self, value: i64) {
-        let function = self.native().methodReturnInteger.unwrap();
-        unsafe { function(value) };
-    }
-
-    pub fn first_indexable_field(&self, object: ObjectPointer) -> *mut c_void {
-        let function = self.native().firstIndexableField.unwrap();
-        unsafe { function(object.into_native()) }
-    }
-
-    pub fn first_byte_pointer_of_data_object(&self, object: ObjectPointer) -> *mut c_void {
-        unsafe { firstBytePointerOfDataObject(object.into_native()) }
-    }
-
-    pub fn pointer_at_pointer(&self, pointer: *mut c_void) -> *mut c_void {
-        return unsafe { *(pointer as *mut *mut c_void) };
     }
 
     pub fn is_kind_of_class(&self, object: ObjectPointer, class: ObjectPointer) -> bool {
@@ -285,12 +145,6 @@ impl InterpreterProxy {
 
     pub fn class_or_nil_at_index(&self, class_index: sqInt) -> ObjectPointer {
         unsafe { ObjectPointer::from_native_c(classOrNilAtIndex(class_index)) }
-    }
-
-    pub fn new_integer(&self, number: impl Into<sqInt>) -> ObjectPointer {
-        let function = self.native().integerObjectOf.unwrap();
-        let oop = unsafe { function(number.into()) };
-        ObjectPointer::from_native_c(oop)
     }
 
     pub fn new_string(&self, string: impl AsRef<str>) -> ObjectPointer {
@@ -307,19 +161,18 @@ impl InterpreterProxy {
             let function = self.native().stringForCString.unwrap();
             let oop = unsafe { function(c_string.as_ptr() as *mut c_char) };
             ObjectPointer::from_native_c(oop)
-        }
-        else {
-            self.nil_object()
+        } else {
+            Smalltalk::nil_object()
         }
     }
 
     pub fn new_external_address<T>(&self, address: *const T) -> ObjectPointer {
-        let external_address = self.instantiate_indexable_class_of_size(
+        let external_address = Smalltalk::instantiate_indexable_class_of_size(
             self.class_external_address(),
             size_of::<*mut c_void>(),
         );
         unsafe {
-            *(self.first_indexable_field(external_address) as *mut *mut c_void) =
+            *(Smalltalk::first_indexable_field(external_address) as *mut *mut c_void) =
                 address as *mut c_void
         };
         external_address
@@ -354,16 +207,6 @@ impl InterpreterProxy {
         }
     }
 
-    pub fn primitive_fail(&self) {
-        let function = self.native().primitiveFail.unwrap();
-        unsafe { function() };
-    }
-
-    pub fn primitive_fail_code(&self, code: sqInt) {
-        let function = self.native().primitiveFailFor.unwrap();
-        unsafe { function(code) };
-    }
-
     pub fn is_failed(&self) -> bool {
         let function = self.native().failed.unwrap();
         unsafe { function() != 0 }
@@ -386,10 +229,32 @@ fn cast_integer<T: Display + TryInto<R> + Copy, R: Display>(number: T) -> R {
     })
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 #[repr(transparent)]
 pub struct ObjectPointer(sqInt);
 impl NativeTransmutable<sqInt> for ObjectPointer {}
+impl ObjectPointer {
+    pub fn read_uint32(&self) -> u32 {
+        let pointer: *mut u32 = unsafe { std::mem::transmute(self.into_native()) };
+        unsafe { pointer.read() }
+    }
+
+    pub fn offset_by(&self, offset: sqInt) -> Self {
+        ObjectPointer(self.0 + offset)
+    }
+}
+
+impl From<ObjectPointer> for sqInt {
+    fn from(value: ObjectPointer) -> Self {
+        value.0
+    }
+}
+
+impl From<sqInt> for ObjectPointer {
+    fn from(value: sqInt) -> Self {
+        Self(value)
+    }
+}
 
 #[derive(Copy, Clone, Debug)]
 #[repr(transparent)]
@@ -398,6 +263,18 @@ impl NativeTransmutable<sqInt> for ObjectFieldIndex {}
 impl ObjectFieldIndex {
     pub fn new(index: usize) -> Self {
         Self(index as sqInt)
+    }
+}
+
+impl From<u32> for ObjectFieldIndex {
+    fn from(value: u32) -> Self {
+        Self::new(value as usize)
+    }
+}
+
+impl From<usize> for ObjectFieldIndex {
+    fn from(value: usize) -> Self {
+        Self::new(value)
     }
 }
 

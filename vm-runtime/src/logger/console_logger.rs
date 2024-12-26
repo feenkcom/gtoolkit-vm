@@ -1,12 +1,9 @@
 use std::any::Any;
-use std::collections::HashSet;
 pub use std::os::raw::{c_char, c_int};
-use std::sync::Mutex;
 
+use crate::{LogSignal, Logger, VM_LOGGER};
 use chrono::Local;
-use num_traits::FromPrimitive;
-
-use crate::{vm, LogSignal, Logger, NullLogger, VM_LOGGER};
+use vm_bindings::Smalltalk;
 
 #[derive(Debug)]
 pub struct ConsoleLogger;
@@ -55,11 +52,8 @@ impl Logger for ConsoleLogger {
 #[no_mangle]
 #[allow(non_snake_case)]
 pub fn primitiveStartConsoleLogger() {
-    let vm = vm();
-    let proxy = vm.proxy();
-
     let mut logger = VM_LOGGER.lock().unwrap();
     logger.set_logger(Box::new(ConsoleLogger::new()));
 
-    proxy.method_return_boolean(true);
+    Smalltalk::method_return_boolean(true);
 }

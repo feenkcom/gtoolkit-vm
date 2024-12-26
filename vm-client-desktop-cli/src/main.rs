@@ -71,13 +71,11 @@ fn main() {
                     "Enable virtual machine stack printing when encountering OS platform signals",
                 ),
         )
-         .arg(
+        .arg(
             Arg::new("should-avoid-searching-segments-with-pinned-objects")
                 .long("should-avoid-searching-segments-with-pinned-objects")
                 .action(clap::ArgAction::SetTrue)
-                .help(
-                    "Pablos questionable command line parameter",
-                ),
+                .help("Pablos questionable command line parameter"),
         )
         .arg(
             Arg::new("version")
@@ -161,7 +159,9 @@ fn main() {
 
     let mut interpreter_configuration = InterpreterConfiguration::new(image_path);
     interpreter_configuration.set_interactive_session(matches.get_flag("interactive"));
-    interpreter_configuration.set_should_avoid_searching_segments_with_pinned_objects(matches.get_flag("should-avoid-searching-segments-with-pinned-objects"));
+    interpreter_configuration.set_should_avoid_searching_segments_with_pinned_objects(
+        matches.get_flag("should-avoid-searching-segments-with-pinned-objects"),
+    );
     interpreter_configuration.set_is_worker_thread(worker_mode.should_run_in_worker_thread());
     interpreter_configuration
         .set_should_print_stack_on_signals(matches.get_flag("print-stack-on-signals"));

@@ -6,7 +6,7 @@ use std::sync::{Arc, Mutex};
 
 use libffi::low::{ffi_cif, ffi_type, CodePtr};
 
-use vm_bindings::{Marshallable, ObjectFieldIndex, StackOffset};
+use vm_bindings::{Marshallable, ObjectFieldIndex, Smalltalk, StackOffset};
 
 use crate::{vm, EventLoopMessage};
 
@@ -86,12 +86,12 @@ enum TFPrimitiveCallout {
 pub fn primitiveEventLoopCallout() {
     let proxy = vm().proxy();
 
-    let external_function_oop = proxy.stack_object_value(StackOffset::new(
+    let external_function_oop = Smalltalk::stack_object_value(StackOffset::new(
         TFPrimitiveCallout::ExternalFunction as i32,
     ));
     let external_function = proxy.get_handler(external_function_oop);
 
-    let cif_oop = proxy.object_field_at(
+    let cif_oop = Smalltalk::object_field_at(
         external_function_oop,
         ObjectFieldIndex::new(TFExternalFunction::Definition as usize),
     );
@@ -99,7 +99,7 @@ pub fn primitiveEventLoopCallout() {
     let cif_ptr = proxy.get_handler(cif_oop) as *mut ffi_cif;
     let cif: &ffi_cif = unsafe { transmute(cif_ptr) };
 
-    let function_name_oop = proxy.object_field_at(
+    let function_name_oop = Smalltalk::object_field_at(
         external_function_oop,
         ObjectFieldIndex::new(TFExternalFunction::FunctionName as usize),
     );
@@ -110,7 +110,7 @@ pub fn primitiveEventLoopCallout() {
         None
     };
 
-    let module_name_oop = proxy.object_field_at(
+    let module_name_oop = Smalltalk::object_field_at(
         external_function_oop,
         ObjectFieldIndex::new(TFExternalFunction::ModuleName as usize),
     );
@@ -121,12 +121,12 @@ pub fn primitiveEventLoopCallout() {
         None
     };
 
-    let semaphore_index = proxy
-        .stack_integer_value(StackOffset::new(TFPrimitiveCallout::SemaphoreIndex as i32))
-        as usize;
+    let semaphore_index =
+        Smalltalk::stack_integer_value(StackOffset::new(TFPrimitiveCallout::SemaphoreIndex as i32))
+            as usize;
 
     let arguments_array_oop =
-        proxy.stack_object_value(StackOffset::new(TFPrimitiveCallout::Arguments as i32));
+        Smalltalk::stack_object_value(StackOffset::new(TFPrimitiveCallout::Arguments as i32));
     let argument_size: usize = cif.nargs as usize;
 
     let arg_types: &[*mut ffi_type] =
@@ -178,12 +178,12 @@ pub fn primitiveEventLoopCallout() {
     // if semaphore index is zero it means that nothing is waiting for the callout and we can just return nil.
     if semaphore_index == 0 {
         let callout_ptr: *const Mutex<EventLoopCallout> = std::ptr::null();
-        proxy.method_return_value(proxy.new_external_address(callout_ptr))
+        Smalltalk::method_return_value(proxy.new_external_address(callout_ptr))
     } else {
         // intentionally leak the callout so that it can be released later, once the return value is read
         let callout_ptr = Arc::into_raw(callout);
 
-        proxy.method_return_value(proxy.new_external_address(callout_ptr));
+        Smalltalk::method_return_value(proxy.new_external_address(callout_ptr));
     }
 }
 
@@ -199,14 +199,14 @@ pub fn primitiveExtractReturnValue() {
     unsafe {
         let proxy = vm().proxy();
 
-        let callout_address_oop = proxy.stack_object_value(StackOffset::new(
+        let callout_address_oop = Smalltalk::stack_object_value(StackOffset::new(
             TFPrimitiveReturnValue::CalloutAddress as i32,
         ));
         let callout_address =
             proxy.read_address(callout_address_oop) as *mut Mutex<EventLoopCallout>;
 
         if callout_address.is_null() {
-            return proxy.primitive_fail();
+            return Smalltalk::primitive_fail();
         }
 
         let callout = Arc::from_raw(callout_address);

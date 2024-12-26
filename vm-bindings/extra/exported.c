@@ -20,14 +20,6 @@ void setVmRunOnWorkerThread(int isOnWorker) {
     vmRunOnWorkerThread = isOnWorker;
 }
 
-sqInt exportInstantiateClassIsPinned(sqInt classObj, sqInt isPinned) {
-    return instantiateClassisPinned(classObj, isPinned);
-}
-
-void* exportFirstBytePointerOfDataObject(sqInt objOop) {
-    return firstBytePointerOfDataObject(objOop);
-}
-
 usqLong exportStatFullGCUsecs() {
     return getStatFullGCUsecs();
 }

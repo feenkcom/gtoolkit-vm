@@ -8,12 +8,11 @@ use std::sync::Arc;
 use std::thread::JoinHandle;
 
 use anyhow::Result;
+use vm_bindings::{virtual_machine_info, InterpreterConfiguration, InterpreterProxy, LogLevel, NamedPrimitive, ObjectFieldIndex, ObjectPointer, PharoInterpreter, Smalltalk, StackOffset};
 use widestring::U32Str;
-use vm_bindings::{
-    virtual_machine_info, InterpreterConfiguration, InterpreterProxy, LogLevel, NamedPrimitive,
-    ObjectFieldIndex, PharoInterpreter, StackOffset,
-};
 
+#[cfg(feature = "pharo-compiler")]
+use crate::pharo_compiler::*;
 use crate::version::{app_info, app_version};
 use crate::{
     log_signal, primitiveEnableLogSignal, primitiveGetEnabledLogSignals, primitivePollLogger,
@@ -111,6 +110,15 @@ impl VirtualMachine {
         vm.add_primitive(primitive!(primitiveAppInfo));
         vm.add_primitive(primitive!(primitiveAppVersion));
         vm.add_primitive(primitive!(primitiveWideStringByteIndexToCharIndex));
+        vm.add_primitive(primitive!(primitiveIdentityDictionaryScanFor));
+        vm.add_primitive(primitive!(primitiveIdentityHash));
+
+        #[cfg(feature = "pharo-compiler")]
+        {
+            vm.add_primitive(primitive!(primitivePharoCompilerNew));
+            vm.add_primitive(primitive!(primitivePharoCompilerCompile));
+        }
+
         #[cfg(target_os = "android")]
         vm.add_primitive(primitive!(primitiveGetAndroidApp));
         #[cfg(target_os = "android")]
@@ -129,6 +137,7 @@ impl VirtualMachine {
     }
 
     /// Return a proxy to the interpreter which can be used to communicate with the vm
+    /// *Expensive*, as it allocates a large struct on each call
     pub fn proxy(&self) -> &InterpreterProxy {
         self.interpreter.proxy()
     }
@@ -177,7 +186,7 @@ impl VirtualMachine {
 
 #[no_mangle]
 pub fn is_virtual_machine() {
-    vm().proxy().method_return_boolean(true);
+    Smalltalk::method_return_boolean(true);
 }
 
 #[no_mangle]
@@ -187,34 +196,34 @@ pub fn primitiveGetNamedPrimitives() {
     let named_primitives = vm().named_primitives();
 
     let return_array =
-        proxy.instantiate_indexable_class_of_size(proxy.class_array(), named_primitives.len());
+        Smalltalk::instantiate_indexable_class_of_size(proxy.class_array(), named_primitives.len());
     for (index, named_primitive) in named_primitives.iter().enumerate() {
         let each_primitive_array =
-            proxy.instantiate_indexable_class_of_size(proxy.class_array(), 3);
+            Smalltalk::instantiate_indexable_class_of_size(proxy.class_array(), 3);
 
         let plugin_name = proxy.new_string(named_primitive.plugin_name());
         let primitive_name = proxy.new_string(named_primitive.primitive_name());
         let primitive_address = proxy.new_external_address(named_primitive.primitive_address());
 
-        proxy.item_at_put(each_primitive_array, ObjectFieldIndex::new(1), plugin_name);
-        proxy.item_at_put(
+        Smalltalk::item_at_put(each_primitive_array, ObjectFieldIndex::new(1), plugin_name);
+        Smalltalk::item_at_put(
             each_primitive_array,
             ObjectFieldIndex::new(2),
             primitive_name,
         );
-        proxy.item_at_put(
+        Smalltalk::item_at_put(
             each_primitive_array,
             ObjectFieldIndex::new(3),
             primitive_address,
         );
 
-        proxy.item_at_put(
+        Smalltalk::item_at_put(
             return_array,
             ObjectFieldIndex::new(index + 1),
             each_primitive_array,
         );
     }
-    proxy.method_return_value(return_array);
+    Smalltalk::method_return_value(return_array);
 }
 
 #[no_mangle]
@@ -222,7 +231,7 @@ pub fn primitiveGetNamedPrimitives() {
 pub fn primitiveGetSemaphoreSignaller() {
     let proxy = vm().proxy();
     let signaller = proxy.new_external_address(semaphore_signaller as *const c_void);
-    proxy.method_return_value(signaller);
+    Smalltalk::method_return_value(signaller);
 }
 
 #[no_mangle]
@@ -236,7 +245,7 @@ pub fn primitiveGetEventLoop() {
         Some(event_loop) => event_loop as *const EventLoop,
     };
 
-    proxy.method_return_value(proxy.new_external_address(event_loop));
+    Smalltalk::method_return_value(proxy.new_external_address(event_loop));
 }
 
 #[no_mangle]
@@ -244,7 +253,7 @@ pub fn primitiveGetEventLoop() {
 pub fn primitiveGetEventLoopReceiver() {
     let proxy = vm().proxy();
     let receiver = proxy.new_external_address(try_receive_events as *const c_void);
-    proxy.method_return_value(receiver);
+    Smalltalk::method_return_value(receiver);
 }
 
 #[no_mangle]
@@ -296,8 +305,8 @@ pub extern "C" fn semaphore_signaller(semaphore_index: usize) {
 pub fn primitiveSetEventLoopWaker() {
     let proxy = vm().proxy();
 
-    let waker_thunk_external_address = proxy.stack_object_value(StackOffset::new(1));
-    let waker_function_external_address = proxy.stack_object_value(StackOffset::new(0));
+    let waker_thunk_external_address = Smalltalk::stack_object_value(StackOffset::new(1));
+    let waker_function_external_address = Smalltalk::stack_object_value(StackOffset::new(0));
 
     let waker_function_ptr = proxy.read_address(waker_function_external_address);
 
@@ -308,7 +317,7 @@ pub fn primitiveSetEventLoopWaker() {
     let waker = EventLoopWaker::new(waker_function, waker_thunk);
     vm().event_loop_waker.replace(Some(waker));
 
-    proxy.method_return_boolean(true);
+    Smalltalk::method_return_boolean(true);
 }
 
 #[no_mangle]
@@ -317,7 +326,7 @@ pub fn primitiveFullGarbageCollectorMicroseconds() {
     let proxy = vm().proxy();
 
     let microseconds = vm().interpreter().full_gc_microseconds();
-    proxy.method_return_value(proxy.new_positive_64bit_integer(microseconds));
+    Smalltalk::method_return_value(proxy.new_positive_64bit_integer(microseconds));
 }
 
 #[no_mangle]
@@ -326,28 +335,28 @@ pub fn primitiveScavengeGarbageCollectorMicroseconds() {
     let proxy = vm().proxy();
 
     let microseconds = vm().interpreter().scavenge_gc_microseconds();
-    proxy.method_return_value(proxy.new_positive_64bit_integer(microseconds));
+    Smalltalk::method_return_value(proxy.new_positive_64bit_integer(microseconds));
 }
 
 #[no_mangle]
 #[allow(non_snake_case)]
 pub fn primitiveFirstBytePointerOfDataObject() {
     let proxy = vm().proxy();
-    let receiver = proxy.stack_object_value(StackOffset::new(0));
+    let receiver = Smalltalk::stack_object_value(StackOffset::new(0));
 
-    let pointer = proxy.first_byte_pointer_of_data_object(receiver);
-    proxy.method_return_value(proxy.new_external_address(pointer));
+    let pointer = Smalltalk::first_byte_pointer_of_data_object(receiver);
+    Smalltalk::method_return_value(proxy.new_external_address(pointer));
 }
 
 #[no_mangle]
 #[allow(non_snake_case)]
 pub fn primitivePointerAtPointer() {
     let proxy = vm().proxy();
-    let external_address = proxy.stack_object_value(StackOffset::new(0));
+    let external_address = Smalltalk::stack_object_value(StackOffset::new(0));
 
     let external_address_pointer = proxy.read_address(external_address);
-    let pointer = proxy.pointer_at_pointer(external_address_pointer);
-    proxy.method_return_value(proxy.new_external_address(pointer));
+    let pointer = Smalltalk::pointer_at_pointer(external_address_pointer);
+    Smalltalk::method_return_value(proxy.new_external_address(pointer));
 }
 
 #[no_mangle]
@@ -355,7 +364,7 @@ pub fn primitivePointerAtPointer() {
 pub fn primitiveVirtualMachineInfo() {
     let proxy = vm().proxy();
     let info = virtual_machine_info();
-    proxy.method_return_value(proxy.new_string(info));
+    Smalltalk::method_return_value(proxy.new_string(info));
 }
 
 #[no_mangle]
@@ -363,7 +372,7 @@ pub fn primitiveVirtualMachineInfo() {
 pub fn primitiveAppInfo() {
     let proxy = vm().proxy();
     let info = app_info();
-    proxy.method_return_value(proxy.new_string(info));
+    Smalltalk::method_return_value(proxy.new_string(info));
 }
 
 #[no_mangle]
@@ -371,56 +380,57 @@ pub fn primitiveAppInfo() {
 pub fn primitiveAppVersion() {
     let proxy = vm().proxy();
     let version = app_version();
-    proxy.method_return_value(proxy.new_string(version));
+    Smalltalk::method_return_value(proxy.new_string(version));
 }
 
 #[no_mangle]
 #[allow(non_snake_case)]
 pub fn primitiveFcntl() {
-    let proxy = vm().proxy();
     #[cfg(unix)]
     {
-        match proxy.method_argument_count() {
+        match Smalltalk::method_argument_count() {
             2 => {
-                let file_descriptor = proxy.stack_integer_value(StackOffset::new(1)) as c_int;
-                let command = proxy.stack_integer_value(StackOffset::new(0)) as c_int;
+                let file_descriptor = Smalltalk::stack_integer_value(StackOffset::new(1)) as c_int;
+                let command = Smalltalk::stack_integer_value(StackOffset::new(0)) as c_int;
 
                 let result = unsafe { libc::fcntl(file_descriptor, command) };
-                proxy.method_return_value(proxy.new_integer(result));
+                Smalltalk::method_return_value(Smalltalk::new_integer(result));
             }
             3 => {
-                let file_descriptor = proxy.stack_integer_value(StackOffset::new(2)) as c_int;
-                let command = proxy.stack_integer_value(StackOffset::new(1)) as c_int;
-                let argument = proxy.stack_integer_value(StackOffset::new(0)) as c_int;
+                let file_descriptor = Smalltalk::stack_integer_value(StackOffset::new(2)) as c_int;
+                let command = Smalltalk::stack_integer_value(StackOffset::new(1)) as c_int;
+                let argument = Smalltalk::stack_integer_value(StackOffset::new(0)) as c_int;
 
                 let result = unsafe { libc::fcntl(file_descriptor, command, argument) };
-                proxy.method_return_value(proxy.new_integer(result));
+                Smalltalk::method_return_value(Smalltalk::new_integer(result));
             }
-            _ => proxy.primitive_fail(),
+            _ => Smalltalk::primitive_fail(),
         }
     }
     #[cfg(not(unix))]
     {
-        proxy.primitive_fail();
+        Smalltalk::primitive_fail();
     }
 }
 
 #[no_mangle]
 #[allow(non_snake_case)]
 pub fn primitiveWideStringByteIndexToCharIndex() {
-    let proxy = vm().proxy();
-    if proxy.method_argument_count() != 1 {
-        error!("Wrong argument count, expected 1 got {}", proxy.method_argument_count());
-        proxy.primitive_fail();
+    if Smalltalk::method_argument_count() != 1 {
+        error!(
+            "Wrong argument count, expected 1 got {}",
+            Smalltalk::method_argument_count()
+        );
+        Smalltalk::primitive_fail();
         return;
     }
 
-    let byte_offset = proxy.stack_integer_value(StackOffset::new(0)) as usize;
+    let byte_offset = Smalltalk::stack_integer_value(StackOffset::new(0)) as usize;
 
-    let wide_string = proxy.stack_object_value(StackOffset::new(1));
-    let wide_string_size = proxy.size_of(wide_string);
+    let wide_string = Smalltalk::stack_object_value(StackOffset::new(1));
+    let wide_string_size = Smalltalk::size_of(wide_string);
 
-    let wide_string_ptr = proxy.first_indexable_field(wide_string) as *const u32;
+    let wide_string_ptr = Smalltalk::first_indexable_field(wide_string) as *const u32;
 
     let u32_str = unsafe { U32Str::from_ptr(wide_string_ptr, wide_string_size) };
     let mut char_offset = 1usize;
@@ -428,10 +438,82 @@ pub fn primitiveWideStringByteIndexToCharIndex() {
     for each in u32_str.chars_lossy() {
         current_byte_offset += each.len_utf8();
         if current_byte_offset > byte_offset {
-            proxy.method_return_integer(char_offset as i64);
+            Smalltalk::method_return_integer(char_offset as i64);
             return;
         }
         char_offset += 1;
     }
-    proxy.method_return_integer(char_offset.min(wide_string_size) as i64);
+    Smalltalk::method_return_integer(char_offset.min(wide_string_size) as i64);
+}
+
+#[no_mangle]
+#[allow(non_snake_case)]
+pub fn primitiveIdentityHash() {
+    let object = Smalltalk::stack_object_value(StackOffset::new(0));
+    let hash = Smalltalk::identity_hash(object);
+    Smalltalk::method_return_integer(hash as i64)
+}
+
+#[no_mangle]
+#[allow(non_snake_case)]
+pub fn primitiveIdentityDictionaryScanFor() {
+    if Smalltalk::method_argument_count() != 2 {
+        error!(
+            "Wrong argument count, expected 2 got {}",
+            Smalltalk::method_argument_count()
+        );
+        Smalltalk::primitive_fail();
+        return;
+    }
+
+    let hash = Smalltalk::stack_integer_value(StackOffset::new(0)) as u32;
+    let object = Smalltalk::stack_object_value(StackOffset::new(1));
+    let dictionary = Smalltalk::stack_object_value(StackOffset::new(2));
+
+    let array = Smalltalk::object_field_at(dictionary, 1usize.into());
+
+    let finish = Smalltalk::size_of(array) as u32;
+    let start = hash.rem_euclid(finish) + 1;
+
+    fn find_item_or_empty_slot(
+        start: u32,
+        finish: u32,
+        array: ObjectPointer,
+        object: ObjectPointer,
+    ) -> Option<u32> {
+        let nil_object = Smalltalk::nil_object();
+
+        // Search from (hash mod size) to the end.
+        for index in start..(finish + 1) {
+            let association = Smalltalk::item_at(array, index.into());
+            if Smalltalk::is_identical(association, nil_object)? {
+                return Some(index);
+            }
+
+            let key = Smalltalk::object_field_at(association, 0usize.into());
+            if Smalltalk::is_identical(key, object)? {
+                return Some(index);
+            }
+        }
+
+        // Search from 1 to where we started.
+        for index in 1..start {
+            let association = Smalltalk::item_at(array, index.into());
+            if Smalltalk::is_identical(association, nil_object)? {
+                return Some(index);
+            }
+
+            let key = Smalltalk::object_field_at(association, 0usize.into());
+            if Smalltalk::is_identical(key, object)? {
+                return Some(index);
+            }
+        }
+
+        Some(0)
+    }
+
+    match find_item_or_empty_slot(start, finish, array, object) {
+        None => Smalltalk::primitive_fail_code(1),
+        Some(index) => Smalltalk::method_return_integer(index as i64),
+    }
 }

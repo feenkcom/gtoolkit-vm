@@ -21,6 +21,9 @@ mod version;
 mod virtual_machine;
 mod working_directory;
 
+#[cfg(feature = "pharo-compiler")]
+mod pharo_compiler;
+
 pub use constellation::Constellation;
 pub use error::{ApplicationError, Result};
 pub use event_loop::{EventLoop, EventLoopMessage, EventLoopWaker};

@@ -5,7 +5,7 @@ use std::ffi::{CStr, CString};
 use std::fmt::Debug;
 use std::os::raw::{c_char, c_int};
 use std::sync::Mutex;
-use vm_bindings::{ObjectFieldIndex, StackOffset};
+use vm_bindings::{ObjectFieldIndex, Smalltalk, StackOffset};
 
 lazy_static! {
     pub static ref VM_LOGGER: Mutex<VirtualMachineLogger> = Mutex::new(VirtualMachineLogger::new());
@@ -144,15 +144,15 @@ pub fn primitiveEnableLogSignal() {
     let proxy = vm().proxy();
     let mut logger = VM_LOGGER.lock().unwrap();
 
-    let smalltalk_string = proxy.stack_object_value(StackOffset::new(0));
+    let smalltalk_string = Smalltalk::stack_object_value(StackOffset::new(0));
 
     match proxy.cstring_value_of(smalltalk_string) {
         None => {
-            proxy.primitive_fail();
+            Smalltalk::primitive_fail();
         }
         Some(cstring) => {
             logger.enable_type(cstring);
-            proxy.method_return_boolean(true);
+            Smalltalk::method_return_boolean(true);
         }
     }
 }
@@ -164,12 +164,12 @@ pub fn primitiveGetEnabledLogSignals() {
 
     let logs = VM_LOGGER.lock().unwrap().enabled_types();
 
-    let return_array = proxy.instantiate_indexable_class_of_size(proxy.class_array(), logs.len());
+    let return_array = Smalltalk::instantiate_indexable_class_of_size(proxy.class_array(), logs.len());
     for (index, log_type) in logs.iter().enumerate() {
         let each_type = proxy.new_string(log_type);
-        proxy.item_at_put(return_array, ObjectFieldIndex::new(index + 1), each_type);
+        Smalltalk::item_at_put(return_array, ObjectFieldIndex::new(index + 1), each_type);
     }
-    proxy.method_return_value(return_array);
+    Smalltalk::method_return_value(return_array);
 }
 
 #[no_mangle]
@@ -179,37 +179,34 @@ pub fn primitivePollLogger() {
 
     let logs = VM_LOGGER.lock().unwrap().poll_all();
 
-    let return_array = proxy.instantiate_indexable_class_of_size(proxy.class_array(), logs.len());
+    let return_array = Smalltalk::instantiate_indexable_class_of_size(proxy.class_array(), logs.len());
     for (index, log) in logs.iter().enumerate() {
-        let each_log_array = proxy.instantiate_indexable_class_of_size(proxy.class_array(), 4);
+        let each_log_array = Smalltalk::instantiate_indexable_class_of_size(proxy.class_array(), 4);
 
         let log_type = proxy.new_string(log.log_type.as_str());
         let file_name = proxy.new_string(log.file_name.as_str());
         let function_name = proxy.new_string(log.function_name.as_str());
         let message = proxy.new_string(log.message.as_str());
 
-        proxy.item_at_put(each_log_array, ObjectFieldIndex::new(1), log_type);
-        proxy.item_at_put(each_log_array, ObjectFieldIndex::new(2), file_name);
-        proxy.item_at_put(each_log_array, ObjectFieldIndex::new(3), function_name);
-        proxy.item_at_put(each_log_array, ObjectFieldIndex::new(4), message);
+        Smalltalk::item_at_put(each_log_array, ObjectFieldIndex::new(1), log_type);
+        Smalltalk::item_at_put(each_log_array, ObjectFieldIndex::new(2), file_name);
+        Smalltalk::item_at_put(each_log_array, ObjectFieldIndex::new(3), function_name);
+        Smalltalk::item_at_put(each_log_array, ObjectFieldIndex::new(4), message);
 
-        proxy.item_at_put(
+        Smalltalk::item_at_put(
             return_array,
             ObjectFieldIndex::new(index + 1),
             each_log_array,
         );
     }
-    proxy.method_return_value(return_array);
+    Smalltalk::method_return_value(return_array);
 }
 
 #[no_mangle]
 #[allow(non_snake_case)]
 pub fn primitiveStopLogger() {
-    let vm = vm();
-    let proxy = vm.proxy();
-
     let mut logger = VM_LOGGER.lock().unwrap();
     logger.set_logger(Box::new(NullLogger));
 
-    proxy.method_return_boolean(true);
+    Smalltalk::method_return_boolean(true);
 }

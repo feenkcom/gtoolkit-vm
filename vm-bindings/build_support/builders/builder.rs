@@ -1,12 +1,12 @@
-use std::{env, fmt};
 use std::fmt::{Debug, Display, Formatter};
 use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
+use std::{env, fmt};
 
 use bindgen::CargoCallbacks;
-use platforms::{Platform, PointerWidth};
 use platforms::target::OS;
+use platforms::{Platform, PointerWidth};
 
 pub const SOURCES_DIRECTORY: &str = "pharo-vm";
 
@@ -318,14 +318,52 @@ pub trait Builder: Debug {
             .allowlist_function("exportOsCogStackPageHeadroom")
             .allowlist_function("exportGetHandler")
             .allowlist_function("exportReadAddress")
-            .allowlist_function("exportInstantiateClassIsPinned")
-            .allowlist_function("exportFirstBytePointerOfDataObject")
             .allowlist_function("exportStatFullGCUsecs")
             .allowlist_function("exportStatScavengeGCUsecs")
             .allowlist_function("exportClassOrNilAtIndex")
+            .allowlist_function("exportIsOopForwarded")
             .allowlist_function("setVmRunOnWorkerThread")
             .allowlist_function("setLogger")
             .allowlist_function("setShouldLog")
+            // the following functions are exported straight from the VM dynamic library,
+            // rather than a VM Proxy
+            .allowlist_function("createNewMethodheaderbytecodeCount")
+
+            // InterpreterPrimitives
+            .allowlist_function("primitiveFail")
+            .allowlist_function("primitiveFailFor")
+
+            // StackInterpreter
+            .allowlist_function("methodReturnValue")
+            .allowlist_function("methodReturnBool")
+            .allowlist_function("methodReturnFloat")
+            .allowlist_function("methodReturnInteger")
+            .allowlist_function("methodReturnReceiver")
+            .allowlist_function("methodArgumentCount")
+            .allowlist_function("stackFloatValue")
+            .allowlist_function("stackIntegerValue")
+            .allowlist_function("stackObjectValue")
+            .allowlist_function("stObjectat")
+            .allowlist_function("stObjectatput")
+            .allowlist_function("stSizeOf")
+            .allowlist_function("addressCouldBeClassObj")
+
+            // SpurMemoryManager
+            .allowlist_function("falseObject")
+            .allowlist_function("trueObject")
+            .allowlist_function("nilObject")
+            .allowlist_function("firstIndexableField")
+            .allowlist_function("firstFixedField")
+            .allowlist_function("instantiateClassindexableSize")
+            .allowlist_function("instantiateClassisPinned")
+            .allowlist_function("fetchPointerofObject")
+            .allowlist_function("integerObjectOf")
+            .allowlist_function("newHashBitsOf")
+            .allowlist_function("hashBitsOf")
+            .allowlist_function("ensureBehaviorHash")
+            .allowlist_function("firstBytePointerOfDataObject")
+            .allowlist_function("isOopForwarded")
+
             .allowlist_type("sqInt")
             .allowlist_type("usqInt")
             .allowlist_type("sqExport")
