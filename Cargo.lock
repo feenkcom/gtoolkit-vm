@@ -1988,19 +1988,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e3148f5046208a5d56bcfc03053e3ca6334e51da8dfb19b6cdc8b306fae3283e"
 
 [[package]]
-name = "pharo-compiler"
-version = "0.0.1"
-dependencies = [
- "lexical-core",
- "log",
- "num-traits",
- "ordered-float",
- "ordermap",
- "strum 0.26.3",
- "vec_map",
-]
-
-[[package]]
 name = "pin-project-lite"
 version = "0.2.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3055,7 +3042,6 @@ dependencies = [
  "log",
  "num",
  "num-traits",
- "pharo-compiler",
  "thiserror",
  "to_absolute",
  "vm-bindings",
