@@ -6,8 +6,6 @@ edition = "2021"
 
 [dependencies]
 vm-bindings = { path = "../vm-bindings", default-features = false }
-# Not included by default
-pharo-compiler = { path = "../../pharo-compiler-rs/pharo-compiler", optional = true }
 default-env = "0.1"
 to_absolute = "0.1"
 anyhow = "1.0"
