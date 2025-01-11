@@ -78,9 +78,9 @@ CoInterpreterWithTelemetry class >> declareCVarsIn: aCCodeGenerator [
 { #category : #generation }
 CoInterpreterWithTelemetry class >> generate [
 	| interpreterClass memoryManager compilerClass imageFormat imageReaderClassName imageWriterClassName options platformDirectory vmmaker |
-	interpreterClass := CoInterpreterWithTelemetry.
+	interpreterClass := CoInterpreterWithProcessSwitchTelemetry.
 	memoryManager := Spur64BitCoMemoryManager.
-	compilerClass := StackToRegisterMappingCogitWithTelemetry.
+	compilerClass := StackToRegisterMappingCogitWithProcessSwitchTelemetry.
 	imageFormat := 'SpurFormat'.
 	imageReaderClassName := SpurImageReader name.
 	imageWriterClassName := SpurImageWriter name.

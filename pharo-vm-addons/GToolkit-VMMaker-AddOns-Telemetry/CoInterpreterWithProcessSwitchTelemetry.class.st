@@ -48,6 +48,7 @@ CoInterpreterWithProcessSwitchTelemetry class >> shouldGenerateTypedefFor: aStru
 { #category : #'accessing - telemetry' }
 CoInterpreterWithProcessSwitchTelemetry >> disableTelemetry [
 	<api>
+	<export: true>
 	<inline: false>
 	
 	telemetryEnabled := false.
@@ -70,6 +71,7 @@ CoInterpreterWithProcessSwitchTelemetry >> doRecordContextSwitchTo: aNewProc [
 { #category : #'accessing - telemetry' }
 CoInterpreterWithProcessSwitchTelemetry >> enableTelemetry [
 	<api>
+	<export: true>
 	<inline: false>
 	
 	telemetryEnabled := true
@@ -78,6 +80,7 @@ CoInterpreterWithProcessSwitchTelemetry >> enableTelemetry [
 { #category : #initialization }
 CoInterpreterWithProcessSwitchTelemetry >> setTelemetry: interpreterTelemetry [
 	<api>
+	<export: true>
 	<inline: false>
 	<var: #interpreterTelemetry type: #'CoInterpreterTelemetry *'>
 	
@@ -87,6 +90,7 @@ CoInterpreterWithProcessSwitchTelemetry >> setTelemetry: interpreterTelemetry [
 { #category : #'accessing - telemetry' }
 CoInterpreterWithProcessSwitchTelemetry >> takeTelemetry [
 	<api>
+	<export: true>
 	<inline: false>
 	<var: #prevTelemetry type: #'CoInterpreterTelemetry *'>
 	| prevTelemetry |

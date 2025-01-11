@@ -376,6 +376,12 @@ pub trait Builder: Debug {
                     .join("pharoClient.h")
                     .display()
                     .to_string(),
+            )
+            .header(
+                extra_headers
+                    .join("telemetry-export.h")
+                    .display()
+                    .to_string(),
             );
 
         builder = builder

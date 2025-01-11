@@ -135,7 +135,7 @@ impl VirtualMachine {
     }
 
     fn cogit_compiler(_builder: Rc<dyn Builder>) -> &'static str {
-        "StackToRegisterMappingCogit"
+        "StackToRegisterMappingCogitWithProcessSwitchTelemetry"
     }
 
     fn interpreter_sources() -> Vec<&'static str> {
