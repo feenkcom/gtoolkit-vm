@@ -128,12 +128,7 @@ impl VirtualMachine {
     /// slower stack interpreter
     fn interpreter(_builder: Rc<dyn Builder>) -> &'static str {
         if cfg!(feature = "jit") {
-            if cfg!(feature = "telemetry") {
-                "CoInterpreterWithProcessSwitchTelemetry"
-            }
-            else {
-                "CoInterpreter"
-            }
+            "CoInterpreterWithProcessSwitchTelemetry"
         } else {
             "StackVM"
         }

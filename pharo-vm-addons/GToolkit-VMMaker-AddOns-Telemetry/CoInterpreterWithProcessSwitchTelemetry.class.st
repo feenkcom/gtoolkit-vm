@@ -8,7 +8,7 @@ Class {
 	#category : #'GToolkit-VMMaker-AddOns-Telemetry'
 }
 
-{ #category : #'as yet unclassified' }
+{ #category : #translation }
 CoInterpreterWithProcessSwitchTelemetry class >> additionalHeadersDo: aBinaryBlock [
 	"Evaluate aBinaryBlock with the names and contents of
 	 any additional header files that need to be generated."
@@ -19,12 +19,12 @@ CoInterpreterWithProcessSwitchTelemetry class >> additionalHeadersDo: aBinaryBlo
 		value: CoInterpreterTelemetry cogMethodHeader
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #translation }
 CoInterpreterWithProcessSwitchTelemetry class >> ancilliaryClasses [
 	^ super ancilliaryClasses, { CoInterpreterTelemetry }
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #translation }
 CoInterpreterWithProcessSwitchTelemetry class >> declareCVarsIn: aCCodeGenerator [
 	"Override to avoid repeating StackInterpreter's declarations and add our own extensions"
 	self class == thisContext methodClass
@@ -38,7 +38,7 @@ CoInterpreterWithProcessSwitchTelemetry class >> declareCVarsIn: aCCodeGenerator
 		var: #telemetryEnabled type: 'int'
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #translation }
 CoInterpreterWithProcessSwitchTelemetry class >> shouldGenerateTypedefFor: aStructClass [
 	"Hack to work-around multiple definitions.  Sometimes a type has been defined in an include."
 	^ (super shouldGenerateTypedefFor: aStructClass)
@@ -96,7 +96,7 @@ CoInterpreterWithProcessSwitchTelemetry >> takeTelemetry [
 	^ prevTelemetry
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'process primitive support' }
 CoInterpreterWithProcessSwitchTelemetry >> transferTo: newProc from: sourceCode [
 	self doRecordContextSwitchTo:newProc.
 	super transferTo: newProc from: sourceCode
