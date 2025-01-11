@@ -7,10 +7,6 @@ use std::sync::mpsc::Sender;
 use std::sync::Arc;
 use std::thread::JoinHandle;
 
-use anyhow::Result;
-use vm_bindings::{virtual_machine_info, InterpreterConfiguration, InterpreterProxy, LogLevel, NamedPrimitive, ObjectFieldIndex, ObjectPointer, PharoInterpreter, Smalltalk, StackOffset};
-use widestring::U32Str;
-
 #[cfg(feature = "pharo-compiler")]
 use crate::pharo_compiler::*;
 use crate::version::{app_info, app_version};
@@ -21,6 +17,14 @@ use crate::{
 };
 #[cfg(feature = "ffi")]
 use crate::{primitiveEventLoopCallout, primitiveExtractReturnValue};
+use anyhow::Result;
+use vm_bindings::{
+    virtual_machine_info, InterpreterConfiguration, InterpreterProxy, LogLevel, NamedPrimitive,
+    ObjectFieldIndex, ObjectPointer, PharoInterpreter, Smalltalk, StackOffset,
+};
+use vm_object_model::objects::Array;
+use vm_object_model::{AnyObject, RawObjectPointer};
+use widestring::U32Str;
 
 #[no_mangle]
 pub static mut VIRTUAL_MACHINE: Option<Arc<VirtualMachine>> = None;
@@ -111,12 +115,15 @@ impl VirtualMachine {
         vm.add_primitive(primitive!(primitiveAppVersion));
         vm.add_primitive(primitive!(primitiveWideStringByteIndexToCharIndex));
         vm.add_primitive(primitive!(primitiveIdentityDictionaryScanFor));
+        vm.add_primitive(primitive!(primitiveIdentityDictionaryScanFor2));
         vm.add_primitive(primitive!(primitiveIdentityHash));
 
         #[cfg(feature = "pharo-compiler")]
         {
             vm.add_primitive(primitive!(primitivePharoCompilerNew));
             vm.add_primitive(primitive!(primitivePharoCompilerCompile));
+            vm.add_primitive(primitive!(primitivePharoCompilerPrintObject));
+            vm.add_primitive(primitive!(primitivePharoCompilerFindInWeakSet));
         }
 
         #[cfg(target_os = "android")]
@@ -305,8 +312,9 @@ pub extern "C" fn semaphore_signaller(semaphore_index: usize) {
 pub fn primitiveSetEventLoopWaker() {
     let proxy = vm().proxy();
 
-    let waker_thunk_external_address = Smalltalk::stack_object_value(StackOffset::new(1));
-    let waker_function_external_address = Smalltalk::stack_object_value(StackOffset::new(0));
+    let waker_thunk_external_address = Smalltalk::stack_object_value_unchecked(StackOffset::new(1));
+    let waker_function_external_address =
+        Smalltalk::stack_object_value_unchecked(StackOffset::new(0));
 
     let waker_function_ptr = proxy.read_address(waker_function_external_address);
 
@@ -342,7 +350,7 @@ pub fn primitiveScavengeGarbageCollectorMicroseconds() {
 #[allow(non_snake_case)]
 pub fn primitiveFirstBytePointerOfDataObject() {
     let proxy = vm().proxy();
-    let receiver = Smalltalk::stack_object_value(StackOffset::new(0));
+    let receiver = Smalltalk::stack_object_value_unchecked(StackOffset::new(0));
 
     let pointer = Smalltalk::first_byte_pointer_of_data_object(receiver);
     Smalltalk::method_return_value(proxy.new_external_address(pointer));
@@ -352,7 +360,7 @@ pub fn primitiveFirstBytePointerOfDataObject() {
 #[allow(non_snake_case)]
 pub fn primitivePointerAtPointer() {
     let proxy = vm().proxy();
-    let external_address = Smalltalk::stack_object_value(StackOffset::new(0));
+    let external_address = Smalltalk::stack_object_value_unchecked(StackOffset::new(0));
 
     let external_address_pointer = proxy.read_address(external_address);
     let pointer = Smalltalk::pointer_at_pointer(external_address_pointer);
@@ -427,7 +435,7 @@ pub fn primitiveWideStringByteIndexToCharIndex() {
 
     let byte_offset = Smalltalk::stack_integer_value(StackOffset::new(0)) as usize;
 
-    let wide_string = Smalltalk::stack_object_value(StackOffset::new(1));
+    let wide_string = Smalltalk::stack_object_value_unchecked(StackOffset::new(1));
     let wide_string_size = Smalltalk::size_of(wide_string);
 
     let wide_string_ptr = Smalltalk::first_indexable_field(wide_string) as *const u32;
@@ -449,7 +457,7 @@ pub fn primitiveWideStringByteIndexToCharIndex() {
 #[no_mangle]
 #[allow(non_snake_case)]
 pub fn primitiveIdentityHash() {
-    let object = Smalltalk::stack_object_value(StackOffset::new(0));
+    let object = Smalltalk::stack_object_value(StackOffset::new(0)).unwrap();
     let hash = Smalltalk::identity_hash(object);
     Smalltalk::method_return_integer(hash as i64)
 }
@@ -467,8 +475,8 @@ pub fn primitiveIdentityDictionaryScanFor() {
     }
 
     let hash = Smalltalk::stack_integer_value(StackOffset::new(0)) as u32;
-    let object = Smalltalk::stack_object_value(StackOffset::new(1));
-    let dictionary = Smalltalk::stack_object_value(StackOffset::new(2));
+    let object = Smalltalk::stack_object_value_unchecked(StackOffset::new(1));
+    let dictionary = Smalltalk::stack_object_value_unchecked(StackOffset::new(2));
 
     let array = Smalltalk::object_field_at(dictionary, 1usize.into());
 
@@ -513,6 +521,88 @@ pub fn primitiveIdentityDictionaryScanFor() {
     }
 
     match find_item_or_empty_slot(start, finish, array, object) {
+        None => Smalltalk::primitive_fail_code(1),
+        Some(index) => Smalltalk::method_return_integer(index as i64),
+    }
+}
+
+#[no_mangle]
+#[allow(non_snake_case)]
+pub fn primitiveIdentityDictionaryScanFor2() {
+    if Smalltalk::method_argument_count() != 2 {
+        error!(
+            "Wrong argument count, expected 2 got {}",
+            Smalltalk::method_argument_count()
+        );
+        Smalltalk::primitive_fail();
+        return;
+    }
+
+    let hash = Smalltalk::stack_integer_value(StackOffset::new(0)) as u32;
+    let object_ptr = Smalltalk::stack_object_value_unchecked(StackOffset::new(1));
+    let object_raw = RawObjectPointer::new(object_ptr.into());
+    let object = object_raw.reify();
+    let dictionary = Smalltalk::stack_object_value_unchecked(StackOffset::new(2));
+
+    let array_ptr = Smalltalk::object_field_at(dictionary, 1usize.into());
+    let raw_pointer = RawObjectPointer::new(array_ptr.into());
+    let array = raw_pointer
+        .reify()
+        .as_object_unchecked()
+        .try_as_array()
+        .unwrap();
+
+    let nil_ptr = Smalltalk::nil_object();
+    let nil_raw = RawObjectPointer::new(nil_ptr.into());
+    let nil = nil_raw.reify();
+
+    let finish = array.len();
+    let start = hash.rem_euclid(finish as u32) as usize;
+
+    fn find_item_or_empty_slot(
+        start: usize,
+        finish: usize,
+        array: &Array,
+        object: &AnyObject,
+        nil_object: &AnyObject,
+    ) -> Option<usize> {
+        for (index, association) in array.raw_items()[start..finish]
+            .iter()
+            .map(RawObjectPointer::reify)
+            .enumerate()
+        {
+            if association.is_identical(nil_object)? {
+                return Some(index + 1);
+            }
+
+            let association_a = association.as_object_unchecked();
+            let key = association_a.inst_var_at(0).unwrap();
+
+            if key.is_identical(object)? {
+                return Some(index + 1);
+            }
+        }
+
+        for (index, association) in array.raw_items()[0..start]
+            .iter()
+            .map(RawObjectPointer::reify)
+            .enumerate()
+        {
+            if association.is_identical(nil_object)? {
+                return Some(index + 1);
+            }
+
+            let association = association.as_object_unchecked();
+            let key = association.inst_var_at(0).unwrap();
+
+            if key.is_identical(object)? {
+                return Some(index + 1);
+            }
+        }
+        Some(0)
+    }
+
+    match find_item_or_empty_slot(start, finish, &array, &object, &nil) {
         None => Smalltalk::primitive_fail_code(1),
         Some(index) => Smalltalk::method_return_integer(index as i64),
     }

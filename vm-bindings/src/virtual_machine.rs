@@ -1,18 +1,65 @@
+use crate::bindings::{
+    addressCouldBeClassObj, createNewMethodheaderbytecodeCount, ensureBehaviorHash, falseObject,
+    fetchPointerofObject, firstBytePointerOfDataObject, firstFixedField, firstIndexableField,
+    hashBitsOf, instantiateClassindexableSize, instantiateClassisPinned, integerObjectOf,
+    isOopForwarded, methodArgumentCount, methodReturnBool, methodReturnInteger, methodReturnValue,
+    nilObject, primitiveFail, primitiveFailFor, sqInt, stObjectat, stObjectatput, stSizeOf,
+    stackIntegerValue, stackValue, trueObject,
+};
+use crate::prelude::NativeTransmutable;
 use crate::{ObjectFieldIndex, ObjectPointer, StackOffset};
 use std::os::raw::c_void;
-
-use crate::bindings::{addressCouldBeClassObj, createNewMethodheaderbytecodeCount, ensureBehaviorHash, falseObject, fetchPointerofObject, firstBytePointerOfDataObject, firstIndexableField, hashBitsOf, instantiateClassindexableSize, instantiateClassisPinned, integerObjectOf, isOopForwarded, methodArgumentCount, methodReturnBool, methodReturnInteger, methodReturnValue, nilObject, primitiveFail, primitiveFailFor, sqInt, stObjectat, stObjectatput, stSizeOf, stackIntegerValue, stackObjectValue, trueObject};
-use crate::prelude::NativeTransmutable;
+use vm_object_model::{Immediate, ObjectHeader};
 
 pub struct Smalltalk {}
 
 impl Smalltalk {
+    pub fn new() -> Self {
+        Self {}
+    }
+
     pub fn method_argument_count() -> usize {
         unsafe { methodArgumentCount() as usize }
     }
 
-    pub fn stack_object_value(offset: StackOffset) -> ObjectPointer {
-        unsafe { ObjectPointer::from_native_c(stackObjectValue(offset.into_native())) }
+    /// Get a value from the stack.
+    /// It can be either an immediate value (integer, float, char) or
+    /// an object.
+    pub fn stack_value(offset: StackOffset) -> ObjectPointer {
+        unsafe { ObjectPointer::from_native_c(stackValue(offset.into_native())) }
+    }
+
+    /// Check if the value on a stack is an object (non-intermediate) and return it.
+    pub fn stack_object_value(offset: StackOffset) -> Option<ObjectPointer> {
+        let value = Self::stack_value(offset);
+        if value.is_immediate() {
+            None
+        } else {
+            Some(value)
+        }
+    }
+
+    pub fn get_stack_value(&self, offset: StackOffset) -> vm_object_model::AnyObject {
+        let value = Self::stack_value(offset);
+        if value.is_immediate() {
+            vm_object_model::AnyObject::Immediate(Immediate(value.into_native()))
+        } else {
+            let raw_header: *mut ObjectHeader = unsafe { std::mem::transmute(value) };
+            let object_header = unsafe { &*raw_header };
+            let object = unsafe { std::mem::transmute(object_header) };
+            vm_object_model::AnyObject::Object(object)
+        }
+    }
+
+    /// Return an object on a stack. May return an invalid pointer if
+    pub fn stack_object_value_unchecked(offset: StackOffset) -> ObjectPointer {
+        let value = Self::stack_value(offset);
+        if value.is_immediate() {
+            Self::primitive_fail();
+            0.into()
+        } else {
+            value
+        }
     }
 
     pub fn stack_integer_value(offset: StackOffset) -> sqInt {
@@ -91,6 +138,10 @@ impl Smalltalk {
 
     pub fn first_indexable_field(object: ObjectPointer) -> *mut c_void {
         unsafe { firstIndexableField(object.into_native()) }
+    }
+
+    pub fn first_fixed_field(object: ObjectPointer) -> *mut c_void {
+        unsafe { firstFixedField(object.into_native()) }
     }
 
     pub fn bool_object(value: bool) -> ObjectPointer {

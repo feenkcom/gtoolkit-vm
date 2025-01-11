@@ -23,6 +23,7 @@ mod working_directory;
 
 #[cfg(feature = "pharo-compiler")]
 mod pharo_compiler;
+mod telemetry;
 
 pub use constellation::Constellation;
 pub use error::{ApplicationError, Result};
@@ -34,3 +35,4 @@ pub use logger::*;
 pub use version::{fetch_version, print_short_version, print_version};
 pub use virtual_machine::{vm, VirtualMachine, VirtualMachineConfiguration};
 pub use working_directory::executable_working_directory;
+pub use telemetry::*;

@@ -9,19 +9,23 @@ members = [
     "vm-client-android",
     "vm-client-tests",
     "vm-client-test-library",
-    "vm-library-tester",
+    "vm-library-tester", "vm-object-model",
 ]
 
 exclude = ["target", "third_party", "libs"]
 
 [profile.release]
 rpath = false
+debug = true
 
 [profile.dev]
 rpath = false
+debug = true
 
 [profile.test]
 rpath = false
+debug = true
 
 [profile.bench]
 rpath = false
+debug = true

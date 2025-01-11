@@ -10,6 +10,7 @@
     StackInterpreter >> #methodReturnReceiver.
     StackInterpreter >> #methodArgumentCount.
 
+    StackInterpreter >> #stackValue:.
     StackInterpreter >> #stackObjectValue:.
     StackInterpreter >> #stackIntegerValue:.
     StackInterpreter >> #stackFloatValue:.

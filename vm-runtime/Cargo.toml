@@ -6,6 +6,7 @@ edition = "2021"
 
 [dependencies]
 vm-bindings = { path = "../vm-bindings", default-features = false }
+vm-object-model = {path = "../vm-object-model" }
 default-env = "0.1"
 to_absolute = "0.1"
 anyhow = "1.0"
@@ -21,6 +22,7 @@ libc = "0.2"
 libffi = { version = "3.1", optional = true }
 widestring = "1.1"
 byte_string = "1.0"
+bitfield-struct = "0.10"
 
 [target.'cfg(target_os="macos")'.dependencies]
 core-foundation = "0.9.1"

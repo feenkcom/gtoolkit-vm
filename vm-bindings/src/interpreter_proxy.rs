@@ -234,13 +234,32 @@ fn cast_integer<T: Display + TryInto<R> + Copy, R: Display>(number: T) -> R {
 pub struct ObjectPointer(sqInt);
 impl NativeTransmutable<sqInt> for ObjectPointer {}
 impl ObjectPointer {
-    pub fn read_uint32(&self) -> u32 {
-        let pointer: *mut u32 = unsafe { std::mem::transmute(self.into_native()) };
-        unsafe { pointer.read() }
+    const NUM_SLOTS_MASK: u8 = 255;
+    pub const TAG_MASK: sqInt = 7;
+
+    pub fn read<T>(&self) -> T {
+        let pointer: *mut T = unsafe { std::mem::transmute(self.into_native()) };
+        unsafe { pointer.read_unaligned() }
+    }
+
+    pub fn read_long(&self) -> sqInt {
+        self.read::<sqInt>()
+    }
+
+    pub fn read_u32(&self) -> u32 {
+        self.read::<u32>()
+    }
+
+    pub fn read_u8(&self) -> u8 {
+        self.read::<u8>()
     }
 
     pub fn offset_by(&self, offset: sqInt) -> Self {
         ObjectPointer(self.0 + offset)
+    }
+
+    pub fn is_immediate(&self) -> bool {
+        (self.into_native() & Self::TAG_MASK) != 0
     }
 }
 
@@ -253,6 +272,12 @@ impl From<ObjectPointer> for sqInt {
 impl From<sqInt> for ObjectPointer {
     fn from(value: sqInt) -> Self {
         Self(value)
+    }
+}
+
+impl From<*const c_void> for ObjectPointer {
+    fn from(value: *const c_void) -> Self {
+        Self(unsafe { std::mem::transmute(value) })
     }
 }
 

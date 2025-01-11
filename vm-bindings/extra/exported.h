@@ -32,6 +32,7 @@ EXPORT(sqInt) methodReturnFloat(double aFloat);
 EXPORT(sqInt) methodReturnInteger(sqInt integer);
 EXPORT(sqInt) methodReturnReceiver(void);
 EXPORT(sqInt) methodArgumentCount(void);
+EXPORT(sqInt) stackValue(sqInt offset);
 EXPORT(double) stackFloatValue(sqInt offset);
 EXPORT(sqInt) stackIntegerValue(sqInt offset);
 EXPORT(sqInt) stackObjectValue(sqInt offset);

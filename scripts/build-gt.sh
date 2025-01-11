@@ -41,6 +41,5 @@ export CARGO_LOG=cargo::core::compiler::fingerprint=info
   --author "feenk gmbh <contact@feenk.com>" \
   --libraries-versions libraries.version \
   --icons icons/GlamorousToolkit.icns \
-  --executables app cli \
-  -vvvv \
+  --executables cli \
   --libraries boxer cairo clipboard crypto filewatcher freetype git gleam glutin pixels process sdl2 skia ssl webview winit test-library

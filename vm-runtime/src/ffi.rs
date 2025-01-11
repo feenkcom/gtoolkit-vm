@@ -86,7 +86,7 @@ enum TFPrimitiveCallout {
 pub fn primitiveEventLoopCallout() {
     let proxy = vm().proxy();
 
-    let external_function_oop = Smalltalk::stack_object_value(StackOffset::new(
+    let external_function_oop = Smalltalk::stack_object_value_unchecked(StackOffset::new(
         TFPrimitiveCallout::ExternalFunction as i32,
     ));
     let external_function = proxy.get_handler(external_function_oop);
@@ -125,8 +125,9 @@ pub fn primitiveEventLoopCallout() {
         Smalltalk::stack_integer_value(StackOffset::new(TFPrimitiveCallout::SemaphoreIndex as i32))
             as usize;
 
-    let arguments_array_oop =
-        Smalltalk::stack_object_value(StackOffset::new(TFPrimitiveCallout::Arguments as i32));
+    let arguments_array_oop = Smalltalk::stack_object_value_unchecked(StackOffset::new(
+        TFPrimitiveCallout::Arguments as i32,
+    ));
     let argument_size: usize = cif.nargs as usize;
 
     let arg_types: &[*mut ffi_type] =
@@ -199,7 +200,7 @@ pub fn primitiveExtractReturnValue() {
     unsafe {
         let proxy = vm().proxy();
 
-        let callout_address_oop = Smalltalk::stack_object_value(StackOffset::new(
+        let callout_address_oop = Smalltalk::stack_object_value_unchecked(StackOffset::new(
             TFPrimitiveReturnValue::CalloutAddress as i32,
         ));
         let callout_address =

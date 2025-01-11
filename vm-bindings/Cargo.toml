@@ -12,6 +12,7 @@ libffi-sys = { version = "2.3", optional = true }
 num = "0.4"
 num-derive = "0.4"
 num-traits = "0.2"
+vm-object-model = {path = "../vm-object-model"}
 
 [features]
 default = [ "full" ]

@@ -1,6 +1,6 @@
 use crate::bindings::sqInt;
 
-use crate::{Smalltalk, InterpreterProxy, ObjectFieldIndex, ObjectPointer};
+use crate::{InterpreterProxy, ObjectFieldIndex, ObjectPointer, Smalltalk};
 
 #[cfg(feature = "ffi")]
 use libffi::low::ffi_type;

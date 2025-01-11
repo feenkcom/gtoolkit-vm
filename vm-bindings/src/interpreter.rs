@@ -57,6 +57,27 @@ impl PharoInterpreter {
         unsafe { setShouldLog(should_log) };
     }
 
+    pub fn set_telemetry(&self, interpreter_telemetry: InterpreterTelemetry) {
+        unsafe { setTelemetry(Box::into_raw(Box::new(interpreter_telemetry))) };
+    }
+
+    pub fn take_telemetry(&self) -> Option<InterpreterTelemetry> {
+        let telemetry = unsafe { takeTelemetry() };
+        if telemetry.is_null() {
+            None
+        } else {
+            Some(unsafe { *Box::from_raw(telemetry) })
+        }
+    }
+
+    pub fn enable_telemetry(&self) {
+        unsafe { enableTelemetry() };
+    }
+
+    pub fn disable_telemetry(&self) {
+        unsafe { disableTelemetry() };
+    }
+
     /// Launch the vm according to the configuration
     pub fn start(self: Arc<Self>) -> Result<Option<JoinHandle<Result<()>>>> {
         let parameters = self.configuration.create_interpreter_parameters();

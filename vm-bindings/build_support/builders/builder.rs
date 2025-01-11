@@ -313,6 +313,11 @@ pub trait Builder: Debug {
             .allowlist_function("setProcessEnvironmentVector")
             .allowlist_function("getVMExports")
             .allowlist_function("setVMExports")
+            // telemetry
+            .allowlist_function("setTelemetry")
+            .allowlist_function("takeTelemetry")
+            .allowlist_function("enableTelemetry")
+            .allowlist_function("disableTelemetry")
             // re-export the internal methods
             .allowlist_function("exportSqGetInterpreterProxy")
             .allowlist_function("exportOsCogStackPageHeadroom")
@@ -328,11 +333,9 @@ pub trait Builder: Debug {
             // the following functions are exported straight from the VM dynamic library,
             // rather than a VM Proxy
             .allowlist_function("createNewMethodheaderbytecodeCount")
-
             // InterpreterPrimitives
             .allowlist_function("primitiveFail")
             .allowlist_function("primitiveFailFor")
-
             // StackInterpreter
             .allowlist_function("methodReturnValue")
             .allowlist_function("methodReturnBool")
@@ -340,6 +343,7 @@ pub trait Builder: Debug {
             .allowlist_function("methodReturnInteger")
             .allowlist_function("methodReturnReceiver")
             .allowlist_function("methodArgumentCount")
+            .allowlist_function("stackValue")
             .allowlist_function("stackFloatValue")
             .allowlist_function("stackIntegerValue")
             .allowlist_function("stackObjectValue")
@@ -347,7 +351,6 @@ pub trait Builder: Debug {
             .allowlist_function("stObjectatput")
             .allowlist_function("stSizeOf")
             .allowlist_function("addressCouldBeClassObj")
-
             // SpurMemoryManager
             .allowlist_function("falseObject")
             .allowlist_function("trueObject")
@@ -363,7 +366,6 @@ pub trait Builder: Debug {
             .allowlist_function("ensureBehaviorHash")
             .allowlist_function("firstBytePointerOfDataObject")
             .allowlist_function("isOopForwarded")
-
             .allowlist_type("sqInt")
             .allowlist_type("usqInt")
             .allowlist_type("sqExport")
