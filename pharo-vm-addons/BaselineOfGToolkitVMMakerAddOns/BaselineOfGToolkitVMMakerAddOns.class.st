@@ -8,5 +8,6 @@ Class {
 BaselineOfGToolkitVMMakerAddOns >> baseline: spec [
 	<baseline>
 	spec for: #'common' do: [
-		spec package: 'GToolkit-VMMaker-AddOns'].
+		spec package: 'GToolkit-VMMaker-AddOns'.
+		spec package: 'GToolkit-VMMaker-AddOns-Telemetry'].
 ]
