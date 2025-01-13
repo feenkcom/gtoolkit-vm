@@ -48,6 +48,7 @@ EXPORT(sqInt) nilObject();
 EXPORT(void *) firstIndexableField(sqInt oop);
 EXPORT(void *) firstFixedField(sqInt oop);
 EXPORT(sqInt) instantiateClassindexableSize(sqInt classObj, sqInt nElements);
+EXPORT(sqInt) instantiateClassindexableSizeisPinned(sqInt classObj, sqInt nElements, sqInt isPinned);
 EXPORT(sqInt) instantiateClassisPinned(sqInt classObj, sqInt isPinned);
 EXPORT(sqInt) fetchPointerofObject(sqInt fieldIndex, sqInt objOop);
 EXPORT(sqInt) integerObjectOf(sqInt value);

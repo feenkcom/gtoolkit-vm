@@ -1,11 +1,11 @@
 use crate::bindings::{
-    exportOsCogStackPageHeadroom as osCogStackPageHeadroom,
+    disableTelemetry, enableTelemetry, exportOsCogStackPageHeadroom as osCogStackPageHeadroom,
     exportSqGetInterpreterProxy as sqGetInterpreterProxy, exportStatFullGCUsecs as statFullGCUsecs,
     exportStatScavengeGCUsecs as statScavengeGCUsecs, getVMExports, installErrorHandlers,
     registerCurrentThreadToHandleExceptions, setLogger, setProcessArguments,
-    setProcessEnvironmentVector, setShouldLog, setVMExports, setVmRunOnWorkerThread, sqExport,
-    sqInt, vm_init, vm_parameters_ensure_interactive_image_parameter, vm_run_interpreter,
-    VirtualMachine,
+    setProcessEnvironmentVector, setShouldLog, setTelemetry, setVMExports, setVmRunOnWorkerThread,
+    sqExport, sqInt, takeTelemetry, vm_init, vm_parameters_ensure_interactive_image_parameter,
+    vm_run_interpreter, InterpreterTelemetry, VirtualMachine,
 };
 use crate::parameters::InterpreterParameters;
 use crate::prelude::NativeAccess;

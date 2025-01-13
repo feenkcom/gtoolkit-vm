@@ -237,6 +237,10 @@ impl ObjectPointer {
     const NUM_SLOTS_MASK: u8 = 255;
     pub const TAG_MASK: sqInt = 7;
 
+    pub fn as_i64(&self) -> i64 {
+        self.0
+    }
+
     pub fn read<T>(&self) -> T {
         let pointer: *mut T = unsafe { std::mem::transmute(self.into_native()) };
         unsafe { pointer.read_unaligned() }

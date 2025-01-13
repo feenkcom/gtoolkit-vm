@@ -358,6 +358,7 @@ pub trait Builder: Debug {
             .allowlist_function("firstIndexableField")
             .allowlist_function("firstFixedField")
             .allowlist_function("instantiateClassindexableSize")
+            .allowlist_function("instantiateClassindexableSizeisPinned")
             .allowlist_function("instantiateClassisPinned")
             .allowlist_function("fetchPointerofObject")
             .allowlist_function("integerObjectOf")

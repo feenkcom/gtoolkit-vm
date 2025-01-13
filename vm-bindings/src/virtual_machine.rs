@@ -1,7 +1,7 @@
 use crate::bindings::{
     addressCouldBeClassObj, createNewMethodheaderbytecodeCount, ensureBehaviorHash, falseObject,
     fetchPointerofObject, firstBytePointerOfDataObject, firstFixedField, firstIndexableField,
-    hashBitsOf, instantiateClassindexableSize, instantiateClassisPinned, integerObjectOf,
+    hashBitsOf, instantiateClassindexableSize, instantiateClassindexableSizeisPinned, instantiateClassisPinned, integerObjectOf,
     isOopForwarded, methodArgumentCount, methodReturnBool, methodReturnInteger, methodReturnValue,
     nilObject, primitiveFail, primitiveFailFor, sqInt, stObjectat, stObjectatput, stSizeOf,
     stackIntegerValue, stackValue, trueObject,
@@ -175,6 +175,12 @@ impl Smalltalk {
         ObjectPointer::from_native_c(oop)
     }
 
+    pub fn instantiate_indexable_class_of_size_pinned(class: ObjectPointer, size: usize, is_pinned: bool) -> ObjectPointer {
+        let is_pinned = if is_pinned { 1 } else { 0 };
+        let oop = unsafe { instantiateClassindexableSizeisPinned(class.into_native(), size as sqInt, is_pinned as sqInt) };
+        ObjectPointer::from_native_c(oop)
+    }
+
     pub fn method_return_boolean(value: bool) {
         let boolean = Self::bool_object(value);
         unsafe { methodReturnBool(boolean.into_native()) };
@@ -216,10 +222,6 @@ impl Smalltalk {
     }
 
     pub fn is_identical(first: ObjectPointer, second: ObjectPointer) -> Option<bool> {
-        if Self::is_oop_forwarded(first) {
-            return None;
-        }
-
         if Self::is_oop_forwarded(second) {
             return None;
         }

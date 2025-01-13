@@ -12,8 +12,9 @@ use crate::pharo_compiler::*;
 use crate::version::{app_info, app_version};
 use crate::{
     log_signal, primitiveEnableLogSignal, primitiveGetEnabledLogSignals, primitivePollLogger,
-    primitiveStartBeacon, primitiveStartConsoleLogger, primitiveStopLogger, should_log_all_signals,
-    should_log_signal, ConsoleLogger, EventLoop, EventLoopMessage, EventLoopWaker, VM_LOGGER,
+    primitiveStartBeacon, primitiveStartConsoleLogger, primitiveStartProcessSwitchTelemetry,
+    primitiveStopLogger, primitiveStopTelemetry, should_log_all_signals, should_log_signal,
+    ConsoleLogger, EventLoop, EventLoopMessage, EventLoopWaker, VM_LOGGER,
 };
 #[cfg(feature = "ffi")]
 use crate::{primitiveEventLoopCallout, primitiveExtractReturnValue};
@@ -117,6 +118,10 @@ impl VirtualMachine {
         vm.add_primitive(primitive!(primitiveIdentityDictionaryScanFor));
         vm.add_primitive(primitive!(primitiveIdentityDictionaryScanFor2));
         vm.add_primitive(primitive!(primitiveIdentityHash));
+
+        // telemetry
+        vm.add_primitive(primitive!(primitiveStartProcessSwitchTelemetry));
+        vm.add_primitive(primitive!(primitiveStopTelemetry));
 
         #[cfg(feature = "pharo-compiler")]
         {

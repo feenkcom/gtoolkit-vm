@@ -29,6 +29,7 @@
 
     SpurMemoryManager >> #instantiateClass:isPinned:.
     SpurMemoryManager >> #instantiateClass:indexableSize:.
+    SpurMemoryManager >> #instantiateClass:indexableSize:isPinned:.
     SpurMemoryManager >> #firstFixedField:.
     SpurMemoryManager >> #firstIndexableField:.
     SpurMemoryManager >> #newHashBitsOf:.

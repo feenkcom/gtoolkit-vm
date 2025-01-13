@@ -1,5 +1,5 @@
-use crate::objects::{Array, ByteSymbol, WideSymbol};
-use crate::{AnyObject, ObjectFormat, ObjectHeader, RawObjectPointer};
+use crate::objects::{Array, ArrayMut, ByteSymbol, WideSymbol};
+use crate::{AnyObject, AnyObjectMut, ObjectFormat, ObjectHeader, RawObjectPointer};
 use std::os::raw::c_void;
 use widestring::U32Str;
 
@@ -92,6 +92,21 @@ impl Object {
         }
     }
 
+    pub fn try_as_array_mut(&mut self) -> Option<ArrayMut> {
+        match self.object_format() {
+            ObjectFormat::IndexableWithoutInstVars | ObjectFormat::WeakIndexable => {
+                let length = self.len();
+                let slice_ptr = self.first_fixed_field_ptr() as *mut RawObjectPointer;
+
+                let slice: &mut [RawObjectPointer] =
+                    unsafe { std::slice::from_raw_parts_mut(slice_ptr, length) };
+
+                Some(ArrayMut::new(&self.0, slice))
+            }
+            _ => None,
+        }
+    }
+
     pub fn try_as_byte_symbol(&self) -> Option<ByteSymbol> {
         match self.object_format() {
             ObjectFormat::Indexable8(_) => {
@@ -136,5 +151,34 @@ impl Object {
 
         let pointer_value: i64 = unsafe { *pointer };
         Some(AnyObject::from(pointer_value))
+    }
+
+    pub fn inst_var_at_mut(&mut self, field_index: usize) -> Option<AnyObjectMut> {
+        if field_index >= self.amount_of_slots_unchecked() {
+            return None;
+        }
+
+        let pointer = unsafe {
+            self.as_ptr().offset(
+                size_of::<ObjectHeader>() as isize + (field_index << Self::SHIFT_FOR_WORD) as isize,
+            )
+        } as *const i64;
+
+        let pointer_value: i64 = unsafe { *pointer };
+        Some(AnyObjectMut::from(pointer_value))
+    }
+
+    pub fn inst_var_at_put(&mut self, field_index: usize, object: &AnyObject) {
+        if field_index >= self.amount_of_slots_unchecked() {
+            return;
+        }
+
+        let mut pointer = unsafe {
+            self.as_ptr().offset(
+                size_of::<ObjectHeader>() as isize + (field_index << Self::SHIFT_FOR_WORD) as isize,
+            )
+        } as *mut i64;
+
+        unsafe { *pointer = object.raw_header().as_i64() };
     }
 }
