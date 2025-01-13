@@ -5,7 +5,13 @@ import hudson.tasks.junit.CaseResult
 pipeline {
     agent none
     parameters {
-        choice(name: 'BUMP', choices: ['patch', 'minor', 'major'], description: 'What to bump when releasing') }
+        choice(name: 'BUMP', choices: ['patch', 'minor', 'major'], description: 'What to bump when releasing')
+        booleanParam(
+          defaultValue: false,
+          description: 'Clean up workspace before build',
+          name: 'CLEANUP_WORKSPACE'
+        )
+    }
     options {
         buildDiscarder(logRotator(numToKeepStr: '50'))
         disableConcurrentBuilds()
@@ -41,6 +47,19 @@ pipeline {
     }
 
     stages {
+        stage('Clean workspace') {
+            agent any
+            when { expression { return env.CLEANUP_WORKSPACE } }
+            steps {
+                cleanWs()
+            }
+        }
+        stage('Update workspace') {
+            agent any
+            steps {
+                checkout scm
+            }
+        }
         stage ('Read tool versions') {
             agent {
                 label "${MACOS_M1_TARGET}"

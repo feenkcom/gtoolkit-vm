@@ -278,7 +278,7 @@ pub fn primitiveGetAndroidApp() {
     let proxy = vm.proxy();
 
     let android_app = Box::into_raw(Box::new(vm.android_app.clone()));
-    proxy.method_return_value(proxy.new_external_address(android_app));
+    Smalltalk::method_return_value(proxy.new_external_address(android_app));
 }
 
 #[no_mangle]
@@ -295,7 +295,7 @@ pub fn primitiveGetAndroidNativeWindow() {
         .map(|native_window| native_window.ptr().as_ptr())
         .unwrap_or(std::ptr::null_mut());
 
-    proxy.method_return_value(proxy.new_external_address(native_window));
+    Smalltalk::method_return_value(proxy.new_external_address(native_window));
 }
 
 #[no_mangle]
