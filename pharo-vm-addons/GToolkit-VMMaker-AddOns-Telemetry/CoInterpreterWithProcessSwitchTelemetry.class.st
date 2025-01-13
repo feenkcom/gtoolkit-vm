@@ -76,6 +76,7 @@ CoInterpreterWithProcessSwitchTelemetry >> doRecordSemaphoreWait: aSemaphore isL
 		ifTrue: [
 			telemetry
 				telemetrySignalSemaphoreWait: aSemaphore
+				process: self activeProcess
 				isLocked: isLocked ]
 ]
 

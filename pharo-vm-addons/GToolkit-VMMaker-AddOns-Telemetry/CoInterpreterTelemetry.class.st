@@ -35,7 +35,7 @@ CoInterpreterTelemetry class >> instVarNamesAndTypesForTranslationDo: aBinaryBlo
 		value: 'contextSwitchFn' value: #('void (*' ')(void*, sqInt, sqInt)');
 		value: 'debugRecordClassFn' value: #('void (*' ')(void*, sqInt, uint8_t)');
 		value: 'debugRecordSelectorFn' value: #('void (*' ')(void*, sqInt)');
-		value: 'semaphoreWaitFn' value: #('void (*' ')(void*, sqInt, uint8_t)')
+		value: 'semaphoreWaitFn' value: #('void (*' ')(void*, sqInt, sqInt, uint8_t)')
 ]
 
 { #category : #translation }
@@ -202,7 +202,7 @@ CoInterpreterTelemetry >> telemetrySignalReturnFrom: sourceId in: executionLocat
 ]
 
 { #category : #signalling }
-CoInterpreterTelemetry >> telemetrySignalSemaphoreWait: aSemaphore isLocked: isLocked [
+CoInterpreterTelemetry >> telemetrySignalSemaphoreWait: aSemaphore process: aProcess isLocked: isLocked [
 	<inline: false>
 	<returnTypeC:'void'>
 	
@@ -210,6 +210,7 @@ CoInterpreterTelemetry >> telemetrySignalSemaphoreWait: aSemaphore isLocked: isL
 		perform: self semaphoreWaitFn
 		with: self payload
 		with: aSemaphore
+		with: aProcess
 		with: isLocked
 ]
 

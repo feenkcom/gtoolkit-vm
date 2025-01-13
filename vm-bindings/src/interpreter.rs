@@ -11,7 +11,6 @@ use crate::parameters::InterpreterParameters;
 use crate::prelude::NativeAccess;
 use crate::{InterpreterConfiguration, InterpreterProxy, NamedPrimitive};
 use anyhow::{bail, Result};
-use log::Log;
 use std::fmt::Debug;
 use std::os::raw::{c_char, c_int};
 use std::panic;

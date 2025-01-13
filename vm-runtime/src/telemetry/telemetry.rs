@@ -63,6 +63,25 @@ impl GlobalTelemetry {
         }));
     }
 
+    pub fn receive_semaphore_wait_signal(
+        &mut self,
+        semaphore: AnyObject,
+        process: AnyObject,
+        is_locked: bool,
+    ) {
+        println!(
+            "Receive semaphore wait {:#?}; locked: {:#?}",
+            semaphore, is_locked
+        );
+
+        self.receive_signal(TelemetrySignal::SemaphoreWait(SemaphoreWaitSignal {
+            timestamp: Instant::now(),
+            semaphore: semaphore.raw_header(),
+            process: process.raw_header(),
+            is_locked,
+        }));
+    }
+
     pub fn receive_signal(&mut self, signal: TelemetrySignal) {
         self.telemetries
             .values_mut()
@@ -80,6 +99,7 @@ impl GlobalTelemetry {
             contextSwitchFn: Some(telemetry_receive_context_switch_signal),
             debugRecordClassFn: None,
             debugRecordSelectorFn: None,
+            semaphoreWaitFn: Some(telemetry_receive_semaphore_wait_signal),
         }
     }
 }
@@ -93,6 +113,7 @@ pub trait AbstractTelemetry: Send + Sync {
 #[repr(u8)]
 pub enum TelemetrySignal {
     ContextSwitch(ContextSwitchSignal),
+    SemaphoreWait(SemaphoreWaitSignal),
 }
 
 impl From<&TelemetrySignal> for u8 {
@@ -108,6 +129,14 @@ pub struct ContextSwitchSignal {
     pub timestamp: Instant,
     pub old_process: RawObjectPointer,
     pub new_process: RawObjectPointer,
+}
+
+#[derive(Debug, Clone)]
+pub struct SemaphoreWaitSignal {
+    pub timestamp: Instant,
+    pub semaphore: RawObjectPointer,
+    pub process: RawObjectPointer,
+    pub is_locked: bool,
 }
 
 #[no_mangle]
@@ -149,6 +178,22 @@ pub unsafe extern "C" fn telemetry_receive_context_switch_signal(
         telemetry.lock().receive_context_switch_signal(
             AnyObject::from(old_process),
             AnyObject::from(new_process),
+        );
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn telemetry_receive_semaphore_wait_signal(
+    _nothing: *mut c_void,
+    semaphore: sqInt,
+    process: sqInt,
+    is_locked: u8,
+) {
+    if let Some(telemetry) = TELEMETRY_INSTANCE.get() {
+        telemetry.lock().receive_semaphore_wait_signal(
+            AnyObject::from(semaphore),
+            AnyObject::from(process),
+            is_locked != 0,
         );
     }
 }
