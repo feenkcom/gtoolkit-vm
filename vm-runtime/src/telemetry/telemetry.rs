@@ -51,11 +51,6 @@ impl GlobalTelemetry {
         old_process: AnyObject,
         new_process: AnyObject,
     ) {
-        println!(
-            "Receive context switch signal from {:#?} to {:#?}",
-            old_process, new_process
-        );
-
         self.receive_signal(TelemetrySignal::ContextSwitch(ContextSwitchSignal {
             timestamp: Instant::now(),
             old_process: old_process.raw_header(),
@@ -69,11 +64,6 @@ impl GlobalTelemetry {
         process: AnyObject,
         is_locked: bool,
     ) {
-        println!(
-            "Receive semaphore wait {:#?}; locked: {:#?}",
-            semaphore, is_locked
-        );
-
         self.receive_signal(TelemetrySignal::SemaphoreWait(SemaphoreWaitSignal {
             timestamp: Instant::now(),
             semaphore: semaphore.raw_header(),
@@ -114,14 +104,6 @@ pub trait AbstractTelemetry: Send + Sync {
 pub enum TelemetrySignal {
     ContextSwitch(ContextSwitchSignal),
     SemaphoreWait(SemaphoreWaitSignal),
-}
-
-impl From<&TelemetrySignal> for u8 {
-    fn from(signal: &TelemetrySignal) -> u8 {
-        match signal {
-            TelemetrySignal::ContextSwitch(_) => 3,
-        }
-    }
 }
 
 #[derive(Debug, Clone)]
