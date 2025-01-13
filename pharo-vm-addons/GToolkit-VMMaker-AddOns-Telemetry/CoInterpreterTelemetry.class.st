@@ -10,7 +10,8 @@ Class {
 		'beginMachineMethodFn',
 		'activateMachineMethodFn',
 		'debugRecordClassFn',
-		'debugRecordSelectorFn'
+		'debugRecordSelectorFn',
+		'semaphoreWaitFn'
 	],
 	#category : #'GToolkit-VMMaker-AddOns-Telemetry'
 }
@@ -33,7 +34,8 @@ CoInterpreterTelemetry class >> instVarNamesAndTypesForTranslationDo: aBinaryBlo
 		value: 'beginMachineMethodFn' value: #('void (*' ')(void*)');
 		value: 'contextSwitchFn' value: #('void (*' ')(void*, sqInt, sqInt)');
 		value: 'debugRecordClassFn' value: #('void (*' ')(void*, sqInt, uint8_t)');
-		value: 'debugRecordSelectorFn' value: #('void (*' ')(void*, sqInt)')
+		value: 'debugRecordSelectorFn' value: #('void (*' ')(void*, sqInt)');
+		value: 'semaphoreWaitFn' value: #('void (*' ')(void*, sqInt, uint8_t)')
 ]
 
 { #category : #translation }
@@ -79,6 +81,11 @@ CoInterpreterTelemetry >> primitiveActivationFn [
 { #category : #accessing }
 CoInterpreterTelemetry >> returnFn [
 	^ returnFn
+]
+
+{ #category : #accessing }
+CoInterpreterTelemetry >> semaphoreWaitFn [
+	^ semaphoreWaitFn
 ]
 
 { #category : #accessing }
@@ -192,6 +199,18 @@ CoInterpreterTelemetry >> telemetrySignalReturnFrom: sourceId in: executionLocat
 		with: sourceId
 		with: executionLocation
 		with: aFP
+]
+
+{ #category : #signalling }
+CoInterpreterTelemetry >> telemetrySignalSemaphoreWait: aSemaphore isLocked: isLocked [
+	<inline: false>
+	<returnTypeC:'void'>
+	
+	self
+		perform: self semaphoreWaitFn
+		with: self payload
+		with: aSemaphore
+		with: isLocked
 ]
 
 { #category : #signalling }
