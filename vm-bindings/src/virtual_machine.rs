@@ -9,7 +9,7 @@ use crate::bindings::{
 use crate::prelude::NativeTransmutable;
 use crate::{ObjectFieldIndex, ObjectPointer, StackOffset};
 use std::os::raw::c_void;
-use vm_object_model::{Immediate, ObjectHeader};
+use vm_object_model::{AnyObjectRef, Immediate, ObjectHeader, RawObjectPointer};
 
 pub struct Smalltalk {}
 
@@ -27,6 +27,13 @@ impl Smalltalk {
     /// an object.
     pub fn stack_value(offset: StackOffset) -> ObjectPointer {
         unsafe { ObjectPointer::from_native_c(stackValue(offset.into_native())) }
+    }
+
+    /// Get a reference to a value from the stack.
+    /// It can be either an immediate value (integer, float, char) or
+    /// an object.
+    pub fn stack_ref(offset: StackOffset) -> AnyObjectRef {
+        (unsafe { RawObjectPointer::new(stackValue(offset.into_native())) }).into()
     }
 
     /// Check if the value on a stack is an object (non-intermediate) and return it.

@@ -1,4 +1,4 @@
-use crate::{vm, ProcessSwitchTelemetry};
+use crate::vm;
 use once_cell::sync::OnceCell;
 use parking_lot::Mutex;
 use std::collections::HashMap;
@@ -6,11 +6,11 @@ use std::ffi::c_void;
 use std::time::Instant;
 use vm_bindings::bindings::{sqInt, InterpreterTelemetry};
 use vm_bindings::{Smalltalk, StackOffset};
-use vm_object_model::{AnyObject, RawObjectPointer};
+use vm_object_model::{AnyObject, AnyObjectRef, ObjectRef, RawObjectPointer};
 
 static TELEMETRY_INSTANCE: OnceCell<Mutex<GlobalTelemetry>> = OnceCell::new();
 
-struct GlobalTelemetry {
+pub struct GlobalTelemetry {
     telemetries: HashMap<usize, Box<dyn AbstractTelemetry>>,
     next_instance_id: usize,
 }
@@ -23,7 +23,17 @@ impl GlobalTelemetry {
         }
     }
 
-    pub fn add_telemetry(&mut self, mut telemetry: Box<dyn AbstractTelemetry>) -> usize {
+    pub fn register(telemetry: impl AbstractTelemetry + 'static) {
+        TELEMETRY_INSTANCE
+            .get_or_init(|| {
+                let telemetry = Self::init();
+                Mutex::new(telemetry)
+            })
+            .lock()
+            .add_telemetry(Box::new(telemetry));
+    }
+
+    fn add_telemetry(&mut self, mut telemetry: Box<dyn AbstractTelemetry>) -> usize {
         if self.telemetries.is_empty() {
             let interpreter = vm().interpreter();
             interpreter.set_telemetry(self.as_interpreter_telemetry());
@@ -48,26 +58,26 @@ impl GlobalTelemetry {
 
     pub fn receive_context_switch_signal(
         &mut self,
-        old_process: AnyObject,
-        new_process: AnyObject,
+        old_process: ObjectRef,
+        new_process: ObjectRef,
     ) {
         self.receive_signal(TelemetrySignal::ContextSwitch(ContextSwitchSignal {
             timestamp: Instant::now(),
-            old_process: old_process.raw_header(),
-            new_process: new_process.raw_header(),
+            old_process,
+            new_process,
         }));
     }
 
     pub fn receive_semaphore_wait_signal(
         &mut self,
-        semaphore: AnyObject,
-        process: AnyObject,
+        semaphore: ObjectRef,
+        process: ObjectRef,
         is_locked: bool,
     ) {
         self.receive_signal(TelemetrySignal::SemaphoreWait(SemaphoreWaitSignal {
             timestamp: Instant::now(),
-            semaphore: semaphore.raw_header(),
-            process: process.raw_header(),
+            semaphore,
+            process,
             is_locked,
         }));
     }
@@ -109,34 +119,16 @@ pub enum TelemetrySignal {
 #[derive(Debug, Clone)]
 pub struct ContextSwitchSignal {
     pub timestamp: Instant,
-    pub old_process: RawObjectPointer,
-    pub new_process: RawObjectPointer,
+    pub old_process: ObjectRef,
+    pub new_process: ObjectRef,
 }
 
 #[derive(Debug, Clone)]
 pub struct SemaphoreWaitSignal {
     pub timestamp: Instant,
-    pub semaphore: RawObjectPointer,
-    pub process: RawObjectPointer,
+    pub semaphore: ObjectRef,
+    pub process: ObjectRef,
     pub is_locked: bool,
-}
-
-#[no_mangle]
-#[allow(non_snake_case)]
-pub fn primitiveStartProcessSwitchTelemetry() {
-    let telemetry_pointer = Smalltalk::stack_value(StackOffset::new(0));
-    let process_switch_telemetry =
-        ProcessSwitchTelemetry::new(RawObjectPointer::new(telemetry_pointer.as_i64()));
-
-    TELEMETRY_INSTANCE
-        .get_or_init(|| {
-            let telemetry = GlobalTelemetry::init();
-            Mutex::new(telemetry)
-        })
-        .lock()
-        .add_telemetry(Box::new(process_switch_telemetry));
-
-    Smalltalk::method_return_boolean(true);
 }
 
 #[no_mangle]
@@ -157,10 +149,28 @@ pub unsafe extern "C" fn telemetry_receive_context_switch_signal(
     new_process: sqInt,
 ) {
     if let Some(telemetry) = TELEMETRY_INSTANCE.get() {
-        telemetry.lock().receive_context_switch_signal(
-            AnyObject::from(old_process),
-            AnyObject::from(new_process),
-        );
+        let old_process_ref = AnyObjectRef::from(RawObjectPointer::new(old_process));
+        let new_process_ref = AnyObjectRef::from(RawObjectPointer::new(new_process));
+
+        let old_process = match old_process_ref.as_object() {
+            Ok(old_process) => old_process,
+            Err(error) => {
+                error!("Failed to get old_process object: {:?}", error);
+                return;
+            }
+        };
+
+        let new_process = match new_process_ref.as_object() {
+            Ok(new_process) => new_process,
+            Err(error) => {
+                error!("Failed to get new_process object: {:?}", error);
+                return;
+            }
+        };
+
+        telemetry
+            .lock()
+            .receive_context_switch_signal(old_process, new_process);
     }
 }
 
@@ -172,10 +182,27 @@ pub unsafe extern "C" fn telemetry_receive_semaphore_wait_signal(
     is_locked: u8,
 ) {
     if let Some(telemetry) = TELEMETRY_INSTANCE.get() {
-        telemetry.lock().receive_semaphore_wait_signal(
-            AnyObject::from(semaphore),
-            AnyObject::from(process),
-            is_locked != 0,
-        );
+        let semaphore_ref = AnyObjectRef::from(RawObjectPointer::new(semaphore));
+        let process_ref = AnyObjectRef::from(RawObjectPointer::new(process));
+
+        let semaphore = match semaphore_ref.as_object() {
+            Ok(semaphore) => semaphore,
+            Err(error) => {
+                error!("Failed to get semaphore object: {:?}", error);
+                return;
+            }
+        };
+
+        let process = match process_ref.as_object() {
+            Ok(process) => process,
+            Err(error) => {
+                error!("Failed to get process object: {:?}", error);
+                return;
+            }
+        };
+
+        telemetry
+            .lock()
+            .receive_semaphore_wait_signal(semaphore, process, is_locked != 0);
     }
 }

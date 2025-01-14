@@ -1,6 +1,7 @@
 use std::cell::RefCell;
 use std::ffi::{c_int, CString};
 use std::mem::transmute;
+use std::ops::Deref;
 use std::os::raw::c_void;
 use std::process::exit;
 use std::sync::mpsc::Sender;
@@ -23,8 +24,8 @@ use vm_bindings::{
     virtual_machine_info, InterpreterConfiguration, InterpreterProxy, LogLevel, NamedPrimitive,
     ObjectFieldIndex, ObjectPointer, PharoInterpreter, Smalltalk, StackOffset,
 };
-use vm_object_model::objects::Array;
-use vm_object_model::{AnyObject, RawObjectPointer};
+use vm_object_model::objects::{Array, ArrayRef};
+use vm_object_model::{AnyObject, AnyObjectRef, Error, RawObjectPointer};
 use widestring::U32Str;
 
 #[no_mangle]
@@ -116,12 +117,14 @@ impl VirtualMachine {
         vm.add_primitive(primitive!(primitiveAppVersion));
         vm.add_primitive(primitive!(primitiveWideStringByteIndexToCharIndex));
         vm.add_primitive(primitive!(primitiveIdentityDictionaryScanFor));
-        vm.add_primitive(primitive!(primitiveIdentityDictionaryScanFor2));
         vm.add_primitive(primitive!(primitiveIdentityHash));
 
         // telemetry
         vm.add_primitive(primitive!(primitiveStartProcessSwitchTelemetry));
         vm.add_primitive(primitive!(primitiveStopTelemetry));
+
+        // debug
+        vm.add_primitive(primitive!(primitiveDebugPrintArray));
 
         #[cfg(feature = "pharo-compiler")]
         {
@@ -531,84 +534,113 @@ pub fn primitiveIdentityDictionaryScanFor() {
     }
 }
 
+// #[no_mangle]
+// #[allow(non_snake_case)]
+// pub fn primitiveIdentityDictionaryScanFor2() {
+//     if Smalltalk::method_argument_count() != 2 {
+//         error!(
+//             "Wrong argument count, expected 2 got {}",
+//             Smalltalk::method_argument_count()
+//         );
+//         Smalltalk::primitive_fail();
+//         return;
+//     }
+//
+//     let hash = Smalltalk::stack_integer_value(StackOffset::new(0)) as u32;
+//     let object_ptr = Smalltalk::stack_object_value_unchecked(StackOffset::new(1));
+//     let object_raw = RawObjectPointer::new(object_ptr.into());
+//     let object = object_raw.reify();
+//     let dictionary = Smalltalk::stack_object_value_unchecked(StackOffset::new(2));
+//
+//     let array_ptr = Smalltalk::object_field_at(dictionary, 1usize.into());
+//     let raw_pointer = RawObjectPointer::new(array_ptr.into());
+//     let array = raw_pointer
+//         .reify()
+//         .as_object_unchecked()
+//         .try_as_array()
+//         .unwrap();
+//
+//     let nil_ptr = Smalltalk::nil_object();
+//     let nil_raw = RawObjectPointer::new(nil_ptr.into());
+//     let nil = nil_raw.reify();
+//
+//     let finish = array.len();
+//     let start = hash.rem_euclid(finish as u32) as usize;
+//
+//     fn find_item_or_empty_slot(
+//         start: usize,
+//         finish: usize,
+//         array: &DeprecatedArray,
+//         object: &AnyObject,
+//         nil_object: &AnyObject,
+//     ) -> Option<usize> {
+//         for (index, association) in array.raw_items()[start..finish]
+//             .iter()
+//             .map(RawObjectPointer::reify)
+//             .enumerate()
+//         {
+//             if association.is_identical(nil_object)? {
+//                 return Some(index + 1);
+//             }
+//
+//             let association_a = association.as_object_unchecked();
+//             let key = association_a.inst_var_at(0).unwrap();
+//
+//             if key.is_identical(object)? {
+//                 return Some(index + 1);
+//             }
+//         }
+//
+//         for (index, association) in array.raw_items()[0..start]
+//             .iter()
+//             .map(RawObjectPointer::reify)
+//             .enumerate()
+//         {
+//             if association.is_identical(nil_object)? {
+//                 return Some(index + 1);
+//             }
+//
+//             let association = association.as_object_unchecked();
+//             let key = association.inst_var_at(0).unwrap();
+//
+//             if key.is_identical(object)? {
+//                 return Some(index + 1);
+//             }
+//         }
+//         Some(0)
+//     }
+//
+//     match find_item_or_empty_slot(start, finish, &array, &object, &nil) {
+//         None => Smalltalk::primitive_fail_code(1),
+//         Some(index) => Smalltalk::method_return_integer(index as i64),
+//     }
+// }
+
 #[no_mangle]
 #[allow(non_snake_case)]
-pub fn primitiveIdentityDictionaryScanFor2() {
-    if Smalltalk::method_argument_count() != 2 {
-        error!(
-            "Wrong argument count, expected 2 got {}",
-            Smalltalk::method_argument_count()
-        );
-        Smalltalk::primitive_fail();
-        return;
-    }
+pub fn primitiveDebugPrintArray() {
+    let value_ptr = Smalltalk::stack_ref(StackOffset::new(0));
 
-    let hash = Smalltalk::stack_integer_value(StackOffset::new(0)) as u32;
-    let object_ptr = Smalltalk::stack_object_value_unchecked(StackOffset::new(1));
-    let object_raw = RawObjectPointer::new(object_ptr.into());
-    let object = object_raw.reify();
-    let dictionary = Smalltalk::stack_object_value_unchecked(StackOffset::new(2));
+    let array: &Array = &ArrayRef::try_from(value_ptr).unwrap();
 
-    let array_ptr = Smalltalk::object_field_at(dictionary, 1usize.into());
-    let raw_pointer = RawObjectPointer::new(array_ptr.into());
-    let array = raw_pointer
-        .reify()
-        .as_object_unchecked()
-        .try_as_array()
-        .unwrap();
-
-    let nil_ptr = Smalltalk::nil_object();
-    let nil_raw = RawObjectPointer::new(nil_ptr.into());
-    let nil = nil_raw.reify();
-
-    let finish = array.len();
-    let start = hash.rem_euclid(finish as u32) as usize;
-
-    fn find_item_or_empty_slot(
-        start: usize,
-        finish: usize,
-        array: &Array,
-        object: &AnyObject,
-        nil_object: &AnyObject,
-    ) -> Option<usize> {
-        for (index, association) in array.raw_items()[start..finish]
-            .iter()
-            .map(RawObjectPointer::reify)
-            .enumerate()
-        {
-            if association.is_identical(nil_object)? {
-                return Some(index + 1);
-            }
-
-            let association_a = association.as_object_unchecked();
-            let key = association_a.inst_var_at(0).unwrap();
-
-            if key.is_identical(object)? {
-                return Some(index + 1);
-            }
+    for each in array.iter() {
+        if each.is_immediate() {
+            println!("{:?}", each.as_immediate().unwrap());
         }
-
-        for (index, association) in array.raw_items()[0..start]
-            .iter()
-            .map(RawObjectPointer::reify)
-            .enumerate()
-        {
-            if association.is_identical(nil_object)? {
-                return Some(index + 1);
-            }
-
-            let association = association.as_object_unchecked();
-            let key = association.inst_var_at(0).unwrap();
-
-            if key.is_identical(object)? {
-                return Some(index + 1);
-            }
+        else {
+            println!("{:?}", each.as_object().unwrap().deref());
         }
-        Some(0)
     }
 
-    match find_item_or_empty_slot(start, finish, &array, &object, &nil) {
-        None => Smalltalk::primitive_fail_code(1),
-        Some(index) => Smalltalk::method_return_integer(index as i64),
-    }
+    // match ArrayRef::try_from(value_ptr)  {
+    //     Ok(array_ref) => {
+    //         println!("{:?}",&array_ref);
+    //         Smalltalk::method_return_boolean(true);
+    //     }
+    //     Err(error) => {
+    //         error!("{}", error);
+    //         Smalltalk::primitive_fail();
+    //     }
+    // }
+    Smalltalk::method_return_boolean(true);
 }

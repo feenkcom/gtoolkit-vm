@@ -1,5 +1,7 @@
 mod telemetry;
-mod process_switch;
+mod local_process_switch;
+mod global_process_switch;
 
 pub use telemetry::*;
-pub use process_switch::*;
+pub use local_process_switch::*;
+pub use global_process_switch::*;

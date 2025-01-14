@@ -1,5 +1,6 @@
 use std::mem::transmute;
 use std::os::raw::c_void;
+use crate::{AnyObjectRef, Error, Result, RawObjectPointer};
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct Immediate(pub i64);
@@ -35,5 +36,23 @@ impl Immediate {
         } else {
             None
         }
+    }
+}
+
+impl TryFrom<RawObjectPointer> for Immediate {
+    type Error = Error;
+
+    fn try_from(value: RawObjectPointer) -> Result<Self> {
+        if value.is_immediate() {
+            Ok(Self(value.as_i64()))
+        } else {
+            Err(Error::NotAnObject(value))
+        }
+    }
+}
+
+impl From<Immediate> for AnyObjectRef {
+    fn from(immediate: Immediate) -> Self {
+        Self::from(RawObjectPointer::from(immediate.0))
     }
 }

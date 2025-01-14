@@ -1,8 +1,10 @@
+use crate::immediate::Immediate;
 use crate::object::Object;
-use crate::ObjectHeader;
+use crate::Result;
+use crate::{Error, ObjectHeader, ObjectRef};
 use std::ffi::c_void;
 use std::mem::transmute;
-use crate::immediate::Immediate;
+use std::ptr::{with_exposed_provenance, with_exposed_provenance_mut};
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(transparent)]
@@ -15,6 +17,20 @@ impl RawObjectPointer {
 
     pub fn as_i64(self) -> i64 {
         self.0
+    }
+
+    pub fn as_ptr(&self) -> *const c_void {
+        with_exposed_provenance(self.0 as _)
+    }
+
+    pub unsafe fn cast<T>(&self) -> &T {
+        let ptr: *const T = with_exposed_provenance(self.0 as usize);
+        unsafe { &*ptr }
+    }
+
+    pub unsafe fn cast_mut<T>(&mut self) -> &mut T {
+        let ptr: *mut T = with_exposed_provenance_mut(self.0 as usize);
+        unsafe { &mut *ptr }
     }
 
     pub fn reify(&self) -> AnyObject {
@@ -45,6 +61,56 @@ impl From<i64> for RawObjectPointer {
 impl From<*const c_void> for RawObjectPointer {
     fn from(value: *const c_void) -> Self {
         unsafe { transmute(value) }
+    }
+}
+
+#[derive(Debug, Copy, Clone)]
+#[repr(transparent)]
+pub struct AnyObjectRef(RawObjectPointer);
+
+impl AnyObjectRef {
+    pub fn as_ptr(&self) -> *const c_void {
+        self.0.as_ptr()
+    }
+
+    pub fn as_i64(&self) -> i64 {
+        self.0.as_i64()
+    }
+
+    pub fn is_immediate(&self) -> bool {
+        self.0.is_immediate()
+    }
+
+    pub fn equals(&self, other: &AnyObjectRef) -> Result<bool> {
+        if self.is_immediate() {
+            if other.is_immediate() {
+                Ok(self.0 == other.0)
+            } else {
+                Ok(false)
+            }
+        } else {
+            if other.is_immediate() {
+                Ok(false)
+            } else {
+                let this = self.as_object()?;
+                let other = other.as_object()?;
+                this.equals(&other)
+            }
+        }
+    }
+
+    pub fn as_immediate(&self) -> Result<Immediate> {
+        Immediate::try_from(self.0)
+    }
+
+    pub fn as_object(&self) -> Result<ObjectRef> {
+        ObjectRef::try_from(self.0)
+    }
+}
+
+impl From<RawObjectPointer> for AnyObjectRef {
+    fn from(value: RawObjectPointer) -> Self {
+        Self(value)
     }
 }
 
@@ -137,14 +203,14 @@ impl<'image> AnyObjectMut<'image> {
     pub fn is_object(&self) -> bool {
         match self {
             Self::Immediate(_) => false,
-            Self::Object(_) => true
+            Self::Object(_) => true,
         }
     }
 
     pub fn amount_of_slots(&self) -> usize {
         match self {
             Self::Immediate(_) => 0,
-            Self::Object(object) => object.amount_of_slots()
+            Self::Object(object) => object.amount_of_slots(),
         }
     }
 

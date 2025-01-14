@@ -1,24 +1,26 @@
 use crate::object::Object;
-use crate::objects::{hash_of, Array};
-use crate::{AnyObject, ObjectHeader};
+use crate::objects::{hash_of, ArrayRef};
+use crate::Result;
+use crate::{AnyObjectRef, Error, ObjectRef};
 use std::hash::Hash;
+use std::ops::Deref;
 
 #[derive(Debug)]
-pub struct WeakSymbolSet<'image> {
-    header: &'image ObjectHeader,
-    tally: AnyObject<'image>,
-    array: Array<'image>,
-    flag: AnyObject<'image>,
+#[repr(C)]
+pub struct WeakSymbolSet {
+    this: Object,
+    tally: AnyObjectRef,
+    array: ArrayRef,
+    flag: ObjectRef,
 }
 
-impl<'obj> WeakSymbolSet<'obj> {
-    pub fn find_like_byte_str(&self, string: &str) -> Option<&Object> {
+impl WeakSymbolSet {
+    pub fn find_like_byte_str(&self, string: &str) -> Option<ObjectRef> {
         if let Some(index) = self.scan_for_byte_str(string) {
-            let raw_item = &self.array.raw_items()[index];
-            let item = raw_item.reify();
+            let item = self.array.get(index)?.as_object().ok()?;
 
-            if !item.is_identical(&self.flag)? {
-                return Some(item.as_object_unchecked());
+            if !item.equals(&self.flag).ok()? {
+                return Some(item);
             }
         }
         None
@@ -31,18 +33,15 @@ impl<'obj> WeakSymbolSet<'obj> {
         let mut index = start;
 
         loop {
-            let raw_item = self.array.raw_items()[index];
-            let item = raw_item.reify();
-
-            if item.is_identical(&self.flag)? {
-                return Some(index);
-            }
-
-            let item = item.as_object_unchecked();
-
-            if let Some(byte_symbol) = item.try_as_byte_symbol() {
-                if byte_symbol.as_str() == string {
+            if let Ok(item) = self.array[index].as_object() {
+                if item.equals(&self.flag).ok()? {
                     return Some(index);
+                }
+
+                if let Some(byte_symbol) = item.try_as_byte_symbol() {
+                    if byte_symbol.as_str() == string {
+                        return Some(index);
+                    }
                 }
             }
 
@@ -56,27 +55,35 @@ impl<'obj> WeakSymbolSet<'obj> {
     }
 }
 
-impl<'obj> TryFrom<&'obj Object> for WeakSymbolSet<'obj> {
-    type Error = String;
+impl Deref for WeakSymbolSet {
+    type Target = Object;
 
-    fn try_from(value: &'obj Object) -> Result<Self, Self::Error> {
-        let tally = value
-            .inst_var_at(0)
-            .ok_or_else(|| "Tally is not defined".to_string())?;
-        let array = value
-            .inst_var_at(1)
-            .and_then(|array| array.try_as_object())
-            .and_then(|array| array.try_as_array())
-            .ok_or_else(|| "Array is not defined".to_string())?;
-        let flag = value
-            .inst_var_at(2)
-            .ok_or_else(|| "Flag is not defined".to_string())?;
+    fn deref(&self) -> &Self::Target {
+        &self.this
+    }
+}
 
-        Ok(WeakSymbolSet {
-            header: value.header(),
-            tally,
-            array,
-            flag,
-        })
+#[derive(Debug, Copy, Clone)]
+#[repr(transparent)]
+pub struct WeakSymbolSetRef(ObjectRef);
+
+impl Deref for WeakSymbolSetRef {
+    type Target = WeakSymbolSet;
+    fn deref(&self) -> &Self::Target {
+        unsafe { self.0.cast() }
+    }
+}
+
+impl TryFrom<AnyObjectRef> for WeakSymbolSetRef {
+    type Error = Error;
+
+    fn try_from(value: AnyObjectRef) -> Result<Self> {
+        let object = value.as_object()?;
+
+        if object.amount_of_slots() != 3 {
+            return Err(Error::InvalidType("WeakSymbolSet".to_string()));
+        }
+
+        Ok(Self(object))
     }
 }

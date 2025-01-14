@@ -1,5 +1,6 @@
-use crate::objects::{Array, ArrayMut, ByteSymbol, WideSymbol};
-use crate::{AnyObject, AnyObjectMut, ObjectFormat, ObjectHeader, RawObjectPointer};
+use crate::objects::{ByteSymbol, WideSymbol};
+use crate::{AnyObject, AnyObjectMut, AnyObjectRef, Error, ObjectFormat, ObjectHeader, RawObjectPointer, Result};
+use std::ops::{Deref, DerefMut};
 use std::os::raw::c_void;
 use widestring::U32Str;
 
@@ -77,34 +78,16 @@ impl Object {
         Some(self.as_ptr() == second.as_ptr())
     }
 
-    pub fn try_as_array(&self) -> Option<Array> {
-        match self.object_format() {
-            ObjectFormat::IndexableWithoutInstVars | ObjectFormat::WeakIndexable => {
-                let length = self.len();
-                let slice_ptr = self.first_fixed_field_ptr() as *const RawObjectPointer;
-
-                let slice: &[RawObjectPointer] =
-                    unsafe { std::slice::from_raw_parts(slice_ptr, length) };
-
-                Some(Array::new(&self.0, slice))
-            }
-            _ => None,
+    pub fn equals(&self, other: &Object) -> Result<bool> {
+        if self.is_forwarded() {
+            return Err(Error::ForwardedUnsupported);
         }
-    }
 
-    pub fn try_as_array_mut(&mut self) -> Option<ArrayMut> {
-        match self.object_format() {
-            ObjectFormat::IndexableWithoutInstVars | ObjectFormat::WeakIndexable => {
-                let length = self.len();
-                let slice_ptr = self.first_fixed_field_ptr() as *mut RawObjectPointer;
-
-                let slice: &mut [RawObjectPointer] =
-                    unsafe { std::slice::from_raw_parts_mut(slice_ptr, length) };
-
-                Some(ArrayMut::new(&self.0, slice))
-            }
-            _ => None,
+        if other.is_forwarded() {
+            return Err(Error::ForwardedUnsupported);
         }
+
+        Ok(self.0 == other.0)
     }
 
     pub fn try_as_byte_symbol(&self) -> Option<ByteSymbol> {
@@ -168,7 +151,7 @@ impl Object {
         Some(AnyObjectMut::from(pointer_value))
     }
 
-    pub fn inst_var_at_put(&mut self, field_index: usize, object: &AnyObject) {
+    pub fn inst_var_at_put(&mut self, field_index: usize, object: impl Into<AnyObjectRef>) {
         if field_index >= self.amount_of_slots_unchecked() {
             return;
         }
@@ -179,6 +162,63 @@ impl Object {
             )
         } as *mut i64;
 
-        unsafe { *pointer = object.raw_header().as_i64() };
+        unsafe { *pointer = object.into().as_i64() };
+    }
+}
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[repr(transparent)]
+pub struct ObjectRef(RawObjectPointer);
+
+impl ObjectRef {
+    pub fn into_inner(self) -> RawObjectPointer {
+        self.0
+    }
+
+    pub unsafe fn cast<T>(&self) -> &T {
+        self.0.cast()
+    }
+
+    pub unsafe fn cast_mut<T>(&mut self) -> &mut T {
+        self.0.cast_mut()
+    }
+}
+
+impl Deref for ObjectRef {
+    type Target = Object;
+
+    fn deref(&self) -> &Self::Target {
+        unsafe { self.0.cast() }
+    }
+}
+
+impl DerefMut for ObjectRef {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        unsafe { self.0.cast_mut() }
+    }
+}
+
+impl TryFrom<RawObjectPointer> for ObjectRef {
+    type Error = Error;
+
+    fn try_from(value: RawObjectPointer) -> Result<Self> {
+        if !value.is_immediate() {
+            Ok(Self(value))
+        } else {
+            Err(Error::NotAnObject(value))
+        }
+    }
+}
+
+impl From<ObjectRef> for AnyObjectRef {
+    fn from(obj: ObjectRef) -> Self {
+        Self::from(obj.0)
+    }
+}
+
+impl From<&mut Object> for AnyObjectRef {
+    fn from(obj: &mut Object) -> Self {
+        let ptr = obj as *mut _ as usize;
+        AnyObjectRef::from(RawObjectPointer::from(i64::try_from(ptr).unwrap()))
     }
 }
