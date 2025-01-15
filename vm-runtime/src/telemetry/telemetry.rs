@@ -6,7 +6,7 @@ use std::ffi::c_void;
 use std::time::Instant;
 use vm_bindings::bindings::{sqInt, InterpreterTelemetry};
 use vm_bindings::{Smalltalk, StackOffset};
-use vm_object_model::{AnyObject, AnyObjectRef, ObjectRef, RawObjectPointer};
+use vm_object_model::{AnyObjectRef, ObjectRef, RawObjectPointer};
 
 static TELEMETRY_INSTANCE: OnceCell<Mutex<GlobalTelemetry>> = OnceCell::new();
 

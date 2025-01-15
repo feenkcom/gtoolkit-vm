@@ -22,10 +22,12 @@
     StackInterpreter >> #addressCouldBeClassObj:.
 
 
-
     SpurMemoryManager >> #falseObject.
     SpurMemoryManager >> #trueObject.
     SpurMemoryManager >> #nilObject.
+    SpurMemoryManager >> #classArray.
+    SpurMemoryManager >> #classExternalAddress.
+    SpurMemoryManager >> #classString.
 
     SpurMemoryManager >> #instantiateClass:isPinned:.
     SpurMemoryManager >> #instantiateClass:indexableSize:.

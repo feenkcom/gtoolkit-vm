@@ -7,7 +7,7 @@ pub type Result<T> = core::result::Result<T, ApplicationError>;
 
 #[derive(Error, Debug)]
 pub enum ApplicationError {
-    #[error("Object memory error")]
+    #[error("Object memory error: {0}")]
     ObjectMemoryError(#[from] vm_object_model::Error),
     #[error("Input/Output error")]
     IoError(#[from] std::io::Error),

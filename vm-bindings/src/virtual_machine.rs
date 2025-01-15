@@ -1,15 +1,16 @@
 use crate::bindings::{
-    addressCouldBeClassObj, createNewMethodheaderbytecodeCount, ensureBehaviorHash, falseObject,
-    fetchPointerofObject, firstBytePointerOfDataObject, firstFixedField, firstIndexableField,
-    hashBitsOf, instantiateClassindexableSize, instantiateClassindexableSizeisPinned, instantiateClassisPinned, integerObjectOf,
-    isOopForwarded, methodArgumentCount, methodReturnBool, methodReturnInteger, methodReturnValue,
-    nilObject, primitiveFail, primitiveFailFor, sqInt, stObjectat, stObjectatput, stSizeOf,
-    stackIntegerValue, stackValue, trueObject,
+    addressCouldBeClassObj, classArray, classExternalAddress, classString,
+    createNewMethodheaderbytecodeCount, ensureBehaviorHash, falseObject, fetchPointerofObject,
+    firstBytePointerOfDataObject, firstFixedField, firstIndexableField, hashBitsOf,
+    instantiateClassindexableSize, instantiateClassindexableSizeisPinned, instantiateClassisPinned,
+    integerObjectOf, isOopForwarded, methodArgumentCount, methodReturnBool, methodReturnInteger,
+    methodReturnValue, nilObject, primitiveFail, primitiveFailFor, sqInt, stObjectat,
+    stObjectatput, stSizeOf, stackIntegerValue, stackValue, trueObject,
 };
 use crate::prelude::NativeTransmutable;
 use crate::{ObjectFieldIndex, ObjectPointer, StackOffset};
 use std::os::raw::c_void;
-use vm_object_model::{AnyObjectRef, Immediate, ObjectHeader, RawObjectPointer};
+use vm_object_model::{AnyObjectRef, ObjectRef, RawObjectPointer};
 
 pub struct Smalltalk {}
 
@@ -46,16 +47,9 @@ impl Smalltalk {
         }
     }
 
-    pub fn get_stack_value(&self, offset: StackOffset) -> vm_object_model::AnyObject {
+    pub fn get_stack_value(&self, offset: StackOffset) -> AnyObjectRef {
         let value = Self::stack_value(offset);
-        if value.is_immediate() {
-            vm_object_model::AnyObject::Immediate(Immediate(value.into_native()))
-        } else {
-            let raw_header: *mut ObjectHeader = unsafe { std::mem::transmute(value) };
-            let object_header = unsafe { &*raw_header };
-            let object = unsafe { std::mem::transmute(object_header) };
-            vm_object_model::AnyObject::Object(object)
-        }
+        AnyObjectRef::from(RawObjectPointer::from(value.as_i64()))
     }
 
     /// Return an object on a stack. May return an invalid pointer if
@@ -171,20 +165,84 @@ impl Smalltalk {
         unsafe { ObjectPointer::from_native_c(nilObject()) }
     }
 
-    pub fn instantiate_class(class: ObjectPointer, is_pinned: bool) -> ObjectPointer {
+    pub fn primitive_class_array() -> ObjectPointer {
+        unsafe { ObjectPointer::from_native_c(classArray()) }
+    }
+
+    pub fn class_array() -> ObjectRef {
+        AnyObjectRef::from(RawObjectPointer::from(
+            Self::primitive_class_array().into_native(),
+        ))
+        .as_object()
+        .unwrap()
+    }
+
+    pub fn class_external_address() -> ObjectPointer {
+        unsafe { ObjectPointer::from_native_c(classExternalAddress()) }
+    }
+
+    pub fn class_string() -> ObjectPointer {
+        unsafe { ObjectPointer::from_native_c(classString()) }
+    }
+
+    pub fn primitive_instantiate_class(class: ObjectPointer, is_pinned: bool) -> ObjectPointer {
         let is_pinned = if is_pinned { 1 } else { 0 };
         let oop = unsafe { instantiateClassisPinned(class.into_native(), is_pinned) };
         ObjectPointer::from_native_c(oop)
     }
 
-    pub fn instantiate_indexable_class_of_size(class: ObjectPointer, size: usize) -> ObjectPointer {
+    pub fn instantiate_class(class: ObjectRef) -> AnyObjectRef {
+        let pointer = Self::primitive_instantiate_class(
+            ObjectPointer::from(class.into_inner().as_i64()),
+            false,
+        );
+        AnyObjectRef::from(RawObjectPointer::from(pointer.into_native()))
+    }
+
+    pub fn instantiate<T: TryFrom<AnyObjectRef, Error = vm_object_model::Error>>(
+        class: ObjectRef,
+    ) -> vm_object_model::Result<T> {
+        let object_ref = Self::instantiate_class(class);
+        T::try_from(object_ref)
+    }
+
+    pub fn primitive_instantiate_indexable_class_of_size(
+        class: ObjectPointer,
+        size: usize,
+    ) -> ObjectPointer {
         let oop = unsafe { instantiateClassindexableSize(class.into_native(), size as sqInt) };
         ObjectPointer::from_native_c(oop)
     }
 
-    pub fn instantiate_indexable_class_of_size_pinned(class: ObjectPointer, size: usize, is_pinned: bool) -> ObjectPointer {
+    pub fn instantiate_indexable_class(class: ObjectRef, size: usize) -> AnyObjectRef {
+        let pointer = Self::primitive_instantiate_indexable_class_of_size(
+            ObjectPointer::from(class.into_inner().as_i64()),
+            size,
+        );
+        AnyObjectRef::from(RawObjectPointer::from(pointer.into_native()))
+    }
+
+    pub fn instantiate_indexable<T: TryFrom<AnyObjectRef, Error = vm_object_model::Error>>(
+        class: ObjectRef,
+        size: usize,
+    ) -> vm_object_model::Result<T> {
+        let object_ref = Self::instantiate_indexable_class(class, size);
+        T::try_from(object_ref)
+    }
+
+    pub fn instantiate_indexable_class_of_size_pinned(
+        class: ObjectPointer,
+        size: usize,
+        is_pinned: bool,
+    ) -> ObjectPointer {
         let is_pinned = if is_pinned { 1 } else { 0 };
-        let oop = unsafe { instantiateClassindexableSizeisPinned(class.into_native(), size as sqInt, is_pinned as sqInt) };
+        let oop = unsafe {
+            instantiateClassindexableSizeisPinned(
+                class.into_native(),
+                size as sqInt,
+                is_pinned as sqInt,
+            )
+        };
         ObjectPointer::from_native_c(oop)
     }
 

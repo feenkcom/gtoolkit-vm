@@ -27,21 +27,6 @@ impl InterpreterProxy {
         unsafe { function() as usize }
     }
 
-    pub fn class_array(&self) -> ObjectPointer {
-        let function = self.native().classArray.unwrap();
-        unsafe { ObjectPointer::from_native_c(function()) }
-    }
-
-    pub fn class_external_address(&self) -> ObjectPointer {
-        let function = self.native().classExternalAddress.unwrap();
-        unsafe { ObjectPointer::from_native_c(function()) }
-    }
-
-    pub fn class_string(&self) -> ObjectPointer {
-        let function = self.native().classString.unwrap();
-        unsafe { ObjectPointer::from_native_c(function()) }
-    }
-
     pub fn pop(&self, amount_of_stack_items: usize) {
         let function = self.native().pop.unwrap();
         unsafe {
@@ -167,8 +152,8 @@ impl InterpreterProxy {
     }
 
     pub fn new_external_address<T>(&self, address: *const T) -> ObjectPointer {
-        let external_address = Smalltalk::instantiate_indexable_class_of_size(
-            self.class_external_address(),
+        let external_address = Smalltalk::primitive_instantiate_indexable_class_of_size(
+            Smalltalk::class_external_address(),
             size_of::<*mut c_void>(),
         );
         unsafe {

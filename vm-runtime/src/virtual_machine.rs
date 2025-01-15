@@ -8,14 +8,16 @@ use std::sync::mpsc::Sender;
 use std::sync::Arc;
 use std::thread::JoinHandle;
 
+use crate::objects::{Array, ArrayRef};
 #[cfg(feature = "pharo-compiler")]
 use crate::pharo_compiler::*;
 use crate::version::{app_info, app_version};
 use crate::{
     log_signal, primitiveEnableLogSignal, primitiveGetEnabledLogSignals, primitivePollLogger,
-    primitiveStartBeacon, primitiveStartConsoleLogger, primitiveStartProcessSwitchTelemetry,
-    primitiveStopLogger, primitiveStopTelemetry, should_log_all_signals, should_log_signal,
-    ConsoleLogger, EventLoop, EventLoopMessage, EventLoopWaker, VM_LOGGER,
+    primitiveStartBeacon, primitiveStartConsoleLogger, primitiveStartGlobalProcessSwitchTelemetry,
+    primitiveStartLocalProcessSwitchTelemetry, primitiveStopLogger, primitiveStopTelemetry,
+    should_log_all_signals, should_log_signal, ConsoleLogger, EventLoop, EventLoopMessage,
+    EventLoopWaker, VM_LOGGER,
 };
 #[cfg(feature = "ffi")]
 use crate::{primitiveEventLoopCallout, primitiveExtractReturnValue};
@@ -24,8 +26,7 @@ use vm_bindings::{
     virtual_machine_info, InterpreterConfiguration, InterpreterProxy, LogLevel, NamedPrimitive,
     ObjectFieldIndex, ObjectPointer, PharoInterpreter, Smalltalk, StackOffset,
 };
-use vm_object_model::objects::{Array, ArrayRef};
-use vm_object_model::{AnyObject, AnyObjectRef, Error, RawObjectPointer};
+use vm_object_model::{AnyObjectRef, Error, RawObjectPointer};
 use widestring::U32Str;
 
 #[no_mangle]
@@ -120,7 +121,8 @@ impl VirtualMachine {
         vm.add_primitive(primitive!(primitiveIdentityHash));
 
         // telemetry
-        vm.add_primitive(primitive!(primitiveStartProcessSwitchTelemetry));
+        vm.add_primitive(primitive!(primitiveStartLocalProcessSwitchTelemetry));
+        vm.add_primitive(primitive!(primitiveStartGlobalProcessSwitchTelemetry));
         vm.add_primitive(primitive!(primitiveStopTelemetry));
 
         // debug
@@ -210,11 +212,15 @@ pub fn primitiveGetNamedPrimitives() {
     let proxy = vm().proxy();
     let named_primitives = vm().named_primitives();
 
-    let return_array =
-        Smalltalk::instantiate_indexable_class_of_size(proxy.class_array(), named_primitives.len());
+    let return_array = Smalltalk::primitive_instantiate_indexable_class_of_size(
+        Smalltalk::primitive_class_array(),
+        named_primitives.len(),
+    );
     for (index, named_primitive) in named_primitives.iter().enumerate() {
-        let each_primitive_array =
-            Smalltalk::instantiate_indexable_class_of_size(proxy.class_array(), 3);
+        let each_primitive_array = Smalltalk::primitive_instantiate_indexable_class_of_size(
+            Smalltalk::primitive_class_array(),
+            3,
+        );
 
         let plugin_name = proxy.new_string(named_primitive.plugin_name());
         let primitive_name = proxy.new_string(named_primitive.primitive_name());
@@ -626,8 +632,7 @@ pub fn primitiveDebugPrintArray() {
     for each in array.iter() {
         if each.is_immediate() {
             println!("{:?}", each.as_immediate().unwrap());
-        }
-        else {
+        } else {
             println!("{:?}", each.as_object().unwrap().deref());
         }
     }

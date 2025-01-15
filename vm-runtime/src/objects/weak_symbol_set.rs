@@ -1,9 +1,8 @@
-use crate::object::Object;
-use crate::objects::{hash_of, ArrayRef};
-use crate::Result;
-use crate::{AnyObjectRef, Error, ObjectRef};
+use crate::objects::{hash_of, ArrayRef, ByteSymbol};
 use std::hash::Hash;
 use std::ops::Deref;
+use vm_object_model::Result;
+use vm_object_model::{AnyObjectRef, Error, Object, ObjectRef};
 
 #[derive(Debug)]
 #[repr(C)]
@@ -38,7 +37,7 @@ impl WeakSymbolSet {
                     return Some(index);
                 }
 
-                if let Some(byte_symbol) = item.try_as_byte_symbol() {
+                if let Ok(byte_symbol) = ByteSymbol::try_from(item.deref()) {
                     if byte_symbol.as_str() == string {
                         return Some(index);
                     }

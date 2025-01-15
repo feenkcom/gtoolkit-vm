@@ -164,8 +164,10 @@ pub fn primitiveGetEnabledLogSignals() {
 
     let logs = VM_LOGGER.lock().unwrap().enabled_types();
 
-    let return_array =
-        Smalltalk::instantiate_indexable_class_of_size(proxy.class_array(), logs.len());
+    let return_array = Smalltalk::primitive_instantiate_indexable_class_of_size(
+        Smalltalk::primitive_class_array(),
+        logs.len(),
+    );
     for (index, log_type) in logs.iter().enumerate() {
         let each_type = proxy.new_string(log_type);
         Smalltalk::item_at_put(return_array, ObjectFieldIndex::new(index + 1), each_type);
@@ -180,10 +182,15 @@ pub fn primitivePollLogger() {
 
     let logs = VM_LOGGER.lock().unwrap().poll_all();
 
-    let return_array =
-        Smalltalk::instantiate_indexable_class_of_size(proxy.class_array(), logs.len());
+    let return_array = Smalltalk::primitive_instantiate_indexable_class_of_size(
+        Smalltalk::primitive_class_array(),
+        logs.len(),
+    );
     for (index, log) in logs.iter().enumerate() {
-        let each_log_array = Smalltalk::instantiate_indexable_class_of_size(proxy.class_array(), 4);
+        let each_log_array = Smalltalk::primitive_instantiate_indexable_class_of_size(
+            Smalltalk::primitive_class_array(),
+            4,
+        );
 
         let log_type = proxy.new_string(log.log_type.as_str());
         let file_name = proxy.new_string(log.file_name.as_str());

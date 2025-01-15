@@ -1,6 +1,7 @@
-use crate::{AnyObjectRef, Error, Object, ObjectFormat, ObjectRef};
 use std::fmt::Debug;
 use std::ops::{Deref, DerefMut, Index};
+use vm_bindings::Smalltalk;
+use vm_object_model::{AnyObjectRef, Error, Object, ObjectFormat, ObjectRef, Result};
 
 #[repr(C)]
 pub struct Array {
@@ -9,16 +10,24 @@ pub struct Array {
 }
 
 impl Array {
+    pub fn new(size: usize) -> Result<ArrayRef> {
+        Smalltalk::instantiate_indexable(Smalltalk::class_array(), size)
+    }
+
     pub fn get(&self, index: usize) -> Option<AnyObjectRef> {
         self.as_slice().get(index).map(|item| item.clone())
     }
 
     pub fn insert(&mut self, index: usize, object: impl Into<AnyObjectRef>) {
+        println!("Insert at: {} len: {}; attay {:?}", index, self.len(), ObjectRef::from(&self.this));
+        if index >= self.len() {
+            panic!("Index {} out of bounds [0..{}). {:?}. {:?}", index, self.len(), self.this, ObjectRef::from(&self.this));
+        }
         self.as_slice_mut()[index] = object.into();
     }
 
     pub fn len(&self) -> usize {
-        self.this.len()
+        self.this.amount_of_indexable_units()
     }
 
     pub fn iter(&self) -> impl Iterator<Item = &AnyObjectRef> {
@@ -86,7 +95,7 @@ impl DerefMut for ArrayRef {
 impl TryFrom<AnyObjectRef> for ArrayRef {
     type Error = Error;
 
-    fn try_from(value: AnyObjectRef) -> Result<Self, Self::Error> {
+    fn try_from(value: AnyObjectRef) -> Result<Self> {
         let object_ref = value.as_object()?;
         match object_ref.object_format() {
             ObjectFormat::IndexableWithoutInstVars | ObjectFormat::WeakIndexable => {
@@ -97,5 +106,11 @@ impl TryFrom<AnyObjectRef> for ArrayRef {
                 object_format,
             }),
         }
+    }
+}
+
+impl From<ArrayRef> for AnyObjectRef {
+    fn from(value: ArrayRef) -> Self {
+        value.0.into()
     }
 }

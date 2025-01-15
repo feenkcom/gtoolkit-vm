@@ -1,8 +1,6 @@
-use crate::objects::{ByteSymbol, WideSymbol};
-use crate::{AnyObject, AnyObjectMut, AnyObjectRef, Error, ObjectFormat, ObjectHeader, RawObjectPointer, Result};
+use crate::{AnyObjectRef, Error, ObjectFormat, ObjectHeader, RawObjectPointer, Result};
 use std::ops::{Deref, DerefMut};
 use std::os::raw::c_void;
-use widestring::U32Str;
 
 #[derive(Debug)]
 #[repr(transparent)]
@@ -21,7 +19,7 @@ impl Object {
     pub fn amount_of_slots(&self) -> usize {
         assert!(
             self.0.class_index() > Self::FORWARDED_OBJECT_CLASS_INDEX_PUN,
-            "Most not be free or forwarded object"
+            "Must not be free or forwarded object"
         );
 
         self.amount_of_slots_unchecked()
@@ -48,13 +46,13 @@ impl Object {
     /// Answer the number of indexable units in the object.
     /// For a CompiledMethod, the size of the method header (in bytes)
     /// should be subtracted from the result of this method.
-    pub fn len(&self) -> usize {
+    pub fn amount_of_indexable_units(&self) -> usize {
         self.object_format()
             .amount_of_indexable_units(self.amount_of_slots_unchecked())
     }
 
     pub fn as_ptr(&self) -> *const c_void {
-        unsafe { std::mem::transmute(self) }
+        self as *const _ as *const c_void
     }
 
     /// Return a pointer to the object memory right after the header
@@ -79,49 +77,14 @@ impl Object {
     }
 
     pub fn equals(&self, other: &Object) -> Result<bool> {
-        if self.is_forwarded() {
-            return Err(Error::ForwardedUnsupported);
-        }
-
         if other.is_forwarded() {
-            return Err(Error::ForwardedUnsupported);
+            return Err(Error::ForwardedUnsupported(self.into(), other.header().clone()));
         }
 
         Ok(self.0 == other.0)
     }
 
-    pub fn try_as_byte_symbol(&self) -> Option<ByteSymbol> {
-        match self.object_format() {
-            ObjectFormat::Indexable8(_) => {
-                let length = self.len();
-                let slice_ptr = unsafe { self.as_ptr().offset(size_of::<ObjectHeader>() as isize) }
-                    as *const u8;
-
-                let source_bytes = unsafe { std::slice::from_raw_parts(slice_ptr, length) };
-                let source_str = unsafe { std::str::from_utf8_unchecked(source_bytes) };
-
-                Some(ByteSymbol::new(&self.0, source_str))
-            }
-            _ => None,
-        }
-    }
-
-    pub fn try_as_wide_symbol(&self) -> Option<WideSymbol> {
-        match self.object_format() {
-            ObjectFormat::Indexable32(_) => {
-                let length = self.len();
-                let slice_ptr = unsafe { self.as_ptr().offset(size_of::<ObjectHeader>() as isize) }
-                    as *const u32;
-
-                let source_str = unsafe { U32Str::from_ptr(slice_ptr, length) };
-
-                Some(WideSymbol::new(&self.0, source_str))
-            }
-            _ => None,
-        }
-    }
-
-    pub fn inst_var_at(&self, field_index: usize) -> Option<AnyObject> {
+    pub fn inst_var_at(&self, field_index: usize) -> Option<AnyObjectRef> {
         if field_index >= self.amount_of_slots_unchecked() {
             return None;
         }
@@ -133,22 +96,7 @@ impl Object {
         } as *const i64;
 
         let pointer_value: i64 = unsafe { *pointer };
-        Some(AnyObject::from(pointer_value))
-    }
-
-    pub fn inst_var_at_mut(&mut self, field_index: usize) -> Option<AnyObjectMut> {
-        if field_index >= self.amount_of_slots_unchecked() {
-            return None;
-        }
-
-        let pointer = unsafe {
-            self.as_ptr().offset(
-                size_of::<ObjectHeader>() as isize + (field_index << Self::SHIFT_FOR_WORD) as isize,
-            )
-        } as *const i64;
-
-        let pointer_value: i64 = unsafe { *pointer };
-        Some(AnyObjectMut::from(pointer_value))
+        Some(AnyObjectRef::from(RawObjectPointer::from(pointer_value)))
     }
 
     pub fn inst_var_at_put(&mut self, field_index: usize, object: impl Into<AnyObjectRef>) {
@@ -213,6 +161,13 @@ impl TryFrom<RawObjectPointer> for ObjectRef {
 impl From<ObjectRef> for AnyObjectRef {
     fn from(obj: ObjectRef) -> Self {
         Self::from(obj.0)
+    }
+}
+
+impl From<&Object> for ObjectRef {
+    fn from(obj: &Object) -> Self {
+        let ptr = obj as *const _ as usize;
+        ObjectRef(RawObjectPointer::from(i64::try_from(ptr).unwrap()))
     }
 }
 

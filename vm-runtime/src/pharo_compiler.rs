@@ -1,14 +1,14 @@
+use crate::objects::{CompiledMethod, WeakSymbolSet};
 use crate::vm;
 use libc::open;
+use pharo_compiler::bytecode::CompiledCodeLiteral;
+use pharo_compiler::ir::{OwnedLiteral, OwnedLiteralValue};
 use pharo_compiler::kernel_environment;
 use pharo_compiler::vm_plugin::PharoCompiler;
 use std::fmt::Debug;
 use std::slice;
-use pharo_compiler::bytecode::CompiledCodeLiteral;
-use pharo_compiler::ir::{OwnedLiteral, OwnedLiteralValue};
 use vm_bindings::{Smalltalk, StackOffset};
-use vm_object_model::objects::{CompiledMethod, WeakSymbolSet};
-use vm_object_model::{AnyObject, ObjectFormat};
+use vm_object_model::ObjectFormat;
 
 #[cfg(not(feature = "pharo-compiler"))]
 compile_error!("\"pharo-compiler\" feature must be enabled for this module.");
@@ -58,42 +58,36 @@ pub fn primitivePharoCompilerCompile() {
 
     let compiled_method_object = AnyObject::from(compiled_method.pharo_method);
 
-    let compiled_method_object = CompiledMethod::try_from(compiled_method_object.as_object_unchecked()).unwrap();
+    let compiled_method_object =
+        CompiledMethod::try_from(compiled_method_object.as_object_unchecked()).unwrap();
 
     let symbol_table = AnyObject::from(compiler.symbol_table);
     let symbol_table = WeakSymbolSet::try_from(symbol_table.as_object_unchecked()).unwrap();
 
     for (index, literal) in compiled_method.literals().iter().enumerate() {
         match literal {
-            CompiledCodeLiteral::Literal(literal) => {
-                match literal {
-                    OwnedLiteral::Value(literal) => {
-                        match literal {
-                            OwnedLiteralValue::True => {}
-                            OwnedLiteralValue::False => {}
-                            OwnedLiteralValue::Nil => {}
-                            OwnedLiteralValue::Integer(_) => {}
-                            OwnedLiteralValue::Float(_) => {}
-                            OwnedLiteralValue::Character(_) => {}
-                            OwnedLiteralValue::String(_) => {
-
-                            }
-                            OwnedLiteralValue::Symbol(string) => {
-                                if let Some(symbol) = symbol_table.find_like_byte_str(string) {
-                                    compiled_method_object.set_literal(AnyObject::Object(symbol), index);
-                                }
-                            }
+            CompiledCodeLiteral::Literal(literal) => match literal {
+                OwnedLiteral::Value(literal) => match literal {
+                    OwnedLiteralValue::True => {}
+                    OwnedLiteralValue::False => {}
+                    OwnedLiteralValue::Nil => {}
+                    OwnedLiteralValue::Integer(_) => {}
+                    OwnedLiteralValue::Float(_) => {}
+                    OwnedLiteralValue::Character(_) => {}
+                    OwnedLiteralValue::String(_) => {}
+                    OwnedLiteralValue::Symbol(string) => {
+                        if let Some(symbol) = symbol_table.find_like_byte_str(string) {
+                            compiled_method_object.set_literal(AnyObject::Object(symbol), index);
                         }
                     }
-                    OwnedLiteral::Array(_) => {}
-                    OwnedLiteral::ByteArray(_) => {}
-                }
-            }
+                },
+                OwnedLiteral::Array(_) => {}
+                OwnedLiteral::ByteArray(_) => {}
+            },
             CompiledCodeLiteral::Variable(_) => {}
             CompiledCodeLiteral::CompiledBlock(_) => {}
         }
     }
-
 
     Smalltalk::method_return_value(compiled_method.pharo_method.into());
 }

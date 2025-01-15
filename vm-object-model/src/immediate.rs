@@ -1,8 +1,9 @@
+use crate::{AnyObjectRef, Error, RawObjectPointer, Result};
 use std::mem::transmute;
 use std::os::raw::c_void;
-use crate::{AnyObjectRef, Error, Result, RawObjectPointer};
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[repr(transparent)]
 pub struct Immediate(pub i64);
 
 impl Immediate {
@@ -12,10 +13,6 @@ impl Immediate {
     pub fn new_integer(value: i64) -> Self {
         let unsigned_value: u64 = unsafe { transmute(value) };
         Self(unsafe { transmute((unsigned_value << Self::NUMBER_TAG) + 1) })
-    }
-
-    pub fn as_ptr(&self) -> *const c_void {
-        unsafe { transmute(self.0) }
     }
 
     pub fn is_small_integer(&self) -> bool {

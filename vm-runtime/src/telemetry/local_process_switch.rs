@@ -1,9 +1,12 @@
+use crate::objects::OrderedCollectionRef;
+use crate::{
+    AbstractTelemetry, ApplicationError, ContextSwitchSignal, GlobalTelemetry, Result,
+    SemaphoreWaitSignal, TelemetrySignal,
+};
 use std::ops::{Deref, DerefMut};
-use crate::{AbstractTelemetry, ApplicationError, ContextSwitchSignal, Result, GlobalTelemetry, SemaphoreWaitSignal, TelemetrySignal};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use vm_bindings::{ObjectPointer, Smalltalk, StackOffset};
-use vm_object_model::objects::OrderedCollectionRef;
-use vm_object_model::{AnyObject, AnyObjectRef, Immediate, Object, ObjectRef, RawObjectPointer};
+use vm_object_model::{AnyObjectRef, Immediate, Object, ObjectRef, RawObjectPointer};
 
 #[repr(C)]
 pub struct LocalProcessSwitchTelemetry {
@@ -52,23 +55,19 @@ impl LocalProcessSwitchTelemetry {
         });
     }
 
-    fn add_signal(
-        &mut self,
-        signal_class: ObjectRef,
-        callback: impl FnOnce(&mut Object),
-    ) {
-        let signal_pointer =
-            Smalltalk::instantiate_class(ObjectPointer::from(signal_class.into_inner().as_i64()), false);
-        let mut signal_pointer = RawObjectPointer::new(signal_pointer.as_i64());
+    fn add_signal(&mut self, signal_class: ObjectRef, callback: impl FnOnce(&mut Object)) {
+        let signal_pointer = Smalltalk::primitive_instantiate_class(
+            ObjectPointer::from(signal_class.into_inner().as_i64()),
+            false,
+        );
+        let mut signal_pointer = AnyObjectRef::from(RawObjectPointer::new(signal_pointer.as_i64()));
 
-        let signal_object = signal_pointer.reify_mut().into_object_unchecked_mut();
+        let mut signal_object_ref = signal_pointer.as_object().unwrap();
+        let signal_object = signal_object_ref.deref_mut();
 
         let since_the_epoch = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
 
-        signal_object.inst_var_at_put(
-            0,
-            Immediate::new_integer(since_the_epoch.as_secs() as i64),
-        );
+        signal_object.inst_var_at_put(0, Immediate::new_integer(since_the_epoch.as_secs() as i64));
 
         signal_object.inst_var_at_put(
             1,
@@ -77,14 +76,13 @@ impl LocalProcessSwitchTelemetry {
 
         callback(signal_object);
 
-        self.signals.add_last(signal_object);
+        //self.signals.add_last(signal_object);
     }
 }
 
 #[derive(Debug)]
 #[repr(transparent)]
 pub struct LocalProcessSwitchTelemetryRef(ObjectRef);
-
 
 impl AbstractTelemetry for LocalProcessSwitchTelemetryRef {
     fn receive_signal(&mut self, signal: &TelemetrySignal) {
@@ -102,7 +100,6 @@ impl AbstractTelemetry for LocalProcessSwitchTelemetryRef {
         self.id = Immediate::new_integer(id as i64);
     }
 }
-
 
 impl Deref for LocalProcessSwitchTelemetryRef {
     type Target = LocalProcessSwitchTelemetry;
@@ -124,17 +121,19 @@ impl TryFrom<AnyObjectRef> for LocalProcessSwitchTelemetryRef {
         let object = value.as_object()?;
 
         if object.amount_of_slots() != 5 {
-            return Err(vm_object_model::Error::InvalidType("LocalProcessSwitchTelemetry".to_string()).into());
+            return Err(vm_object_model::Error::InvalidType(
+                "LocalProcessSwitchTelemetry".to_string(),
+            )
+            .into());
         }
 
         Ok(Self(object))
     }
 }
 
-
 #[no_mangle]
 #[allow(non_snake_case)]
-pub fn primitiveStartProcessSwitchTelemetry() {
+pub fn primitiveStartLocalProcessSwitchTelemetry() {
     let telemetry_pointer = Smalltalk::stack_ref(StackOffset::new(0));
     match LocalProcessSwitchTelemetryRef::try_from(telemetry_pointer) {
         Ok(telemetry) => {

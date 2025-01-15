@@ -104,7 +104,7 @@ pub fn primitiveEventLoopCallout() {
         ObjectFieldIndex::new(TFExternalFunction::FunctionName as usize),
     );
 
-    let function_name = if proxy.is_kind_of_class(function_name_oop, proxy.class_string()) {
+    let function_name = if proxy.is_kind_of_class(function_name_oop, Smalltalk::class_string()) {
         proxy.cstring_value_of(function_name_oop)
     } else {
         None
@@ -115,7 +115,7 @@ pub fn primitiveEventLoopCallout() {
         ObjectFieldIndex::new(TFExternalFunction::ModuleName as usize),
     );
 
-    let module_name = if proxy.is_kind_of_class(module_name_oop, proxy.class_string()) {
+    let module_name = if proxy.is_kind_of_class(module_name_oop, Smalltalk::class_string()) {
         proxy.cstring_value_of(module_name_oop)
     } else {
         None

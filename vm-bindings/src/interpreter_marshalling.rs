@@ -529,7 +529,7 @@ impl Marshallable for InterpreterProxy {
     ) -> Result<()> {
         let external_address = Smalltalk::object_field_at(array, ObjectFieldIndex::new(index));
 
-        if !self.is_kind_of_class(external_address, self.class_external_address()) {
+        if !self.is_kind_of_class(external_address, Smalltalk::class_external_address()) {
             bail!(
                 "pointer argument at index {} is not an external address",
                 index,
