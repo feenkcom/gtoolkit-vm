@@ -144,6 +144,7 @@ pipeline {
 
                         withCredentials([
                             file(credentialsId: 'feenk-apple-developer-certificate', variable: 'CERT'),
+                            string(credentialsId: 'feenk-apple-developer-certificate-password', variable: 'CERT_PASSWORD'),
                             string(credentialsId: 'feenk-apple-signing-identity', variable: 'SIGNING_IDENTITY')
                         ]) {
                             sh "./feenk-signer mac target/${TARGET}/release/bundle/${APP_NAME}.app"
@@ -153,15 +154,20 @@ pipeline {
 
                         sh "cargo test --package vm-client-tests"
 
-                        sh """
-                           /Library/Developer/CommandLineTools/usr/bin/notarytool submit \
-                                --verbose \
-                                --apple-id "notarization@feenk.com" \
-                                --password "${APPLEPASSWORD}" \
-                                --team-id "77664ZXL29" \
-                                --wait \
-                                ${APP_NAME}-${TARGET}.app.zip
-                           """
+                        script.withCredentials([
+                            string(credentialsId: 'notarizeusername', variable: 'APPLE_ID'),
+                            string(credentialsId: 'notarizepassword-manager', variable: 'APPLE_PASSWORD')
+                        ]) {
+                            sh """
+                               /Library/Developer/CommandLineTools/usr/bin/notarytool submit \
+                                    --verbose \
+                                    --apple-id "\$APPLE_ID" \
+                                    --password "\$APPLE_PASSWORD" \
+                                    --team-id "77664ZXL29" \
+                                    --wait \
+                                    ${APP_NAME}-${TARGET}.app.zip
+                               """
+                        }
 
 //                        sh """
 //                           xcrun altool -t osx -f ${APP_NAME}-${TARGET}.app.zip -itc_provider "77664ZXL29" --primary-bundle-id "com.feenk.gtoolkit-vm-x86-64" --notarize-app --verbose  --username "notarization@feenk.com" --password "${APPLEPASSWORD}"
@@ -212,6 +218,7 @@ pipeline {
 
                         withCredentials([
                             file(credentialsId: 'feenk-apple-developer-certificate', variable: 'CERT'),
+                            string(credentialsId: 'feenk-apple-developer-certificate-password', variable: 'CERT_PASSWORD'),
                             string(credentialsId: 'feenk-apple-signing-identity', variable: 'SIGNING_IDENTITY')
                         ]) {
                             sh "./feenk-signer mac target/${TARGET}/release/bundle/${APP_NAME}.app"
@@ -221,15 +228,20 @@ pipeline {
 
                         sh "cargo test --package vm-client-tests"
 
-                        sh """
-                           /Library/Developer/CommandLineTools/usr/bin/notarytool submit \
-                                --verbose \
-                                --apple-id "notarization@feenk.com" \
-                                --password "${APPLEPASSWORD}" \
-                                --team-id "77664ZXL29" \
-                                --wait \
-                                ${APP_NAME}-${TARGET}.app.zip
-                           """
+                        script.withCredentials([
+                            string(credentialsId: 'notarizeusername', variable: 'APPLE_ID'),
+                            string(credentialsId: 'notarizepassword-manager', variable: 'APPLE_PASSWORD')
+                        ]) {
+                            sh """
+                               /Library/Developer/CommandLineTools/usr/bin/notarytool submit \
+                                    --verbose \
+                                    --apple-id "\$APPLE_ID" \
+                                    --password "\$APPLE_PASSWORD" \
+                                    --team-id "77664ZXL29" \
+                                    --wait \
+                                    ${APP_NAME}-${TARGET}.app.zip
+                               """
+                        }
 
 //                        sh """
 //                           xcrun altool -t osx -f ${APP_NAME}-${TARGET}.app.zip -itc_provider "77664ZXL29" --primary-bundle-id "com.feenk.gtoolkit-vm-aarch64" --notarize-app --verbose  --username "notarization@feenk.com" --password "${APPLEPASSWORD}"
