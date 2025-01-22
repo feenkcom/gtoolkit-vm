@@ -154,7 +154,7 @@ pipeline {
 
                         sh "cargo test --package vm-client-tests"
 
-                        script.withCredentials([
+                        withCredentials([
                             string(credentialsId: 'notarizeusername', variable: 'APPLE_ID'),
                             string(credentialsId: 'notarizepassword-manager', variable: 'APPLE_PASSWORD')
                         ]) {
@@ -228,7 +228,7 @@ pipeline {
 
                         sh "cargo test --package vm-client-tests"
 
-                        script.withCredentials([
+                        withCredentials([
                             string(credentialsId: 'notarizeusername', variable: 'APPLE_ID'),
                             string(credentialsId: 'notarizepassword-manager', variable: 'APPLE_PASSWORD')
                         ]) {
