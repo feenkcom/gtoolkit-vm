@@ -1,6 +1,7 @@
+use crate::assign_field;
 use std::fmt::Debug;
 use std::ops::{Deref, DerefMut, Index};
-use vm_bindings::Smalltalk;
+use vm_bindings::{ObjectPointer, Smalltalk};
 use vm_object_model::{AnyObjectRef, Error, Object, ObjectFormat, ObjectRef, Result};
 
 #[repr(C)]
@@ -19,11 +20,24 @@ impl Array {
     }
 
     pub fn insert(&mut self, index: usize, object: impl Into<AnyObjectRef>) {
-        println!("Insert at: {} len: {}; attay {:?}", index, self.len(), ObjectRef::from(&self.this));
-        if index >= self.len() {
-            panic!("Index {} out of bounds [0..{}). {:?}. {:?}", index, self.len(), self.this, ObjectRef::from(&self.this));
+        assign_field!(self, self.as_slice_mut()[index], object.into());
+    }
+
+    pub fn copy_from(&mut self, start: usize, end: usize, source_slice: &[AnyObjectRef]) {
+        let target_slice = &mut self.as_slice_mut()[start..end];
+        target_slice.copy_from_slice(source_slice);
+
+        let this_ptr = ObjectPointer::from(self.as_ptr());
+        if Smalltalk::is_old(this_ptr) {
+            let must_remember = source_slice
+                .iter()
+                .find(|each| Smalltalk::is_young(ObjectPointer::from(each.as_i64())))
+                .is_some();
+
+            if must_remember {
+                Smalltalk::possible_old_object_store_into(this_ptr);
+            }
         }
-        self.as_slice_mut()[index] = object.into();
     }
 
     pub fn len(&self) -> usize {
@@ -40,7 +54,7 @@ impl Array {
         unsafe { std::slice::from_raw_parts(slice_ptr, length) }
     }
 
-    pub fn as_slice_mut(&mut self) -> &mut [AnyObjectRef] {
+    fn as_slice_mut(&mut self) -> &mut [AnyObjectRef] {
         let length = self.len();
         let slice_ptr = &mut self.items as *mut _ as *mut AnyObjectRef;
         unsafe { std::slice::from_raw_parts_mut(slice_ptr, length) }
@@ -101,10 +115,7 @@ impl TryFrom<AnyObjectRef> for ArrayRef {
             ObjectFormat::IndexableWithoutInstVars | ObjectFormat::WeakIndexable => {
                 Ok(ArrayRef(object_ref))
             }
-            object_format => Err(Error::NotAnArray {
-                object_ref,
-                object_format,
-            }),
+            object_format => Err(Error::NotAnArray(object_format)),
         }
     }
 }

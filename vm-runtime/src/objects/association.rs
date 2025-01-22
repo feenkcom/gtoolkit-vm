@@ -1,4 +1,5 @@
-use log::__private_api::Value;
+use crate::assign_field;
+use std::fmt::Debug;
 use std::ops::{Deref, DerefMut};
 use vm_bindings::Smalltalk;
 use vm_object_model::{AnyObjectRef, Error, Object, ObjectRef, Result};
@@ -25,11 +26,18 @@ impl Association {
     }
 
     pub fn set_key(&mut self, key: impl Into<AnyObjectRef>) {
-        self.key = key.into();
+        assign_field!(self.key, key.into());
     }
 
     pub fn set_value(&mut self, value: impl Into<AnyObjectRef>) {
-        self.value = value.into();
+        assign_field!(self.value, value.into());
+    }
+}
+
+impl Deref for Association {
+    type Target = Object;
+    fn deref(&self) -> &Self::Target {
+        &self.this
     }
 }
 
@@ -60,7 +68,7 @@ impl TryFrom<AnyObjectRef> for AssociationRef {
 
         if actual_amount_of_slots != EXPECTED_AMOUNT_OF_SLOTS {
             return Err(Error::WrongAmountOfSlots {
-                object_ref: object,
+                object: object.header().clone(),
                 expected: EXPECTED_AMOUNT_OF_SLOTS,
                 actual: actual_amount_of_slots,
             }

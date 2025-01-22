@@ -1,6 +1,6 @@
-use crate::{AnyObjectRef, Error, ObjectFormat, ObjectHeader, RawObjectPointer, Result};
 use std::ops::{Deref, DerefMut};
 use std::os::raw::c_void;
+use crate::{Error, Immediate, ObjectFormat, ObjectHeader, RawObjectPointer, Result};
 
 #[derive(Debug)]
 #[repr(transparent)]
@@ -77,8 +77,12 @@ impl Object {
     }
 
     pub fn equals(&self, other: &Object) -> Result<bool> {
+        // if self.is_forwarded() {
+        //     return Err(Error::ForwardedUnsupported(self.header().clone()));
+        // }
+
         if other.is_forwarded() {
-            return Err(Error::ForwardedUnsupported(self.into(), other.header().clone()));
+            return Err(Error::ForwardedUnsupported(other.header().clone()));
         }
 
         Ok(self.0 == other.0)
@@ -175,5 +179,62 @@ impl From<&mut Object> for AnyObjectRef {
     fn from(obj: &mut Object) -> Self {
         let ptr = obj as *mut _ as usize;
         AnyObjectRef::from(RawObjectPointer::from(i64::try_from(ptr).unwrap()))
+    }
+}
+
+
+#[derive(Debug, Copy, Clone)]
+#[repr(transparent)]
+pub struct AnyObjectRef(RawObjectPointer);
+
+impl AnyObjectRef {
+    pub fn as_ptr(&self) -> *const c_void {
+        self.0.as_ptr()
+    }
+
+    pub fn as_i64(&self) -> i64 {
+        self.0.as_i64()
+    }
+
+    pub fn is_immediate(&self) -> bool {
+        self.0.is_immediate()
+    }
+
+    pub fn equals(&self, other: &AnyObjectRef) -> Result<bool> {
+        if self.is_immediate() {
+            if other.is_immediate() {
+                Ok(self.0 == other.0)
+            } else {
+                Ok(false)
+            }
+        } else {
+            if other.is_immediate() {
+                Ok(false)
+            } else {
+                let this = self.as_object()?;
+                let other = other.as_object()?;
+                this.equals(&other)
+            }
+        }
+    }
+
+    pub fn as_immediate(&self) -> Result<Immediate> {
+        Immediate::try_from(self.0)
+    }
+
+    pub fn as_object(&self) -> Result<ObjectRef> {
+        ObjectRef::try_from(self.0)
+    }
+}
+
+impl From<RawObjectPointer> for AnyObjectRef {
+    fn from(value: RawObjectPointer) -> Self {
+        Self(value)
+    }
+}
+
+impl From<Immediate> for AnyObjectRef {
+    fn from(immediate: Immediate) -> Self {
+        Self::from(RawObjectPointer::from(immediate.0))
     }
 }

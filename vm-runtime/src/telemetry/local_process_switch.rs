@@ -39,7 +39,7 @@ impl LocalProcessSwitchTelemetry {
         self.add_signal(self.context_switch_signal_class, |signal_object| {
             signal_object.inst_var_at_put(
                 2,
-                RawObjectPointer::new(Smalltalk::bool_object(alive).as_i64()),
+                RawObjectPointer::new(Smalltalk::primitive_bool_object(alive).as_i64()),
             );
         });
     }
@@ -50,7 +50,7 @@ impl LocalProcessSwitchTelemetry {
 
             signal_object.inst_var_at_put(
                 3,
-                RawObjectPointer::new(Smalltalk::bool_object(signal.is_locked).as_i64()),
+                RawObjectPointer::new(Smalltalk::primitive_bool_object(signal.is_locked).as_i64()),
             );
         });
     }
@@ -67,11 +67,11 @@ impl LocalProcessSwitchTelemetry {
 
         let since_the_epoch = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
 
-        signal_object.inst_var_at_put(0, Immediate::new_integer(since_the_epoch.as_secs() as i64));
+        signal_object.inst_var_at_put(0, Immediate::new_i64(since_the_epoch.as_secs() as i64));
 
         signal_object.inst_var_at_put(
             1,
-            Immediate::new_integer(since_the_epoch.subsec_nanos() as i64),
+            Immediate::new_i64(since_the_epoch.subsec_nanos() as i64),
         );
 
         callback(signal_object);
@@ -97,7 +97,7 @@ impl AbstractTelemetry for LocalProcessSwitchTelemetryRef {
     }
 
     fn assign_id(&mut self, id: usize) {
-        self.id = Immediate::new_integer(id as i64);
+        self.id = Immediate::new_i64(id as i64);
     }
 }
 

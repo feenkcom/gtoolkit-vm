@@ -266,7 +266,7 @@ impl From<sqInt> for ObjectPointer {
 
 impl From<*const c_void> for ObjectPointer {
     fn from(value: *const c_void) -> Self {
-        Self(unsafe { std::mem::transmute(value) })
+        Self(sqInt::try_from(value as usize).unwrap())
     }
 }
 

@@ -28,6 +28,10 @@
     SpurMemoryManager >> #classArray.
     SpurMemoryManager >> #classExternalAddress.
     SpurMemoryManager >> #classString.
+    SpurMemoryManager >> #isOld:.
+    SpurMemoryManager >> #isYoung:.
+    SpurMemoryManager >> #possibleOldObjectStoreInto:.
+    SpurMemoryManager >> #possiblePermObjectStoreInto:value:.
 
     SpurMemoryManager >> #instantiateClass:isPinned:.
     SpurMemoryManager >> #instantiateClass:indexableSize:.

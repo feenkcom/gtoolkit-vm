@@ -1,3 +1,4 @@
+use crate::assign_field;
 use crate::objects::{Array, ArrayRef};
 use std::ops::{Deref, DerefMut};
 use vm_bindings::Smalltalk;
@@ -23,23 +24,21 @@ impl OrderedCollection {
     ) -> Result<OrderedCollectionRef> {
         let mut ordered_collection =
             Smalltalk::instantiate::<OrderedCollectionRef>(ordered_collection_class)?;
-        ordered_collection.array = Array::new(capacity)?;
-        ordered_collection.first_index = Immediate::new_integer(1);
-        ordered_collection.last_index = Immediate::new_integer(0);
+
+        assign_field!(ordered_collection.array, Array::new(capacity)?);
+        ordered_collection.first_index = Immediate::new_i64(1);
+        ordered_collection.last_index = Immediate::new_i64(0);
         Ok(ordered_collection)
     }
 
     pub fn add_last(&mut self, object: impl Into<AnyObjectRef>) {
         if self.last_index() == self.array.len() {
-            println!("Time to grow!");
             self.make_room_at_last();
         }
         let last_index = self.last_index();
 
-        println!("Add item to {:?}. Array: {:?}", self, self.array.deref());
-
         self.array.insert(last_index, object);
-        self.last_index = Immediate::new_integer(last_index as i64 + 1);
+        self.last_index = Immediate::new_i64(last_index as i64 + 1);
     }
 
     pub fn len(&self) -> usize {
@@ -85,14 +84,17 @@ impl OrderedCollection {
         let start_index = self.first_index() - 1;
         let end_index = self.last_index();
 
-        let target_slice = &mut new_array.as_slice_mut()[start_index..end_index];
-        let source_slice = &self.array.as_slice()[start_index .. end_index];
+        let source_slice = &self.array.as_slice()[start_index..end_index];
 
-        target_slice.copy_from_slice(source_slice);
+        new_array.copy_from(start_index, end_index, source_slice);
 
-        self.array = new_array;
+        assign_field!(self.array, new_array);
+    }
 
-        println!("Grew an internal array to {}", self.array.len());
+    pub fn validate_non_forward(&self) {
+        if self.array.is_forwarded() {
+            panic!("The array is forwarded!");
+        }
     }
 }
 
@@ -111,13 +113,17 @@ pub struct OrderedCollectionRef(ObjectRef);
 impl Deref for OrderedCollectionRef {
     type Target = OrderedCollection;
     fn deref(&self) -> &Self::Target {
-        unsafe { self.0.cast() }
+        let c: &OrderedCollection = unsafe { self.0.cast() };
+        c.validate_non_forward();
+        c
     }
 }
 
 impl DerefMut for OrderedCollectionRef {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        unsafe { self.0.cast_mut() }
+        let c: &mut OrderedCollection = unsafe { self.0.cast_mut() };
+        c.validate_non_forward();
+        c
     }
 }
 
@@ -127,11 +133,15 @@ impl TryFrom<AnyObjectRef> for OrderedCollectionRef {
     fn try_from(value: AnyObjectRef) -> Result<Self> {
         const EXPECTED_AMOUNT_OF_SLOTS: usize = 3;
         let object = value.as_object()?;
+        if object.is_forwarded() {
+            panic!("Object is forwarded!");
+        }
+
         let actual_amount_of_slots = object.amount_of_slots();
 
         if actual_amount_of_slots != EXPECTED_AMOUNT_OF_SLOTS {
             return Err(Error::WrongAmountOfSlots {
-                object_ref: object,
+                object: object.header().clone(),
                 expected: EXPECTED_AMOUNT_OF_SLOTS,
                 actual: actual_amount_of_slots,
             }

@@ -1,4 +1,4 @@
-use crate::{AnyObjectRef, Error, RawObjectPointer, Result};
+use crate::{Error, RawObjectPointer, Result};
 use std::mem::transmute;
 use std::os::raw::c_void;
 
@@ -10,9 +10,13 @@ impl Immediate {
     const SMALL_INTEGER_TAG: i64 = 1;
     const NUMBER_TAG: i64 = 3;
 
-    pub fn new_integer(value: i64) -> Self {
+    pub fn new_i64(value: i64) -> Self {
         let unsigned_value: u64 = unsafe { transmute(value) };
-        Self(unsafe { transmute((unsigned_value << Self::NUMBER_TAG) + 1) })
+        Self::new_u64(unsigned_value)
+    }
+
+    pub fn new_u64(value: u64) -> Self {
+        Self(unsafe { transmute((value << Self::NUMBER_TAG) + 1) })
     }
 
     pub fn is_small_integer(&self) -> bool {
@@ -48,8 +52,3 @@ impl TryFrom<RawObjectPointer> for Immediate {
     }
 }
 
-impl From<Immediate> for AnyObjectRef {
-    fn from(immediate: Immediate) -> Self {
-        Self::from(RawObjectPointer::from(immediate.0))
-    }
-}

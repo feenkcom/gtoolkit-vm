@@ -3,8 +3,9 @@ use crate::bindings::{
     createNewMethodheaderbytecodeCount, ensureBehaviorHash, falseObject, fetchPointerofObject,
     firstBytePointerOfDataObject, firstFixedField, firstIndexableField, hashBitsOf,
     instantiateClassindexableSize, instantiateClassindexableSizeisPinned, instantiateClassisPinned,
-    integerObjectOf, isOopForwarded, methodArgumentCount, methodReturnBool, methodReturnInteger,
-    methodReturnValue, nilObject, primitiveFail, primitiveFailFor, sqInt, stObjectat,
+    integerObjectOf, isOld, isOopForwarded, isYoung, methodArgumentCount, methodReturnBool,
+    methodReturnInteger, methodReturnValue, nilObject, possibleOldObjectStoreInto,
+    possiblePermObjectStoreIntovalue, primitiveFail, primitiveFailFor, sqInt, stObjectat,
     stObjectatput, stSizeOf, stackIntegerValue, stackValue, trueObject,
 };
 use crate::prelude::NativeTransmutable;
@@ -145,12 +146,18 @@ impl Smalltalk {
         unsafe { firstFixedField(object.into_native()) }
     }
 
-    pub fn bool_object(value: bool) -> ObjectPointer {
+    pub fn primitive_bool_object(value: bool) -> ObjectPointer {
         if value {
             Self::true_object()
         } else {
             Self::false_object()
         }
+    }
+
+    pub fn bool_object(value: bool) -> ObjectRef {
+        AnyObjectRef::from(RawObjectPointer::new(Self::primitive_bool_object(value).as_i64()))
+            .as_object()
+            .unwrap()
     }
 
     pub fn true_object() -> ObjectPointer {
@@ -214,6 +221,22 @@ impl Smalltalk {
         ObjectPointer::from_native_c(oop)
     }
 
+    pub fn primitive_instantiate_indexable_class_of_size_pinned(
+        class: ObjectPointer,
+        size: usize,
+        is_pinned: bool,
+    ) -> ObjectPointer {
+        let is_pinned = if is_pinned { 1 } else { 0 };
+        let oop = unsafe {
+            instantiateClassindexableSizeisPinned(
+                class.into_native(),
+                size as sqInt,
+                is_pinned as sqInt,
+            )
+        };
+        ObjectPointer::from_native_c(oop)
+    }
+
     pub fn instantiate_indexable_class(class: ObjectRef, size: usize) -> AnyObjectRef {
         let pointer = Self::primitive_instantiate_indexable_class_of_size(
             ObjectPointer::from(class.into_inner().as_i64()),
@@ -247,7 +270,7 @@ impl Smalltalk {
     }
 
     pub fn method_return_boolean(value: bool) {
-        let boolean = Self::bool_object(value);
+        let boolean = Self::primitive_bool_object(value);
         unsafe { methodReturnBool(boolean.into_native()) };
     }
 
@@ -260,14 +283,14 @@ impl Smalltalk {
         ObjectPointer::from_native_c(oop)
     }
 
-    pub fn identity_hash(object: ObjectPointer) -> u32 {
+    pub fn identity_hash(object: ObjectPointer) -> u64 {
         let hash = if Self::could_oop_be_class(object) {
             Self::behavior_identity_hash(object)
         } else {
             Self::object_identity_hash(object)
         };
 
-        hash << 8
+        (hash as u64) << 8
     }
 
     pub fn could_oop_be_class(object: ObjectPointer) -> bool {
@@ -297,7 +320,30 @@ impl Smalltalk {
         (unsafe { isOopForwarded(object.into_native()) }) != 0
     }
 
+    pub fn is_old(object: ObjectPointer) -> bool {
+        (unsafe { isOld(object.into_native()) }) != 0
+    }
+
+    pub fn is_young(object: ObjectPointer) -> bool {
+        (unsafe { isYoung(object.into_native()) }) != 0
+    }
+
+    pub fn possible_old_object_store_into(object: ObjectPointer) {
+        unsafe { possibleOldObjectStoreInto(object.into_native()) };
+    }
+
+    pub fn possible_perm_object_store_into(object: ObjectPointer, value: ObjectPointer) {
+        unsafe { possiblePermObjectStoreIntovalue(object.into_native(), value.into_native()) };
+    }
+
     pub fn pointer_at_pointer(pointer: *mut c_void) -> *mut c_void {
         unsafe { *(pointer as *mut *mut c_void) }
+    }
+
+    pub fn prepare_to_store(object: ObjectPointer, value: ObjectPointer) {
+        if Smalltalk::is_old(object) && Smalltalk::is_young(value) {
+            Smalltalk::possible_old_object_store_into(object);
+        }
+        Smalltalk::possible_perm_object_store_into(object, value);
     }
 }

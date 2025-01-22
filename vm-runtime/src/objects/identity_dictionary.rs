@@ -1,3 +1,4 @@
+use crate::assign_field;
 use crate::objects::{Array, ArrayRef, Association, AssociationRef};
 use num_traits::Zero;
 use std::ops::{Deref, DerefMut};
@@ -16,19 +17,6 @@ pub struct IdentityDictionary {
 }
 
 impl IdentityDictionary {
-    pub fn insert(&mut self, key: AnyObjectRef, value: AnyObjectRef) {
-        let index = self.scan_for(key).unwrap();
-        let mut association = self.array[index].as_object().unwrap();
-
-        // we know that an inner array contains either nils or associations.
-        // nil objects have zero slots, so use that
-        if association.amount_of_slots().is_zero() {
-            self.at_new_index_put(index, key, value);
-        } else {
-            association.inst_var_at_put(1, value);
-        }
-    }
-
     pub fn get_or_insert(
         &mut self,
         key: impl Into<AnyObjectRef>,
@@ -44,7 +32,7 @@ impl IdentityDictionary {
             )
         });
 
-        let mut association = self.association_at(index);
+        let association = self.association_at(index);
         match association {
             None => {
                 let default = default_value();
@@ -76,7 +64,7 @@ impl IdentityDictionary {
         association.set_value(value);
 
         self.array.insert(index, association);
-        self.tally = Immediate::new_integer(self.tally() + 1);
+        self.tally = Immediate::new_i64(self.tally() + 1);
         self.full_check();
     }
 
@@ -87,12 +75,7 @@ impl IdentityDictionary {
 
         let hash = Smalltalk::identity_hash(ObjectPointer::from(key.as_i64()));
         let finish = self.array.len();
-        let start = hash.rem_euclid(finish as u32) as usize;
-
-        println!(
-            "scan for: {:?}; hash: {:?}; start: {}; finish: {}",
-            key, hash, start, finish
-        );
+        let start = hash.rem_euclid(finish as u64) as usize;
 
         self.find_item_or_empty_slot(start, finish, key)
     }
@@ -107,7 +90,10 @@ impl IdentityDictionary {
         finish: usize,
         object: AnyObjectRef,
     ) -> Option<usize> {
-        let nil_object = AnyObjectRef::from(RawObjectPointer::from(Smalltalk::nil_object().as_i64())).as_object().unwrap();
+        let nil_object =
+            AnyObjectRef::from(RawObjectPointer::from(Smalltalk::nil_object().as_i64()))
+                .as_object()
+                .unwrap();
 
         for (index, association) in self.array.as_slice()[start..finish]
             .iter()
@@ -116,12 +102,15 @@ impl IdentityDictionary {
         {
             let index = index + start;
             if association.equals(&nil_object).unwrap() {
-                println!("[Forward] Found empty slot at {}", index);
                 return Some(index);
             }
 
             if association.is_forwarded() {
-                panic!("Association is forwarded: {:?} {:?}", association, association.header());
+                panic!(
+                    "Association is forwarded: {:?} {:?}",
+                    association,
+                    association.header()
+                );
             }
 
             let association = AssociationRef::try_from(AnyObjectRef::from(association)).unwrap_or_else(|error| {
@@ -133,15 +122,13 @@ impl IdentityDictionary {
                     nil_object
                 )});
             if association.key().equals(&object).unwrap_or_else(|error| {
-                error!(
+                panic!(
                     "[Forward] Failed to compare association key {:?} with object {:?}. Error: {}",
                     association.key(),
                     object,
                     error
                 );
-                false
             }) {
-                println!("[Forward] Found object at {}", index);
                 return Some(index);
             }
         }
@@ -152,7 +139,6 @@ impl IdentityDictionary {
             .enumerate()
         {
             if association.equals(&nil_object).unwrap() {
-                println!("[Backward] Found empty slot at {}", index);
                 return Some(index);
             }
 
@@ -162,11 +148,9 @@ impl IdentityDictionary {
                 .equals(&object)
                 .expect("[Backward] Compare association key with object")
             {
-                println!("[Backward] Found empty slot at {}", index);
                 return Some(index);
             }
         }
-        println!("Could not find any slot for {:?}", object);
         None
     }
 
@@ -177,13 +161,36 @@ impl IdentityDictionary {
         }
     }
 
-    fn grow(&mut self) {
-        error!("Growing identity dictionary");
+    fn scan_all_for(&self, key: AnyObjectRef) -> Vec<usize> {
+        let nil_object =
+            AnyObjectRef::from(RawObjectPointer::from(Smalltalk::nil_object().as_i64()))
+                .as_object()
+                .unwrap();
 
+        let mut indices = vec![];
+
+        for (index, each) in self
+            .array
+            .iter()
+            .map(|each| each.as_object().unwrap())
+            .enumerate()
+        {
+            if !each.equals(&nil_object).unwrap() {
+                let association = AssociationRef::try_from(AnyObjectRef::from(each)).unwrap();
+                if association.key().equals(&key).unwrap() {
+                    indices.push(index);
+                }
+            }
+        }
+        indices
+    }
+
+    fn grow(&mut self) {
         let old_elements = self.array;
 
         let new_array_len = old_elements.len() * 2;
         let new_array = Array::new(new_array_len).unwrap();
+        assign_field!(self.this, self.array, new_array);
 
         if new_array.len() != new_array_len {
             panic!(
@@ -193,24 +200,29 @@ impl IdentityDictionary {
             );
         }
 
-        self.tally = Immediate::new_integer(0);
+        self.tally = Immediate::new_i64(0);
 
         let nil_object =
             AnyObjectRef::from(RawObjectPointer::from(Smalltalk::nil_object().as_i64()));
         for each in old_elements.iter() {
             if !each.equals(&nil_object).unwrap() {
-                self.no_check_add(new_array, each.clone().try_into().unwrap());
+                self.no_check_add(each.clone().try_into().unwrap());
             }
         }
-
-        self.array = new_array;
     }
 
-    fn no_check_add(&mut self, mut array: ArrayRef, association: AssociationRef) {
+    fn no_check_add(&mut self, association: AssociationRef) {
         let key = association.key();
         let index = self.scan_for(key).expect("Find an available slot");
-        array.insert(index, association);
-        self.tally = Immediate::new_integer(self.tally() + 1);
+        self.array.insert(index, association);
+        self.tally = Immediate::new_i64(self.tally() + 1);
+    }
+}
+
+impl Deref for IdentityDictionary {
+    type Target = Object;
+    fn deref(&self) -> &Self::Target {
+        &self.this
     }
 }
 

@@ -53,6 +53,8 @@ EXPORT(void *) firstFixedField(sqInt oop);
 EXPORT(sqInt) instantiateClassindexableSize(sqInt classObj, sqInt nElements);
 EXPORT(sqInt) instantiateClassindexableSizeisPinned(sqInt classObj, sqInt nElements, sqInt isPinned);
 EXPORT(sqInt) instantiateClassisPinned(sqInt classObj, sqInt isPinned);
+EXPORT(void) possibleOldObjectStoreInto(sqInt destObj);
+EXPORT(void) possiblePermObjectStoreIntovalue(sqInt destObj, sqInt valueObj);
 EXPORT(sqInt) fetchPointerofObject(sqInt fieldIndex, sqInt objOop);
 EXPORT(sqInt) integerObjectOf(sqInt value);
 EXPORT(sqInt) newHashBitsOf(sqInt objOop);
@@ -60,6 +62,8 @@ EXPORT(sqInt) hashBitsOf(sqInt objOop);
 EXPORT(sqInt) ensureBehaviorHash(sqInt objOop);
 EXPORT(void *) firstBytePointerOfDataObject(sqInt objOop);
 EXPORT(sqInt) isOopForwarded(sqInt oop);
+EXPORT(sqInt) isOld(sqInt oop);
+EXPORT(sqInt) isYoung(sqInt oop);
 
 extern int vmRunOnWorkerThread;
 EXPORT(void) setVmRunOnWorkerThread(int isOnWorker);

@@ -187,6 +187,10 @@ impl Unit {
 
     pub fn compile(&self) -> Build {
         let original_sources = find_all_sources(&self.sources, self.builder.clone()).unwrap();
+        for source in &original_sources {
+            println!("cargo:rerun-if-changed={}", source.display());
+        }
+
         let mut sources = Vec::new();
         let dst = self.output_directory();
         for file in original_sources.iter() {

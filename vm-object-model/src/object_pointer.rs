@@ -1,6 +1,3 @@
-use crate::immediate::Immediate;
-use crate::ObjectRef;
-use crate::Result;
 use std::ffi::c_void;
 use std::ptr::{with_exposed_provenance, with_exposed_provenance_mut};
 
@@ -48,56 +45,6 @@ fn is_immediate(value: i64) -> bool {
 
 impl From<i64> for RawObjectPointer {
     fn from(value: i64) -> Self {
-        Self(value)
-    }
-}
-
-#[derive(Debug, Copy, Clone)]
-#[repr(transparent)]
-pub struct AnyObjectRef(RawObjectPointer);
-
-impl AnyObjectRef {
-    pub fn as_ptr(&self) -> *const c_void {
-        self.0.as_ptr()
-    }
-
-    pub fn as_i64(&self) -> i64 {
-        self.0.as_i64()
-    }
-
-    pub fn is_immediate(&self) -> bool {
-        self.0.is_immediate()
-    }
-
-    pub fn equals(&self, other: &AnyObjectRef) -> Result<bool> {
-        if self.is_immediate() {
-            if other.is_immediate() {
-                Ok(self.0 == other.0)
-            } else {
-                Ok(false)
-            }
-        } else {
-            if other.is_immediate() {
-                Ok(false)
-            } else {
-                let this = self.as_object()?;
-                let other = other.as_object()?;
-                this.equals(&other)
-            }
-        }
-    }
-
-    pub fn as_immediate(&self) -> Result<Immediate> {
-        Immediate::try_from(self.0)
-    }
-
-    pub fn as_object(&self) -> Result<ObjectRef> {
-        ObjectRef::try_from(self.0)
-    }
-}
-
-impl From<RawObjectPointer> for AnyObjectRef {
-    fn from(value: RawObjectPointer) -> Self {
         Self(value)
     }
 }
