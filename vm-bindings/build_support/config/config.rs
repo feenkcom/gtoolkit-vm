@@ -28,6 +28,7 @@ pub enum Config {
     VERSION_MAJOR(usize),
     VERSION_MINOR(usize),
     VERSION_PATCH(usize),
+    PharoVM_VERSION_STRING(String),
     BUILT_FROM(String),
     ALWAYS_INTERACTIVE(bool),
 }
@@ -49,6 +50,7 @@ impl Config {
             Config::VERSION_MAJOR(value) => value.to_string(),
             Config::VERSION_MINOR(value) => value.to_string(),
             Config::VERSION_PATCH(value) => value.to_string(),
+            Config::PharoVM_VERSION_STRING(value) => value.to_string(),
             Config::BUILT_FROM(value) => value.to_string(),
             Config::ALWAYS_INTERACTIVE(value) => (if *value { 1 } else { 0 }).to_string(),
         }

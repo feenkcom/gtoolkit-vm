@@ -58,6 +58,8 @@ impl OrderedCollection {
         if (tally * 2) >= self.last_index() {
             return self.grow_at_last();
         }
+
+        todo!()
     }
 
     //// makeRoomAtLast

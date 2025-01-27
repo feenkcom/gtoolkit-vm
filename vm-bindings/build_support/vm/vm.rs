@@ -118,6 +118,11 @@ impl VirtualMachine {
             .var(Config::VERSION_MAJOR(info.version_major()))
             .var(Config::VERSION_MINOR(info.version_minor()))
             .var(Config::VERSION_PATCH(info.version_patch()))
+            .var(Config::PharoVM_VERSION_STRING(
+                info.version()
+                    .map(|version| format!("{}", version))
+                    .unwrap_or_else(|| "Unknown version".to_string()),
+            ))
             .var(Config::BUILT_FROM(info.to_string()))
             .var(Config::ALWAYS_INTERACTIVE(false));
         Ok(config)
