@@ -12,13 +12,7 @@ use crate::objects::{Array, ArrayRef};
 #[cfg(feature = "pharo-compiler")]
 use crate::pharo_compiler::*;
 use crate::version::{app_info, app_version};
-use crate::{
-    log_signal, primitiveEnableLogSignal, primitiveGetEnabledLogSignals, primitivePollLogger,
-    primitiveStartBeacon, primitiveStartConsoleLogger, primitiveStartGlobalProcessSwitchTelemetry,
-    primitiveStartLocalProcessSwitchTelemetry, primitiveStopLogger, primitiveStopTelemetry,
-    should_log_all_signals, should_log_signal, ConsoleLogger, EventLoop, EventLoopMessage,
-    EventLoopWaker, VM_LOGGER,
-};
+use crate::{log_signal, primitiveEnableLogSignal, primitiveGetEnabledLogSignals, primitivePollLogger, primitiveStartBeacon, primitiveStartConsoleLogger, primitiveStartGlobalProcessSwitchTelemetry, primitiveStartLocalProcessSwitchTelemetry, primitiveStopLogger, primitiveStopTelemetry, primitiveTelemetryContextSignal, primitiveTelemetryObjectSignal, should_log_all_signals, should_log_signal, ConsoleLogger, EventLoop, EventLoopMessage, EventLoopWaker, VM_LOGGER};
 #[cfg(feature = "ffi")]
 use crate::{primitiveEventLoopCallout, primitiveExtractReturnValue};
 use anyhow::Result;
@@ -123,6 +117,8 @@ impl VirtualMachine {
         // telemetry
         vm.add_primitive(primitive!(primitiveStartLocalProcessSwitchTelemetry));
         vm.add_primitive(primitive!(primitiveStartGlobalProcessSwitchTelemetry));
+        vm.add_primitive(primitive!(primitiveTelemetryObjectSignal));
+        vm.add_primitive(primitive!(primitiveTelemetryContextSignal));
         vm.add_primitive(primitive!(primitiveStopTelemetry));
 
         // debug

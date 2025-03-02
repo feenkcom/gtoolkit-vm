@@ -1,8 +1,5 @@
 use crate::objects::OrderedCollectionRef;
-use crate::{
-    AbstractTelemetry, ApplicationError, ContextSwitchSignal, GlobalTelemetry, Result,
-    SemaphoreWaitSignal, TelemetrySignal,
-};
+use crate::{AbstractTelemetry, ApplicationError, ContextSwitchSignal, GlobalTelemetry, ComputationSignal, Result, SemaphoreWaitSignal, TelemetrySignal, ContextSignal};
 use std::ops::{Deref, DerefMut};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use vm_bindings::{ObjectPointer, Smalltalk, StackOffset};
@@ -26,6 +23,18 @@ impl LocalProcessSwitchTelemetry {
         } else if signal.new_process == self.current_process {
             // switches back
             self.add_context_switch_signal(true);
+        }
+    }
+
+    fn receive_computation_signal(&mut self, signal: &ComputationSignal) {
+        if signal.process == self.current_process {
+            //todo self.add_semaphore_wait_signal(signal);
+        }
+    }
+
+    fn receive_context_signal(&mut self, signal: &ContextSignal) {
+        if signal.process == self.current_process {
+            //todo self.add_semaphore_wait_signal(signal);
         }
     }
 
@@ -92,6 +101,12 @@ impl AbstractTelemetry for LocalProcessSwitchTelemetryRef {
             }
             TelemetrySignal::SemaphoreWait(signal) => {
                 self.receive_semaphore_wait_signal(signal);
+            }
+            TelemetrySignal::ComputationSignal(signal) => {
+                self.receive_computation_signal(signal);
+            }
+            TelemetrySignal::ContextSignal(signal) => {
+                self.receive_context_signal(signal);
             }
         }
     }

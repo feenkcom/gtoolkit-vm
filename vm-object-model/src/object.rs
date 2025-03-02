@@ -1,6 +1,6 @@
+use crate::{Error, Immediate, ObjectFormat, ObjectHeader, RawObjectPointer, Result};
 use std::ops::{Deref, DerefMut};
 use std::os::raw::c_void;
-use crate::{Error, Immediate, ObjectFormat, ObjectHeader, RawObjectPointer, Result};
 
 #[derive(Debug)]
 #[repr(transparent)]
@@ -181,7 +181,6 @@ impl From<&mut Object> for AnyObjectRef {
         AnyObjectRef::from(RawObjectPointer::from(i64::try_from(ptr).unwrap()))
     }
 }
-
 
 #[derive(Debug, Copy, Clone)]
 #[repr(transparent)]

@@ -29,4 +29,3 @@ pub struct ObjectHeader {
     pub is_marked: bool,
     pub num_slots: u8,
 }
-

@@ -1,12 +1,12 @@
 use crate::bindings::{
     addressCouldBeClassObj, classArray, classExternalAddress, classString,
     createNewMethodheaderbytecodeCount, ensureBehaviorHash, falseObject, fetchPointerofObject,
-    firstBytePointerOfDataObject, firstFixedField, firstIndexableField, hashBitsOf,
-    instantiateClassindexableSize, instantiateClassindexableSizeisPinned, instantiateClassisPinned,
-    integerObjectOf, isOld, isOopForwarded, isYoung, methodArgumentCount, methodReturnBool,
-    methodReturnInteger, methodReturnValue, nilObject, possibleOldObjectStoreInto,
-    possiblePermObjectStoreIntovalue, primitiveFail, primitiveFailFor, sqInt, stObjectat,
-    stObjectatput, stSizeOf, stackIntegerValue, stackValue, trueObject,
+    firstBytePointerOfDataObject, firstFixedField, firstIndexableField, getThisContext, hashBitsOf,
+    instVarofContext, instantiateClassindexableSize, instantiateClassindexableSizeisPinned,
+    instantiateClassisPinned, integerObjectOf, isOld, isOopForwarded, isYoung, methodArgumentCount,
+    methodReturnBool, methodReturnInteger, methodReturnValue, nilObject,
+    possibleOldObjectStoreInto, possiblePermObjectStoreIntovalue, primitiveFail, primitiveFailFor,
+    sqInt, stObjectat, stObjectatput, stSizeOf, stackIntegerValue, stackValue, trueObject,
 };
 use crate::prelude::NativeTransmutable;
 use crate::{ObjectFieldIndex, ObjectPointer, StackOffset};
@@ -155,9 +155,11 @@ impl Smalltalk {
     }
 
     pub fn bool_object(value: bool) -> ObjectRef {
-        AnyObjectRef::from(RawObjectPointer::new(Self::primitive_bool_object(value).as_i64()))
-            .as_object()
-            .unwrap()
+        AnyObjectRef::from(RawObjectPointer::new(
+            Self::primitive_bool_object(value).as_i64(),
+        ))
+        .as_object()
+        .unwrap()
     }
 
     pub fn true_object() -> ObjectPointer {
@@ -346,4 +348,36 @@ impl Smalltalk {
         }
         Smalltalk::possible_perm_object_store_into(object, value);
     }
+
+    pub fn this_context() -> ObjectRef {
+        ObjectRef::try_from(RawObjectPointer::new(unsafe { getThisContext() })).unwrap()
+    }
+
+    pub fn context_sender(context: ObjectRef) -> ObjectRef {
+        ObjectRef::try_from(RawObjectPointer::new(unsafe {
+            instVarofContext(0, context.into_inner().as_i64())
+        }))
+        .unwrap()
+    }
+
+    pub fn context_method(context: ObjectRef) -> ObjectRef {
+        ObjectRef::try_from(RawObjectPointer::new(unsafe {
+            instVarofContext(3, context.into_inner().as_i64())
+        }))
+        .unwrap()
+    }
+
+    pub fn context_stack_length(context: ObjectRef) -> usize {
+        let mut length = 1;
+        let nil_object = ObjectRef::try_from(RawObjectPointer::new(Self::nil_object().into_native())).unwrap();
+
+        let mut sender = context;
+        while sender != nil_object {
+            length += 1;
+            sender = Self::context_sender(sender);
+        }
+
+        length
+    }
+
 }

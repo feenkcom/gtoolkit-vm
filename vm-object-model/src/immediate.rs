@@ -51,4 +51,3 @@ impl TryFrom<RawObjectPointer> for Immediate {
         }
     }
 }
-

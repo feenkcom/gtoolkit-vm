@@ -68,6 +68,32 @@ impl GlobalTelemetry {
         }));
     }
 
+    pub fn receive_computation_signal(
+        &mut self,
+        process: ObjectRef,
+        object: AnyObjectRef,
+        is_start: bool,
+    ) {
+        self.receive_signal(TelemetrySignal::ComputationSignal(ComputationSignal {
+            timestamp: Instant::now(),
+            process,
+            object,
+            is_start,
+        }));
+    }
+
+    pub fn receive_context_signal(
+        &mut self,
+        process: ObjectRef,
+        signal: AnyObjectRef,
+    ) {
+        self.receive_signal(TelemetrySignal::ContextSignal(ContextSignal {
+            timestamp: Instant::now(),
+            process,
+            signal,
+        }));
+    }
+
     pub fn receive_semaphore_wait_signal(
         &mut self,
         semaphore: ObjectRef,
@@ -114,6 +140,8 @@ pub trait AbstractTelemetry: Send + Sync {
 pub enum TelemetrySignal {
     ContextSwitch(ContextSwitchSignal),
     SemaphoreWait(SemaphoreWaitSignal),
+    ComputationSignal(ComputationSignal),
+    ContextSignal(ContextSignal)
 }
 
 #[derive(Debug, Clone)]
@@ -121,6 +149,21 @@ pub struct ContextSwitchSignal {
     pub timestamp: Instant,
     pub old_process: ObjectRef,
     pub new_process: ObjectRef,
+}
+
+#[derive(Debug, Clone)]
+pub struct ComputationSignal {
+    pub timestamp: Instant,
+    pub process: ObjectRef,
+    pub object: AnyObjectRef,
+    pub is_start: bool,
+}
+
+#[derive(Debug, Clone)]
+pub struct ContextSignal {
+    pub timestamp: Instant,
+    pub process: ObjectRef,
+    pub signal: AnyObjectRef,
 }
 
 #[derive(Debug, Clone)]
@@ -137,6 +180,44 @@ pub fn primitiveStopTelemetry() {
     let telemetry_id = Smalltalk::stack_integer_value(StackOffset::new(0)) as usize;
     if let Some(telemetry) = TELEMETRY_INSTANCE.get() {
         telemetry.lock().remove_telemetry(telemetry_id);
+    }
+
+    Smalltalk::method_return_value(Smalltalk::true_object());
+}
+
+#[no_mangle]
+#[allow(non_snake_case)]
+pub fn primitiveTelemetryObjectSignal() {
+    if let Some(telemetry) = TELEMETRY_INSTANCE.get() {
+        let process = Smalltalk::stack_ref(StackOffset::new(0))
+            .as_object()
+            .unwrap();
+        let object = Smalltalk::stack_ref(StackOffset::new(1));
+        let is_start = Smalltalk::stack_ref(StackOffset::new(2))
+            .as_object()
+            .unwrap()
+            == Smalltalk::bool_object(true);
+
+        telemetry
+            .lock()
+            .receive_computation_signal(process, object, is_start);
+    }
+
+    Smalltalk::method_return_value(Smalltalk::true_object());
+}
+
+#[no_mangle]
+#[allow(non_snake_case)]
+pub fn primitiveTelemetryContextSignal() {
+    if let Some(telemetry) = TELEMETRY_INSTANCE.get() {
+        let process = Smalltalk::stack_ref(StackOffset::new(0))
+            .as_object()
+            .unwrap();
+        let object = Smalltalk::stack_ref(StackOffset::new(1));
+
+        telemetry
+            .lock()
+            .receive_context_signal(process, object);
     }
 
     Smalltalk::method_return_value(Smalltalk::true_object());

@@ -40,6 +40,10 @@ EXPORT(sqInt) stObjectat(sqInt array, sqInt index);
 EXPORT(sqInt) stObjectatput(sqInt array, sqInt index, sqInt value);
 EXPORT(sqInt) stSizeOf(sqInt oop);
 EXPORT(sqInt) addressCouldBeClassObj(sqInt oop);
+EXPORT(sqInt) getThisContext(void);
+
+// CoInterpreter
+EXPORT(sqInt) instVarofContext(sqInt offset, sqInt oop);
 
 // SpurMemoryManager
 EXPORT(sqInt) falseObject();

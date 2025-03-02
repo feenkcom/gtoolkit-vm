@@ -351,6 +351,9 @@ pub trait Builder: Debug {
             .allowlist_function("stObjectatput")
             .allowlist_function("stSizeOf")
             .allowlist_function("addressCouldBeClassObj")
+            .allowlist_function("getThisContext")
+            // CoInterpreter
+            .allowlist_function("instVarofContext")
             // SpurMemoryManager
             .allowlist_function("falseObject")
             .allowlist_function("trueObject")

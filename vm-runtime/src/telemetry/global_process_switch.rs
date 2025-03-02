@@ -1,5 +1,5 @@
-use crate::objects::{Array, OrderedCollection, OrderedCollectionRef};
-use crate::{AbstractTelemetry, ApplicationError, ContextSwitchSignal, GlobalTelemetry, IdentityDictionaryRef, PharoProcessSemaphoreWaitSignalRef, PharoProcessSwitchSignal, PharoProcessSwitchSignalRef, Result, SemaphoreWaitSignal, TelemetrySignal};
+use crate::objects::{Array, ArrayRef, OrderedCollection, OrderedCollectionRef};
+use crate::{copy_stack, AbstractTelemetry, ApplicationError, ContextSwitchSignal, GlobalTelemetry, IdentityDictionaryRef, ComputationSignal, PharoProcessComputationSignalRef, PharoProcessSemaphoreWaitSignalRef, PharoProcessSwitchSignal, PharoProcessSwitchSignalRef, Result, SemaphoreWaitSignal, TelemetrySignal, ContextSignal, PharoProcessContextSignal, PharoProcessContextSignalRef};
 use std::ops::{Deref, DerefMut};
 use std::time::{SystemTime, UNIX_EPOCH};
 use vm_bindings::{ObjectPointer, Smalltalk, StackOffset};
@@ -14,6 +14,8 @@ pub struct GlobalProcessSwitchTelemetry {
     signals_dictionary: IdentityDictionaryRef,
     context_switch_signal_class: ObjectRef,
     semaphore_wait_signal_class: ObjectRef,
+    computation_signal_class: ObjectRef,
+    context_signal_class: ObjectRef,
     ordered_collection_class: ObjectRef,
 }
 
@@ -31,8 +33,9 @@ pub struct GlobalProcessSwitchTelemetryRef(ObjectRef);
 
 impl GlobalProcessSwitchTelemetryRef {
     fn receive_context_switch_signal(&mut self, signal: &ContextSwitchSignal) {
-        self.add_context_switch_signal(signal.old_process, false);
-        self.add_context_switch_signal(signal.new_process, true);
+        let stack = copy_stack(Smalltalk::this_context());
+        self.add_context_switch_signal(signal.old_process, false, stack);
+        self.add_context_switch_signal(signal.new_process, true, stack);
     }
 
     fn receive_semaphore_wait_signal(&mut self, signal: &SemaphoreWaitSignal) {
@@ -41,18 +44,46 @@ impl GlobalProcessSwitchTelemetryRef {
         }
     }
 
-    fn add_context_switch_signal(&mut self, process: ObjectRef, alive: bool) {
+    fn receive_computation_signal(&mut self, signal: &ComputationSignal) {
+        self.add_computation_signal(signal.process, signal.object, signal.is_start);
+    }
+
+    fn receive_context_signal(&mut self, signal: &ContextSignal) {
+        self.add_context_signal(signal.process, signal.signal);
+    }
+
+    fn add_context_switch_signal(&mut self, process: ObjectRef, alive: bool, stack: ArrayRef) {
         self.add_signal::<PharoProcessSwitchSignalRef>(process, self.context_switch_signal_class, |signal_object| {
             signal_object.set_timestamp(SystemTime::now().duration_since(UNIX_EPOCH).unwrap());
             signal_object.set_resumed(alive);
+            signal_object.set_stack(stack);
         });
     }
+
+
 
     fn add_semaphore_wait_signal(&mut self, process: ObjectRef, signal: &SemaphoreWaitSignal) {
         self.add_signal::<PharoProcessSemaphoreWaitSignalRef>(process, self.semaphore_wait_signal_class, |signal_object| {
             signal_object.set_timestamp(SystemTime::now().duration_since(UNIX_EPOCH).unwrap());
             signal_object.set_locked(signal.is_locked);
             signal_object.set_semaphore(signal.semaphore);
+            signal_object.set_context(Smalltalk::this_context());
+        });
+    }
+
+    fn add_computation_signal(&mut self, process: ObjectRef, object: AnyObjectRef, is_start: bool) {
+        self.add_signal::<PharoProcessComputationSignalRef>(process, self.computation_signal_class, |signal_object| {
+            signal_object.set_timestamp(SystemTime::now().duration_since(UNIX_EPOCH).unwrap());
+            signal_object.set_object(object);
+            signal_object.set_is_start(is_start);
+        });
+    }
+
+    fn add_context_signal(&mut self, process: ObjectRef, object: AnyObjectRef) {
+        self.add_signal::<PharoProcessContextSignalRef>(process, self.context_signal_class, |signal_object| {
+            signal_object.set_timestamp(SystemTime::now().duration_since(UNIX_EPOCH).unwrap());
+            signal_object.set_object(object);
+            signal_object.set_context(Smalltalk::this_context());
         });
     }
 
@@ -87,6 +118,12 @@ impl AbstractTelemetry for GlobalProcessSwitchTelemetryRef {
             TelemetrySignal::SemaphoreWait(signal) => {
                 self.receive_semaphore_wait_signal(signal);
             }
+            TelemetrySignal::ComputationSignal(signal) => {
+                self.receive_computation_signal(signal);
+            }
+            TelemetrySignal::ContextSignal(signal) => {
+                self.receive_context_signal(signal);
+            }
         }
     }
 
@@ -116,7 +153,7 @@ impl TryFrom<AnyObjectRef> for GlobalProcessSwitchTelemetryRef {
     type Error = ApplicationError;
 
     fn try_from(value: AnyObjectRef) -> Result<Self> {
-        const EXPECTED_AMOUNT_OF_SLOTS: usize = 6;
+        const EXPECTED_AMOUNT_OF_SLOTS: usize = 8;
         let object = value.as_object()?;
         if object.is_forwarded() {
             panic!("It is forwarded!");

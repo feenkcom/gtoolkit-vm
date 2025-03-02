@@ -21,6 +21,7 @@
 
     StackInterpreter >> #addressCouldBeClassObj:.
 
+    CoInterpreter >> #instVar:ofContext:.
 
     SpurMemoryManager >> #falseObject.
     SpurMemoryManager >> #trueObject.
@@ -62,6 +63,9 @@ SpurMemoryManager compile: 'getStatScavengeGCUsecs
     <api>
     ^ statScavengeGCUsecs'.
 
+StackInterpreter compile: 'getThisContext
+    <export: true>
+    ^ self ensureFrameIsMarried: framePointer SP: stackPointer'.
 
 InterpreterPrimitives compile: 'createNewMethod: class header: header bytecodeCount: bytecodeCount
     <api>
