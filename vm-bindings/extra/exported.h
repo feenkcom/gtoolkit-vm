@@ -68,6 +68,8 @@ EXPORT(void *) firstBytePointerOfDataObject(sqInt objOop);
 EXPORT(sqInt) isOopForwarded(sqInt oop);
 EXPORT(sqInt) isOld(sqInt oop);
 EXPORT(sqInt) isYoung(sqInt oop);
+EXPORT(sqInt) fetchClassOfNonImm(sqInt oop);
+EXPORT(sqInt) stContextSize(sqInt oop);
 
 extern int vmRunOnWorkerThread;
 EXPORT(void) setVmRunOnWorkerThread(int isOnWorker);

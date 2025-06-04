@@ -90,4 +90,36 @@ impl ObjectFormat {
             ObjectFormat::Unsupported(_) => 0,
         }
     }
+
+    pub fn is_bits(&self) -> bool {
+        match self {
+            ObjectFormat::ZeroSized => false,
+            ObjectFormat::NonIndexable => false,
+            ObjectFormat::IndexableWithoutInstVars => false,
+            ObjectFormat::IndexableWithInstVars => false,
+            ObjectFormat::WeakIndexable => false,
+            ObjectFormat::WeakNonIndexable => false,
+            ObjectFormat::Forwarded => false,
+            ObjectFormat::Indexable64 => true,
+            ObjectFormat::Indexable32(_) => true,
+            ObjectFormat::Indexable16(_) => true,
+            ObjectFormat::Indexable8(_) => true,
+            ObjectFormat::CompiledMethod(_) => true,
+            ObjectFormat::Unsupported(_) => false,
+        }
+    }
+
+    pub fn is_weak(&self) -> bool {
+        match self {
+            ObjectFormat::WeakIndexable => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_ephemeron(&self) -> bool {
+        match self {
+            ObjectFormat::WeakNonIndexable => true,
+            _ => false,
+        }
+    }
 }

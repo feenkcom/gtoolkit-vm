@@ -9,7 +9,6 @@ pub struct CompiledMethod<'obj> {
 impl<'obj> CompiledMethod<'obj> {
     pub fn set_literal(&self, literal: AnyObjectRef, literal_index: usize) {
         let compiled_method_header = self.header.first_fixed_field_ptr();
-        let len = self.header.amount_of_indexable_units();
 
         let mut literal_ptr =
             unsafe { compiled_method_header.offset((1 + literal_index as isize) * 8) }

@@ -82,11 +82,7 @@ impl GlobalTelemetry {
         }));
     }
 
-    pub fn receive_context_signal(
-        &mut self,
-        process: ObjectRef,
-        signal: AnyObjectRef,
-    ) {
+    pub fn receive_context_signal(&mut self, process: ObjectRef, signal: AnyObjectRef) {
         self.receive_signal(TelemetrySignal::ContextSignal(ContextSignal {
             timestamp: Instant::now(),
             process,
@@ -141,7 +137,7 @@ pub enum TelemetrySignal {
     ContextSwitch(ContextSwitchSignal),
     SemaphoreWait(SemaphoreWaitSignal),
     ComputationSignal(ComputationSignal),
-    ContextSignal(ContextSignal)
+    ContextSignal(ContextSignal),
 }
 
 #[derive(Debug, Clone)]
@@ -215,9 +211,7 @@ pub fn primitiveTelemetryContextSignal() {
             .unwrap();
         let object = Smalltalk::stack_ref(StackOffset::new(1));
 
-        telemetry
-            .lock()
-            .receive_context_signal(process, object);
+        telemetry.lock().receive_context_signal(process, object);
     }
 
     Smalltalk::method_return_value(Smalltalk::true_object());

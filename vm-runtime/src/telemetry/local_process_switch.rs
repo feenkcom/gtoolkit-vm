@@ -1,5 +1,8 @@
 use crate::objects::OrderedCollectionRef;
-use crate::{AbstractTelemetry, ApplicationError, ContextSwitchSignal, GlobalTelemetry, ComputationSignal, Result, SemaphoreWaitSignal, TelemetrySignal, ContextSignal};
+use crate::{
+    AbstractTelemetry, ApplicationError, ComputationSignal, ContextSignal, ContextSwitchSignal,
+    GlobalTelemetry, Result, SemaphoreWaitSignal, TelemetrySignal,
+};
 use std::ops::{Deref, DerefMut};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use vm_bindings::{ObjectPointer, Smalltalk, StackOffset};
@@ -78,10 +81,7 @@ impl LocalProcessSwitchTelemetry {
 
         signal_object.inst_var_at_put(0, Immediate::new_i64(since_the_epoch.as_secs() as i64));
 
-        signal_object.inst_var_at_put(
-            1,
-            Immediate::new_i64(since_the_epoch.subsec_nanos() as i64),
-        );
+        signal_object.inst_var_at_put(1, Immediate::new_i64(since_the_epoch.subsec_nanos() as i64));
 
         callback(signal_object);
 

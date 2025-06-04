@@ -24,6 +24,7 @@ mod working_directory;
 pub mod objects;
 #[cfg(feature = "pharo-compiler")]
 mod pharo_compiler;
+mod reference_finder;
 mod telemetry;
 
 pub use constellation::Constellation;

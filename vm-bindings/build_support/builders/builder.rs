@@ -377,6 +377,8 @@ pub trait Builder: Debug {
             .allowlist_function("isYoung")
             .allowlist_function("possibleOldObjectStoreInto")
             .allowlist_function("possiblePermObjectStoreIntovalue")
+            .allowlist_function("fetchClassOfNonImm")
+            .allowlist_function("stContextSize")
             .allowlist_type("sqInt")
             .allowlist_type("usqInt")
             .allowlist_type("sqExport")

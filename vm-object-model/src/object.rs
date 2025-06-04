@@ -1,3 +1,4 @@
+use std::hash::{Hash, Hasher};
 use crate::{Error, Immediate, ObjectFormat, ObjectHeader, RawObjectPointer, Result};
 use std::ops::{Deref, DerefMut};
 use std::os::raw::c_void;
@@ -46,6 +47,8 @@ impl Object {
     /// Answer the number of indexable units in the object.
     /// For a CompiledMethod, the size of the method header (in bytes)
     /// should be subtracted from the result of this method.
+    ///
+    /// lengthOf: objOop format: fmt
     pub fn amount_of_indexable_units(&self) -> usize {
         self.object_format()
             .amount_of_indexable_units(self.amount_of_slots_unchecked())
@@ -123,6 +126,14 @@ impl Object {
 pub struct ObjectRef(RawObjectPointer);
 
 impl ObjectRef {
+    pub fn header(&self) -> &ObjectHeader {
+        unsafe { self.cast::<Object>() }.header()
+    }
+
+    pub fn is_context(&self) -> bool {
+        self.header().class_index() == 36
+    }
+
     pub fn into_inner(self) -> RawObjectPointer {
         self.0
     }
@@ -217,6 +228,18 @@ impl AnyObjectRef {
         }
     }
 
+    pub fn amount_of_instance_variables(&self) -> usize {
+        self.as_object()
+            .map(|object| object.amount_of_slots())
+            .unwrap_or(0)
+    }
+
+    pub fn amount_of_indexable_units(&self) -> usize {
+        self.as_object()
+            .map(|object| object.amount_of_indexable_units())
+            .unwrap_or(0)
+    }
+
     pub fn as_immediate(&self) -> Result<Immediate> {
         Immediate::try_from(self.0)
     }
@@ -235,5 +258,20 @@ impl From<RawObjectPointer> for AnyObjectRef {
 impl From<Immediate> for AnyObjectRef {
     fn from(immediate: Immediate) -> Self {
         Self::from(RawObjectPointer::from(immediate.0))
+    }
+}
+
+impl PartialEq<Self> for AnyObjectRef {
+    fn eq(&self, other: &Self) -> bool {
+        self.as_i64() == other.as_i64()
+    }
+}
+
+impl Eq for AnyObjectRef {}
+
+
+impl Hash for AnyObjectRef {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.as_i64().hash(state);
     }
 }

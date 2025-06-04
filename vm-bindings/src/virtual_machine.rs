@@ -1,12 +1,13 @@
 use crate::bindings::{
     addressCouldBeClassObj, classArray, classExternalAddress, classString,
-    createNewMethodheaderbytecodeCount, ensureBehaviorHash, falseObject, fetchPointerofObject,
-    firstBytePointerOfDataObject, firstFixedField, firstIndexableField, getThisContext, hashBitsOf,
-    instVarofContext, instantiateClassindexableSize, instantiateClassindexableSizeisPinned,
-    instantiateClassisPinned, integerObjectOf, isOld, isOopForwarded, isYoung, methodArgumentCount,
-    methodReturnBool, methodReturnInteger, methodReturnValue, nilObject,
-    possibleOldObjectStoreInto, possiblePermObjectStoreIntovalue, primitiveFail, primitiveFailFor,
-    sqInt, stObjectat, stObjectatput, stSizeOf, stackIntegerValue, stackValue, trueObject,
+    createNewMethodheaderbytecodeCount, ensureBehaviorHash, falseObject, fetchClassOfNonImm,
+    fetchPointerofObject, firstBytePointerOfDataObject, firstFixedField, firstIndexableField,
+    getThisContext, hashBitsOf, instVarofContext, instantiateClassindexableSize,
+    instantiateClassindexableSizeisPinned, instantiateClassisPinned, integerObjectOf, isOld,
+    isOopForwarded, isYoung, methodArgumentCount, methodReturnBool, methodReturnInteger,
+    methodReturnValue, nilObject, possibleOldObjectStoreInto, possiblePermObjectStoreIntovalue,
+    primitiveFail, primitiveFailFor, sqInt, stContextSize, stObjectat, stObjectatput,
+    stSizeOf, stackIntegerValue, stackValue, trueObject,
 };
 use crate::prelude::NativeTransmutable;
 use crate::{ObjectFieldIndex, ObjectPointer, StackOffset};
@@ -369,7 +370,8 @@ impl Smalltalk {
 
     pub fn context_stack_length(context: ObjectRef) -> usize {
         let mut length = 1;
-        let nil_object = ObjectRef::try_from(RawObjectPointer::new(Self::nil_object().into_native())).unwrap();
+        let nil_object =
+            ObjectRef::try_from(RawObjectPointer::new(Self::nil_object().into_native())).unwrap();
 
         let mut sender = context;
         while sender != nil_object {
@@ -380,4 +382,26 @@ impl Smalltalk {
         length
     }
 
+    pub fn context_inst_var_at(context: ObjectRef, index: impl Into<ObjectFieldIndex>) -> AnyObjectRef {
+        AnyObjectRef::from(RawObjectPointer::new(unsafe {
+            instVarofContext(index.into().into_native(), context.into_inner().as_i64())
+        }))
+    }
+
+    pub fn context_size(context: ObjectRef) -> usize {
+        unsafe { stContextSize(context.into_inner().as_i64()) as usize }
+    }
+
+    pub fn context_at(context: ObjectRef, index: impl Into<ObjectFieldIndex>) -> AnyObjectRef {
+        AnyObjectRef::from(RawObjectPointer::new(unsafe {
+            stObjectat(context.into_inner().as_i64(), index.into().into_native())
+        }))
+    }
+
+    pub fn class_of_object(object: ObjectRef) -> ObjectRef {
+        ObjectRef::try_from(RawObjectPointer::new(unsafe {
+            fetchClassOfNonImm(object.into_inner().as_i64())
+        }))
+        .unwrap()
+    }
 }

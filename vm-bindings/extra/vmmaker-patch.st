@@ -33,6 +33,7 @@
     SpurMemoryManager >> #isYoung:.
     SpurMemoryManager >> #possibleOldObjectStoreInto:.
     SpurMemoryManager >> #possiblePermObjectStoreInto:value:.
+    SpurMemoryManager >> #fetchClassOfNonImm:.
 
     SpurMemoryManager >> #instantiateClass:isPinned:.
     SpurMemoryManager >> #instantiateClass:indexableSize:.
@@ -91,5 +92,13 @@ InterpreterPrimitives compile: 'createNewMethod: class header: header bytecodeCo
 			ofObject: theMethod
 			withValue: objectMemory nilObject ].
 	^ theMethod'.
+
+StackInterpreter compile: 'stContextSize: aContext
+    | sz |
+    <export: true>
+
+    self writeBackHeadFramePointers.
+    sz := self stackPointerForMaybeMarriedContext: aContext.
+    ^ sz'.
 
 Smalltalk snapshot: true andQuit: true

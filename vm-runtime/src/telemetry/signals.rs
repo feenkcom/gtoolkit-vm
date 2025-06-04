@@ -1,9 +1,11 @@
 use crate::assign_field;
+use crate::objects::{Array, ArrayRef};
 use std::ops::{Deref, DerefMut};
 use std::time::Duration;
 use vm_bindings::Smalltalk;
-use vm_object_model::{AnyObjectRef, Error, Immediate, Object, ObjectRef, RawObjectPointer, Result};
-use crate::objects::{Array, ArrayRef};
+use vm_object_model::{
+    AnyObjectRef, Error, Immediate, Object, ObjectRef, RawObjectPointer, Result,
+};
 
 #[repr(C)]
 pub struct PharoProcessSwitchSignal {
@@ -11,7 +13,7 @@ pub struct PharoProcessSwitchSignal {
     seconds: Immediate,
     nanos: Immediate,
     is_resumed: ObjectRef,
-    stack: ArrayRef
+    stack: ArrayRef,
 }
 
 impl PharoProcessSwitchSignal {
@@ -112,7 +114,8 @@ pub fn copy_stack(context: ObjectRef) -> ArrayRef {
     let stack_length = Smalltalk::context_stack_length(context);
     let mut array = Array::new(stack_length).unwrap();
 
-    let nil_object = ObjectRef::try_from(RawObjectPointer::new(Smalltalk::nil_object().as_i64())).unwrap();
+    let nil_object =
+        ObjectRef::try_from(RawObjectPointer::new(Smalltalk::nil_object().as_i64())).unwrap();
 
     let mut sender = context;
     let mut index = 0;
@@ -166,7 +169,7 @@ impl TryFrom<AnyObjectRef> for PharoProcessSwitchSignalRef {
                 expected: EXPECTED_AMOUNT_OF_SLOTS,
                 actual: actual_amount_of_slots,
             }
-                .into());
+            .into());
         }
 
         Ok(Self(object))
@@ -221,7 +224,7 @@ impl TryFrom<AnyObjectRef> for PharoProcessComputationSignalRef {
                 expected: EXPECTED_AMOUNT_OF_SLOTS,
                 actual: actual_amount_of_slots,
             }
-                .into());
+            .into());
         }
 
         Ok(Self(object))
@@ -233,7 +236,6 @@ impl From<PharoProcessComputationSignalRef> for AnyObjectRef {
         value.0.into()
     }
 }
-
 
 #[derive(Debug, Copy, Clone)]
 #[repr(transparent)]
@@ -277,7 +279,7 @@ impl TryFrom<AnyObjectRef> for PharoProcessContextSignalRef {
                 expected: EXPECTED_AMOUNT_OF_SLOTS,
                 actual: actual_amount_of_slots,
             }
-                .into());
+            .into());
         }
 
         Ok(Self(object))
@@ -332,7 +334,7 @@ impl TryFrom<AnyObjectRef> for PharoProcessSemaphoreWaitSignalRef {
                 expected: EXPECTED_AMOUNT_OF_SLOTS,
                 actual: actual_amount_of_slots,
             }
-                .into());
+            .into());
         }
 
         Ok(Self(object))
