@@ -3,7 +3,6 @@ use vm_object_model::{AnyObjectRef, Immediate, ObjectFormat, ObjectRef, RawObjec
 use crate::objects::Array;
 use crate::reference_finder::find_first_path_with_backlinks::find_paths_with_backlinks;
 use num_traits::Zero;
-use rayon::prelude::*;
 use std::fmt::Debug;
 use std::hash::Hash;
 use std::ops::BitAnd;
