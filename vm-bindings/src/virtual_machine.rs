@@ -197,6 +197,11 @@ impl Smalltalk {
 
     pub fn primitive_instantiate_class(class: ObjectPointer, is_pinned: bool) -> ObjectPointer {
         let is_pinned = if is_pinned { 1 } else { 0 };
+
+        if class.into_native() == 0 {
+            panic!("Class {:?} is a null pointer", class);
+        }
+
         let oop = unsafe { instantiateClassisPinned(class.into_native(), is_pinned) };
         if oop == 0 {
             panic!("Failed to instantiate Class {:?}. Not enough memory", class);
@@ -238,6 +243,9 @@ impl Smalltalk {
         size: usize,
         is_pinned: bool,
     ) -> ObjectPointer {
+        if class.into_native() == 0 {
+            panic!("Class {:?} is a null pointer", class);
+        }
         let is_pinned = if is_pinned { 1 } else { 0 };
         let oop = unsafe {
             instantiateClassindexableSizeisPinned(
@@ -246,6 +254,12 @@ impl Smalltalk {
                 is_pinned as sqInt,
             )
         };
+        if oop == 0 {
+            panic!(
+                "Failed to instantiate IndexableClass {:?} of size {:?}. Not enough memory",
+                class, size
+            );
+        }
         ObjectPointer::from_native_c(oop)
     }
 
@@ -279,6 +293,12 @@ impl Smalltalk {
                 is_pinned as sqInt,
             )
         };
+        if oop == 0 {
+            panic!(
+                "Failed to instantiate IndexableClass {:?} of size {:?}. Not enough memory",
+                class, size
+            );
+        }
         ObjectPointer::from_native_c(oop)
     }
 

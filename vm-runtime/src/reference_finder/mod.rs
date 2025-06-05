@@ -10,7 +10,8 @@ pub use object_iterator::*;
 pub use object_visitor::*;
 pub use reference_finder::*;
 use vm_bindings::{ObjectPointer, Smalltalk};
-use vm_object_model::{AnyObjectRef, ObjectRef};
+use vm_object_model::AnyObjectRef;
+use crate::assign_field;
 
 fn convert_referenced_object_paths(
     paths: Vec<Vec<ReferencedObject>>,
@@ -41,7 +42,6 @@ fn convert_referenced_object_path(
         .get(2)
         .ok_or_else(|| anyhow!("Context variable class is not defined"))?
         .as_object()?;
-
     let array_item_class = classes
         .get(3)
         .ok_or_else(|| anyhow!("Array item class is not defined"))?
@@ -57,6 +57,7 @@ fn convert_referenced_object_path(
         };
 
         let mut inst = Smalltalk::instantiate_class(inst_class).as_object()?;
+        Smalltalk::prepare_to_store(ObjectPointer::from(inst.as_ptr()), ObjectPointer::from(each.object().as_ptr()));
         inst.inst_var_at_put(0, each.object());
 
         array.insert(index, inst);
