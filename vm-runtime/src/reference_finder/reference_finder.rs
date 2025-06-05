@@ -122,7 +122,7 @@ impl ObjectVisitor for ReferenceFinder {
             self.paths.push(state.path_with(object));
 
             return if self.find_all_paths {
-                VisitorAction::Continue
+                VisitorAction::Skip
             } else {
                 VisitorAction::Stop
             };
