@@ -23,6 +23,25 @@ pub struct ObjectIterator {
     pub is_context: bool,
 }
 
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+pub enum ReferencedObject {
+    InstanceVariable(AnyObjectRef),
+    ContextVariable(AnyObjectRef),
+    ArrayItem(AnyObjectRef),
+    Root(AnyObjectRef),
+}
+
+impl ReferencedObject {
+    pub fn object(&self) -> AnyObjectRef {
+        match *self {
+            ReferencedObject::InstanceVariable(object) => object,
+            ReferencedObject::ContextVariable(object) => object,
+            ReferencedObject::ArrayItem(object) => object,
+            ReferencedObject::Root(object) => object,
+        }
+    }
+}
+
 impl ObjectIterator {
     pub fn new(oop: AnyObjectRef) -> Self {
         if let Ok(object) = oop.as_object() {
@@ -63,7 +82,7 @@ impl ObjectIterator {
 }
 
 impl Iterator for ObjectIterator {
-    type Item = AnyObjectRef;
+    type Item = ReferencedObject;
     fn next(&mut self) -> Option<Self::Item> {
         if let Ok(object) = self.object.as_object() {
             loop {
@@ -72,9 +91,9 @@ impl Iterator for ObjectIterator {
                 }
 
                 let next = if self.is_context {
-                    Smalltalk::context_inst_var_at(object, self.index)
+                    ReferencedObject::ContextVariable(Smalltalk::context_inst_var_at(object, self.index))
                 } else {
-                    object.inst_var_at(self.index).unwrap()
+                    ReferencedObject::InstanceVariable(object.inst_var_at(self.index).unwrap())
                 };
                 self.index += 1;
 
@@ -100,14 +119,14 @@ impl Iterator for ObjectIterator {
 
                 let index = self.index - self.amount_of_fixed_fields;
                 let next = if self.is_context {
-                    Smalltalk::context_at(object, index + 1)
+                    ReferencedObject::ContextVariable(Smalltalk::context_at(object, index + 1))
                 } else {
                     let var = Smalltalk::item_at(
                         ObjectPointer::from(self.object.as_ptr()),
                         (index + 1).into(),
                     );
                     let var_ptr = RawObjectPointer::from(var.as_i64());
-                    AnyObjectRef::from(var_ptr)
+                    ReferencedObject::ArrayItem(AnyObjectRef::from(var_ptr))
                 };
 
                 self.index += 1;

@@ -1,5 +1,8 @@
 use crate::objects::{Array, Association};
-use crate::reference_finder::{visit_objects, visit_unique_objects, visitor_next_objects, ObjectVisitor, VisitorAction, VisitorState};
+use crate::reference_finder::{
+    visit_unique_objects, visitor_next_objects, ObjectVisitor, ReferencedObject,
+    VisitorAction, VisitorState,
+};
 use std::collections::HashMap;
 use vm_bindings::{ObjectPointer, Smalltalk, StackOffset};
 use vm_object_model::{AnyObjectRef, Immediate, ObjectRef};
@@ -41,12 +44,16 @@ impl InstanceCounter {
 }
 
 impl ObjectVisitor for InstanceCounter {
-    fn next_objects(object: AnyObjectRef) -> impl Iterator<Item = AnyObjectRef> {
-        visitor_next_objects(object).filter(|each| !each.is_immediate())
+    fn next_objects(object: ReferencedObject) -> impl Iterator<Item = ReferencedObject> {
+        visitor_next_objects(object).filter(|each| !each.object().is_immediate())
     }
 
-    fn visit_referenced_object(&mut self, object: AnyObjectRef, _state: &VisitorState) -> VisitorAction {
-        if let Ok(object) = object.as_object() {
+    fn visit_referenced_object(
+        &mut self,
+        object: ReferencedObject,
+        _state: &VisitorState,
+    ) -> VisitorAction {
+        if let Ok(object) = object.object().as_object() {
             let class = Smalltalk::class_of_object(object);
             let entry = self.classes_map.entry(class).or_insert(0);
             *entry += 1;

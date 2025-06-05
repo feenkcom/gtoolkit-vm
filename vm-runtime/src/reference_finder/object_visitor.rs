@@ -1,14 +1,15 @@
-use crate::reference_finder::object_iterator::GraphNode;
+use crate::reference_finder::GraphNode;
 use std::collections::HashSet;
 use std::fmt::Debug;
 use std::hash::Hash;
 use std::rc::Rc;
 use vm_object_model::AnyObjectRef;
+use crate::reference_finder::ReferencedObject;
 
 #[inline]
 pub fn visit_referenced_object<V>(
     visitor: &mut V,
-    object: AnyObjectRef,
+    object: ReferencedObject,
     state: &VisitorState,
 ) -> VisitorAction
 where
@@ -18,25 +19,25 @@ where
 }
 
 #[inline]
-pub fn visitor_next_objects(object: AnyObjectRef) -> impl Iterator<Item = AnyObjectRef> {
-    object.neighbors()
+pub fn visitor_next_objects(object: ReferencedObject) -> impl Iterator<Item = ReferencedObject> {
+    object.object().neighbors()
 }
 
 pub trait ObjectVisitor {
     #[inline]
-    fn next_objects(object: AnyObjectRef) -> impl Iterator<Item = AnyObjectRef> {
+    fn next_objects(object: ReferencedObject) -> impl Iterator<Item = ReferencedObject> {
         visitor_next_objects(object)
     }
 
     #[inline]
-    fn visit_object(&mut self, _object: AnyObjectRef, _state: &VisitorState) -> VisitorAction {
+    fn visit_object(&mut self, _object: ReferencedObject, _state: &VisitorState) -> VisitorAction {
         VisitorAction::Continue
     }
 
     #[inline]
     fn visit_referenced_object(
         &mut self,
-        object: AnyObjectRef,
+        object: ReferencedObject,
         state: &VisitorState,
     ) -> VisitorAction
     where
@@ -56,6 +57,8 @@ pub enum VisitorAction {
 pub fn visit_objects<T: ObjectVisitor>(start: AnyObjectRef, visitor: &mut T) {
     let mut visited: HashSet<AnyObjectRef> = HashSet::new();
 
+    let start = ReferencedObject::Root(start);
+
     let root = VisitorState {
         node: start,
         parent: None,
@@ -74,7 +77,7 @@ pub fn visit_objects<T: ObjectVisitor>(start: AnyObjectRef, visitor: &mut T) {
     let mut buffer = vec![];
     let mut objects_left = vec![];
     objects_left.push(Rc::new(root));
-    visited.insert(start);
+    visited.insert(start.object());
 
     loop {
         buffer.clear();
@@ -92,7 +95,7 @@ pub fn visit_objects<T: ObjectVisitor>(start: AnyObjectRef, visitor: &mut T) {
             for neighbor in T::next_objects(state.node) {
                 match visitor.visit_referenced_object(neighbor, state) {
                     VisitorAction::Continue => {
-                        if visited.insert(neighbor) {
+                        if visited.insert(neighbor.object()) {
                             objects_left.push(Rc::new(VisitorState {
                                 node: neighbor,
                                 parent: Some(state.clone()),
@@ -118,6 +121,8 @@ pub fn visit_objects<T: ObjectVisitor>(start: AnyObjectRef, visitor: &mut T) {
 pub fn visit_unique_objects<T: ObjectVisitor>(start: AnyObjectRef, visitor: &mut T) {
     let mut visited: HashSet<AnyObjectRef> = HashSet::new();
 
+    let start = ReferencedObject::Root(start);
+
     let root = VisitorState {
         node: start,
         parent: None,
@@ -136,7 +141,7 @@ pub fn visit_unique_objects<T: ObjectVisitor>(start: AnyObjectRef, visitor: &mut
     let mut buffer = vec![];
     let mut objects_left = vec![];
     objects_left.push(Rc::new(root));
-    visited.insert(start);
+    visited.insert(start.object());
 
     loop {
         buffer.clear();
@@ -152,7 +157,7 @@ pub fn visit_unique_objects<T: ObjectVisitor>(start: AnyObjectRef, visitor: &mut
                 }
             }
             for neighbor in T::next_objects(state.node) {
-                if visited.insert(neighbor) {
+                if visited.insert(neighbor.object()) {
                     match visitor.visit_referenced_object(neighbor, state) {
                         VisitorAction::Continue => {
                             objects_left.push(Rc::new(VisitorState {
@@ -179,26 +184,26 @@ pub fn visit_unique_objects<T: ObjectVisitor>(start: AnyObjectRef, visitor: &mut
 
 #[derive(Clone, Debug)]
 pub struct VisitorState {
-    node: AnyObjectRef,
+    node: ReferencedObject,
     parent: Option<Rc<VisitorState>>,
 }
 
 impl VisitorState {
-    pub fn path(&self) -> Vec<AnyObjectRef> {
+    pub fn path(&self) -> Vec<ReferencedObject> {
         reconstruct_path(self, vec![])
     }
 
-    pub fn path_with(&self, object: AnyObjectRef) -> Vec<AnyObjectRef> {
+    pub fn path_with(&self, object: ReferencedObject) -> Vec<ReferencedObject> {
         reconstruct_path(self, vec![object])
     }
 
-    pub fn path_with_limited(&self, object: AnyObjectRef, len: usize) -> Vec<AnyObjectRef> {
+    pub fn path_with_limited(&self, object: ReferencedObject, len: usize) -> Vec<ReferencedObject> {
         reconstruct_path_limited(self, vec![object], len)
     }
 }
 
 /// Reconstruct path from backlinks
-fn reconstruct_path(mut frame: &VisitorState, mut path: Vec<AnyObjectRef>) -> Vec<AnyObjectRef> {
+fn reconstruct_path(mut frame: &VisitorState, mut path: Vec<ReferencedObject>) -> Vec<ReferencedObject> {
     loop {
         path.push(frame.node.clone());
         match &frame.parent {
@@ -212,9 +217,9 @@ fn reconstruct_path(mut frame: &VisitorState, mut path: Vec<AnyObjectRef>) -> Ve
 
 fn reconstruct_path_limited(
     mut frame: &VisitorState,
-    mut path: Vec<AnyObjectRef>,
+    mut path: Vec<ReferencedObject>,
     length: usize,
-) -> Vec<AnyObjectRef> {
+) -> Vec<ReferencedObject> {
     loop {
         if path.len() >= length {
             break;
