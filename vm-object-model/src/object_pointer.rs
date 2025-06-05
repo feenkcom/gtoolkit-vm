@@ -1,7 +1,7 @@
 use std::ffi::c_void;
 use std::ptr::{with_exposed_provenance, with_exposed_provenance_mut};
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 #[repr(transparent)]
 pub struct RawObjectPointer(i64);
 

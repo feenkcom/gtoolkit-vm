@@ -11,7 +11,7 @@ use std::thread::JoinHandle;
 use crate::objects::{Array, ArrayRef};
 #[cfg(feature = "pharo-compiler")]
 use crate::pharo_compiler::*;
-use crate::reference_finder::{primitiveReferenceFinderFindAllPaths, primitiveReferenceFinderFindPath, primitiveReferenceFinderGetNeighbours};
+use crate::reference_finder::{primitiveClassInstanceReferenceFinderFindAllPaths, primitiveInstanceCounterCountAll, primitiveReferenceFinderFindAllPaths, primitiveReferenceFinderFindPath, primitiveReferenceFinderGetNeighbours};
 use crate::version::{app_info, app_version};
 use crate::{
     log_signal, primitiveEnableLogSignal, primitiveGetEnabledLogSignals, primitivePollLogger,
@@ -132,6 +132,8 @@ impl VirtualMachine {
         vm.add_primitive(primitive!(primitiveReferenceFinderFindAllPaths));
         vm.add_primitive(primitive!(primitiveReferenceFinderFindPath));
         vm.add_primitive(primitive!(primitiveReferenceFinderGetNeighbours));
+        vm.add_primitive(primitive!(primitiveClassInstanceReferenceFinderFindAllPaths));
+        vm.add_primitive(primitive!(primitiveInstanceCounterCountAll));
 
         // debug
         vm.add_primitive(primitive!(primitiveDebugPrintArray));

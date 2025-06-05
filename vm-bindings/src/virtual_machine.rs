@@ -6,8 +6,8 @@ use crate::bindings::{
     instantiateClassindexableSizeisPinned, instantiateClassisPinned, integerObjectOf, isOld,
     isOopForwarded, isYoung, methodArgumentCount, methodReturnBool, methodReturnInteger,
     methodReturnValue, nilObject, possibleOldObjectStoreInto, possiblePermObjectStoreIntovalue,
-    primitiveFail, primitiveFailFor, sqInt, stContextSize, stObjectat, stObjectatput,
-    stSizeOf, stackIntegerValue, stackValue, trueObject,
+    primitiveFail, primitiveFailFor, sqInt, stContextSize, stObjectat, stObjectatput, stSizeOf,
+    stackIntegerValue, stackValue, trueObject,
 };
 use crate::prelude::NativeTransmutable;
 use crate::{ObjectFieldIndex, ObjectPointer, StackOffset};
@@ -198,6 +198,9 @@ impl Smalltalk {
     pub fn primitive_instantiate_class(class: ObjectPointer, is_pinned: bool) -> ObjectPointer {
         let is_pinned = if is_pinned { 1 } else { 0 };
         let oop = unsafe { instantiateClassisPinned(class.into_native(), is_pinned) };
+        if oop == 0 {
+            panic!("Failed to instantiate Class {:?}. Not enough memory", class);
+        }
         ObjectPointer::from_native_c(oop)
     }
 
@@ -221,6 +224,12 @@ impl Smalltalk {
         size: usize,
     ) -> ObjectPointer {
         let oop = unsafe { instantiateClassindexableSize(class.into_native(), size as sqInt) };
+        if oop == 0 {
+            panic!(
+                "Failed to instantiate IndexableClass {:?} of size {:?}. Not enough memory",
+                class, size
+            );
+        }
         ObjectPointer::from_native_c(oop)
     }
 
@@ -245,6 +254,7 @@ impl Smalltalk {
             ObjectPointer::from(class.into_inner().as_i64()),
             size,
         );
+
         AnyObjectRef::from(RawObjectPointer::from(pointer.into_native()))
     }
 
@@ -382,7 +392,10 @@ impl Smalltalk {
         length
     }
 
-    pub fn context_inst_var_at(context: ObjectRef, index: impl Into<ObjectFieldIndex>) -> AnyObjectRef {
+    pub fn context_inst_var_at(
+        context: ObjectRef,
+        index: impl Into<ObjectFieldIndex>,
+    ) -> AnyObjectRef {
         AnyObjectRef::from(RawObjectPointer::new(unsafe {
             instVarofContext(index.into().into_native(), context.into_inner().as_i64())
         }))
