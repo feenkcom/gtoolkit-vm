@@ -25,7 +25,7 @@ pub struct ObjectIterator {
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum ReferencedObject {
-    InstanceVariable(AnyObjectRef),
+    InstanceVariable(AnyObjectRef, usize),
     ContextVariable(AnyObjectRef),
     ArrayItem(AnyObjectRef),
     Root(AnyObjectRef),
@@ -34,7 +34,7 @@ pub enum ReferencedObject {
 impl ReferencedObject {
     pub fn object(&self) -> AnyObjectRef {
         match *self {
-            ReferencedObject::InstanceVariable(object) => object,
+            ReferencedObject::InstanceVariable(object, _) => object,
             ReferencedObject::ContextVariable(object) => object,
             ReferencedObject::ArrayItem(object) => object,
             ReferencedObject::Root(object) => object,
@@ -89,11 +89,10 @@ impl Iterator for ObjectIterator {
                 if self.index >= self.amount_of_fixed_fields {
                     break;
                 }
-
                 let next = if self.is_context {
                     ReferencedObject::ContextVariable(Smalltalk::context_inst_var_at(object, self.index))
                 } else {
-                    ReferencedObject::InstanceVariable(object.inst_var_at(self.index).unwrap())
+                    ReferencedObject::InstanceVariable(object.inst_var_at(self.index).unwrap(), self.index)
                 };
                 self.index += 1;
 

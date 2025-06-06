@@ -10,8 +10,20 @@ pub use object_iterator::*;
 pub use object_visitor::*;
 pub use reference_finder::*;
 use vm_bindings::{ObjectPointer, Smalltalk};
-use vm_object_model::AnyObjectRef;
-use crate::assign_field;
+use vm_object_model::Immediate;
+
+fn method_return_paths(paths: Vec<Vec<ReferencedObject>>, classes: ArrayRef) -> Result<(), anyhow::Error> {
+    let paths = convert_referenced_object_paths(paths, classes)?;
+    Smalltalk::method_return_value(ObjectPointer::from(paths.as_ptr()));
+    Ok(())
+}
+
+fn method_return_path(path: Vec<ReferencedObject>, classes: ArrayRef) -> Result<(), anyhow::Error> {
+    let paths = convert_referenced_object_path(path, classes)?;
+    Smalltalk::method_return_value(ObjectPointer::from(paths.as_ptr()));
+    Ok(())
+}
+
 
 fn convert_referenced_object_paths(
     paths: Vec<Vec<ReferencedObject>>,
@@ -49,14 +61,17 @@ fn convert_referenced_object_path(
 
     let mut array = Array::new(path.len())?;
     for (index, each) in path.into_iter().enumerate() {
-        let inst_class = match each {
-            ReferencedObject::InstanceVariable(_) => instance_variable_class,
-            ReferencedObject::ContextVariable(_) => context_variable_class,
-            ReferencedObject::ArrayItem(_) => array_item_class,
-            ReferencedObject::Root(_) => root_class,
+        let mut inst = match each {
+            ReferencedObject::InstanceVariable(_, index) => {
+                let mut referenced_object = Smalltalk::instantiate_class(instance_variable_class).as_object()?;
+                referenced_object.inst_var_at_put(1, Immediate::new_u64(index as u64));
+                referenced_object
+            },
+            ReferencedObject::ContextVariable(_) => Smalltalk::instantiate_class(context_variable_class).as_object()?,
+            ReferencedObject::ArrayItem(_) => Smalltalk::instantiate_class(array_item_class).as_object()?,
+            ReferencedObject::Root(_) => Smalltalk::instantiate_class(root_class).as_object()?,
         };
 
-        let mut inst = Smalltalk::instantiate_class(inst_class).as_object()?;
         Smalltalk::prepare_to_store(ObjectPointer::from(inst.as_ptr()), ObjectPointer::from(each.object().as_ptr()));
         inst.inst_var_at_put(0, each.object());
 
@@ -64,26 +79,4 @@ fn convert_referenced_object_path(
     }
 
     Ok(array)
-}
-
-fn method_return_path(path: Vec<ReferencedObject>) {
-    let mut array = Array::new(path.len()).unwrap();
-    for (index, each) in path.iter().enumerate() {
-        array.insert(index, each.object());
-    }
-
-    Smalltalk::method_return_value(ObjectPointer::from(array.as_ptr()));
-}
-
-fn method_return_paths(paths: Vec<Vec<AnyObjectRef>>) {
-    let mut paths_array = Array::new(paths.len()).unwrap();
-    for (path_index, path) in paths.iter().enumerate() {
-        let mut path_array = Array::new(path.len()).unwrap();
-        for (obj_index, obj) in path.iter().enumerate() {
-            path_array.insert(obj_index, *obj);
-        }
-        paths_array.insert(path_index, path_array);
-    }
-
-    Smalltalk::method_return_value(ObjectPointer::from(paths_array.as_ptr()));
 }

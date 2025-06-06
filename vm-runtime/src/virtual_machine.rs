@@ -11,7 +11,7 @@ use std::thread::JoinHandle;
 use crate::objects::{Array, ArrayRef};
 #[cfg(feature = "pharo-compiler")]
 use crate::pharo_compiler::*;
-use crate::reference_finder::{primitiveClassInstanceReferenceFinderFindAllPaths, primitiveInstanceCounterCountAll, primitiveReferenceFinderFindAllPaths, primitiveReferenceFinderFindPath, primitiveReferenceFinderGetNeighbours};
+use crate::reference_finder::{primitiveClassInstanceReferenceFinderFindAllPaths, primitiveClassInstanceReferenceFinderFindPath, primitiveInstanceCounterCountAll, primitiveReferenceFinderFindAllPaths, primitiveReferenceFinderFindPath, primitiveReferenceFinderGetNeighbours};
 use crate::version::{app_info, app_version};
 use crate::{
     log_signal, primitiveEnableLogSignal, primitiveGetEnabledLogSignals, primitivePollLogger,
@@ -129,10 +129,11 @@ impl VirtualMachine {
         vm.add_primitive(primitive!(primitiveStopTelemetry));
 
         // reference finder
-        vm.add_primitive(primitive!(primitiveReferenceFinderFindAllPaths));
-        vm.add_primitive(primitive!(primitiveReferenceFinderFindPath));
-        vm.add_primitive(primitive!(primitiveReferenceFinderGetNeighbours));
-        vm.add_primitive(primitive!(primitiveClassInstanceReferenceFinderFindAllPaths));
+        vm.add_primitive(try_primitive!(primitiveReferenceFinderFindAllPaths));
+        vm.add_primitive(try_primitive!(primitiveReferenceFinderFindPath));
+        vm.add_primitive(try_primitive!(primitiveReferenceFinderGetNeighbours));
+        vm.add_primitive(try_primitive!(primitiveClassInstanceReferenceFinderFindAllPaths));
+        vm.add_primitive(try_primitive!(primitiveClassInstanceReferenceFinderFindPath));
         vm.add_primitive(primitive!(primitiveInstanceCounterCountAll));
 
         // debug

@@ -17,6 +17,28 @@ macro_rules! primitive {
     };
 }
 
+#[macro_export]
+macro_rules! try_primitive {
+    ($func_name:ident) => {
+        paste::item! {
+            {
+                #[no_mangle]
+                #[allow(non_snake_case)]
+                pub extern "C" fn [< try_ $func_name >]() {
+                    $func_name().unwrap_or_else(|error| {
+                        error!("{}", error);
+                        Smalltalk::primitive_fail()
+                    });
+                }
+                NamedPrimitive::new()
+                    .with_plugin_name("")
+                    .with_primitive_name(concat!(stringify!($func_name)))
+                    .with_primitive_address([< try_ $func_name >] as *const std::os::raw::c_void)
+            }
+        }
+    };
+}
+
 impl NamedPrimitive {
     pub fn new() -> Self {
         Self::from_native_c(sqExport::new())

@@ -1,70 +1,62 @@
 use std::collections::HashSet;
-use std::error::Error;
 use vm_object_model::{AnyObjectRef, ObjectRef};
 
-use crate::objects::{Array, ArrayRef};
+use crate::objects::ArrayRef;
 use crate::reference_finder::object_iterator::GraphNode;
 use crate::reference_finder::{
-    convert_referenced_object_paths, method_return_path, method_return_paths, visit_objects,
-    visitor_next_objects, ObjectVisitor, ReferencedObject, VisitorAction, VisitorState,
+    method_return_path, method_return_paths, visit_objects, visitor_next_objects, ObjectVisitor,
+    ReferencedObject, VisitorAction, VisitorState,
 };
-use anyhow::anyhow;
 use std::fmt::Debug;
 use std::hash::Hash;
-use vm_bindings::{ObjectPointer, Smalltalk, StackOffset};
+use vm_bindings::{Smalltalk, StackOffset};
 
-#[no_mangle]
 #[allow(non_snake_case)]
-pub fn primitiveReferenceFinderFindAllPaths() {
-    fn find_all_path() -> Result<(), anyhow::Error> {
-        let classes = ArrayRef::try_from(Smalltalk::stack_ref(StackOffset::new(0)))?;
-        let start_obj = Smalltalk::stack_ref(StackOffset::new(1));
-        let target_obj = Smalltalk::stack_ref(StackOffset::new(2));
+pub extern "C" fn primitiveReferenceFinderFindAllPaths() -> Result<(), anyhow::Error> {
+    let classes = ArrayRef::try_from(Smalltalk::stack_ref(StackOffset::new(0)))?;
+    let start_obj = Smalltalk::stack_ref(StackOffset::new(1));
+    let target_obj = Smalltalk::stack_ref(StackOffset::new(2));
 
-        let paths = ReferenceFinder::find_all_paths(start_obj, target_obj);
-        let paths = convert_referenced_object_paths(paths, classes)?;
-
-        Smalltalk::method_return_value(ObjectPointer::from(paths.as_ptr()));
-        Ok(())
-    }
-
-    find_all_path().unwrap_or_else(|error| error!("{}", error));
+    let paths = ReferenceFinder::find_all_paths(start_obj, target_obj);
+    method_return_paths(paths, classes)
 }
 
-#[no_mangle]
 #[allow(non_snake_case)]
-pub fn primitiveReferenceFinderFindPath() {
-    let start_obj = Smalltalk::stack_ref(StackOffset::new(0));
-    let target_obj = Smalltalk::stack_ref(StackOffset::new(1));
+pub fn primitiveReferenceFinderFindPath() -> Result<(), anyhow::Error> {
+    let classes = ArrayRef::try_from(Smalltalk::stack_ref(StackOffset::new(0)))?;
+    let start_obj = Smalltalk::stack_ref(StackOffset::new(1));
+    let target_obj = Smalltalk::stack_ref(StackOffset::new(2));
 
     let path = ReferenceFinder::find_path(start_obj, target_obj).unwrap_or(vec![]);
-    method_return_path(path);
+    method_return_path(path, classes)
 }
 
-#[no_mangle]
 #[allow(non_snake_case)]
-pub fn primitiveReferenceFinderGetNeighbours() {
-    let start_obj = Smalltalk::stack_ref(StackOffset::new(0));
-    method_return_path(start_obj.neighbors().collect());
+pub fn primitiveReferenceFinderGetNeighbours() -> Result<(), anyhow::Error> {
+    let classes = ArrayRef::try_from(Smalltalk::stack_ref(StackOffset::new(0)))?;
+    let start_obj = Smalltalk::stack_ref(StackOffset::new(1));
+    method_return_path(start_obj.neighbors().collect(), classes)
 }
 
-#[no_mangle]
 #[allow(non_snake_case)]
-pub fn primitiveClassInstanceReferenceFinderFindAllPaths() {
-    fn find_all_path() -> Result<(), anyhow::Error> {
-        let target_class = Smalltalk::stack_ref(StackOffset::new(3)).as_object()?;
-        let start_obj = Smalltalk::stack_ref(StackOffset::new(2));
-        let path_len = Smalltalk::stack_integer_value(StackOffset::new(1)) as usize;
-        let classes = ArrayRef::try_from(Smalltalk::stack_ref(StackOffset::new(0)))?;
+pub fn primitiveClassInstanceReferenceFinderFindAllPaths() -> Result<(), anyhow::Error> {
+    let target_class = Smalltalk::stack_ref(StackOffset::new(3)).as_object()?;
+    let start_obj = Smalltalk::stack_ref(StackOffset::new(2));
+    let path_len = Smalltalk::stack_integer_value(StackOffset::new(1)) as usize;
+    let classes = ArrayRef::try_from(Smalltalk::stack_ref(StackOffset::new(0)))?;
 
-        let paths = ClassInstanceReferenceFinder::find_all_paths(start_obj, target_class, path_len);
-        let paths = convert_referenced_object_paths(paths, classes)?;
+    let paths = ClassInstanceReferenceFinder::find_all_paths(start_obj, target_class, path_len);
+    method_return_paths(paths, classes)
+}
 
-        Smalltalk::method_return_value(ObjectPointer::from(paths.as_ptr()));
-        Ok(())
-    }
+#[allow(non_snake_case)]
+pub fn primitiveClassInstanceReferenceFinderFindPath() -> Result<(), anyhow::Error> {
+    let target_class = Smalltalk::stack_ref(StackOffset::new(2)).as_object()?;
+    let start_obj = Smalltalk::stack_ref(StackOffset::new(1));
+    let classes = ArrayRef::try_from(Smalltalk::stack_ref(StackOffset::new(0)))?;
 
-    find_all_path().unwrap_or_else(|error| error!("{}", error));
+    let paths = ClassInstanceReferenceFinder::find_path(start_obj, target_class).unwrap_or(vec![]);
+    method_return_path(paths, classes)
 }
 
 pub struct ReferenceFinder {
@@ -123,6 +115,7 @@ impl ObjectVisitor for ReferenceFinder {
 pub struct ClassInstanceReferenceFinder {
     class: ObjectRef,
     path_len: usize,
+    find_all_paths: bool,
     paths: HashSet<Vec<ReferencedObject>>,
 }
 
@@ -135,10 +128,26 @@ impl ClassInstanceReferenceFinder {
         let mut finder = Self {
             class,
             path_len,
+            find_all_paths: true,
             paths: Default::default(),
         };
         visit_objects(start, &mut finder);
         finder.paths.into_iter().collect()
+    }
+
+    pub fn find_path(start: AnyObjectRef, class: ObjectRef) -> Option<Vec<ReferencedObject>> {
+        let mut finder = Self {
+            class,
+            path_len: 0,
+            find_all_paths: false,
+            paths: Default::default(),
+        };
+        visit_objects(start, &mut finder);
+        finder
+            .paths
+            .into_iter()
+            .collect::<Vec<Vec<ReferencedObject>>>()
+            .pop()
     }
 }
 
@@ -155,8 +164,14 @@ impl ObjectVisitor for ClassInstanceReferenceFinder {
         if let Ok(this_object) = object.object().as_object() {
             let class = Smalltalk::class_of_object(this_object);
             if class == self.class {
-                self.paths
-                    .insert(state.path_with_limited(object, self.path_len));
+                return if self.find_all_paths {
+                    self.paths
+                        .insert(state.path_with_limited(object, self.path_len));
+                    VisitorAction::Skip
+                } else {
+                    self.paths.insert(state.path_with(object));
+                    VisitorAction::Stop
+                };
             }
         }
         VisitorAction::Continue
