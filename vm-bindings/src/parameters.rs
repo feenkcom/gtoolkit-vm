@@ -235,6 +235,7 @@ impl Default for InterpreterParameters {
             maxCodeSize: 0,
             edenSize: 0,
             minPermSpaceSize: 0,
+            maxSlotsForNewSpaceAlloc: 0,
             processArgc: 0,
             processArgv: std::ptr::null_mut(),
             environmentVector: std::ptr::null_mut(),
