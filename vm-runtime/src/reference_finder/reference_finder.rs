@@ -17,7 +17,12 @@ pub extern "C" fn primitiveReferenceFinderFindAllPaths() -> Result<(), anyhow::E
     let start_obj = Smalltalk::stack_ref(StackOffset::new(1));
     let target_obj = Smalltalk::stack_ref(StackOffset::new(2));
 
-    let paths = ReferenceFinder::find_all_paths(start_obj, target_obj);
+    let classes_to_ignore: Result<Vec<_>, _> =
+        classes.iter().map(|each| each.as_object()).collect();
+    let paths = ReferenceFinder::new(target_obj)
+        .with_all_paths(true)
+        .with_ignored_classes(classes_to_ignore?)
+        .find(start_obj);
     method_return_paths(paths, classes)
 }
 
@@ -27,7 +32,14 @@ pub fn primitiveReferenceFinderFindPath() -> Result<(), anyhow::Error> {
     let start_obj = Smalltalk::stack_ref(StackOffset::new(1));
     let target_obj = Smalltalk::stack_ref(StackOffset::new(2));
 
-    let path = ReferenceFinder::find_path(start_obj, target_obj).unwrap_or(vec![]);
+    let classes_to_ignore: Result<Vec<_>, _> =
+        classes.iter().map(|each| each.as_object()).collect();
+    let path = ReferenceFinder::new(target_obj)
+        .with_all_paths(false)
+        .with_ignored_classes(classes_to_ignore?)
+        .find(start_obj)
+        .pop()
+        .unwrap_or(vec![]);
     method_return_path(path, classes)
 }
 
@@ -62,28 +74,41 @@ pub fn primitiveClassInstanceReferenceFinderFindPath() -> Result<(), anyhow::Err
 pub struct ReferenceFinder {
     target: AnyObjectRef,
     find_all_paths: bool,
+    classes_to_ignore: HashSet<ObjectRef>,
     paths: Vec<Vec<ReferencedObject>>,
 }
 
 impl ReferenceFinder {
-    pub fn find_path(start: AnyObjectRef, target: AnyObjectRef) -> Option<Vec<ReferencedObject>> {
-        let mut finder = Self {
+    pub fn new(target: AnyObjectRef) -> Self {
+        Self {
             target,
             find_all_paths: false,
             paths: vec![],
-        };
-        visit_objects(start, &mut finder);
-        finder.paths.pop()
+            classes_to_ignore: Default::default(),
+        }
+    }
+
+    pub fn find_path(start: AnyObjectRef, target: AnyObjectRef) -> Option<Vec<ReferencedObject>> {
+        Self::new(target).find(start).pop()
     }
 
     pub fn find_all_paths(start: AnyObjectRef, target: AnyObjectRef) -> Vec<Vec<ReferencedObject>> {
-        let mut finder = Self {
-            target,
-            find_all_paths: true,
-            paths: vec![],
-        };
-        visit_objects(start, &mut finder);
-        finder.paths
+        Self::new(target).with_all_paths(true).find(start)
+    }
+
+    pub fn with_all_paths(mut self, find_all_paths: bool) -> Self {
+        self.find_all_paths = find_all_paths;
+        self
+    }
+
+    pub fn with_ignored_classes<T: IntoIterator<Item = ObjectRef>>(mut self, classes: T) -> Self {
+        self.classes_to_ignore.extend(classes);
+        self
+    }
+
+    pub fn find(mut self, start: AnyObjectRef) -> Vec<Vec<ReferencedObject>> {
+        visit_objects(start, &mut self);
+        self.paths
     }
 }
 
@@ -99,9 +124,19 @@ impl ObjectVisitor for ReferenceFinder {
         object: ReferencedObject,
         state: &VisitorState,
     ) -> VisitorAction {
+        if !self.classes_to_ignore.is_empty() {
+            if let Ok(object) = object.object().as_object() {
+                if self
+                    .classes_to_ignore
+                    .contains(&Smalltalk::class_of_object(object))
+                {
+                    return VisitorAction::Skip;
+                }
+            }
+        }
+
         if object.object() == self.target {
             self.paths.push(state.path_with(object));
-
             return if self.find_all_paths {
                 VisitorAction::Skip
             } else {
