@@ -15,7 +15,9 @@ pipeline {
     options {
         buildDiscarder(logRotator(numToKeepStr: '50'))
         disableConcurrentBuilds()
-        slackSend(color: '#FFFF00', message: ("Started <${env.BUILD_URL}|${env.JOB_NAME} [${env.BUILD_NUMBER}]>"))
+        script {
+            slackSend(color: '#FFFF00', message: ("Started <${env.BUILD_URL}|${env.JOB_NAME} [${env.BUILD_NUMBER}]>"))
+        }
     }
     environment {
         GITHUB_TOKEN = credentials('githubrelease')
@@ -531,10 +533,14 @@ pipeline {
 
     post {
         success {
-            slackSend(color: '#00FF00', message: "Successful <${env.BUILD_URL}|${env.JOB_NAME} [${env.BUILD_NUMBER}]>")
+            script {
+                slackSend(color: '#00FF00', message: "Successful <${env.BUILD_URL}|${env.JOB_NAME} [${env.BUILD_NUMBER}]>")
+            }
         }
         failure {
-            slackSend(color: '#FF0000', message: "Failed  <${env.BUILD_URL}/consoleFull|${env.JOB_NAME} [${env.BUILD_NUMBER}]>")
+            script {
+                slackSend(color: '#FF0000', message: "Failed  <${env.BUILD_URL}/consoleFull|${env.JOB_NAME} [${env.BUILD_NUMBER}]>")
+            }
         }
     }
 }
