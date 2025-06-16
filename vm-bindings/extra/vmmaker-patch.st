@@ -107,7 +107,7 @@ CogAbstractInstruction compile: 'unalignedLongAt: byteAddress put: aWord
 
     ^ objectMemory unalignedLongAt: byteAddress put: aWord'.
 
-CogX64Compiler compile: 'unalignedLong32At: byteAddress put: aWord [
+CogX64Compiler compile: 'unalignedLong32At: byteAddress put: aWord
 	<cmacro: ''(inst,byteAddress,aWord) memcpy((char*)byteAddress, &aWord, sizeof(int32_t))''>
 
 	objectMemory
