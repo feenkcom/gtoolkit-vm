@@ -101,4 +101,20 @@ StackInterpreter compile: 'stContextSize: aContext
     sz := self stackPointerForMaybeMarriedContext: aContext.
     ^ sz'.
 
+
+CogAbstractInstruction compile: 'unalignedLongAt: byteAddress put: aWord
+    <cmacro: ''(byteAddress,aWord) memcpy((char*)byteAddress, &aWord, sizeof(sqInt))''>
+
+    ^ objectMemory unalignedLongAt: byteAddress put: aWord'.
+
+CogX64Compiler compile: 'unalignedLong32At: byteAddress put: aWord [
+	<cmacro: ''(inst,byteAddress,aWord) memcpy((char*)byteAddress, &aWord, sizeof(int32_t))''>
+
+	objectMemory
+		byteAt: byteAddress + 0 put:  (aWord bitAnd: 16rFF);
+		byteAt: byteAddress + 1 put: ((aWord >> 8) bitAnd: 16rFF);
+		byteAt: byteAddress + 2 put: ((aWord >> 16) bitAnd: 16rFF);
+		byteAt: byteAddress + 3 put: ((aWord >> 24) bitAnd: 16rFF).
+	^aWord'.
+
 Smalltalk snapshot: true andQuit: true
