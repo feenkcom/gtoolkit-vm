@@ -15,6 +15,7 @@ pipeline {
     options {
         buildDiscarder(logRotator(numToKeepStr: '50'))
         disableConcurrentBuilds()
+        slackSend(color: '#FFFF00', message: ("Started <${env.BUILD_URL}|${env.JOB_NAME} [${env.BUILD_NUMBER}]>"))
     }
     environment {
         GITHUB_TOKEN = credentials('githubrelease')
@@ -169,10 +170,6 @@ pipeline {
                                     ${APP_NAME}-${TARGET}.app.zip
                                """
                         }
-
-//                        sh """
-//                           xcrun altool -t osx -f ${APP_NAME}-${TARGET}.app.zip -itc_provider "77664ZXL29" --primary-bundle-id "com.feenk.gtoolkit-vm-x86-64" --notarize-app --verbose  --username "notarization@feenk.com" --password "${APPLEPASSWORD}"
-//                           """
                         stash includes: "${APP_NAME}-${TARGET}.app.zip", name: "${TARGET}"
                     }
                 }
@@ -243,10 +240,6 @@ pipeline {
                                     ${APP_NAME}-${TARGET}.app.zip
                                """
                         }
-
-//                        sh """
-//                           xcrun altool -t osx -f ${APP_NAME}-${TARGET}.app.zip -itc_provider "77664ZXL29" --primary-bundle-id "com.feenk.gtoolkit-vm-aarch64" --notarize-app --verbose  --username "notarization@feenk.com" --password "${APPLEPASSWORD}"
-//                           """
                         stash includes: "${APP_NAME}-${TARGET}.app.zip", name: "${TARGET}"
                     }
                 }
@@ -533,6 +526,15 @@ pipeline {
                         ${APP_NAME}-${WINDOWS_AMD64_TARGET}.zip \
                         ${APP_NAME}-${WINDOWS_ARM64_TARGET}.zip """
             }
+        }
+    }
+
+    post {
+        success {
+            slackSend(color: '#00FF00', message: "Successful <${env.BUILD_URL}|${env.JOB_NAME} [${env.BUILD_NUMBER}]>")
+        }
+        failure {
+            slackSend(color: '#FF0000', message: "Failed  <${env.BUILD_URL}/consoleFull|${env.JOB_NAME} [${env.BUILD_NUMBER}]>")
         }
     }
 }
