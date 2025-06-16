@@ -15,9 +15,6 @@ pipeline {
     options {
         buildDiscarder(logRotator(numToKeepStr: '50'))
         disableConcurrentBuilds()
-        script {
-            slackSend(color: '#FFFF00', message: ("Started <${env.BUILD_URL}|${env.JOB_NAME} [${env.BUILD_NUMBER}]>"))
-        }
     }
     environment {
         GITHUB_TOKEN = credentials('githubrelease')
@@ -51,6 +48,13 @@ pipeline {
     }
 
     stages {
+        stage('Pre-Build Hook') {
+            steps {
+                script {
+                    slackSend(color: '#FFFF00', message: ("Started <${env.BUILD_URL}|${env.JOB_NAME} [${env.BUILD_NUMBER}]>"))
+                }
+            }
+        }
         stage('Clean workspace') {
             agent any
             when { expression { return env.CLEANUP_WORKSPACE } }
