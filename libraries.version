@@ -8,7 +8,7 @@
   "Process": "v0.32.0",
   "Skia": "v0.38.1",
   "Winit": "v0.40.0",
-  "Winit30": "v0.15.0",
+  "Winit30": "v0.16.0",
   "WebView": "v0.13.0",
   "Cairo": "v0.3.0",
   "Crypto": "v0.7.0",
