@@ -157,12 +157,19 @@ fn main() {
         .get_one::<WorkerThreadMode>("MODE")
         .unwrap_or_else(|| &WorkerThreadMode::Auto);
 
+    let should_run_in_worker_thread = worker_mode.should_run_in_worker_thread();
+    let should_have_interactive_session = matches.get_flag("interactive");
+
+    if should_have_interactive_session && !should_run_in_worker_thread {
+        panic!("An interactive mode requires running VM in a worker thread");
+    }
+
     let mut interpreter_configuration = InterpreterConfiguration::new(image_path);
-    interpreter_configuration.set_interactive_session(matches.get_flag("interactive"));
+    interpreter_configuration.set_interactive_session(should_have_interactive_session);
     interpreter_configuration.set_should_avoid_searching_segments_with_pinned_objects(
         matches.get_flag("should-avoid-searching-segments-with-pinned-objects"),
     );
-    interpreter_configuration.set_is_worker_thread(worker_mode.should_run_in_worker_thread());
+    interpreter_configuration.set_is_worker_thread(should_run_in_worker_thread);
     interpreter_configuration
         .set_should_print_stack_on_signals(matches.get_flag("print-stack-on-signals"));
     interpreter_configuration.set_extra_arguments(extra_args);
