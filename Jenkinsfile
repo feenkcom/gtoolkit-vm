@@ -29,10 +29,10 @@ pipeline {
 
         APP_NAME = 'GlamorousToolkit'
         APP_IDENTIFIER = 'com.gtoolkit'
-        APP_LIBRARIES =              'boxer clipboard filewatcher gleam glutin pixels process skia webview winit winit30 test-library cairo crypto freetype git sdl2 ssl'
-        LINUX_APP_LIBRARIES_AMD =    'boxer clipboard filewatcher gleam glutin pixels process skia webview winit winit30 test-library cairo crypto freetype git sdl2 ssl'
-        LINUX_APP_LIBRARIES_ARM =    '      clipboard filewatcher gleam glutin pixels process skia webview winit winit30 test-library       crypto freetype git      ssl'
-        WINDOWS_APP_LIBRARIES_ARM =  'boxer clipboard filewatcher gleam        pixels process skia webview winit winit30 test-library       crypto freetype git sdl2 ssl'
+        APP_LIBRARIES =              'clipboard filewatcher gleam glutin pixels process skia webview winit winit30 test-library cairo crypto freetype git sdl2 ssl'
+        LINUX_APP_LIBRARIES_AMD =    'clipboard filewatcher gleam glutin pixels process skia webview winit winit30 test-library cairo crypto freetype git sdl2 ssl'
+        LINUX_APP_LIBRARIES_ARM =    'clipboard filewatcher gleam glutin pixels process skia webview winit winit30 test-library       crypto freetype git      ssl'
+        WINDOWS_APP_LIBRARIES_ARM =  'clipboard filewatcher gleam        pixels process skia webview winit winit30 test-library       crypto freetype git sdl2 ssl'
         APP_LIBRARIES_VERSIONS = 'libraries.version'
         APP_AUTHOR = '"feenk gmbh <contact@feenk.com>"'
 
