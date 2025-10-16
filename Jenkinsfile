@@ -553,11 +553,11 @@ pipeline {
 
                     def assets = [
                         "${APP_NAME}-${LINUX_AMD64_TARGET}${build_type.suffix}.zip",
-                        "${APP_NAME}-${LINUX_ARM64_TARGET}${build_type.suffix}.zip"
-                        "${APP_NAME}-${MACOS_INTEL_TARGET}${build_type.suffix}.app.zip"
-                        "${APP_NAME}-${MACOS_M1_TARGET}${build_type.suffix}.app.zip"
-                        "${APP_NAME}-${ANDROID_ARM64_TARGET}${build_type.suffix}.apk"
-                        "${APP_NAME}-${WINDOWS_AMD64_TARGET}${build_type.suffix}.zip"
+                        "${APP_NAME}-${LINUX_ARM64_TARGET}${build_type.suffix}.zip",
+                        "${APP_NAME}-${MACOS_INTEL_TARGET}${build_type.suffix}.app.zip",
+                        "${APP_NAME}-${MACOS_M1_TARGET}${build_type.suffix}.app.zip",
+                        "${APP_NAME}-${ANDROID_ARM64_TARGET}${build_type.suffix}.apk",
+                        "${APP_NAME}-${WINDOWS_AMD64_TARGET}${build_type.suffix}.zip",
                         "${APP_NAME}-${WINDOWS_ARM64_TARGET}${build_type.suffix}.zip"
                     ]
 
