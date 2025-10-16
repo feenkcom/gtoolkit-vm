@@ -1,7 +1,7 @@
 use crate::bindings::sqExport;
 
 use crate::prelude::{Handle, NativeAccess, NativeClone, NativeDrop};
-use std::ffi::{CStr, CString};
+use std::ffi::{CStr, CString, FromVecWithNulError};
 use std::fmt::{Debug, Formatter};
 use std::os::raw::{c_char, c_void};
 
@@ -10,10 +10,17 @@ pub type NamedPrimitive = Handle<sqExport>;
 #[macro_export]
 macro_rules! primitive {
     ($func_name:ident) => {
-        NamedPrimitive::new()
-            .with_plugin_name("")
-            .with_primitive_name(stringify!($func_name))
-            .with_primitive_address($func_name as *const std::os::raw::c_void)
+        {
+            let mut primitive_name = Vec::new();
+            primitive_name.extend_from_slice(stringify!($func_name).as_bytes());
+            // spur embeds accessorDepth after a primitive name
+            primitive_name.extend_from_slice(b"\x00\xff");
+
+            NamedPrimitive::new()
+                .with_plugin_name("")
+                .with_primitive_name_bytes(primitive_name)
+                .with_primitive_address($func_name as *const std::os::raw::c_void)
+        }
     };
 }
 
@@ -65,6 +72,11 @@ impl NamedPrimitive {
 
     pub fn with_primitive_name(mut self, name: impl Into<String>) -> Self {
         self.native_mut().set_primitive_name(name.into());
+        self
+    }
+
+    pub fn with_primitive_name_bytes(mut self, name: impl Into<Vec<u8>>) -> Self {
+        self.native_mut().set_primitive_name_bytes(name);
         self
     }
 
@@ -138,6 +150,16 @@ impl sqExport {
         drop(previous_name);
 
         let primitive_name = CString::new(name).unwrap();
+        let primitive_name_ptr = primitive_name.as_ptr() as *mut c_char;
+        std::mem::forget(primitive_name);
+        self.primitiveName = primitive_name_ptr;
+    }
+
+    fn set_primitive_name_bytes(&mut self, name: impl Into<Vec<u8>>) {
+        let previous_name = self.take_primitive_name();
+        drop(previous_name);
+
+        let primitive_name = unsafe { CString::from_vec_with_nul_unchecked(name.into()) };
         let primitive_name_ptr = primitive_name.as_ptr() as *mut c_char;
         std::mem::forget(primitive_name);
         self.primitiveName = primitive_name_ptr;

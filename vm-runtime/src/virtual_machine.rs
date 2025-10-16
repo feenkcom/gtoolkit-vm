@@ -11,7 +11,12 @@ use std::thread::JoinHandle;
 use crate::objects::{Array, ArrayRef};
 #[cfg(feature = "pharo-compiler")]
 use crate::pharo_compiler::*;
-use crate::reference_finder::{primitiveClassInstanceReferenceFinderFindAllPaths, primitiveClassInstanceReferenceFinderFindPath, primitiveInstanceCounterCountAll, primitiveReferenceFinderFindAllPaths, primitiveReferenceFinderFindPath, primitiveReferenceFinderGetNeighbours};
+use crate::reference_finder::{
+    primitiveClassInstanceReferenceFinderFindAllPaths,
+    primitiveClassInstanceReferenceFinderFindPath, primitiveInstanceCounterCountAll,
+    primitiveReferenceFinderFindAllPaths, primitiveReferenceFinderFindPath,
+    primitiveReferenceFinderGetNeighbours,
+};
 use crate::version::{app_info, app_version};
 use crate::{
     log_signal, primitiveEnableLogSignal, primitiveGetEnabledLogSignals, primitivePollLogger,
@@ -132,9 +137,16 @@ impl VirtualMachine {
         vm.add_primitive(try_primitive!(primitiveReferenceFinderFindAllPaths));
         vm.add_primitive(try_primitive!(primitiveReferenceFinderFindPath));
         vm.add_primitive(try_primitive!(primitiveReferenceFinderGetNeighbours));
-        vm.add_primitive(try_primitive!(primitiveClassInstanceReferenceFinderFindAllPaths));
-        vm.add_primitive(try_primitive!(primitiveClassInstanceReferenceFinderFindPath));
+        vm.add_primitive(try_primitive!(
+            primitiveClassInstanceReferenceFinderFindAllPaths
+        ));
+        vm.add_primitive(try_primitive!(
+            primitiveClassInstanceReferenceFinderFindPath
+        ));
         vm.add_primitive(primitive!(primitiveInstanceCounterCountAll));
+
+        vm.add_primitive(primitive!(primitiveIsOldObject));
+        vm.add_primitive(primitive!(primitiveIsYoungObject));
 
         // debug
         vm.add_primitive(primitive!(primitiveDebugPrintArray));
@@ -659,4 +671,18 @@ pub fn primitiveDebugPrintArray() {
     //     }
     // }
     Smalltalk::method_return_boolean(true);
+}
+
+#[no_mangle]
+#[allow(non_snake_case)]
+pub fn primitiveIsOldObject() {
+    let object = Smalltalk::stack_object_value(StackOffset::new(0)).unwrap();
+    Smalltalk::method_return_boolean(Smalltalk::is_old(object));
+}
+
+#[no_mangle]
+#[allow(non_snake_case)]
+pub fn primitiveIsYoungObject() {
+    let object = Smalltalk::stack_object_value(StackOffset::new(0)).unwrap();
+    Smalltalk::method_return_boolean(Smalltalk::is_young(object));
 }

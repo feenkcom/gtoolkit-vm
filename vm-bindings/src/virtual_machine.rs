@@ -304,7 +304,7 @@ impl Smalltalk {
 
     pub fn method_return_boolean(value: bool) {
         let boolean = Self::primitive_bool_object(value);
-        unsafe { methodReturnBool(boolean.into_native()) };
+        Self::method_return_value(boolean);
     }
 
     pub fn method_return_integer(value: i64) {
