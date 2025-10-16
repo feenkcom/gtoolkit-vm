@@ -2,6 +2,11 @@ import hudson.tasks.test.AbstractTestResultAction
 import hudson.model.Actionable
 import hudson.tasks.junit.CaseResult
 
+def BUILD_MATRIX = [
+    [type: 'release', suffix: ''],
+    [type: 'debug', suffix: '-debug']
+]
+
 pipeline {
     agent none
     parameters {
@@ -135,48 +140,53 @@ pipeline {
                         sh "curl -o gtoolkit-vm-builder -LsS https://github.com/feenkcom/gtoolkit-vm-builder/releases/download/${VM_BUILDER_VERSION}/gtoolkit-vm-builder-${TARGET}"
                         sh 'chmod +x gtoolkit-vm-builder'
 
-                        sh """
-                            ./gtoolkit-vm-builder \
-                                --app-name ${APP_NAME} \
-                                --identifier ${APP_IDENTIFIER} \
-                                --author ${APP_AUTHOR} \
-                                --version ${APP_VERSION} \
-                                --icons icons/GlamorousToolkit.icns \
-                                --libraries ${APP_LIBRARIES} \
-                                --libraries-versions ${APP_LIBRARIES_VERSIONS} \
-                                --release \
-                                --verbose """
-
-                        sh "curl -o feenk-signer -LsS https://github.com/feenkcom/feenk-signer/releases/download/${FEENK_SIGNER_VERSION}/feenk-signer-${TARGET}"
-                        sh "chmod +x feenk-signer"
-
-                        withCredentials([
-                            file(credentialsId: 'feenk-apple-developer-certificate', variable: 'CERT'),
-                            string(credentialsId: 'feenk-apple-developer-certificate-password', variable: 'CERT_PASSWORD'),
-                            string(credentialsId: 'feenk-apple-signing-identity', variable: 'SIGNING_IDENTITY')
-                        ]) {
-                            sh "./feenk-signer mac target/${TARGET}/release/bundle/${APP_NAME}.app"
-                        }
-
-                        sh "ditto -c -k --sequesterRsrc --keepParent target/${TARGET}/release/bundle/${APP_NAME}.app ${APP_NAME}-${TARGET}.app.zip"
-
-                        sh "cargo test --package vm-client-tests"
-
-                        withCredentials([
-                            string(credentialsId: 'notarizeusername', variable: 'APPLE_ID'),
-                            string(credentialsId: 'notarizepassword-manager', variable: 'APPLE_PASSWORD')
-                        ]) {
+                        for (build_type in BUILD_MATRIX) {
+                            echo "Building for ${build_type.type}..."
                             sh """
-                               /Library/Developer/CommandLineTools/usr/bin/notarytool submit \
-                                    --verbose \
-                                    --apple-id "\$APPLE_ID" \
-                                    --password "\$APPLE_PASSWORD" \
-                                    --team-id "77664ZXL29" \
-                                    --wait \
-                                    ${APP_NAME}-${TARGET}.app.zip
-                               """
+                                    ./gtoolkit-vm-builder \
+                                        --app-name ${APP_NAME} \
+                                        --identifier ${APP_IDENTIFIER} \
+                                        --author ${APP_AUTHOR} \
+                                        --version ${APP_VERSION} \
+                                        --icons icons/GlamorousToolkit.icns \
+                                        --libraries ${APP_LIBRARIES} \
+                                        --libraries-versions ${APP_LIBRARIES_VERSIONS} \
+                                        --${build_type.type} \
+                                        --verbose """
+
+                                sh "curl -o feenk-signer -LsS https://github.com/feenkcom/feenk-signer/releases/download/${FEENK_SIGNER_VERSION}/feenk-signer-${TARGET}"
+                                sh "chmod +x feenk-signer"
+
+                                withCredentials([
+                                    file(credentialsId: 'feenk-apple-developer-certificate', variable: 'CERT'),
+                                    string(credentialsId: 'feenk-apple-developer-certificate-password', variable: 'CERT_PASSWORD'),
+                                    string(credentialsId: 'feenk-apple-signing-identity', variable: 'SIGNING_IDENTITY')
+                                ]) {
+                                    sh "./feenk-signer mac target/${TARGET}/${build_type.type}/bundle/${APP_NAME}.app"
+                                }
+
+                                sh "ditto -c -k --sequesterRsrc --keepParent target/${TARGET}/${build_type.type}/bundle/${APP_NAME}.app ${APP_NAME}-${TARGET}${build_type.suffix}.app.zip"
+
+                                sh "cargo test --package vm-client-tests"
+
+                                withCredentials([
+                                    string(credentialsId: 'notarizeusername', variable: 'APPLE_ID'),
+                                    string(credentialsId: 'notarizepassword-manager', variable: 'APPLE_PASSWORD')
+                                ]) {
+                                    sh """
+                                       /Library/Developer/CommandLineTools/usr/bin/notarytool submit \
+                                            --verbose \
+                                            --apple-id "\$APPLE_ID" \
+                                            --password "\$APPLE_PASSWORD" \
+                                            --team-id "77664ZXL29" \
+                                            --wait \
+                                            ${APP_NAME}-${TARGET}${build_type.suffix}}.app.zip
+                                       """
+                                }
+                                stash includes: "${APP_NAME}-${TARGET}${build_type.suffix}.app.zip", name: "${TARGET}${build_type.suffix}"
                         }
-                        stash includes: "${APP_NAME}-${TARGET}.app.zip", name: "${TARGET}"
+
+
                     }
                 }
                 stage ('MacOS M1') {
@@ -205,48 +215,52 @@ pipeline {
                         sh "curl -o gtoolkit-vm-builder -LsS https://github.com/feenkcom/gtoolkit-vm-builder/releases/download/${VM_BUILDER_VERSION}/gtoolkit-vm-builder-${TARGET}"
                         sh 'chmod +x gtoolkit-vm-builder'
 
-                        sh """
-                            ./gtoolkit-vm-builder \
-                                --app-name ${APP_NAME} \
-                                --identifier ${APP_IDENTIFIER} \
-                                --author ${APP_AUTHOR} \
-                                --version ${APP_VERSION} \
-                                --icons icons/GlamorousToolkit.icns \
-                                --libraries ${APP_LIBRARIES} \
-                                --libraries-versions ${APP_LIBRARIES_VERSIONS} \
-                                --release \
-                                --verbose """
+                        for (build_type in BUILD_MATRIX) {
+                            echo "Building for ${build_type.type}..."
 
-                        sh "curl -o feenk-signer -LsS  https://github.com/feenkcom/feenk-signer/releases/download/${FEENK_SIGNER_VERSION}/feenk-signer-${TARGET}"
-                        sh "chmod +x feenk-signer"
-
-                        withCredentials([
-                            file(credentialsId: 'feenk-apple-developer-certificate', variable: 'CERT'),
-                            string(credentialsId: 'feenk-apple-developer-certificate-password', variable: 'CERT_PASSWORD'),
-                            string(credentialsId: 'feenk-apple-signing-identity', variable: 'SIGNING_IDENTITY')
-                        ]) {
-                            sh "./feenk-signer mac target/${TARGET}/release/bundle/${APP_NAME}.app"
-                        }
-
-                        sh "ditto -c -k --sequesterRsrc --keepParent target/${TARGET}/release/bundle/${APP_NAME}.app ${APP_NAME}-${TARGET}.app.zip"
-
-                        sh "cargo test --package vm-client-tests"
-
-                        withCredentials([
-                            string(credentialsId: 'notarizeusername', variable: 'APPLE_ID'),
-                            string(credentialsId: 'notarizepassword-manager', variable: 'APPLE_PASSWORD')
-                        ]) {
                             sh """
-                               /Library/Developer/CommandLineTools/usr/bin/notarytool submit \
-                                    --verbose \
-                                    --apple-id "\$APPLE_ID" \
-                                    --password "\$APPLE_PASSWORD" \
-                                    --team-id "77664ZXL29" \
-                                    --wait \
-                                    ${APP_NAME}-${TARGET}.app.zip
-                               """
+                                ./gtoolkit-vm-builder \
+                                    --app-name ${APP_NAME} \
+                                    --identifier ${APP_IDENTIFIER} \
+                                    --author ${APP_AUTHOR} \
+                                    --version ${APP_VERSION} \
+                                    --icons icons/GlamorousToolkit.icns \
+                                    --libraries ${APP_LIBRARIES} \
+                                    --libraries-versions ${APP_LIBRARIES_VERSIONS} \
+                                    --${build_type.type} \
+                                    --verbose """
+
+                            sh "curl -o feenk-signer -LsS  https://github.com/feenkcom/feenk-signer/releases/download/${FEENK_SIGNER_VERSION}/feenk-signer-${TARGET}"
+                            sh "chmod +x feenk-signer"
+
+                            withCredentials([
+                                file(credentialsId: 'feenk-apple-developer-certificate', variable: 'CERT'),
+                                string(credentialsId: 'feenk-apple-developer-certificate-password', variable: 'CERT_PASSWORD'),
+                                string(credentialsId: 'feenk-apple-signing-identity', variable: 'SIGNING_IDENTITY')
+                            ]) {
+                                sh "./feenk-signer mac target/${TARGET}/${build_type.type}/bundle/${APP_NAME}.app"
+                            }
+
+                            sh "ditto -c -k --sequesterRsrc --keepParent target/${TARGET}/${build_type.type}/bundle/${APP_NAME}.app ${APP_NAME}-${TARGET}${build_type.suffix}.app.zip"
+
+                            sh "cargo test --package vm-client-tests"
+
+                            withCredentials([
+                                string(credentialsId: 'notarizeusername', variable: 'APPLE_ID'),
+                                string(credentialsId: 'notarizepassword-manager', variable: 'APPLE_PASSWORD')
+                            ]) {
+                                sh """
+                                   /Library/Developer/CommandLineTools/usr/bin/notarytool submit \
+                                        --verbose \
+                                        --apple-id "\$APPLE_ID" \
+                                        --password "\$APPLE_PASSWORD" \
+                                        --team-id "77664ZXL29" \
+                                        --wait \
+                                        ${APP_NAME}-${TARGET}${build_type.suffix}.app.zip
+                                   """
+                            }
+                            stash includes: "${APP_NAME}-${TARGET}${build_type.suffix}.app.zip", name: "${TARGET}${build_type.suffix}"
                         }
-                        stash includes: "${APP_NAME}-${TARGET}.app.zip", name: "${TARGET}"
                     }
                 }
                 stage ('Linux x86_64') {
@@ -276,27 +290,31 @@ pipeline {
                         sh 'chmod +x gtoolkit-vm-builder'
                         sh 'echo "patchelf $(patchelf --version)"'
 
-                        sh """
-                            ./gtoolkit-vm-builder \
-                                --app-name ${APP_NAME} \
-                                --identifier ${APP_IDENTIFIER} \
-                                --author ${APP_AUTHOR} \
-                                --version ${APP_VERSION} \
-                                --libraries ${LINUX_APP_LIBRARIES_AMD} \
-                                --libraries-versions ${APP_LIBRARIES_VERSIONS} \
-                                --release \
-                                --verbose """
+                        for (build_type in BUILD_MATRIX) {
+                            echo "Building for ${build_type.type}..."
 
-                        sh """
-                            cd target/${TARGET}/release/bundle/${APP_NAME}/
-                            zip -r ${APP_NAME}-${TARGET}.zip .
-                            """
+                            sh """
+                                ./gtoolkit-vm-builder \
+                                    --app-name ${APP_NAME} \
+                                    --identifier ${APP_IDENTIFIER} \
+                                    --author ${APP_AUTHOR} \
+                                    --version ${APP_VERSION} \
+                                    --libraries ${LINUX_APP_LIBRARIES_AMD} \
+                                    --libraries-versions ${APP_LIBRARIES_VERSIONS} \
+                                    --${build_type.type} \
+                                    --verbose """
 
-                        sh "cargo test --package vm-client-tests"
+                            sh """
+                                cd target/${TARGET}/${build_type.type}/bundle/${APP_NAME}/
+                                zip -r ${APP_NAME}-${TARGET}${build_type.suffix}.zip .
+                                """
 
-                        sh 'mv target/${TARGET}/release/bundle/${APP_NAME}/${APP_NAME}-${TARGET}.zip ./${APP_NAME}-${TARGET}.zip'
+                            sh "cargo test --package vm-client-tests"
 
-                        stash includes: "${APP_NAME}-${TARGET}.zip", name: "${TARGET}"
+                            sh "mv target/${TARGET}/${build_type.type}/bundle/${APP_NAME}/${APP_NAME}-${TARGET}${build_type.suffix}.zip ./${APP_NAME}-${TARGET}${build_type.suffix}.zip"
+
+                            stash includes: "${APP_NAME}-${TARGET}${build_type.suffix}.zip", name: "${TARGET}${build_type.suffix}"
+                        }
                     }
                 }
                 stage ('Linux arm64') {
@@ -325,27 +343,30 @@ pipeline {
                         sh "curl -o gtoolkit-vm-builder -LsS https://github.com/feenkcom/gtoolkit-vm-builder/releases/download/${VM_BUILDER_VERSION}/gtoolkit-vm-builder-${TARGET}"
                         sh 'chmod +x gtoolkit-vm-builder'
 
-                        sh """
-                            ./gtoolkit-vm-builder \
-                                --app-name ${APP_NAME} \
-                                --identifier ${APP_IDENTIFIER} \
-                                --author ${APP_AUTHOR} \
-                                --version ${APP_VERSION} \
-                                --libraries ${LINUX_APP_LIBRARIES_ARM} \
-                                --libraries-versions ${APP_LIBRARIES_VERSIONS} \
-                                --release \
-                                --verbose """
+                        for (build_type in BUILD_MATRIX) {
+                            echo "Building for ${build_type.type}..."
+                            sh """
+                                ./gtoolkit-vm-builder \
+                                    --app-name ${APP_NAME} \
+                                    --identifier ${APP_IDENTIFIER} \
+                                    --author ${APP_AUTHOR} \
+                                    --version ${APP_VERSION} \
+                                    --libraries ${LINUX_APP_LIBRARIES_ARM} \
+                                    --libraries-versions ${APP_LIBRARIES_VERSIONS} \
+                                    --${build_type.type} \
+                                    --verbose """
 
-                        sh """
-                            cd target/${TARGET}/release/bundle/${APP_NAME}/
-                            zip -r ${APP_NAME}-${TARGET}.zip .
-                            """
+                            sh """
+                                cd target/${TARGET}/${build_type.type}/bundle/${APP_NAME}/
+                                zip -r ${APP_NAME}-${TARGET}${build_type.suffix}.zip .
+                                """
 
-                        sh "cargo test --package vm-client-tests"
+                            sh "cargo test --package vm-client-tests"
 
-                        sh 'mv target/${TARGET}/release/bundle/${APP_NAME}/${APP_NAME}-${TARGET}.zip ./${APP_NAME}-${TARGET}.zip'
+                            sh "mv target/${TARGET}/${build_type.type}/bundle/${APP_NAME}/${APP_NAME}-${TARGET}${build_type.suffix}.zip ./${APP_NAME}-${TARGET}${build_type.suffix}.zip"
 
-                        stash includes: "${APP_NAME}-${TARGET}.zip", name: "${TARGET}"
+                            stash includes: "${APP_NAME}-${TARGET}${build_type.suffix}.zip", name: "${TARGET}${build_type.suffix}"
+                        }
                     }
                 }
                 stage ('Android arm64') {
@@ -371,23 +392,26 @@ pipeline {
                         sh "curl -o gtoolkit-vm-builder -LsS https://github.com/feenkcom/gtoolkit-vm-builder/releases/download/${VM_BUILDER_VERSION}/gtoolkit-vm-builder-${HOST}"
                         sh 'chmod +x gtoolkit-vm-builder'
 
-                        sh """
-                            ./gtoolkit-vm-builder \
-                                --app-name ${APP_NAME} \
-                                --identifier ${APP_IDENTIFIER} \
-                                --author ${APP_AUTHOR} \
-                                --version ${APP_VERSION} \
-                                --icons icons/android \
-                                --executables android \
-                                --target ${TARGET} \
-                                --libraries clipboard filewatcher pixels process skia winit webview crypto git ssl \
-                                --libraries-versions ${APP_LIBRARIES_VERSIONS} \
-                                --release \
-                                --verbose """
+                        for (build_type in BUILD_MATRIX) {
+                            echo "Building for ${build_type.type}..."
+                            sh """
+                                ./gtoolkit-vm-builder \
+                                    --app-name ${APP_NAME} \
+                                    --identifier ${APP_IDENTIFIER} \
+                                    --author ${APP_AUTHOR} \
+                                    --version ${APP_VERSION} \
+                                    --icons icons/android \
+                                    --executables android \
+                                    --target ${TARGET} \
+                                    --libraries clipboard filewatcher pixels process skia winit webview crypto git ssl \
+                                    --libraries-versions ${APP_LIBRARIES_VERSIONS} \
+                                    --${build_type.type} \
+                                    --verbose """
 
-                        sh "mv target/${TARGET}/release/bundle/${APP_NAME}.apk ./${APP_NAME}-${TARGET}.apk"
+                            sh "mv target/${TARGET}/${build_type.type}/bundle/${APP_NAME}.apk ./${APP_NAME}-${TARGET}${build_type.suffix}.apk"
 
-                        stash includes: "${APP_NAME}-${TARGET}.apk", name: "${TARGET}"
+                            stash includes: "${APP_NAME}-${TARGET}${build_type.suffix}.apk", name: "${TARGET}${build_type.suffix}"
+                        }
                     }
                 }
                 stage ('Windows x86_64') {
@@ -420,24 +444,27 @@ pipeline {
                         powershell "Remove-Item gtoolkit-vm-builder.exe -ErrorAction Ignore"
                         powershell "curl -o gtoolkit-vm-builder.exe https://github.com/feenkcom/gtoolkit-vm-builder/releases/download/${VM_BUILDER_VERSION}/gtoolkit-vm-builder-${TARGET}.exe"
 
-                        powershell """
-                           ./gtoolkit-vm-builder.exe `
-                                --app-name ${APP_NAME} `
-                                --identifier ${APP_IDENTIFIER} `
-                                --author ${APP_AUTHOR} `
-                                --version ${APP_VERSION} `
-                                --libraries ${APP_LIBRARIES} `
-                                --libraries-versions ${APP_LIBRARIES_VERSIONS} `
-                                --icons icons/GlamorousToolkit.ico `
-                                --release `
-                                --target ${TARGET} `
-                                --verbose """
+                        for (build_type in BUILD_MATRIX) {
+                            echo "Building for ${build_type.type}..."
+                            powershell """
+                               ./gtoolkit-vm-builder.exe `
+                                    --app-name ${APP_NAME} `
+                                    --identifier ${APP_IDENTIFIER} `
+                                    --author ${APP_AUTHOR} `
+                                    --version ${APP_VERSION} `
+                                    --libraries ${APP_LIBRARIES} `
+                                    --libraries-versions ${APP_LIBRARIES_VERSIONS} `
+                                    --icons icons/GlamorousToolkit.ico `
+                                    --${build_type.type} `
+                                    --target ${TARGET} `
+                                    --verbose """
 
-                        powershell "Compress-Archive -Path target/${TARGET}/release/bundle/${APP_NAME}/* -DestinationPath ${APP_NAME}-${TARGET}.zip"
+                            powershell "Compress-Archive -Path target/${TARGET}/${build_type.type}/bundle/${APP_NAME}/* -DestinationPath ${APP_NAME}-${TARGET}${build_type.suffix}.zip"
 
-                        powershell "cargo test --package vm-client-tests"
-                        
-                        stash includes: "${APP_NAME}-${TARGET}.zip", name: "${TARGET}"
+                            powershell "cargo test --package vm-client-tests"
+
+                            stash includes: "${APP_NAME}-${TARGET}${build_type.suffix}.zip", name: "${TARGET}${build_type.suffix}"
+                        }
                     }
                 }
                 stage ('Windows arm64') {
@@ -471,22 +498,26 @@ pipeline {
                         powershell "Remove-Item gtoolkit-vm-builder.exe -ErrorAction Ignore"
                         powershell "curl -o gtoolkit-vm-builder.exe https://github.com/feenkcom/gtoolkit-vm-builder/releases/download/${VM_BUILDER_VERSION}/gtoolkit-vm-builder-${HOST}.exe"
 
-                        powershell """
-                           ./gtoolkit-vm-builder.exe `
-                                --app-name ${APP_NAME} `
-                                --identifier ${APP_IDENTIFIER} `
-                                --author ${APP_AUTHOR} `
-                                --version ${APP_VERSION} `
-                                --libraries ${WINDOWS_APP_LIBRARIES_ARM} `
-                                --libraries-versions ${APP_LIBRARIES_VERSIONS} `
-                                --icons icons/GlamorousToolkit.ico `
-                                --release `
-                                --target ${TARGET} `
-                                --verbose """
+                        for (build_type in BUILD_MATRIX) {
+                            echo "Building for ${build_type.type}..."
 
-                        powershell "Compress-Archive -Path target/${TARGET}/release/bundle/${APP_NAME}/* -DestinationPath ${APP_NAME}-${TARGET}.zip"
+                            powershell """
+                               ./gtoolkit-vm-builder.exe `
+                                    --app-name ${APP_NAME} `
+                                    --identifier ${APP_IDENTIFIER} `
+                                    --author ${APP_AUTHOR} `
+                                    --version ${APP_VERSION} `
+                                    --libraries ${WINDOWS_APP_LIBRARIES_ARM} `
+                                    --libraries-versions ${APP_LIBRARIES_VERSIONS} `
+                                    --icons icons/GlamorousToolkit.ico `
+                                    --${build_type.type} `
+                                    --target ${TARGET} `
+                                    --verbose """
 
-                        stash includes: "${APP_NAME}-${TARGET}.zip", name: "${TARGET}"
+                            powershell "Compress-Archive -Path target/${TARGET}/${build_type.type}/bundle/${APP_NAME}/* -DestinationPath ${APP_NAME}-${TARGET}${build_type.suffix}.zip"
+
+                            stash includes: "${APP_NAME}-${TARGET}${build_type.suffix}.zip", name: "${TARGET}${build_type.suffix}"
+                        }
                     }
                 }
             }
@@ -504,13 +535,34 @@ pipeline {
                 }
             }
             steps {
-                unstash "${LINUX_AMD64_TARGET}"
-                unstash "${LINUX_ARM64_TARGET}"
-                unstash "${MACOS_INTEL_TARGET}"
-                unstash "${MACOS_M1_TARGET}"
-                unstash "${ANDROID_ARM64_TARGET}"
-                unstash "${WINDOWS_AMD64_TARGET}"
-                unstash "${WINDOWS_ARM64_TARGET}"
+                def targets = [
+                    LINUX_AMD64_TARGET,
+                    LINUX_ARM64_TARGET,
+                    MACOS_INTEL_TARGET,
+                    MACOS_M1_TARGET,
+                    ANDROID_ARM64_TARGET,
+                    WINDOWS_AMD64_TARGET,
+                    WINDOWS_ARM64_TARGET ]
+
+                def stash_names = []
+                def asset_names = []
+                for (target in targets) {
+                    for (build_type in BUILD_MATRIX) {
+                        stash_names.add("${target}${build_type.suffix}")
+                    }
+
+                    def assets = [
+                        "${APP_NAME}-${LINUX_AMD64_TARGET}${build_type.suffix}.zip",
+                        "${APP_NAME}-${LINUX_ARM64_TARGET}${build_type.suffix}.zip"
+                        "${APP_NAME}-${MACOS_INTEL_TARGET}${build_type.suffix}.app.zip"
+                        "${APP_NAME}-${MACOS_M1_TARGET}${build_type.suffix}.app.zip"
+                        "${APP_NAME}-${ANDROID_ARM64_TARGET}${build_type.suffix}.apk"
+                        "${APP_NAME}-${WINDOWS_AMD64_TARGET}${build_type.suffix}.zip"
+                        "${APP_NAME}-${WINDOWS_ARM64_TARGET}${build_type.suffix}.zip"
+                    ]
+
+                    asset_names.addAll(assets)
+                }
 
                 sh "curl -o feenk-releaser -LsS https://github.com/feenkcom/releaser-rs/releases/download/${FEENK_RELEASER_VERSION}/feenk-releaser-${TARGET}"
                 sh "chmod +x feenk-releaser"
@@ -523,14 +575,7 @@ pipeline {
                     release \
                     --version ${APP_VERSION} \
                     --auto-accept \
-                    --assets \
-                        ${APP_NAME}-${LINUX_AMD64_TARGET}.zip \
-                        ${APP_NAME}-${LINUX_ARM64_TARGET}.zip \
-                        ${APP_NAME}-${MACOS_INTEL_TARGET}.app.zip \
-                        ${APP_NAME}-${MACOS_M1_TARGET}.app.zip \
-                        ${APP_NAME}-${ANDROID_ARM64_TARGET}.apk \
-                        ${APP_NAME}-${WINDOWS_AMD64_TARGET}.zip \
-                        ${APP_NAME}-${WINDOWS_ARM64_TARGET}.zip """
+                    --assets ${asset_names.join(' ')} """
             }
         }
     }
