@@ -7,6 +7,10 @@ def BUILD_MATRIX = [
     [type: 'debug', suffix: '-debug']
 ]
 
+def SIMPLE_BUILD_MATRIX = [
+  [type: 'release', suffix: '']
+]
+
 pipeline {
     agent none
     parameters {
@@ -121,8 +125,6 @@ pipeline {
                     environment {
                         TARGET = "${MACOS_INTEL_TARGET}"
                         PATH = "$HOME/.cargo/bin:/usr/local/bin/:$PATH"
-                        CERT = credentials('devcertificate')
-                        APPLEPASSWORD = credentials('notarizepassword-manager')
                         MACOSX_DEPLOYMENT_TARGET = '10.10'
                         VM_CLIENT_EXECUTABLE = "${WORKSPACE}/target/${TARGET}/release/bundle/${APP_NAME}.app/Contents/MacOS/${APP_NAME}-cli"
                     }
@@ -140,54 +142,53 @@ pipeline {
                         sh "curl -o gtoolkit-vm-builder -LsS https://github.com/feenkcom/gtoolkit-vm-builder/releases/download/${VM_BUILDER_VERSION}/gtoolkit-vm-builder-${TARGET}"
                         sh 'chmod +x gtoolkit-vm-builder'
 
+                        sh "curl -o feenk-signer -LsS https://github.com/feenkcom/feenk-signer/releases/download/${FEENK_SIGNER_VERSION}/feenk-signer-${TARGET}"
+                        sh "chmod +x feenk-signer"
+
                         script {
                             for (build_type in BUILD_MATRIX) {
                                 echo "Building for ${build_type.type}..."
                                 sh """
-                                        ./gtoolkit-vm-builder \
-                                            --app-name ${APP_NAME} \
-                                            --identifier ${APP_IDENTIFIER} \
-                                            --author ${APP_AUTHOR} \
-                                            --version ${APP_VERSION} \
-                                            --icons icons/GlamorousToolkit.icns \
-                                            --libraries ${APP_LIBRARIES} \
-                                            --libraries-versions ${APP_LIBRARIES_VERSIONS} \
-                                            --${build_type.type} \
-                                            --verbose """
+                                    ./gtoolkit-vm-builder \
+                                        --app-name ${APP_NAME} \
+                                        --identifier ${APP_IDENTIFIER} \
+                                        --author ${APP_AUTHOR} \
+                                        --version ${APP_VERSION} \
+                                        --icons icons/GlamorousToolkit.icns \
+                                        --libraries ${APP_LIBRARIES} \
+                                        --libraries-versions ${APP_LIBRARIES_VERSIONS} \
+                                        --${build_type.type} \
+                                        --verbose """
 
-                                    sh "curl -o feenk-signer -LsS https://github.com/feenkcom/feenk-signer/releases/download/${FEENK_SIGNER_VERSION}/feenk-signer-${TARGET}"
-                                    sh "chmod +x feenk-signer"
+                                withCredentials([
+                                    file(credentialsId: 'feenk-apple-developer-certificate', variable: 'CERT'),
+                                    string(credentialsId: 'feenk-apple-developer-certificate-password', variable: 'CERT_PASSWORD'),
+                                    string(credentialsId: 'feenk-apple-signing-identity', variable: 'SIGNING_IDENTITY')
+                                ]) {
+                                    sh "./feenk-signer mac target/${TARGET}/${build_type.type}/bundle/${APP_NAME}.app"
+                                }
 
-                                    withCredentials([
-                                        file(credentialsId: 'feenk-apple-developer-certificate', variable: 'CERT'),
-                                        string(credentialsId: 'feenk-apple-developer-certificate-password', variable: 'CERT_PASSWORD'),
-                                        string(credentialsId: 'feenk-apple-signing-identity', variable: 'SIGNING_IDENTITY')
-                                    ]) {
-                                        sh "./feenk-signer mac target/${TARGET}/${build_type.type}/bundle/${APP_NAME}.app"
-                                    }
+                                sh "ditto -c -k --sequesterRsrc --keepParent target/${TARGET}/${build_type.type}/bundle/${APP_NAME}.app ${APP_NAME}-${TARGET}${build_type.suffix}.app.zip"
 
-                                    sh "ditto -c -k --sequesterRsrc --keepParent target/${TARGET}/${build_type.type}/bundle/${APP_NAME}.app ${APP_NAME}-${TARGET}${build_type.suffix}.app.zip"
+                                sh "cargo test --package vm-client-tests"
 
-                                    sh "cargo test --package vm-client-tests"
-
-                                    withCredentials([
-                                        string(credentialsId: 'notarizeusername', variable: 'APPLE_ID'),
-                                        string(credentialsId: 'notarizepassword-manager', variable: 'APPLE_PASSWORD')
-                                    ]) {
-                                        sh """
-                                           /Library/Developer/CommandLineTools/usr/bin/notarytool submit \
-                                                --verbose \
-                                                --apple-id "\$APPLE_ID" \
-                                                --password "\$APPLE_PASSWORD" \
-                                                --team-id "77664ZXL29" \
-                                                --wait \
-                                                ${APP_NAME}-${TARGET}${build_type.suffix}}.app.zip
-                                           """
-                                    }
-                                    stash includes: "${APP_NAME}-${TARGET}${build_type.suffix}.app.zip", name: "${TARGET}${build_type.suffix}"
+                                withCredentials([
+                                    string(credentialsId: 'notarizeusername', variable: 'APPLE_ID'),
+                                    string(credentialsId: 'notarizepassword-manager', variable: 'APPLE_PASSWORD')
+                                ]) {
+                                    sh """
+                                       /Library/Developer/CommandLineTools/usr/bin/notarytool submit \
+                                            --verbose \
+                                            --apple-id "\$APPLE_ID" \
+                                            --password "\$APPLE_PASSWORD" \
+                                            --team-id "77664ZXL29" \
+                                            --wait \
+                                            ${APP_NAME}-${TARGET}${build_type.suffix}}.app.zip
+                                       """
+                                }
+                                stash includes: "${APP_NAME}-${TARGET}${build_type.suffix}.app.zip", name: "${TARGET}${build_type.suffix}"
                             }
                         }
-
                     }
                 }
                 stage ('MacOS M1') {
@@ -198,8 +199,6 @@ pipeline {
                     environment {
                         TARGET = "${MACOS_M1_TARGET}"
                         PATH = "$HOME/.cargo/bin:/opt/homebrew/bin:$PATH"
-                        CERT = credentials('devcertificate')
-                        APPLEPASSWORD = credentials('notarizepassword-manager')
                         VM_CLIENT_EXECUTABLE = "${WORKSPACE}/target/${TARGET}/release/bundle/${APP_NAME}.app/Contents/MacOS/${APP_NAME}-cli"
                     }
 
@@ -216,6 +215,9 @@ pipeline {
                         sh "curl -o gtoolkit-vm-builder -LsS https://github.com/feenkcom/gtoolkit-vm-builder/releases/download/${VM_BUILDER_VERSION}/gtoolkit-vm-builder-${TARGET}"
                         sh 'chmod +x gtoolkit-vm-builder'
 
+                        sh "curl -o feenk-signer -LsS  https://github.com/feenkcom/feenk-signer/releases/download/${FEENK_SIGNER_VERSION}/feenk-signer-${TARGET}"
+                        sh "chmod +x feenk-signer"
+
                         script {
                             for (build_type in BUILD_MATRIX) {
                                 echo "Building for ${build_type.type}..."
@@ -231,9 +233,6 @@ pipeline {
                                         --libraries-versions ${APP_LIBRARIES_VERSIONS} \
                                         --${build_type.type} \
                                         --verbose """
-
-                                sh "curl -o feenk-signer -LsS  https://github.com/feenkcom/feenk-signer/releases/download/${FEENK_SIGNER_VERSION}/feenk-signer-${TARGET}"
-                                sh "chmod +x feenk-signer"
 
                                 withCredentials([
                                     file(credentialsId: 'feenk-apple-developer-certificate', variable: 'CERT'),
@@ -294,7 +293,7 @@ pipeline {
                         sh 'echo "patchelf $(patchelf --version)"'
 
                         script {
-                            for (build_type in BUILD_MATRIX) {
+                            for (build_type in SIMPLE_BUILD_MATRIX) {
                                 echo "Building for ${build_type.type}..."
 
                                 sh """
@@ -349,7 +348,7 @@ pipeline {
                         sh 'chmod +x gtoolkit-vm-builder'
 
                         script {
-                            for (build_type in BUILD_MATRIX) {
+                            for (build_type in SIMPLE_BUILD_MATRIX) {
                                 echo "Building for ${build_type.type}..."
                                 sh """
                                     ./gtoolkit-vm-builder \
@@ -400,7 +399,7 @@ pipeline {
                         sh 'chmod +x gtoolkit-vm-builder'
 
                         script {
-                            for (build_type in BUILD_MATRIX) {
+                            for (build_type in SIMPLE_BUILD_MATRIX) {
                                 echo "Building for ${build_type.type}..."
                                 sh """
                                     ./gtoolkit-vm-builder \
