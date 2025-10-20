@@ -183,7 +183,7 @@ pipeline {
                                             --password "\$APPLE_PASSWORD" \
                                             --team-id "77664ZXL29" \
                                             --wait \
-                                            ${APP_NAME}-${TARGET}${build_type.suffix}}.app.zip
+                                            ${APP_NAME}-${TARGET}${build_type.suffix}.app.zip
                                        """
                                 }
                                 stash includes: "${APP_NAME}-${TARGET}${build_type.suffix}.app.zip", name: "${TARGET}${build_type.suffix}"
