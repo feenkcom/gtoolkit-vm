@@ -183,7 +183,10 @@ impl PharoInterpreter {
     pub fn add_vm_export(&self, export: NamedPrimitive) {
         let vm_exports_ptr: *mut NamedPrimitive = unsafe { getVMExports() } as *mut NamedPrimitive;
         let length = NamedPrimitive::detect_exports_length(vm_exports_ptr);
-        let new_byte_size = (length + 1) * size_of::<NamedPrimitive>();
+
+        // includes null ending
+        let new_length = length + 2;
+        let new_byte_size = (new_length) * size_of::<NamedPrimitive>();
 
         let new_ptr =
             unsafe { libc::realloc(vm_exports_ptr as _, new_byte_size) } as *mut NamedPrimitive;
@@ -191,9 +194,9 @@ impl PharoInterpreter {
             panic!("Failed to reallocate memory for named primitives");
         }
 
-        let mut vm_exports = unsafe { slice::from_raw_parts_mut(new_ptr, length + 1) };
-        vm_exports[length - 1] = export;
-        vm_exports[length] = NamedPrimitive::null();
+        let mut vm_exports = unsafe { slice::from_raw_parts_mut(new_ptr, new_length) };
+        vm_exports[new_length - 2] = export;
+        vm_exports[new_length - 1] = NamedPrimitive::null();
 
         unsafe { setVMExports(new_ptr as _) };
     }
