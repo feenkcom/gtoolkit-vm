@@ -4,8 +4,8 @@ use crate::bindings::{
     exportStatScavengeGCUsecs as statScavengeGCUsecs, getVMExports, installErrorHandlers,
     registerCurrentThreadToHandleExceptions, setLogger, setProcessArguments,
     setProcessEnvironmentVector, setShouldLog, setTelemetry, setVMExports, setVmRunOnWorkerThread,
-    sqExport, sqInt, takeTelemetry, vm_init, vm_parameters_ensure_interactive_image_parameter,
-    vm_run_interpreter, InterpreterTelemetry, VirtualMachine,
+    takeTelemetry, vm_init, vm_parameters_ensure_interactive_image_parameter, vm_run_interpreter,
+    InterpreterTelemetry,
 };
 use crate::parameters::InterpreterParameters;
 use crate::prelude::NativeAccess;
@@ -13,9 +13,9 @@ use crate::{InterpreterConfiguration, InterpreterProxy, NamedPrimitive};
 use anyhow::{bail, Result};
 use std::fmt::Debug;
 use std::os::raw::{c_char, c_int};
-use std::panic;
 use std::sync::Arc;
 use std::thread::JoinHandle;
+use std::{panic, slice};
 
 #[derive(Debug)]
 pub struct PharoInterpreter {
@@ -177,32 +177,25 @@ impl PharoInterpreter {
         let vm_exports_ptr: *const NamedPrimitive =
             unsafe { getVMExports() } as *const NamedPrimitive;
         let length = NamedPrimitive::detect_exports_length(vm_exports_ptr);
-        unsafe { std::slice::from_raw_parts(vm_exports_ptr, length) }
+        unsafe { slice::from_raw_parts(vm_exports_ptr, length) }
     }
 
     pub fn add_vm_export(&self, export: NamedPrimitive) {
         let vm_exports_ptr: *mut NamedPrimitive = unsafe { getVMExports() } as *mut NamedPrimitive;
         let length = NamedPrimitive::detect_exports_length(vm_exports_ptr);
+        let new_byte_size = (length + 1) * size_of::<NamedPrimitive>();
 
-        let mut new_vm_exports = self
-            .vm_exports()
-            .iter()
-            .map(|each| each.clone())
-            .collect::<Vec<NamedPrimitive>>();
-        new_vm_exports.push(export);
-        new_vm_exports.push(NamedPrimitive::null());
-
-        // the `length + 1` element is part if the vector, we should take it into account
-        let vm_exports = unsafe { Vec::from_raw_parts(vm_exports_ptr, length + 1, length + 1) };
-        drop(vm_exports);
-
-        new_vm_exports.shrink_to_fit();
-        if new_vm_exports.len() != new_vm_exports.capacity() {
-            panic!("Failed to shrink the vector");
+        let new_ptr =
+            unsafe { libc::realloc(vm_exports_ptr as _, new_byte_size) } as *mut NamedPrimitive;
+        if new_ptr.is_null() {
+            panic!("Failed to reallocate memory for named primitives");
         }
-        let vm_exports_ptr = new_vm_exports.as_mut_ptr() as *mut sqExport;
-        std::mem::forget(new_vm_exports);
-        unsafe { setVMExports(vm_exports_ptr) };
+
+        let mut vm_exports = unsafe { slice::from_raw_parts_mut(new_ptr, length + 1) };
+        vm_exports[length - 1] = export;
+        vm_exports[length] = NamedPrimitive::null();
+
+        unsafe { setVMExports(new_ptr as _) };
     }
 
     /// Return the total amount of microseconds spent on full garbage collection
@@ -219,19 +212,28 @@ impl PharoInterpreter {
     fn initialize_vm_exports(&self) {
         let vm_exports_ptr: *const NamedPrimitive =
             unsafe { getVMExports() } as *const NamedPrimitive;
-        let length = NamedPrimitive::detect_exports_length(vm_exports_ptr);
-        let vm_exports = unsafe { std::slice::from_raw_parts(vm_exports_ptr, length + 1) };
-        let mut vm_exports_vec = vm_exports
-            .iter()
-            .map(|each_export| each_export.clone())
-            .collect::<Vec<NamedPrimitive>>();
-        vm_exports_vec.shrink_to_fit();
-        if vm_exports_vec.len() != vm_exports_vec.capacity() {
-            panic!("Failed to shrink the vector");
+        let length = NamedPrimitive::detect_exports_length(vm_exports_ptr) + 1;
+
+        let byte_size = length * size_of::<NamedPrimitive>();
+
+        let mut new_vm_exports_ptr = unsafe { libc::malloc(byte_size) } as *mut NamedPrimitive;
+        if new_vm_exports_ptr.is_null() {
+            panic!("Failed to allocate memory for named primitives");
         }
-        let vm_exports_ptr = vm_exports_vec.as_mut_ptr() as *mut sqExport;
-        std::mem::forget(vm_exports_vec);
-        unsafe { setVMExports(vm_exports_ptr) };
+
+        let new_vm_exports = unsafe { slice::from_raw_parts_mut(new_vm_exports_ptr, length + 1) };
+        for i in 0..length {
+            let previous_primitive = unsafe { &*vm_exports_ptr.offset(i as isize) };
+            new_vm_exports[i].native_mut().pluginName = previous_primitive.native().pluginName;
+            new_vm_exports[i].native_mut().primitiveName =
+                previous_primitive.native().primitiveName;
+            new_vm_exports[i].native_mut().primitiveAddress =
+                previous_primitive.native().primitiveAddress;
+        }
+
+        // there is no need to free previous vm exports because it wasn't allocated
+
+        unsafe { setVMExports(new_vm_exports_ptr as _) };
     }
 }
 

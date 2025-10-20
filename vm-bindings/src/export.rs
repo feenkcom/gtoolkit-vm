@@ -9,19 +9,17 @@ pub type NamedPrimitive = Handle<sqExport>;
 
 #[macro_export]
 macro_rules! primitive {
-    ($func_name:ident) => {
-        {
-            let mut primitive_name = Vec::new();
-            primitive_name.extend_from_slice(stringify!($func_name).as_bytes());
-            // spur embeds accessorDepth after a primitive name
-            primitive_name.extend_from_slice(b"\x00\xff");
+    ($func_name:ident) => {{
+        let mut primitive_name = Vec::new();
+        primitive_name.extend_from_slice(stringify!($func_name).as_bytes());
+        // spur embeds accessorDepth after a primitive name
+        primitive_name.extend_from_slice(b"\x00\xff");
 
-            NamedPrimitive::new()
-                .with_plugin_name("")
-                .with_primitive_name_bytes(primitive_name)
-                .with_primitive_address($func_name as *const std::os::raw::c_void)
-        }
-    };
+        NamedPrimitive::new()
+            .with_plugin_name("")
+            .with_primitive_name_bytes(primitive_name)
+            .with_primitive_address($func_name as *const std::os::raw::c_void)
+    }};
 }
 
 #[macro_export]
@@ -49,8 +47,6 @@ macro_rules! try_primitive {
 impl NamedPrimitive {
     pub fn new() -> Self {
         Self::from_native_c(sqExport::new())
-            .with_plugin_name("")
-            .with_primitive_name("")
     }
 
     pub fn null() -> Self {
@@ -126,8 +122,9 @@ impl sqExport {
     }
 
     fn set_plugin_name(&mut self, name: String) {
-        let previous_name = self.take_plugin_name();
-        drop(previous_name);
+        if !self.pluginName.is_null() {
+            panic!("Can't change plugin name if it is already assigned");
+        }
 
         let plugin_name = CString::new(name).unwrap();
         let plugin_name_ptr = plugin_name.as_ptr() as *mut c_char;
@@ -146,8 +143,9 @@ impl sqExport {
     }
 
     fn set_primitive_name(&mut self, name: String) {
-        let previous_name = self.take_primitive_name();
-        drop(previous_name);
+        if !self.primitiveName.is_null() {
+            panic!("Can't change primitive name if it is already assigned");
+        }
 
         let primitive_name = CString::new(name).unwrap();
         let primitive_name_ptr = primitive_name.as_ptr() as *mut c_char;
@@ -156,8 +154,9 @@ impl sqExport {
     }
 
     fn set_primitive_name_bytes(&mut self, name: impl Into<Vec<u8>>) {
-        let previous_name = self.take_primitive_name();
-        drop(previous_name);
+        if !self.primitiveName.is_null() {
+            panic!("Can't change primitive name if it is already assigned");
+        }
 
         let primitive_name = unsafe { CString::from_vec_with_nul_unchecked(name.into()) };
         let primitive_name_ptr = primitive_name.as_ptr() as *mut c_char;
@@ -171,29 +170,6 @@ impl sqExport {
 
     fn set_primitive_address(&mut self, address: *const std::os::raw::c_void) {
         self.primitiveAddress = address as *mut std::os::raw::c_void;
-    }
-
-    /// Take the ownership over the plugin name
-    fn take_plugin_name(&mut self) -> String {
-        let plugin_name_ptr: *mut std::os::raw::c_char = self.pluginName;
-        self.pluginName = std::ptr::null_mut();
-        if plugin_name_ptr.is_null() {
-            return "".to_string();
-        }
-        unsafe { CString::from_raw(plugin_name_ptr) }
-            .into_string()
-            .unwrap()
-    }
-
-    fn take_primitive_name(&mut self) -> String {
-        let primitive_name_ptr: *mut std::os::raw::c_char = self.primitiveName;
-        self.primitiveName = std::ptr::null_mut();
-        if primitive_name_ptr.is_null() {
-            return "".to_string();
-        }
-        unsafe { CString::from_raw(primitive_name_ptr) }
-            .into_string()
-            .unwrap()
     }
 
     pub(crate) fn is_valid(&self) -> bool {
@@ -213,24 +189,7 @@ impl sqExport {
 }
 
 impl NativeDrop for sqExport {
-    fn drop(&mut self) {
-        self.take_plugin_name();
-        self.take_primitive_name();
-    }
-}
-
-impl NativeClone for sqExport {
-    fn clone(&self) -> Self {
-        let mut new_sq_export = sqExport::new();
-        if !self.pluginName.is_null() {
-            new_sq_export.set_plugin_name(self.plugin_name().to_string());
-        }
-        if !self.primitiveName.is_null() {
-            new_sq_export.set_primitive_name(self.primitive_name().to_string());
-        }
-        new_sq_export.set_primitive_address(self.primitive_address());
-        new_sq_export
-    }
+    fn drop(&mut self) {}
 }
 
 impl Debug for NamedPrimitive {
@@ -258,8 +217,6 @@ mod tests {
         assert_eq!(sq_export.primitive_name(), "");
         assert_eq!(sq_export.primitive_address().is_null(), true);
         assert_eq!(sq_export.is_valid(), false);
-        assert_eq!(sq_export.take_plugin_name(), "".to_string());
-        assert_eq!(sq_export.take_primitive_name(), "".to_string());
     }
 
     #[test]

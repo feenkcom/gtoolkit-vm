@@ -9,6 +9,7 @@ anyhow = "1.0"
 log = "0.4"
 libffi = { version = "3.2", optional = true }
 libffi-sys = { version = "2.3", optional = true }
+libc = "0.2.177"
 num = "0.4"
 num-derive = "0.4"
 num-traits = "0.2"

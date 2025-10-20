@@ -89,6 +89,7 @@ pub fn primitivePharoCompilerCompile() {
                             compiled_method_object.set_literal(AnyObjectRef::from(symbol), index);
                         }
                     }
+                    OwnedLiteralValue::ConstantBlockClosure => {}
                 },
                 OwnedLiteral::Array(_) => {}
                 OwnedLiteral::ByteArray(_) => {}
