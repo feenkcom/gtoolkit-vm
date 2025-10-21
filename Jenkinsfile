@@ -551,7 +551,7 @@ pipeline {
                     def stash_names = []
                     def asset_names = []
 
-                    for (build_type in SIMPLE_BUILD_MATRIX_MATRIX) {
+                    for (build_type in SIMPLE_BUILD_MATRIX) {
                        def assets = [
                            "${APP_NAME}-${LINUX_AMD64_TARGET}${build_type.suffix}.zip",
                            "${APP_NAME}-${LINUX_ARM64_TARGET}${build_type.suffix}.zip",
