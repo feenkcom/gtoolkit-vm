@@ -1,7 +1,7 @@
 import hudson.tasks.test.AbstractTestResultAction
 import hudson.model.Actionable
 import hudson.tasks.junit.CaseResult
-
+ 
 def BUILD_MATRIX = [
     [type: 'release', suffix: ''],
     [type: 'debug', suffix: '-debug']
