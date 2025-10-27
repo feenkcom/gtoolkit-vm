@@ -91,7 +91,7 @@ impl Callout {
         let library = unsafe { Library::new(&module_name) }?;
         let function =
             unsafe { library.get::<unsafe extern "C" fn()>(function_name.as_encoded_bytes()) }?;
-        let function = CodePtr::from_ptr(unsafe { function.into_raw() }.into_raw());
+        let function = CodePtr::from_ptr(unsafe { function.into_raw() }.as_raw_ptr());
 
         let amount_of_arguments = argument_marshall_types.len();
         let mut argument_types = Vec::with_capacity(amount_of_arguments);
@@ -415,7 +415,7 @@ fn call_and_marshall_result(callout: &Callout) -> Result<AnyObjectRef, Error> {
             call_and_marshall_integer!(callout, i16)
         }
         MarshallType::U32 => {
-            call_and_marshall_integer!(callout, u32)
+            call_and_try_marshall_integer!(callout, u32)
         }
         MarshallType::I32 => {
             call_and_marshall_integer!(callout, i32)
@@ -424,7 +424,7 @@ fn call_and_marshall_result(callout: &Callout) -> Result<AnyObjectRef, Error> {
             call_and_try_marshall_integer!(callout, u64)
         }
         MarshallType::I64 => {
-            call_and_marshall_integer!(callout, i64)
+            call_and_try_marshall_integer!(callout, i64)
         }
         MarshallType::USize => {
             call_and_try_marshall_integer!(callout, usize)
