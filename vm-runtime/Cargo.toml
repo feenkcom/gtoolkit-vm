@@ -30,11 +30,11 @@ num-derive = "0.4"
 enum-display = "0.2"
 zerocopy = "0.8"
 user-error = "1.2"
+libloading = "0.8"
 #pharo-compiler = { path = "../../pharo-compiler-rs/pharo-compiler", optional = true }
 
 [target.'cfg(target_os="macos")'.dependencies]
 core-foundation = "0.9.1"
-libloading = "0.8"
 
 [target.'cfg(target_os="android")'.dependencies]
 android-activity = { version = "0.4.1", features = [ "native-activity" ] }
