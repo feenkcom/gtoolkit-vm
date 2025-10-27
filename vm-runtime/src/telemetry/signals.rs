@@ -115,7 +115,7 @@ pub fn copy_stack(context: ObjectRef) -> ArrayRef {
     let mut array = Array::new(stack_length).unwrap();
 
     let nil_object =
-        ObjectRef::try_from(RawObjectPointer::new(Smalltalk::nil_object().as_i64())).unwrap();
+        ObjectRef::try_from(RawObjectPointer::new(Smalltalk::primitive_nil_object().as_i64())).unwrap();
 
     let mut sender = context;
     let mut index = 0;
@@ -166,6 +166,7 @@ impl TryFrom<AnyObjectRef> for PharoProcessSwitchSignalRef {
         if actual_amount_of_slots != EXPECTED_AMOUNT_OF_SLOTS {
             return Err(Error::WrongAmountOfSlots {
                 object: object.header().clone(),
+                type_name: std::any::type_name::<Self>().to_string(),
                 expected: EXPECTED_AMOUNT_OF_SLOTS,
                 actual: actual_amount_of_slots,
             }
@@ -221,6 +222,7 @@ impl TryFrom<AnyObjectRef> for PharoProcessComputationSignalRef {
         if actual_amount_of_slots != EXPECTED_AMOUNT_OF_SLOTS {
             return Err(Error::WrongAmountOfSlots {
                 object: object.header().clone(),
+                type_name: std::any::type_name::<Self>().to_string(),
                 expected: EXPECTED_AMOUNT_OF_SLOTS,
                 actual: actual_amount_of_slots,
             }
@@ -276,6 +278,7 @@ impl TryFrom<AnyObjectRef> for PharoProcessContextSignalRef {
         if actual_amount_of_slots != EXPECTED_AMOUNT_OF_SLOTS {
             return Err(Error::WrongAmountOfSlots {
                 object: object.header().clone(),
+                type_name: std::any::type_name::<Self>().to_string(),
                 expected: EXPECTED_AMOUNT_OF_SLOTS,
                 actual: actual_amount_of_slots,
             }
@@ -331,6 +334,7 @@ impl TryFrom<AnyObjectRef> for PharoProcessSemaphoreWaitSignalRef {
         if actual_amount_of_slots != EXPECTED_AMOUNT_OF_SLOTS {
             return Err(Error::WrongAmountOfSlots {
                 object: object.header().clone(),
+                type_name: std::any::type_name::<Self>().to_string(),
                 expected: EXPECTED_AMOUNT_OF_SLOTS,
                 actual: actual_amount_of_slots,
             }

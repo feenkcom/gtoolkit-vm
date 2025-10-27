@@ -126,6 +126,10 @@ impl Object {
 pub struct ObjectRef(RawObjectPointer);
 
 impl ObjectRef {
+    pub unsafe fn from_raw_pointer_unchecked(pointer: RawObjectPointer) -> Self {
+        Self(pointer)
+    }
+    
     pub fn header(&self) -> &ObjectHeader {
         unsafe { self.cast::<Object>() }.header()
     }
@@ -246,6 +250,10 @@ impl AnyObjectRef {
 
     pub fn as_object(&self) -> Result<ObjectRef> {
         ObjectRef::try_from(self.0)
+    }
+    
+    pub fn into_inner(self) -> RawObjectPointer {
+        self.0
     }
 }
 

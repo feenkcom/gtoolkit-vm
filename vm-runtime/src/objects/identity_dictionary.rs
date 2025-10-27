@@ -91,7 +91,7 @@ impl IdentityDictionary {
         object: AnyObjectRef,
     ) -> Option<usize> {
         let nil_object =
-            AnyObjectRef::from(RawObjectPointer::from(Smalltalk::nil_object().as_i64()))
+            AnyObjectRef::from(RawObjectPointer::from(Smalltalk::primitive_nil_object().as_i64()))
                 .as_object()
                 .unwrap();
 
@@ -163,7 +163,7 @@ impl IdentityDictionary {
 
     fn scan_all_for(&self, key: AnyObjectRef) -> Vec<usize> {
         let nil_object =
-            AnyObjectRef::from(RawObjectPointer::from(Smalltalk::nil_object().as_i64()))
+            AnyObjectRef::from(RawObjectPointer::from(Smalltalk::primitive_nil_object().as_i64()))
                 .as_object()
                 .unwrap();
 
@@ -203,7 +203,7 @@ impl IdentityDictionary {
         self.tally = Immediate::new_i64(0);
 
         let nil_object =
-            AnyObjectRef::from(RawObjectPointer::from(Smalltalk::nil_object().as_i64()));
+            AnyObjectRef::from(RawObjectPointer::from(Smalltalk::primitive_nil_object().as_i64()));
         for each in old_elements.iter() {
             if !each.equals(&nil_object).unwrap() {
                 self.no_check_add(each.clone().try_into().unwrap());

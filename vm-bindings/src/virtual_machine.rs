@@ -1,13 +1,14 @@
 use crate::bindings::{
     addressCouldBeClassObj, classArray, classExternalAddress, classString,
-    createNewMethodheaderbytecodeCount, ensureBehaviorHash, falseObject, fetchClassOfNonImm,
-    fetchPointerofObject, firstBytePointerOfDataObject, firstFixedField, firstIndexableField,
-    getThisContext, hashBitsOf, instVarofContext, instantiateClassindexableSize,
-    instantiateClassindexableSizeisPinned, instantiateClassisPinned, integerObjectOf, isOld,
-    isOopForwarded, isYoung, methodArgumentCount, methodReturnBool, methodReturnInteger,
-    methodReturnValue, nilObject, possibleOldObjectStoreInto, possiblePermObjectStoreIntovalue,
-    primitiveFail, primitiveFailFor, sqInt, stContextSize, stObjectat, stObjectatput, stSizeOf,
-    stackIntegerValue, stackValue, trueObject,
+    createNewMethodheaderbytecodeCount, ensureBehaviorHash, exportReadAddress as readAddress,
+    falseObject, fetchClassOfNonImm, fetchPointerofObject, firstBytePointerOfDataObject,
+    firstFixedField, firstIndexableField, floatObjectOf, floatValueOf, getThisContext, hashBitsOf,
+    instVarofContext, instantiateClassindexableSize, instantiateClassindexableSizeisPinned,
+    instantiateClassisPinned, integerObjectOf, isFloatInstance, isOld, isOopForwarded, isYoung,
+    methodArgumentCount, methodReturnInteger, methodReturnValue, nilObject,
+    possibleOldObjectStoreInto, possiblePermObjectStoreIntovalue, primitiveFail, primitiveFailFor,
+    sqInt, stContextSize, stObjectat, stObjectatput, stSizeOf, stackIntegerValue, stackValue,
+    trueObject, isKindOfClass
 };
 use crate::prelude::NativeTransmutable;
 use crate::{ObjectFieldIndex, ObjectPointer, StackOffset};
@@ -23,6 +24,15 @@ impl Smalltalk {
 
     pub fn method_argument_count() -> usize {
         unsafe { methodArgumentCount() as usize }
+    }
+
+    pub fn method_receiver() -> AnyObjectRef {
+        Self::stack_ref(StackOffset::new(Self::method_argument_count() as i32))
+    }
+
+    pub fn get_method_argument(index: usize) -> AnyObjectRef {
+        let index = (Self::method_argument_count() as i32 - 1) - index as i32;
+        Self::stack_ref(StackOffset::new(index))
     }
 
     /// Get a value from the stack.
@@ -47,11 +57,6 @@ impl Smalltalk {
         } else {
             Some(value)
         }
-    }
-
-    pub fn get_stack_value(&self, offset: StackOffset) -> AnyObjectRef {
-        let value = Self::stack_value(offset);
-        AnyObjectRef::from(RawObjectPointer::from(value.as_i64()))
     }
 
     /// Return an object on a stack. May return an invalid pointer if
@@ -171,8 +176,12 @@ impl Smalltalk {
         unsafe { ObjectPointer::from_native_c(falseObject()) }
     }
 
-    pub fn nil_object() -> ObjectPointer {
+    pub fn primitive_nil_object() -> ObjectPointer {
         unsafe { ObjectPointer::from_native_c(nilObject()) }
+    }
+
+    pub fn nil_object() -> AnyObjectRef {
+        unsafe { AnyObjectRef::from(RawObjectPointer::from(nilObject())) }
     }
 
     pub fn primitive_class_array() -> ObjectPointer {
@@ -187,8 +196,44 @@ impl Smalltalk {
         .unwrap()
     }
 
-    pub fn class_external_address() -> ObjectPointer {
+    pub fn class_external_address() -> ObjectRef {
+        AnyObjectRef::from(RawObjectPointer::from(
+            Self::primitive_class_external_address().into_native(),
+        ))
+        .as_object()
+        .unwrap()
+    }
+
+    pub fn float_value_of(any_object: AnyObjectRef) -> f64 {
+        unsafe { floatValueOf(any_object.as_i64()) }
+    }
+
+    pub fn float_object_of(value: f64) -> AnyObjectRef {
+        AnyObjectRef::from(RawObjectPointer::from(unsafe { floatObjectOf(value) }))
+    }
+
+    pub fn is_float(object: AnyObjectRef) -> bool {
+        (unsafe { isFloatInstance(object.as_i64()) }) != 0
+    }
+
+    pub fn primitive_class_external_address() -> ObjectPointer {
         unsafe { ObjectPointer::from_native_c(classExternalAddress()) }
+    }
+
+    pub fn read_external_address(external_address_object: ObjectRef) -> *mut c_void {
+        unsafe { readAddress(external_address_object.into_inner().as_i64()) }
+    }
+
+    pub fn new_external_address<T>(address: *const T) -> ObjectPointer {
+        let external_address = Self::primitive_instantiate_indexable_class_of_size(
+            Self::primitive_class_external_address(),
+            size_of::<*mut c_void>(),
+        );
+        unsafe {
+            *(Self::first_indexable_field(external_address) as *mut *mut c_void) =
+                address as *mut c_void
+        };
+        external_address
     }
 
     pub fn class_string() -> ObjectPointer {
@@ -311,7 +356,12 @@ impl Smalltalk {
         unsafe { methodReturnInteger(value) };
     }
 
-    pub fn new_integer(number: impl Into<sqInt>) -> ObjectPointer {
+    pub fn new_integer(number: impl Into<sqInt>) -> AnyObjectRef {
+        let oop = unsafe { integerObjectOf(number.into()) };
+        AnyObjectRef::from(RawObjectPointer::from(oop))
+    }
+
+    pub fn new_integer_pointer(number: impl Into<sqInt>) -> ObjectPointer {
         let oop = unsafe { integerObjectOf(number.into()) };
         ObjectPointer::from_native_c(oop)
     }
@@ -400,8 +450,10 @@ impl Smalltalk {
 
     pub fn context_stack_length(context: ObjectRef) -> usize {
         let mut length = 1;
-        let nil_object =
-            ObjectRef::try_from(RawObjectPointer::new(Self::nil_object().into_native())).unwrap();
+        let nil_object = ObjectRef::try_from(RawObjectPointer::new(
+            Self::primitive_nil_object().into_native(),
+        ))
+        .unwrap();
 
         let mut sender = context;
         while sender != nil_object {
@@ -436,5 +488,17 @@ impl Smalltalk {
             fetchClassOfNonImm(object.into_inner().as_i64())
         }))
         .unwrap()
+    }
+    
+    pub fn is_kind_of(object: AnyObjectRef, class: ObjectRef) -> bool {
+        (unsafe {
+            isKindOfClass(object.as_i64(), class.into_inner().as_i64())
+        }) != 0
+    }
+
+    pub fn is_kind_of_object(object: ObjectRef, class: ObjectRef) -> bool {
+        (unsafe {
+            isKindOfClass(object.into_inner().as_i64(), class.into_inner().as_i64())
+        }) != 0
     }
 }

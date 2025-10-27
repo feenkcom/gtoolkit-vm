@@ -18,6 +18,13 @@ use crate::reference_finder::{
     primitiveReferenceFinderGetNeighbours,
 };
 use crate::version::{app_info, app_version};
+#[cfg(feature = "ffi")]
+use crate::{
+    ffi::{
+        primitiveBareFfiCallout, primitiveBareFfiCalloutInvalidate, primitiveBareFfiCalloutRelease,
+    },
+    primitiveEventLoopCallout, primitiveExtractReturnValue,
+};
 use crate::{
     log_signal, primitiveEnableLogSignal, primitiveGetEnabledLogSignals, primitivePollLogger,
     primitiveStartBeacon, primitiveStartConsoleLogger, primitiveStartGlobalProcessSwitchTelemetry,
@@ -25,8 +32,6 @@ use crate::{
     primitiveTelemetryContextSignal, primitiveTelemetryObjectSignal, should_log_all_signals,
     should_log_signal, ConsoleLogger, EventLoop, EventLoopMessage, EventLoopWaker, VM_LOGGER,
 };
-#[cfg(feature = "ffi")]
-use crate::{primitiveEventLoopCallout, primitiveExtractReturnValue};
 use anyhow::Result;
 use vm_bindings::{
     virtual_machine_info, InterpreterConfiguration, InterpreterProxy, LogLevel, NamedPrimitive,
@@ -99,11 +104,17 @@ impl VirtualMachine {
             }
         }
 
-        vm.add_primitive(primitive!(primitiveGetNamedPrimitives));
         #[cfg(feature = "ffi")]
-        vm.add_primitive(primitive!(primitiveEventLoopCallout));
-        #[cfg(feature = "ffi")]
-        vm.add_primitive(primitive!(primitiveExtractReturnValue));
+        {
+            vm.add_primitive(primitive!(primitiveGetNamedPrimitives));
+            vm.add_primitive(primitive!(primitiveEventLoopCallout));
+            vm.add_primitive(primitive!(primitiveExtractReturnValue));
+            
+            vm.add_primitive(try_primitive!(primitiveBareFfiCallout));
+            vm.add_primitive(try_primitive!(primitiveBareFfiCalloutInvalidate));
+            vm.add_primitive(try_primitive!(primitiveBareFfiCalloutRelease));
+        }
+
         vm.add_primitive(primitive!(primitiveGetSemaphoreSignaller));
         vm.add_primitive(primitive!(primitiveGetEventLoop));
         vm.add_primitive(primitive!(primitiveGetEventLoopReceiver));
@@ -247,7 +258,8 @@ pub fn primitiveGetNamedPrimitives() {
 
         let plugin_name = proxy.new_string(named_primitive.plugin_name());
         let primitive_name = proxy.new_string(named_primitive.primitive_name());
-        let primitive_address = proxy.new_external_address(named_primitive.primitive_address());
+        let primitive_address =
+            Smalltalk::new_external_address(named_primitive.primitive_address());
 
         Smalltalk::item_at_put(each_primitive_array, ObjectFieldIndex::new(1), plugin_name);
         Smalltalk::item_at_put(
@@ -273,8 +285,7 @@ pub fn primitiveGetNamedPrimitives() {
 #[no_mangle]
 #[allow(non_snake_case)]
 pub fn primitiveGetSemaphoreSignaller() {
-    let proxy = vm().proxy();
-    let signaller = proxy.new_external_address(semaphore_signaller as *const c_void);
+    let signaller = Smalltalk::new_external_address(semaphore_signaller as *const c_void);
     Smalltalk::method_return_value(signaller);
 }
 
@@ -282,21 +293,19 @@ pub fn primitiveGetSemaphoreSignaller() {
 #[allow(non_snake_case)]
 pub fn primitiveGetEventLoop() {
     let vm = vm();
-    let proxy = vm.proxy();
 
     let event_loop = match vm.event_loop() {
         None => std::ptr::null(),
         Some(event_loop) => event_loop as *const EventLoop,
     };
 
-    Smalltalk::method_return_value(proxy.new_external_address(event_loop));
+    Smalltalk::method_return_value(Smalltalk::new_external_address(event_loop));
 }
 
 #[no_mangle]
 #[allow(non_snake_case)]
 pub fn primitiveGetEventLoopReceiver() {
-    let proxy = vm().proxy();
-    let receiver = proxy.new_external_address(try_receive_events as *const c_void);
+    let receiver = Smalltalk::new_external_address(try_receive_events as *const c_void);
     Smalltalk::method_return_value(receiver);
 }
 
@@ -307,10 +316,9 @@ pub fn primitiveGetEventLoopReceiver() {
 /// Users are responsible for managing the memory
 pub fn primitiveGetAndroidApp() {
     let vm = vm();
-    let proxy = vm.proxy();
 
     let android_app = Box::into_raw(Box::new(vm.android_app.clone()));
-    Smalltalk::method_return_value(proxy.new_external_address(android_app));
+    Smalltalk::method_return_value(Smalltalk::new_external_address(android_app));
 }
 
 #[no_mangle]
@@ -319,7 +327,6 @@ pub fn primitiveGetAndroidApp() {
 /// Returns a pointer to the NativeWindow
 pub fn primitiveGetAndroidNativeWindow() {
     let vm = vm();
-    let proxy = vm.proxy();
 
     let native_window = vm
         .android_app
@@ -327,7 +334,7 @@ pub fn primitiveGetAndroidNativeWindow() {
         .map(|native_window| native_window.ptr().as_ptr())
         .unwrap_or(std::ptr::null_mut());
 
-    Smalltalk::method_return_value(proxy.new_external_address(native_window));
+    Smalltalk::method_return_value(Smalltalk::new_external_address(native_window));
 }
 
 #[no_mangle]
@@ -347,17 +354,18 @@ pub extern "C" fn semaphore_signaller(semaphore_index: usize) {
 #[no_mangle]
 #[allow(non_snake_case)]
 pub fn primitiveSetEventLoopWaker() {
-    let proxy = vm().proxy();
+    let waker_thunk_external_address = Smalltalk::stack_ref(StackOffset::new(1))
+        .as_object()
+        .unwrap();
+    let waker_function_external_address = Smalltalk::stack_ref(StackOffset::new(0))
+        .as_object()
+        .unwrap();
 
-    let waker_thunk_external_address = Smalltalk::stack_object_value_unchecked(StackOffset::new(1));
-    let waker_function_external_address =
-        Smalltalk::stack_object_value_unchecked(StackOffset::new(0));
-
-    let waker_function_ptr = proxy.read_address(waker_function_external_address);
+    let waker_function_ptr = Smalltalk::read_external_address(waker_function_external_address);
 
     let waker_function: extern "C" fn(*const c_void, u32) -> bool =
         unsafe { transmute(waker_function_ptr) };
-    let waker_thunk = proxy.read_address(waker_thunk_external_address);
+    let waker_thunk = Smalltalk::read_external_address(waker_thunk_external_address);
 
     let waker = EventLoopWaker::new(waker_function, waker_thunk);
     vm().event_loop_waker.replace(Some(waker));
@@ -386,22 +394,21 @@ pub fn primitiveScavengeGarbageCollectorMicroseconds() {
 #[no_mangle]
 #[allow(non_snake_case)]
 pub fn primitiveFirstBytePointerOfDataObject() {
-    let proxy = vm().proxy();
     let receiver = Smalltalk::stack_object_value_unchecked(StackOffset::new(0));
 
     let pointer = Smalltalk::first_byte_pointer_of_data_object(receiver);
-    Smalltalk::method_return_value(proxy.new_external_address(pointer));
+    Smalltalk::method_return_value(Smalltalk::new_external_address(pointer));
 }
 
 #[no_mangle]
 #[allow(non_snake_case)]
 pub fn primitivePointerAtPointer() {
-    let proxy = vm().proxy();
-    let external_address = Smalltalk::stack_object_value_unchecked(StackOffset::new(0));
-
-    let external_address_pointer = proxy.read_address(external_address);
+    let external_address = Smalltalk::stack_ref(StackOffset::new(0))
+        .as_object()
+        .unwrap();
+    let external_address_pointer = Smalltalk::read_external_address(external_address);
     let pointer = Smalltalk::pointer_at_pointer(external_address_pointer);
-    Smalltalk::method_return_value(proxy.new_external_address(pointer));
+    Smalltalk::method_return_value(Smalltalk::new_external_address(pointer));
 }
 
 #[no_mangle]
@@ -439,7 +446,7 @@ pub fn primitiveFcntl() {
                 let command = Smalltalk::stack_integer_value(StackOffset::new(0)) as c_int;
 
                 let result = unsafe { libc::fcntl(file_descriptor, command) };
-                Smalltalk::method_return_value(Smalltalk::new_integer(result));
+                Smalltalk::method_return_value(Smalltalk::new_integer_pointer(result));
             }
             3 => {
                 let file_descriptor = Smalltalk::stack_integer_value(StackOffset::new(2)) as c_int;
@@ -447,7 +454,7 @@ pub fn primitiveFcntl() {
                 let argument = Smalltalk::stack_integer_value(StackOffset::new(0)) as c_int;
 
                 let result = unsafe { libc::fcntl(file_descriptor, command, argument) };
-                Smalltalk::method_return_value(Smalltalk::new_integer(result));
+                Smalltalk::method_return_value(Smalltalk::new_integer_pointer(result));
             }
             _ => Smalltalk::primitive_fail(),
         }
@@ -526,7 +533,7 @@ pub fn primitiveIdentityDictionaryScanFor() {
         array: ObjectPointer,
         object: ObjectPointer,
     ) -> Option<u32> {
-        let nil_object = Smalltalk::nil_object();
+        let nil_object = Smalltalk::primitive_nil_object();
 
         // Search from (hash mod size) to the end.
         for index in start..(finish + 1) {

@@ -144,6 +144,7 @@ impl TryFrom<AnyObjectRef> for OrderedCollectionRef {
         if actual_amount_of_slots != EXPECTED_AMOUNT_OF_SLOTS {
             return Err(Error::WrongAmountOfSlots {
                 object: object.header().clone(),
+                type_name: std::any::type_name::<Self>().to_string(),
                 expected: EXPECTED_AMOUNT_OF_SLOTS,
                 actual: actual_amount_of_slots,
             }

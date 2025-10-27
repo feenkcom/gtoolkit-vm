@@ -1,4 +1,3 @@
-use std::ffi::CString;
 use std::fmt::{Debug, Formatter};
 use std::intrinsics::transmute;
 use std::os::raw::c_void;

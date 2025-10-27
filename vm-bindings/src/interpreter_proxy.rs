@@ -42,7 +42,7 @@ impl InterpreterProxy {
     }
 
     pub fn pop_then_push_integer(&self, amount_of_stack_items: usize, number: impl Into<sqInt>) {
-        self.pop_then_push(amount_of_stack_items, Smalltalk::new_integer(number));
+        self.pop_then_push(amount_of_stack_items, Smalltalk::new_integer_pointer(number));
     }
 
     pub fn get_handler(&self, object: ObjectPointer) -> *mut c_void {
@@ -147,30 +147,14 @@ impl InterpreterProxy {
             let oop = unsafe { function(c_string.as_ptr() as *mut c_char) };
             ObjectPointer::from_native_c(oop)
         } else {
-            Smalltalk::nil_object()
+            Smalltalk::primitive_nil_object()
         }
-    }
-
-    pub fn new_external_address<T>(&self, address: *const T) -> ObjectPointer {
-        let external_address = Smalltalk::primitive_instantiate_indexable_class_of_size(
-            Smalltalk::class_external_address(),
-            size_of::<*mut c_void>(),
-        );
-        unsafe {
-            *(Smalltalk::first_indexable_field(external_address) as *mut *mut c_void) =
-                address as *mut c_void
-        };
-        external_address
     }
 
     pub fn new_positive_64bit_integer(&self, integer: u64) -> ObjectPointer {
         let function = self.native().positive64BitIntegerFor.unwrap();
         let oop = unsafe { function(cast_integer(integer)) };
         ObjectPointer::from_native_c(oop)
-    }
-
-    pub fn read_address(&self, external_address_object: ObjectPointer) -> *mut c_void {
-        unsafe { readAddress(external_address_object.into_native()) }
     }
 
     pub fn pin_object(&self, object: ObjectPointer) {

@@ -1,4 +1,4 @@
-use crate::{ObjectFormat, ObjectHeader, RawObjectPointer};
+use crate::{Immediate, ObjectFormat, ObjectHeader, RawObjectPointer};
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -7,6 +7,8 @@ pub enum Error {
     NotAnObject(RawObjectPointer),
     #[error("Expected an immediate value, found an object {0:?}")]
     NotAnImmediate(RawObjectPointer),
+    #[error("Expected an integer value, found something else {0:?}")]
+    NotAnInteger(Immediate),
     #[error("Expected an array, got {0:?} instead")]
     NotAnArray(ObjectFormat),
     #[error("Forwarded object ({0:?}) is not supported for this operation")]
@@ -14,10 +16,11 @@ pub enum Error {
     #[error("Expected an object of type {0}")]
     InvalidType(String),
     #[error(
-        "Object {object:?} has a wrong amount of slots; expected {expected} but got {actual}."
+        "Object {type_name} {object:?} has a wrong amount of slots; expected {expected} but got {actual}."
     )]
     WrongAmountOfSlots {
         object: ObjectHeader,
+        type_name: String,
         expected: usize,
         actual: usize,
     },

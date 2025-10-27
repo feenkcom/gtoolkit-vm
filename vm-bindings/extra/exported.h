@@ -40,6 +40,7 @@ EXPORT(sqInt) stObjectat(sqInt array, sqInt index);
 EXPORT(sqInt) stObjectatput(sqInt array, sqInt index, sqInt value);
 EXPORT(sqInt) stSizeOf(sqInt oop);
 EXPORT(sqInt) addressCouldBeClassObj(sqInt oop);
+EXPORT(sqInt) isKindOfClass(sqInt oop, sqInt aClass);
 EXPORT(sqInt) getThisContext(void);
 
 // CoInterpreter
@@ -61,6 +62,9 @@ EXPORT(void) possibleOldObjectStoreInto(sqInt destObj);
 EXPORT(void) possiblePermObjectStoreIntovalue(sqInt destObj, sqInt valueObj);
 EXPORT(sqInt) fetchPointerofObject(sqInt fieldIndex, sqInt objOop);
 EXPORT(sqInt) integerObjectOf(sqInt value);
+EXPORT(sqInt) floatObjectOf(double aFloat);
+EXPORT(double) floatValueOf(sqInt objOop);
+EXPORT(sqInt) isFloatInstance(sqInt objOop);
 EXPORT(sqInt) newHashBitsOf(sqInt objOop);
 EXPORT(sqInt) hashBitsOf(sqInt objOop);
 EXPORT(sqInt) ensureBehaviorHash(sqInt objOop);

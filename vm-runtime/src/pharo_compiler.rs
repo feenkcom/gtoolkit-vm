@@ -151,6 +151,6 @@ pub fn primitivePharoCompilerFindInWeakSet() {
     if let Some(item) = weak_set.find_like_byte_str(byte_string.as_str()) {
         Smalltalk::method_return_value(item.as_ptr().into());
     } else {
-        Smalltalk::method_return_value(Smalltalk::nil_object());
+        Smalltalk::method_return_value(Smalltalk::primitive_nil_object());
     }
 }

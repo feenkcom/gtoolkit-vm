@@ -31,7 +31,21 @@ macro_rules! try_primitive {
                 #[allow(non_snake_case)]
                 pub extern "C" fn [< try_ $func_name >]() {
                     $func_name().unwrap_or_else(|error| {
-                        error!("{}", error);
+                        use user_error::{UserFacingError, UFE};
+                        let error: Box<dyn std::error::Error> = error.into();
+                        let user_facing_error: UserFacingError = error.into();
+                    
+                        let short_text = user_facing_error.summary();
+                        let long_text = user_facing_error
+                            .reasons()
+                            .map_or_else(
+                                || user_facing_error.helptext(),
+                                |reasons| Some(reasons.join("\n")),
+                            )
+                            .unwrap_or_else(|| "".to_string());
+                        
+                        error!("{}", short_text);
+                        error!("{}", long_text);
                         Smalltalk::primitive_fail()
                     });
                 }

@@ -6,7 +6,7 @@
   "Glutin": "v0.13.1",
   "Pixels": "v0.22.1",
   "Process": "v0.32.0",
-  "Skia": "v0.43.0",
+  "Skia": "v0.44.0",
   "Winit": "v0.40.0",
   "Winit30": "v0.16.0",
   "WebView": "v0.15.0",

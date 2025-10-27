@@ -1,6 +1,5 @@
 use crate::{EventLoop, VirtualMachine, VirtualMachineConfiguration};
 use std::sync::Arc;
-use vm_bindings::InterpreterConfiguration;
 
 #[derive(Debug)]
 pub struct Constellation {

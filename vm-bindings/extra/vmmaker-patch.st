@@ -20,6 +20,7 @@
     StackInterpreter >> #stObject:at:put:.
 
     StackInterpreter >> #addressCouldBeClassObj:.
+    StackInterpreter >> #is:KindOfClass:.
 
     CoInterpreter >> #instVar:ofContext:.
 
@@ -48,8 +49,14 @@
     SpurMemoryManager >> #isOopForwarded:.
 
     Spur32BitMemoryManager >> #integerObjectOf:.
+    Spur32BitMemoryManager >> #floatObjectOf:.
+    Spur32BitMemoryManager >> #floatValueOf:.
+    Spur32BitMemoryManager >> #isFloatInstance:.
+    
     Spur64BitMemoryManager >> #integerObjectOf:.
-
+    Spur64BitMemoryManager >> #floatObjectOf:.
+    Spur64BitMemoryManager >> #floatValueOf:.
+    Spur64BitMemoryManager >> #isFloatInstance:.
 }
 do: [ :eachMethod |
     (RBAddPragmaTransformation pragma: '<export: true>' inMethod: eachMethod selector inClass: eachMethod methodClass name)

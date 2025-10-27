@@ -1,6 +1,5 @@
 use crate::{Error, RawObjectPointer, Result};
 use std::mem::transmute;
-use std::os::raw::c_void;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(transparent)]
@@ -38,6 +37,11 @@ impl Immediate {
             None
         }
     }
+    
+    pub fn try_as_integer(&self) -> Result<i64> {
+        self.as_integer().ok_or_else(||Error::NotAnInteger(self.clone()))
+    }
+    
 }
 
 impl TryFrom<RawObjectPointer> for Immediate {

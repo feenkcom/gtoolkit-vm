@@ -248,7 +248,7 @@ impl Marshallable for InterpreterProxy {
                 let address = unsafe { *(return_holder as *const *const c_void) };
                 self.pop_then_push(
                     primitive_arguments_and_receiver_count,
-                    self.new_external_address(address),
+                    Smalltalk::new_external_address(address),
                 )
             }
             FFI_TYPE_VOID => {
@@ -529,7 +529,7 @@ impl Marshallable for InterpreterProxy {
     ) -> Result<()> {
         let external_address = Smalltalk::object_field_at(array, ObjectFieldIndex::new(index));
 
-        if !self.is_kind_of_class(external_address, Smalltalk::class_external_address()) {
+        if !self.is_kind_of_class(external_address, Smalltalk::primitive_class_external_address()) {
             bail!(
                 "pointer argument at index {} is not an external address",
                 index,
