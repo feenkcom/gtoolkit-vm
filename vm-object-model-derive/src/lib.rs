@@ -70,6 +70,20 @@ fn expand_pharo_object(input: &DeriveInput) -> Result<proc_macro2::TokenStream> 
                 Self(::vm_object_model::ObjectRef::from_raw_pointer_unchecked(value.into_inner()))
             }
         }
+        
+        impl ::core::ops::Deref for #struct_ident {
+            type Target = ::vm_object_model::Object;
+        
+            fn deref(&self) -> &Self::Target {
+                &self.this
+            }
+        }
+        
+        impl ::core::ops::DerefMut for #struct_ident {
+            fn deref_mut(&mut self) -> &mut Self::Target {
+                &mut self.this
+            }
+        }
 
         impl ::core::ops::Deref for #ref_ident {
             type Target = #struct_ident;
