@@ -310,7 +310,7 @@ impl ArgumentMarshall {
                         return Ok(MarshalledValue::F32(integer as f32));
                     }
                 }
-                if !Smalltalk::is_float(object) {
+                if Smalltalk::is_float(object) {
                     return Ok(MarshalledValue::F32(
                         Smalltalk::float_value_of(object) as f32
                     ));
@@ -324,7 +324,7 @@ impl ArgumentMarshall {
                         return Ok(MarshalledValue::F64(integer as f64));
                     }
                 }
-                if !Smalltalk::is_float(object) {
+                if Smalltalk::is_float(object) {
                     return Ok(MarshalledValue::F64(Smalltalk::float_value_of(object)));
                 }
                 Err(Error::InstanceNotFloat)
