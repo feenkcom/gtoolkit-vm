@@ -6,6 +6,8 @@ extern crate default_env;
 extern crate lazy_static;
 #[macro_use]
 extern crate log;
+#[macro_use]
+extern crate vm_object_model_derive;
 
 #[cfg(target_os = "android")]
 pub extern crate android_activity;
@@ -26,6 +28,8 @@ pub mod objects;
 mod pharo_compiler;
 mod reference_finder;
 mod telemetry;
+#[cfg(feature = "tonel")]
+pub mod tonel;
 
 pub use constellation::Constellation;
 pub use error::{ApplicationError, Result};

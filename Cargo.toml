@@ -9,7 +9,9 @@ members = [
     "vm-client-android",
     "vm-client-tests",
     "vm-client-test-library",
-    "vm-library-tester", "vm-object-model",
+    "vm-library-tester",
+    "vm-object-model",
+    "vm-object-model-derive"
 ]
 
 exclude = ["target", "third_party", "libs"]

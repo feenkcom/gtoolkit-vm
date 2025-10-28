@@ -1,9 +1,8 @@
 use enum_display::EnumDisplay;
-use std::any::type_name;
 use std::convert::Infallible;
 use std::ffi::OsString;
 use std::num::TryFromIntError;
-use std::ops::{Deref, DerefMut};
+use std::ops::Deref;
 use std::os::raw::*;
 use vm_bindings::{ObjectPointer, Smalltalk};
 
@@ -16,7 +15,7 @@ use thiserror::Error;
 use vm_bindings::bindings::sqInt;
 use vm_object_model::{AnyObjectRef, Immediate, Object, ObjectRef, RawObjectPointer};
 
-#[derive(Debug)]
+#[derive(Debug, PharoObject)]
 #[repr(C)]
 pub struct ExternalFunction {
     this: Object,
@@ -613,7 +612,7 @@ impl TryFrom<u8> for MarshallType {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PharoObject)]
 #[repr(C)]
 pub struct BareFFIType {
     this: Object,
@@ -637,110 +636,3 @@ impl TryFrom<BareFFITypeRef> for MarshallType {
     }
 }
 
-impl Deref for BareFFIType {
-    type Target = Object;
-    fn deref(&self) -> &Self::Target {
-        &self.this
-    }
-}
-
-#[derive(Debug, Copy, Clone)]
-#[repr(transparent)]
-pub struct BareFFITypeRef(ObjectRef);
-
-impl Deref for BareFFITypeRef {
-    type Target = BareFFIType;
-    fn deref(&self) -> &Self::Target {
-        unsafe { self.0.cast() }
-    }
-}
-
-impl DerefMut for BareFFITypeRef {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        unsafe { self.0.cast_mut() }
-    }
-}
-
-impl TryFrom<AnyObjectRef> for BareFFITypeRef {
-    type Error = Error;
-
-    fn try_from(value: AnyObjectRef) -> Result<Self, Self::Error> {
-        const EXPECTED_AMOUNT_OF_SLOTS: usize = 2;
-        let object = value.as_object()?;
-        let actual_amount_of_slots = object.amount_of_slots();
-
-        if actual_amount_of_slots != EXPECTED_AMOUNT_OF_SLOTS {
-            Err(vm_object_model::Error::WrongAmountOfSlots {
-                object: object.header().clone(),
-                type_name: type_name::<Self>().to_string(),
-                expected: EXPECTED_AMOUNT_OF_SLOTS,
-                actual: actual_amount_of_slots,
-            })?;
-        }
-
-        Ok(Self(object))
-    }
-}
-
-impl From<BareFFITypeRef> for AnyObjectRef {
-    fn from(value: BareFFITypeRef) -> Self {
-        value.0.into()
-    }
-}
-
-impl Deref for ExternalFunction {
-    type Target = Object;
-    fn deref(&self) -> &Self::Target {
-        &self.this
-    }
-}
-
-#[derive(Debug, Copy, Clone)]
-#[repr(transparent)]
-pub struct ExternalFunctionRef(ObjectRef);
-
-impl ExternalFunctionRef {
-    pub unsafe fn from_any_object_unchecked(value: AnyObjectRef) -> Self {
-        Self(ObjectRef::from_raw_pointer_unchecked(value.into_inner()))
-    }
-}
-
-impl Deref for ExternalFunctionRef {
-    type Target = ExternalFunction;
-    fn deref(&self) -> &Self::Target {
-        unsafe { self.0.cast() }
-    }
-}
-
-impl DerefMut for ExternalFunctionRef {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        unsafe { self.0.cast_mut() }
-    }
-}
-
-impl TryFrom<AnyObjectRef> for ExternalFunctionRef {
-    type Error = Error;
-
-    fn try_from(value: AnyObjectRef) -> Result<Self, Self::Error> {
-        const EXPECTED_AMOUNT_OF_SLOTS: usize = 6;
-        let object = value.as_object()?;
-        let actual_amount_of_slots = object.amount_of_slots();
-
-        if actual_amount_of_slots != EXPECTED_AMOUNT_OF_SLOTS {
-            Err(vm_object_model::Error::WrongAmountOfSlots {
-                object: object.header().clone(),
-                type_name: type_name::<Self>().to_string(),
-                expected: EXPECTED_AMOUNT_OF_SLOTS,
-                actual: actual_amount_of_slots,
-            })?;
-        }
-
-        Ok(Self(object))
-    }
-}
-
-impl From<ExternalFunctionRef> for AnyObjectRef {
-    fn from(value: ExternalFunctionRef) -> Self {
-        value.0.into()
-    }
-}

@@ -2499,6 +2499,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6ce2be8dc25455e1f91df71bfa12ad37d7af1092ae736f3a6cd0e37bc7810596"
 
 [[package]]
+name = "ston"
+version = "0.1.0"
+
+[[package]]
 name = "strsim"
 version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2835,6 +2839,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5d99f8c9a7727884afe522e9bd5edbfc91a3312b36a77b5fb8926e4c31a41801"
 
 [[package]]
+name = "tonel"
+version = "0.1.0"
+dependencies = [
+ "ston",
+]
+
+[[package]]
+name = "tonel-loader"
+version = "0.1.0"
+dependencies = [
+ "ston",
+ "tonel",
+]
+
+[[package]]
 name = "tower-service"
 version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3100,6 +3119,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "vm-object-model-derive"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2 1.0.103",
+ "quote 1.0.41",
+ "syn 2.0.108",
+]
+
+[[package]]
 name = "vm-runtime"
 version = "0.1.0"
 dependencies = [
@@ -3128,9 +3156,12 @@ dependencies = [
  "paste",
  "thiserror 2.0.17",
  "to_absolute",
+ "tonel",
+ "tonel-loader",
  "user-error",
  "vm-bindings",
  "vm-object-model",
+ "vm-object-model-derive",
  "widestring",
  "zerocopy",
 ]
