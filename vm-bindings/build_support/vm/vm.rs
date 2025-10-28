@@ -355,12 +355,11 @@ impl VirtualMachine {
             core.define("UNIX", "1");
             core.define("HAVE_TM_GMTOFF", None);
 
+            core.dependency(Dependency::Library("m".to_string(), vec![]));
+            
             // Android has its own pthread implementation
             if !core.target().is_android() {
                 core.dependency(Dependency::Library("pthread".to_string(), vec![]));
-            }
-            if core.target().is_android() {
-                core.dependency(Dependency::Library("m".to_string(), vec![]));
             }
         }
 
