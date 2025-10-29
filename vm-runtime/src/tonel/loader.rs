@@ -2,7 +2,6 @@ use crate::assign_field;
 use crate::objects::{Array, ArrayRef, ByteStringRef};
 use crate::vm;
 use std::path::PathBuf;
-use std::ops::{Deref, DerefMut};
 use thiserror::Error;
 use tonel::MethodType;
 use tonel_loader::{
@@ -22,8 +21,12 @@ pub struct TonelLoadPlan {
 }
 
 impl TonelLoadPlan {
-    pub fn set_package_name(&mut self, value: AnyObjectRef) {
-        assign_field!(self, self.package_name, value);
+    pub fn set_package_name(&mut self, value: ByteStringRef) {
+        assign_field!(self, self.package_name, value.into());
+    }
+
+    pub fn clear_package_name(&mut self) {
+        assign_field!(self, self.package_name, Smalltalk::nil_object());
     }
 
     pub fn set_instructions(&mut self, value: ArrayRef) {
@@ -39,23 +42,23 @@ impl TonelLoadPlan {
 #[repr(C)]
 pub struct TonelLoadInstruction {
     this: Object,
-    kind: AnyObjectRef,
-    name: AnyObjectRef,
-    path: AnyObjectRef,
+    kind: ByteStringRef,
+    name: ByteStringRef,
+    path: ByteStringRef,
     detail: AnyObjectRef,
 }
 
 impl TonelLoadInstruction {
-    pub fn set_kind(&mut self, value: AnyObjectRef) {
-        assign_field!(self, self.kind, value);
+    pub fn set_kind(&mut self, value: ByteStringRef) {
+        assign_field!(self, self.kind, value.into());
     }
 
-    pub fn set_name(&mut self, value: AnyObjectRef) {
-        assign_field!(self, self.name, value);
+    pub fn set_name(&mut self, value: ByteStringRef) {
+        assign_field!(self, self.name, value.into());
     }
 
-    pub fn set_path(&mut self, value: AnyObjectRef) {
-        assign_field!(self, self.path, value);
+    pub fn set_path(&mut self, value: ByteStringRef) {
+        assign_field!(self, self.path, value.into());
     }
 
     pub fn set_detail(&mut self, value: AnyObjectRef) {
@@ -67,95 +70,277 @@ impl TonelLoadInstruction {
 #[repr(C)]
 pub struct TonelMethodDefinition {
     this: Object,
-    selector: AnyObjectRef,
-    owner_name: AnyObjectRef,
-    owner_kind: AnyObjectRef,
-    class_name: AnyObjectRef,
-    method_type: AnyObjectRef,
+    selector: ByteStringRef,
+    owner_name: ByteStringRef,
+    owner_kind: ByteStringRef,
+    class_name: ByteStringRef,
+    method_type: ByteStringRef,
     category: AnyObjectRef,
-    source: AnyObjectRef,
-    header: AnyObjectRef,
-    body: AnyObjectRef,
-    source_path: AnyObjectRef,
+    source: ByteStringRef,
+    header: ByteStringRef,
+    body: ByteStringRef,
+    source_path: ByteStringRef,
 }
 
 impl TonelMethodDefinition {
-    pub fn set_selector(&mut self, value: AnyObjectRef) {
-        assign_field!(self, self.selector, value);
+    pub fn set_selector(&mut self, value: ByteStringRef) {
+        assign_field!(self, self.selector, value.into());
     }
 
-    pub fn set_owner_name(&mut self, value: AnyObjectRef) {
-        assign_field!(self, self.owner_name, value);
+    pub fn set_owner_name(&mut self, value: ByteStringRef) {
+        assign_field!(self, self.owner_name, value.into());
     }
 
-    pub fn set_owner_kind(&mut self, value: AnyObjectRef) {
-        assign_field!(self, self.owner_kind, value);
+    pub fn set_owner_kind(&mut self, value: ByteStringRef) {
+        assign_field!(self, self.owner_kind, value.into());
     }
 
-    pub fn set_class_name(&mut self, value: AnyObjectRef) {
-        assign_field!(self, self.class_name, value);
+    pub fn set_class_name(&mut self, value: ByteStringRef) {
+        assign_field!(self, self.class_name, value.into());
     }
 
-    pub fn set_method_type(&mut self, value: AnyObjectRef) {
-        assign_field!(self, self.method_type, value);
+    pub fn set_method_type(&mut self, value: ByteStringRef) {
+        assign_field!(self, self.method_type, value.into());
     }
 
-    pub fn set_category(&mut self, value: AnyObjectRef) {
-        assign_field!(self, self.category, value);
+    pub fn set_category(&mut self, value: ByteStringRef) {
+        assign_field!(self, self.category, value.into());
     }
 
-    pub fn set_source(&mut self, value: AnyObjectRef) {
-        assign_field!(self, self.source, value);
+    pub fn clear_category(&mut self) {
+        assign_field!(self, self.category, Smalltalk::nil_object());
     }
 
-    pub fn set_header(&mut self, value: AnyObjectRef) {
-        assign_field!(self, self.header, value);
+    pub fn set_source(&mut self, value: ByteStringRef) {
+        assign_field!(self, self.source, value.into());
     }
 
-    pub fn set_body(&mut self, value: AnyObjectRef) {
-        assign_field!(self, self.body, value);
+    pub fn set_header(&mut self, value: ByteStringRef) {
+        assign_field!(self, self.header, value.into());
     }
 
-    pub fn set_source_path(&mut self, value: AnyObjectRef) {
-        assign_field!(self, self.source_path, value);
+    pub fn set_body(&mut self, value: ByteStringRef) {
+        assign_field!(self, self.body, value.into());
+    }
+
+    pub fn set_source_path(&mut self, value: ByteStringRef) {
+        assign_field!(self, self.source_path, value.into());
+    }
+}
+
+#[derive(Debug, PharoObject)]
+#[repr(C)]
+pub struct TonelClassDetail {
+    this: Object,
+    superclass_name: AnyObjectRef,
+    trait_composition: AnyObjectRef,
+    class_trait_composition: AnyObjectRef,
+    instance_variables: ArrayRef,
+    class_variables: ArrayRef,
+    class_instance_variables: ArrayRef,
+    pool_dictionaries: ArrayRef,
+    category: AnyObjectRef,
+    package: AnyObjectRef,
+    tag: AnyObjectRef,
+    type_name: AnyObjectRef,
+    comment: ByteStringRef,
+    source_path: ByteStringRef,
+}
+
+impl TonelClassDetail {
+    pub fn set_superclass_name(&mut self, value: ByteStringRef) {
+        assign_field!(self, self.superclass_name, value.into());
+    }
+
+    pub fn clear_superclass_name(&mut self) {
+        assign_field!(self, self.superclass_name, Smalltalk::nil_object());
+    }
+
+    pub fn set_trait_composition(&mut self, value: ByteStringRef) {
+        assign_field!(self, self.trait_composition, value.into());
+    }
+
+    pub fn clear_trait_composition(&mut self) {
+        assign_field!(self, self.trait_composition, Smalltalk::nil_object());
+    }
+
+    pub fn set_class_trait_composition(&mut self, value: ByteStringRef) {
+        assign_field!(self, self.class_trait_composition, value.into());
+    }
+
+    pub fn clear_class_trait_composition(&mut self) {
+        assign_field!(self, self.class_trait_composition, Smalltalk::nil_object());
+    }
+
+    pub fn set_instance_variables(&mut self, value: ArrayRef) {
+        assign_field!(self, self.instance_variables, value);
+    }
+
+    pub fn set_class_variables(&mut self, value: ArrayRef) {
+        assign_field!(self, self.class_variables, value);
+    }
+
+    pub fn set_class_instance_variables(&mut self, value: ArrayRef) {
+        assign_field!(self, self.class_instance_variables, value);
+    }
+
+    pub fn set_pool_dictionaries(&mut self, value: ArrayRef) {
+        assign_field!(self, self.pool_dictionaries, value);
+    }
+
+    pub fn set_category(&mut self, value: ByteStringRef) {
+        assign_field!(self, self.category, value.into());
+    }
+
+    pub fn clear_category(&mut self) {
+        assign_field!(self, self.category, Smalltalk::nil_object());
+    }
+
+    pub fn set_package(&mut self, value: ByteStringRef) {
+        assign_field!(self, self.package, value.into());
+    }
+
+    pub fn clear_package(&mut self) {
+        assign_field!(self, self.package, Smalltalk::nil_object());
+    }
+
+    pub fn set_tag(&mut self, value: ByteStringRef) {
+        assign_field!(self, self.tag, value.into());
+    }
+
+    pub fn clear_tag(&mut self) {
+        assign_field!(self, self.tag, Smalltalk::nil_object());
+    }
+
+    pub fn set_type_name(&mut self, value: ByteStringRef) {
+        assign_field!(self, self.type_name, value.into());
+    }
+
+    pub fn clear_type_name(&mut self) {
+        assign_field!(self, self.type_name, Smalltalk::nil_object());
+    }
+
+    pub fn set_comment(&mut self, value: ByteStringRef) {
+        assign_field!(self, self.comment, value.into());
+    }
+
+    pub fn set_source_path(&mut self, value: ByteStringRef) {
+        assign_field!(self, self.source_path, value.into());
+    }
+}
+
+#[derive(Debug, PharoObject)]
+#[repr(C)]
+pub struct TonelTraitDetail {
+    this: Object,
+    trait_composition: AnyObjectRef,
+    class_trait_composition: AnyObjectRef,
+    instance_variables: ArrayRef,
+    class_instance_variables: ArrayRef,
+    category: AnyObjectRef,
+    package: AnyObjectRef,
+    tag: AnyObjectRef,
+    comment: ByteStringRef,
+    source_path: ByteStringRef,
+}
+
+impl TonelTraitDetail {
+    pub fn set_trait_composition(&mut self, value: ByteStringRef) {
+        assign_field!(self, self.trait_composition, value.into());
+    }
+
+    pub fn clear_trait_composition(&mut self) {
+        assign_field!(self, self.trait_composition, Smalltalk::nil_object());
+    }
+
+    pub fn set_class_trait_composition(&mut self, value: ByteStringRef) {
+        assign_field!(self, self.class_trait_composition, value.into());
+    }
+
+    pub fn clear_class_trait_composition(&mut self) {
+        assign_field!(self, self.class_trait_composition, Smalltalk::nil_object());
+    }
+
+    pub fn set_instance_variables(&mut self, value: ArrayRef) {
+        assign_field!(self, self.instance_variables, value);
+    }
+
+    pub fn set_class_instance_variables(&mut self, value: ArrayRef) {
+        assign_field!(self, self.class_instance_variables, value);
+    }
+
+    pub fn set_category(&mut self, value: ByteStringRef) {
+        assign_field!(self, self.category, value.into());
+    }
+
+    pub fn clear_category(&mut self) {
+        assign_field!(self, self.category, Smalltalk::nil_object());
+    }
+
+    pub fn set_package(&mut self, value: ByteStringRef) {
+        assign_field!(self, self.package, value.into());
+    }
+
+    pub fn clear_package(&mut self) {
+        assign_field!(self, self.package, Smalltalk::nil_object());
+    }
+
+    pub fn set_tag(&mut self, value: ByteStringRef) {
+        assign_field!(self, self.tag, value.into());
+    }
+
+    pub fn clear_tag(&mut self) {
+        assign_field!(self, self.tag, Smalltalk::nil_object());
+    }
+
+    pub fn set_comment(&mut self, value: ByteStringRef) {
+        assign_field!(self, self.comment, value.into());
+    }
+
+    pub fn set_source_path(&mut self, value: ByteStringRef) {
+        assign_field!(self, self.source_path, value.into());
     }
 }
 
 #[derive(Debug, PharoObject)]
 #[repr(C)]
 pub struct TonelLoadPrecondition {
-    this: vm_object_model::Object,
-    required_name: AnyObjectRef,
-    required_kind: AnyObjectRef,
-    reason: AnyObjectRef,
-    dependent_kind: AnyObjectRef,
-    dependent_name: AnyObjectRef,
+    this: Object,
+    required_name: ByteStringRef,
+    required_kind: ByteStringRef,
+    reason: ByteStringRef,
+    dependent_kind: ByteStringRef,
+    dependent_name: ByteStringRef,
     dependent_source_path: AnyObjectRef,
 }
 
 impl TonelLoadPrecondition {
-    pub fn set_required_name(&mut self, value: AnyObjectRef) {
-        assign_field!(self, self.required_name, value);
+    pub fn set_required_name(&mut self, value: ByteStringRef) {
+        assign_field!(self, self.required_name, value.into());
     }
 
-    pub fn set_required_kind(&mut self, value: AnyObjectRef) {
-        assign_field!(self, self.required_kind, value);
+    pub fn set_required_kind(&mut self, value: ByteStringRef) {
+        assign_field!(self, self.required_kind, value.into());
     }
 
-    pub fn set_reason(&mut self, value: AnyObjectRef) {
-        assign_field!(self, self.reason, value);
+    pub fn set_reason(&mut self, value: ByteStringRef) {
+        assign_field!(self, self.reason, value.into());
     }
 
-    pub fn set_dependent_kind(&mut self, value: AnyObjectRef) {
-        assign_field!(self, self.dependent_kind, value);
+    pub fn set_dependent_kind(&mut self, value: ByteStringRef) {
+        assign_field!(self, self.dependent_kind, value.into());
     }
 
-    pub fn set_dependent_name(&mut self, value: AnyObjectRef) {
-        assign_field!(self, self.dependent_name, value);
+    pub fn set_dependent_name(&mut self, value: ByteStringRef) {
+        assign_field!(self, self.dependent_name, value.into());
     }
 
-    pub fn set_dependent_source_path(&mut self, value: AnyObjectRef) {
-        assign_field!(self, self.dependent_source_path, value);
+    pub fn set_dependent_source_path(&mut self, value: ByteStringRef) {
+        assign_field!(self, self.dependent_source_path, value.into());
+    }
+
+    pub fn clear_dependent_source_path(&mut self) {
+        assign_field!(self, self.dependent_source_path, Smalltalk::nil_object());
     }
 }
 
@@ -174,7 +359,7 @@ pub enum TonelPrimitiveError {
 #[no_mangle]
 #[allow(non_snake_case)]
 pub fn primitiveTonelBuildLoadPlan() -> Result<(), TonelPrimitiveError> {
-    const EXPECTED_ARGUMENTS: usize = 5;
+    const EXPECTED_ARGUMENTS: usize = 7;
     let argument_count = Smalltalk::method_argument_count();
     if argument_count != EXPECTED_ARGUMENTS {
         return Err(TonelPrimitiveError::WrongNumberOfArguments(
@@ -185,17 +370,19 @@ pub fn primitiveTonelBuildLoadPlan() -> Result<(), TonelPrimitiveError> {
     let proxy = vm().proxy();
 
     let path_argument =
-        Smalltalk::stack_object_value_unchecked(StackOffset::new(4));
+        Smalltalk::stack_object_value_unchecked(StackOffset::new(6));
     let path_object =
         AnyObjectRef::from(RawObjectPointer::from(path_argument.as_i64()));
     let path_byte_string =
         ByteStringRef::try_from(path_object).map_err(|_| TonelPrimitiveError::ExpectedByteString)?;
     let package_path = PathBuf::from(path_byte_string.as_str());
 
-    let plan_class = class_argument(StackOffset::new(3))?;
-    let instruction_class = class_argument(StackOffset::new(2))?;
-    let method_definition_class = class_argument(StackOffset::new(1))?;
-    let precondition_class = class_argument(StackOffset::new(0))?;
+    let plan_class = class_argument(StackOffset::new(5))?;
+    let instruction_class = class_argument(StackOffset::new(4))?;
+    let method_definition_class = class_argument(StackOffset::new(3))?;
+    let precondition_class = class_argument(StackOffset::new(2))?;
+    let class_detail_class = class_argument(StackOffset::new(1))?;
+    let trait_detail_class = class_argument(StackOffset::new(0))?;
 
     let load_plan = build_load_plan(package_path)?;
 
@@ -210,6 +397,8 @@ pub fn primitiveTonelBuildLoadPlan() -> Result<(), TonelPrimitiveError> {
         &mut instruction_array,
         instruction_class,
         method_definition_class,
+        class_detail_class,
+        trait_detail_class,
     )?;
 
     let mut preconditions_array =
@@ -221,11 +410,11 @@ pub fn primitiveTonelBuildLoadPlan() -> Result<(), TonelPrimitiveError> {
         precondition_class,
     )?;
 
-    let package_name = load_plan
-        .package_name()
-        .map(|value| string_object(&proxy, value))
-        .unwrap_or_else(Smalltalk::nil_object);
-    plan_object.set_package_name(package_name);
+    if let Some(value) = load_plan.package_name() {
+        plan_object.set_package_name(byte_string(&proxy, value)?);
+    } else {
+        plan_object.clear_package_name();
+    }
     plan_object.set_instructions(instruction_array);
     plan_object.set_preconditions(preconditions_array);
 
@@ -242,6 +431,8 @@ fn build_instructions(
     instruction_array: &mut ArrayRef,
     instruction_class: ObjectRef,
     method_definition_class: ObjectRef,
+    class_detail_class: ObjectRef,
+    trait_detail_class: ObjectRef,
 ) -> Result<(), TonelPrimitiveError> {
     for (index, instruction) in instructions.iter().enumerate() {
         let mut instruction_object =
@@ -251,47 +442,42 @@ fn build_instructions(
 
         match instruction {
             LoadInstruction::Trait(document) => {
-                let kind = string_object(proxy, "trait");
-                let name = string_object(proxy, document.name());
-                let path = string_object(
-                    proxy,
-                    document
-                        .source_path()
-                        .to_string_lossy()
-                        .as_ref(),
-                );
+                let kind = byte_string(proxy, "trait")?;
+                let name = byte_string(proxy, document.name())?;
+                let path_string = document.source_path().to_string_lossy();
+                let path = byte_string(proxy, path_string.as_ref())?;
 
                 instruction_object.set_kind(kind);
                 instruction_object.set_name(name);
                 instruction_object.set_path(path);
-                instruction_object.set_detail(Smalltalk::nil_object());
+                let trait_detail = build_trait_detail(
+                    proxy,
+                    document,
+                    trait_detail_class,
+                )?;
+                instruction_object.set_detail(trait_detail.into());
             }
             LoadInstruction::Class(document) => {
-                let kind = string_object(proxy, "class");
-                let name = string_object(proxy, document.name());
-                let path = string_object(
-                    proxy,
-                    document
-                        .source_path()
-                        .to_string_lossy()
-                        .as_ref(),
-                );
+                let kind = byte_string(proxy, "class")?;
+                let name = byte_string(proxy, document.name())?;
+                let path_string = document.source_path().to_string_lossy();
+                let path = byte_string(proxy, path_string.as_ref())?;
 
                 instruction_object.set_kind(kind);
                 instruction_object.set_name(name);
                 instruction_object.set_path(path);
-                instruction_object.set_detail(Smalltalk::nil_object());
+                let class_detail = build_class_detail(
+                    proxy,
+                    document,
+                    class_detail_class,
+                )?;
+                instruction_object.set_detail(class_detail.into());
             }
             LoadInstruction::Extension(document) => {
-                let kind = string_object(proxy, "extension");
-                let name = string_object(proxy, document.target_name());
-                let path = string_object(
-                    proxy,
-                    document
-                        .source_path()
-                        .to_string_lossy()
-                        .as_ref(),
-                );
+                let kind = byte_string(proxy, "extension")?;
+                let name = byte_string(proxy, document.target_name())?;
+                let path_string = document.source_path().to_string_lossy();
+                let path = byte_string(proxy, path_string.as_ref())?;
 
                 instruction_object.set_kind(kind);
                 instruction_object.set_name(name);
@@ -299,27 +485,21 @@ fn build_instructions(
                 instruction_object.set_detail(Smalltalk::nil_object());
             }
             LoadInstruction::Method(document) => {
-                let kind = string_object(proxy, "method");
-                let name = string_object(proxy, document.identifier());
-                let path = string_object(
-                    proxy,
-                    document
-                        .source_path()
-                        .to_string_lossy()
-                        .as_ref(),
-                );
+                let kind = byte_string(proxy, "method")?;
+                let name = byte_string(proxy, document.identifier())?;
+                let path_string = document.source_path().to_string_lossy();
+                let path = byte_string(proxy, path_string.as_ref())?;
 
                 let method_detail = build_method_detail(
                     proxy,
                     document,
                     method_definition_class,
                 )?;
-                let method_detail_any: AnyObjectRef = method_detail.into();
 
                 instruction_object.set_kind(kind);
                 instruction_object.set_name(name);
                 instruction_object.set_path(path);
-                instruction_object.set_detail(method_detail_any);
+                instruction_object.set_detail(method_detail.into());
             }
         }
 
@@ -341,31 +521,170 @@ fn build_method_detail(
         )?;
 
     let definition = document.definition();
-    method_object.set_selector(string_object(proxy, definition.selector.as_str()));
-    method_object.set_owner_name(string_object(proxy, document.owner_name()));
-    method_object.set_owner_kind(string_object(proxy, match document.owner_kind() {
+    method_object.set_selector(byte_string(proxy, definition.selector.as_str())?);
+    method_object.set_owner_name(byte_string(proxy, document.owner_name())?);
+    method_object.set_owner_kind(byte_string(
+        proxy,
+        match document.owner_kind() {
             MethodOwnerKind::Trait => "trait",
             MethodOwnerKind::Class => "class",
             MethodOwnerKind::Extension => "extension",
-        }));
-    method_object.set_class_name(string_object(proxy, definition.class_name.as_str()));
-    method_object.set_method_type(string_object(proxy, match definition.method_type {
+        },
+    )?);
+    method_object.set_class_name(byte_string(proxy, definition.class_name.as_str())?);
+    method_object.set_method_type(byte_string(
+        proxy,
+        match definition.method_type {
             MethodType::Instance => "instance",
             MethodType::Class => "class",
-        }));
-    method_object.set_category(optional_string_object(proxy, definition.category.as_deref()));
-    method_object.set_source(string_object(proxy, definition.source.as_str()));
-    method_object.set_header(string_object(proxy, definition.header.as_str()));
-    method_object.set_body(string_object(proxy, definition.body.as_str()));
-    method_object.set_source_path(string_object(
-        proxy,
-        document
-            .source_path()
-            .to_string_lossy()
-            .as_ref(),
-    ));
+        },
+    )?);
+    if let Some(category) = definition.category.as_deref() {
+        method_object.set_category(byte_string(proxy, category)?);
+    } else {
+        method_object.clear_category();
+    }
+    method_object.set_source(byte_string(proxy, definition.source.as_str())?);
+    method_object.set_header(byte_string(proxy, definition.header.as_str())?);
+    method_object.set_body(byte_string(proxy, definition.body.as_str())?);
+    let source_path_string = document.source_path().to_string_lossy();
+    method_object.set_source_path(byte_string(proxy, source_path_string.as_ref())?);
 
     Ok(method_object)
+}
+
+fn build_class_detail(
+    proxy: &vm_bindings::InterpreterProxy,
+    document: &tonel_loader::ClassDocument,
+    class_detail_class: ObjectRef,
+) -> Result<TonelClassDetailRef, TonelPrimitiveError> {
+    let mut detail =
+        Smalltalk::instantiate::<TonelClassDetailRef>(class_detail_class)?;
+
+    let definition = document.definition();
+
+    if let Some(super_name) = document.superclass_name() {
+        detail.set_superclass_name(byte_string(proxy, super_name)?);
+    } else {
+        detail.clear_superclass_name();
+    }
+
+    if let Some(text) = definition.trait_composition.as_deref() {
+        detail.set_trait_composition(byte_string(proxy, text)?);
+    } else {
+        detail.clear_trait_composition();
+    }
+
+    if let Some(text) = definition.class_trait_composition.as_deref() {
+        detail.set_class_trait_composition(byte_string(proxy, text)?);
+    } else {
+        detail.clear_class_trait_composition();
+    }
+
+    detail.set_instance_variables(byte_string_array_from_strings(
+        proxy,
+        &definition.inst_vars,
+    )?);
+    detail.set_class_variables(byte_string_array_from_strings(
+        proxy,
+        &definition.class_vars,
+    )?);
+    detail.set_class_instance_variables(byte_string_array_from_strings(
+        proxy,
+        &definition.class_inst_vars,
+    )?);
+    detail.set_pool_dictionaries(byte_string_array_from_strings(
+        proxy,
+        &definition.pools,
+    )?);
+
+    if let Some(category) = definition.category.as_deref() {
+        detail.set_category(byte_string(proxy, category)?);
+    } else {
+        detail.clear_category();
+    }
+
+    if let Some(package) = definition.package.as_deref() {
+        detail.set_package(byte_string(proxy, package)?);
+    } else {
+        detail.clear_package();
+    }
+
+    if let Some(tag) = definition.tag.as_deref() {
+        detail.set_tag(byte_string(proxy, tag)?);
+    } else {
+        detail.clear_tag();
+    }
+
+    if let Some(type_name) = definition.type_.as_deref() {
+        detail.set_type_name(byte_string(proxy, type_name)?);
+    } else {
+        detail.clear_type_name();
+    }
+
+    detail.set_comment(byte_string(proxy, definition.comment.as_str())?);
+
+    let source_path_string = document.source_path().to_string_lossy();
+    detail.set_source_path(byte_string(proxy, source_path_string.as_ref())?);
+
+    Ok(detail)
+}
+
+fn build_trait_detail(
+    proxy: &vm_bindings::InterpreterProxy,
+    document: &tonel_loader::TraitDocument,
+    trait_detail_class: ObjectRef,
+) -> Result<TonelTraitDetailRef, TonelPrimitiveError> {
+    let mut detail =
+        Smalltalk::instantiate::<TonelTraitDetailRef>(trait_detail_class)?;
+
+    let definition = document.definition();
+
+    if let Some(text) = definition.trait_composition.as_deref() {
+        detail.set_trait_composition(byte_string(proxy, text)?);
+    } else {
+        detail.clear_trait_composition();
+    }
+
+    if let Some(text) = definition.class_trait_composition.as_deref() {
+        detail.set_class_trait_composition(byte_string(proxy, text)?);
+    } else {
+        detail.clear_class_trait_composition();
+    }
+
+    detail.set_instance_variables(byte_string_array_from_strings(
+        proxy,
+        &definition.inst_vars,
+    )?);
+    detail.set_class_instance_variables(byte_string_array_from_strings(
+        proxy,
+        &definition.class_inst_vars,
+    )?);
+
+    if let Some(category) = definition.category.as_deref() {
+        detail.set_category(byte_string(proxy, category)?);
+    } else {
+        detail.clear_category();
+    }
+
+    if let Some(package) = definition.package.as_deref() {
+        detail.set_package(byte_string(proxy, package)?);
+    } else {
+        detail.clear_package();
+    }
+
+    if let Some(tag) = definition.tag.as_deref() {
+        detail.set_tag(byte_string(proxy, tag)?);
+    } else {
+        detail.clear_tag();
+    }
+
+    detail.set_comment(byte_string(proxy, definition.comment.as_str())?);
+
+    let source_path_string = document.source_path().to_string_lossy();
+    detail.set_source_path(byte_string(proxy, source_path_string.as_ref())?);
+
+    Ok(detail)
 }
 
 fn build_preconditions(
@@ -381,38 +700,37 @@ fn build_preconditions(
             )?;
 
         precondition_object
-            .set_required_name(string_object(proxy, precondition.required_name.as_str()));
-        precondition_object.set_required_kind(string_object(
+            .set_required_name(byte_string(proxy, precondition.required_name.as_str())?);
+        precondition_object.set_required_kind(byte_string(
             proxy,
             dependency_kind_name(precondition.required_kind),
-        ));
+        )?);
         precondition_object
-            .set_reason(string_object(proxy, dependency_reason_name(precondition.reason)));
+            .set_reason(byte_string(proxy, dependency_reason_name(precondition.reason))?);
 
         match &precondition.dependent {
             tonel_loader::DependentEntity::Trait { name } => {
-                precondition_object.set_dependent_kind(string_object(proxy, "trait"));
-                precondition_object.set_dependent_name(string_object(proxy, name.as_str()));
-                precondition_object
-                    .set_dependent_source_path(Smalltalk::nil_object());
+                precondition_object.set_dependent_kind(byte_string(proxy, "trait")?);
+                precondition_object.set_dependent_name(byte_string(proxy, name.as_str())?);
+                precondition_object.clear_dependent_source_path();
             }
             tonel_loader::DependentEntity::Class { name } => {
-                precondition_object.set_dependent_kind(string_object(proxy, "class"));
-                precondition_object.set_dependent_name(string_object(proxy, name.as_str()));
-                precondition_object
-                    .set_dependent_source_path(Smalltalk::nil_object());
+                precondition_object.set_dependent_kind(byte_string(proxy, "class")?);
+                precondition_object.set_dependent_name(byte_string(proxy, name.as_str())?);
+                precondition_object.clear_dependent_source_path();
             }
             tonel_loader::DependentEntity::Extension {
                 target_name,
                 source_path,
             } => {
-                precondition_object.set_dependent_kind(string_object(proxy, "extension"));
+                precondition_object.set_dependent_kind(byte_string(proxy, "extension")?);
                 precondition_object
-                    .set_dependent_name(string_object(proxy, target_name.as_str()));
-                precondition_object.set_dependent_source_path(string_object(
+                    .set_dependent_name(byte_string(proxy, target_name.as_str())?);
+                let source_path_string = source_path.to_string_lossy();
+                precondition_object.set_dependent_source_path(byte_string(
                     proxy,
-                    source_path.to_string_lossy().as_ref(),
-                ));
+                    source_path_string.as_ref(),
+                )?);
             }
         }
 
@@ -423,19 +741,25 @@ fn build_preconditions(
     Ok(())
 }
 
-fn string_object(proxy: &vm_bindings::InterpreterProxy, value: &str) -> AnyObjectRef {
+fn byte_string(
+    proxy: &vm_bindings::InterpreterProxy,
+    value: &str,
+) -> Result<ByteStringRef, TonelPrimitiveError> {
     let oop = proxy.new_string(value);
-    AnyObjectRef::from(RawObjectPointer::from(oop.as_i64()))
+    let any = AnyObjectRef::from(RawObjectPointer::from(oop.as_i64()));
+    Ok(ByteStringRef::try_from(any)?)
 }
 
-fn optional_string_object(
+fn byte_string_array_from_strings(
     proxy: &vm_bindings::InterpreterProxy,
-    value: Option<&str>,
-) -> AnyObjectRef {
-    match value {
-        Some(text) => string_object(proxy, text),
-        None => Smalltalk::nil_object(),
+    items: &[String],
+) -> Result<ArrayRef, TonelPrimitiveError> {
+    let mut array = Array::new(items.len())?;
+    for (index, item) in items.iter().enumerate() {
+        let value = byte_string(proxy, item.as_str())?;
+        array.insert(index, value.into());
     }
+    Ok(array)
 }
 
 fn dependency_kind_name(kind: DependencyKind) -> &'static str {

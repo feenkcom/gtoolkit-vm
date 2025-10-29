@@ -11,6 +11,9 @@ use std::thread::JoinHandle;
 use crate::objects::{Array, ArrayRef};
 #[cfg(feature = "pharo-compiler")]
 use crate::pharo_compiler::*;
+#[cfg(feature = "tonel")]
+use crate::tonel::*;
+
 use crate::reference_finder::{
     primitiveClassInstanceReferenceFinderFindAllPaths,
     primitiveClassInstanceReferenceFinderFindPath, primitiveInstanceCounterCountAll,
@@ -115,6 +118,12 @@ impl VirtualMachine {
             vm.add_primitive(try_primitive!(primitiveBareFfiCalloutRelease));
         }
 
+        #[cfg(feature = "tonel")]
+        {
+            use crate::tonel::*;
+            vm.add_primitive(try_primitive!(primitiveTonelBuildLoadPlan));
+        }
+        
         vm.add_primitive(primitive!(primitiveGetSemaphoreSignaller));
         vm.add_primitive(primitive!(primitiveGetEventLoop));
         vm.add_primitive(primitive!(primitiveGetEventLoopReceiver));
