@@ -1,5 +1,5 @@
-use std::hash::{Hash, Hasher};
 use crate::{Error, Immediate, ObjectFormat, ObjectHeader, RawObjectPointer, Result};
+use std::hash::{Hash, Hasher};
 use std::ops::{Deref, DerefMut};
 use std::os::raw::c_void;
 
@@ -129,7 +129,7 @@ impl ObjectRef {
     pub unsafe fn from_raw_pointer_unchecked(pointer: RawObjectPointer) -> Self {
         Self(pointer)
     }
-    
+
     pub fn header(&self) -> &ObjectHeader {
         unsafe { self.cast::<Object>() }.header()
     }
@@ -148,6 +148,10 @@ impl ObjectRef {
 
     pub unsafe fn cast_mut<T>(&mut self) -> &mut T {
         self.0.cast_mut()
+    }
+
+    pub fn is_enumerable(&self) -> bool {
+        self.header().class_index() > Object::FORWARDED_OBJECT_CLASS_INDEX_PUN
     }
 }
 
@@ -251,7 +255,7 @@ impl AnyObjectRef {
     pub fn as_object(&self) -> Result<ObjectRef> {
         ObjectRef::try_from(self.0)
     }
-    
+
     pub fn into_inner(self) -> RawObjectPointer {
         self.0
     }
@@ -276,7 +280,6 @@ impl PartialEq<Self> for AnyObjectRef {
 }
 
 impl Eq for AnyObjectRef {}
-
 
 impl Hash for AnyObjectRef {
     fn hash<H: Hasher>(&self, state: &mut H) {

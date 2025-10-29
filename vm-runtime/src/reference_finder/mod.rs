@@ -12,7 +12,10 @@ pub use reference_finder::*;
 use vm_bindings::{ObjectPointer, Smalltalk};
 use vm_object_model::Immediate;
 
-fn method_return_paths(paths: Vec<Vec<ReferencedObject>>, classes: ArrayRef) -> Result<(), anyhow::Error> {
+fn method_return_paths(
+    paths: Vec<Vec<ReferencedObject>>,
+    classes: ArrayRef,
+) -> Result<(), anyhow::Error> {
     let paths = convert_referenced_object_paths(paths, classes)?;
     Smalltalk::method_return_value(ObjectPointer::from(paths.as_ptr()));
     Ok(())
@@ -23,7 +26,6 @@ fn method_return_path(path: Vec<ReferencedObject>, classes: ArrayRef) -> Result<
     Smalltalk::method_return_value(ObjectPointer::from(paths.as_ptr()));
     Ok(())
 }
-
 
 fn convert_referenced_object_paths(
     paths: Vec<Vec<ReferencedObject>>,
@@ -63,16 +65,24 @@ fn convert_referenced_object_path(
     for (index, each) in path.into_iter().enumerate() {
         let mut inst = match each {
             ReferencedObject::InstanceVariable(_, index) => {
-                let mut referenced_object = Smalltalk::instantiate_class(instance_variable_class).as_object()?;
+                let mut referenced_object =
+                    Smalltalk::instantiate_class(instance_variable_class).as_object()?;
                 referenced_object.inst_var_at_put(1, Immediate::new_u64(index as u64));
                 referenced_object
-            },
-            ReferencedObject::ContextVariable(_) => Smalltalk::instantiate_class(context_variable_class).as_object()?,
-            ReferencedObject::ArrayItem(_) => Smalltalk::instantiate_class(array_item_class).as_object()?,
+            }
+            ReferencedObject::ContextVariable(_) => {
+                Smalltalk::instantiate_class(context_variable_class).as_object()?
+            }
+            ReferencedObject::ArrayItem(_) => {
+                Smalltalk::instantiate_class(array_item_class).as_object()?
+            }
             ReferencedObject::Root(_) => Smalltalk::instantiate_class(root_class).as_object()?,
         };
 
-        Smalltalk::prepare_to_store(ObjectPointer::from(inst.as_ptr()), ObjectPointer::from(each.object().as_ptr()));
+        Smalltalk::prepare_to_store(
+            ObjectPointer::from(inst.as_ptr()),
+            ObjectPointer::from(each.object().as_ptr()),
+        );
         inst.inst_var_at_put(0, each.object());
 
         array.insert(index, inst);

@@ -1,10 +1,10 @@
 use crate::reference_finder::GraphNode;
+use crate::reference_finder::ReferencedObject;
 use std::collections::HashSet;
 use std::fmt::Debug;
 use std::hash::Hash;
 use std::rc::Rc;
 use vm_object_model::AnyObjectRef;
-use crate::reference_finder::ReferencedObject;
 
 #[inline]
 pub fn visit_referenced_object<V>(
@@ -203,7 +203,10 @@ impl VisitorState {
 }
 
 /// Reconstruct path from backlinks
-fn reconstruct_path(mut frame: &VisitorState, mut path: Vec<ReferencedObject>) -> Vec<ReferencedObject> {
+fn reconstruct_path(
+    mut frame: &VisitorState,
+    mut path: Vec<ReferencedObject>,
+) -> Vec<ReferencedObject> {
     loop {
         path.push(frame.node.clone());
         match &frame.parent {

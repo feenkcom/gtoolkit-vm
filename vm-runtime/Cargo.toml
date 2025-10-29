@@ -14,6 +14,8 @@ to_absolute = "0.1"
 anyhow = "1.0"
 num = "0.4"
 num-traits = "0.2"
+strum = "0.27"
+strum_macros = "0.27"
 lazy_static = "1.4"
 once_cell = "1.20"
 chrono = "0.4"
@@ -33,8 +35,8 @@ zerocopy = "0.8"
 user-error = "1.2"
 libloading = "0.8"
 #pharo-compiler = { path = "../../pharo-compiler-rs/pharo-compiler", optional = true }
-tonel = { path = "../../pharo-tonel-rs/tonel", optional = true }
-tonel-loader = { path = "../../pharo-tonel-rs/tonel-loader", optional = true }
+#tonel = { path = "../../pharo-tonel-rs/tonel", optional = true }
+#tonel-loader = { path = "../../pharo-tonel-rs/tonel-loader", optional = true }
 
 [target.'cfg(target_os="macos")'.dependencies]
 core-foundation = "0.9.1"
@@ -48,8 +50,8 @@ comfy-table = { version = "7.1", optional = true }
 colored = { version = "2", optional = true }
 
 [features]
-default = [ "full", "tonel" ]
-tonel = [ "dep:tonel", "dep:tonel-loader" ]
+default = [ "full" ]
+#tonel = [ "dep:tonel", "dep:tonel-loader" ]
 full = [ "jit", "full_without_jit" ]
 full_without_jit = [ "vm-bindings/full_without_jit", "ffi", "colored_terminal" ]
 minimal = [ "vm-bindings/minimal" ]

@@ -34,7 +34,7 @@ macro_rules! try_primitive {
                         use user_error::{UserFacingError, UFE};
                         let error: Box<dyn std::error::Error> = error.into();
                         let user_facing_error: UserFacingError = error.into();
-                    
+
                         let short_text = user_facing_error.summary();
                         let long_text = user_facing_error
                             .reasons()
@@ -43,7 +43,7 @@ macro_rules! try_primitive {
                                 |reasons| Some(reasons.join("\n")),
                             )
                             .unwrap_or_else(|| "".to_string());
-                        
+
                         error!("{}", short_text);
                         error!("{}", long_text);
                         Smalltalk::primitive_fail()

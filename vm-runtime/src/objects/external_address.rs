@@ -18,17 +18,17 @@ impl ExternalAddress {
     pub fn len(&self) -> usize {
         self.amount_of_indexable_units()
     }
-    
+
     pub fn read_address(&self) -> *const c_void {
         let ptr = self.first_fixed_field_ptr() as *const *const c_void;
         unsafe { *ptr }
     }
-    
+
     pub fn set_address(&mut self, address: *const c_void) {
         let ptr = self.first_fixed_field_ptr() as *mut *const c_void;
         unsafe { *ptr = address };
     }
-    
+
     pub fn is_null(&self) -> bool {
         self.read_address().is_null()
     }

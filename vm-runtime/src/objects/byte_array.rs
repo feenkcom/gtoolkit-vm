@@ -13,7 +13,7 @@ impl ByteArray {
     pub fn as_slice(&self) -> &[u8] {
         unsafe { slice::from_raw_parts(self.first_fixed_field_ptr() as _, self.len()) }
     }
-    
+
     pub fn len(&self) -> usize {
         self.amount_of_indexable_units()
     }

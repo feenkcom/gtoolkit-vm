@@ -1,10 +1,10 @@
 use crate::assign_field;
 use std::fmt::Debug;
-use std::ops::{Deref, DerefMut};
+use std::ops::Deref;
 use vm_bindings::Smalltalk;
-use vm_object_model::{AnyObjectRef, Error, Object, ObjectRef, Result};
+use vm_object_model::{AnyObjectRef, Object, ObjectRef, Result};
 
-#[derive(Debug)]
+#[derive(Debug, PharoObject)]
 #[repr(C)]
 pub struct Association {
     this: Object,
@@ -31,57 +31,5 @@ impl Association {
 
     pub fn set_value(&mut self, value: impl Into<AnyObjectRef>) {
         assign_field!(self.value, value.into());
-    }
-}
-
-impl Deref for Association {
-    type Target = Object;
-    fn deref(&self) -> &Self::Target {
-        &self.this
-    }
-}
-
-#[derive(Debug, Copy, Clone)]
-#[repr(transparent)]
-pub struct AssociationRef(ObjectRef);
-
-impl Deref for AssociationRef {
-    type Target = Association;
-    fn deref(&self) -> &Self::Target {
-        unsafe { self.0.cast() }
-    }
-}
-
-impl DerefMut for AssociationRef {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        unsafe { self.0.cast_mut() }
-    }
-}
-
-impl TryFrom<AnyObjectRef> for AssociationRef {
-    type Error = Error;
-
-    fn try_from(value: AnyObjectRef) -> Result<Self> {
-        const EXPECTED_AMOUNT_OF_SLOTS: usize = 2;
-        let object = value.as_object()?;
-        let actual_amount_of_slots = object.amount_of_slots();
-
-        if actual_amount_of_slots != EXPECTED_AMOUNT_OF_SLOTS {
-            return Err(Error::WrongAmountOfSlots {
-                object: object.header().clone(),
-                type_name: std::any::type_name::<Self>().to_string(),
-                expected: EXPECTED_AMOUNT_OF_SLOTS,
-                actual: actual_amount_of_slots,
-            }
-            .into());
-        }
-
-        Ok(Self(object))
-    }
-}
-
-impl From<AssociationRef> for AnyObjectRef {
-    fn from(value: AssociationRef) -> Self {
-        value.0.into()
     }
 }

@@ -70,15 +70,15 @@ fn expand_pharo_object(input: &DeriveInput) -> Result<proc_macro2::TokenStream> 
                 Self(::vm_object_model::ObjectRef::from_raw_pointer_unchecked(value.into_inner()))
             }
         }
-        
+
         impl ::core::ops::Deref for #struct_ident {
             type Target = ::vm_object_model::Object;
-        
+
             fn deref(&self) -> &Self::Target {
                 &self.this
             }
         }
-        
+
         impl ::core::ops::DerefMut for #struct_ident {
             fn deref_mut(&mut self) -> &mut Self::Target {
                 &mut self.this
@@ -99,10 +99,10 @@ fn expand_pharo_object(input: &DeriveInput) -> Result<proc_macro2::TokenStream> 
             }
         }
 
-        impl ::core::convert::TryFrom<AnyObjectRef> for #ref_ident {
+        impl ::core::convert::TryFrom<::vm_object_model::AnyObjectRef> for #ref_ident {
             type Error = ::vm_object_model::Error;
 
-            fn try_from(value: ::vm_object_model::AnyObjectRef) -> Result<Self, Self::Error> {
+            fn try_from(value: ::vm_object_model::AnyObjectRef) -> ::std::result::Result<Self, Self::Error> {
                 const EXPECTED_AMOUNT_OF_SLOTS: usize = #expected_slots_lit;
 
                 let object = value.as_object()?;

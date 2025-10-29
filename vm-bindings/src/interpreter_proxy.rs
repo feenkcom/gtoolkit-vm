@@ -42,7 +42,10 @@ impl InterpreterProxy {
     }
 
     pub fn pop_then_push_integer(&self, amount_of_stack_items: usize, number: impl Into<sqInt>) {
-        self.pop_then_push(amount_of_stack_items, Smalltalk::new_integer_pointer(number));
+        self.pop_then_push(
+            amount_of_stack_items,
+            Smalltalk::new_integer_pointer(number),
+        );
     }
 
     pub fn get_handler(&self, object: ObjectPointer) -> *mut c_void {

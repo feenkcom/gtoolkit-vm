@@ -71,6 +71,41 @@ SpurMemoryManager compile: 'getStatScavengeGCUsecs
     <api>
     ^ statScavengeGCUsecs'.
 
+SpurMemoryManager compile: 'getOldSpaceMemoryStart
+    <api>
+    <export: true>
+    ^ self firstObject'.
+
+SpurMemoryManager compile: 'getOldSpaceMemoryEnd
+    <api>
+    <export: true>
+    ^ memoryMap oldSpaceEnd'.
+    
+SpurMemoryManager compile: 'getEdenSpaceMemoryStart
+    <api>
+    <export: true>
+    ^ scavenger eden start'.
+
+SpurMemoryManager compile: 'getEdenSpaceMemoryEnd
+    <api>
+    <export: true>
+    ^ freeStart'.
+    
+SpurMemoryManager compile: 'getPastSpaceMemoryStart
+    <api>
+    <export: true>
+    ^ scavenger pastSpace start'.
+
+SpurMemoryManager compile: 'getPastSpaceMemoryEnd
+    <api>
+    <export: true>
+    ^ pastSpaceStart'.
+   
+SpurMemoryManager compile: 'getObjectAfter: objOop limit: limit
+    <api>
+    <export: true>
+    ^ self objectAfter: objOop limit: limit'.
+
 StackInterpreter compile: 'getThisContext
     <export: true>
     ^ self ensureFrameIsMarried: framePointer SP: stackPointer'.

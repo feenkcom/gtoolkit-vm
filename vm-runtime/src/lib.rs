@@ -23,6 +23,7 @@ mod version;
 mod virtual_machine;
 mod working_directory;
 
+mod memory;
 pub mod objects;
 #[cfg(feature = "pharo-compiler")]
 mod pharo_compiler;

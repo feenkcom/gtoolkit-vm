@@ -114,8 +114,10 @@ pub fn copy_stack(context: ObjectRef) -> ArrayRef {
     let stack_length = Smalltalk::context_stack_length(context);
     let mut array = Array::new(stack_length).unwrap();
 
-    let nil_object =
-        ObjectRef::try_from(RawObjectPointer::new(Smalltalk::primitive_nil_object().as_i64())).unwrap();
+    let nil_object = ObjectRef::try_from(RawObjectPointer::new(
+        Smalltalk::primitive_nil_object().as_i64(),
+    ))
+    .unwrap();
 
     let mut sender = context;
     let mut index = 0;

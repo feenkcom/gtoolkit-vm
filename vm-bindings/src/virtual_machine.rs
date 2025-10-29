@@ -1,15 +1,4 @@
-use crate::bindings::{
-    addressCouldBeClassObj, classArray, classExternalAddress, classString,
-    createNewMethodheaderbytecodeCount, ensureBehaviorHash, exportReadAddress as readAddress,
-    falseObject, fetchClassOfNonImm, fetchPointerofObject, firstBytePointerOfDataObject,
-    firstFixedField, firstIndexableField, floatObjectOf, floatValueOf, getThisContext, hashBitsOf,
-    instVarofContext, instantiateClassindexableSize, instantiateClassindexableSizeisPinned,
-    instantiateClassisPinned, integerObjectOf, isFloatInstance, isOld, isOopForwarded, isYoung,
-    methodArgumentCount, methodReturnInteger, methodReturnValue, nilObject,
-    possibleOldObjectStoreInto, possiblePermObjectStoreIntovalue, primitiveFail, primitiveFailFor,
-    sqInt, stContextSize, stObjectat, stObjectatput, stSizeOf, stackIntegerValue, stackValue,
-    trueObject, isKindOfClass
-};
+use crate::bindings::{addressCouldBeClassObj, classArray, classExternalAddress, classString, createNewMethodheaderbytecodeCount, ensureBehaviorHash, exportReadAddress as readAddress, falseObject, fetchClassOfNonImm, fetchPointerofObject, firstBytePointerOfDataObject, firstFixedField, firstIndexableField, floatObjectOf, floatValueOf, getEdenSpaceMemoryEnd, getEdenSpaceMemoryStart, getObjectAfterlimit, getOldSpaceMemoryEnd, getOldSpaceMemoryStart, getPastSpaceMemoryEnd, getPastSpaceMemoryStart, getThisContext, hashBitsOf, instVarofContext, instantiateClassindexableSize, instantiateClassindexableSizeisPinned, instantiateClassisPinned, integerObjectOf, isFloatInstance, isKindOfClass, isOld, isOopForwarded, isYoung, methodArgumentCount, methodReturnInteger, methodReturnValue, nilObject, possibleOldObjectStoreInto, possiblePermObjectStoreIntovalue, primitiveFail, primitiveFailFor, sqInt, stContextSize, stObjectat, stObjectatput, stSizeOf, stackIntegerValue, stackValue, trueObject};
 use crate::prelude::NativeTransmutable;
 use crate::{ObjectFieldIndex, ObjectPointer, StackOffset};
 use std::os::raw::c_void;
@@ -99,6 +88,11 @@ impl Smalltalk {
 
     pub fn method_return_value(value: ObjectPointer) {
         unsafe { methodReturnValue(value.into_native()) };
+    }
+    
+    pub fn method_return(value: impl Into<AnyObjectRef>) {
+        let value = value.into();
+        Self::method_return_value(ObjectPointer::from(value.as_i64()));
     }
 
     /// Return an item at an index within the indexable object (array, string, etc.).
@@ -489,16 +483,56 @@ impl Smalltalk {
         }))
         .unwrap()
     }
-    
+
     pub fn is_kind_of(object: AnyObjectRef, class: ObjectRef) -> bool {
-        (unsafe {
-            isKindOfClass(object.as_i64(), class.into_inner().as_i64())
-        }) != 0
+        (unsafe { isKindOfClass(object.as_i64(), class.into_inner().as_i64()) }) != 0
     }
 
     pub fn is_kind_of_object(object: ObjectRef, class: ObjectRef) -> bool {
-        (unsafe {
-            isKindOfClass(object.into_inner().as_i64(), class.into_inner().as_i64())
-        }) != 0
+        (unsafe { isKindOfClass(object.into_inner().as_i64(), class.into_inner().as_i64()) }) != 0
+    }
+
+    pub fn next_object(object: ObjectRef, limit: RawObjectPointer) -> ObjectRef {
+        unsafe {
+            ObjectRef::from_raw_pointer_unchecked(RawObjectPointer::new(getObjectAfterlimit(
+                object.into_inner().as_i64(),
+                limit.as_i64(),
+            )))
+        }
+    }
+    
+    pub fn byte_size(object: ObjectRef) -> usize {
+        let next_object = Self::next_object(object, RawObjectPointer::new(i64::MAX));
+        (next_object.into_inner().as_i64() - object.into_inner().as_i64()) as usize
+    }
+
+    pub fn old_space_start() -> ObjectRef {
+        unsafe {
+            ObjectRef::from_raw_pointer_unchecked(RawObjectPointer::new(getOldSpaceMemoryStart()))
+        }
+    }
+
+    pub fn old_space_end() -> RawObjectPointer {
+        RawObjectPointer::new(unsafe { getOldSpaceMemoryEnd() as i64 })
+    }
+
+    pub fn eden_space_start() -> ObjectRef {
+        unsafe {
+            ObjectRef::from_raw_pointer_unchecked(RawObjectPointer::new(getEdenSpaceMemoryStart() as i64))
+        }
+    }
+
+    pub fn eden_space_end() -> RawObjectPointer {
+        RawObjectPointer::new(unsafe { getEdenSpaceMemoryEnd() as i64 })
+    }
+
+    pub fn past_space_start() -> ObjectRef {
+        unsafe {
+            ObjectRef::from_raw_pointer_unchecked(RawObjectPointer::new(getPastSpaceMemoryStart() as i64))
+        }
+    }
+
+    pub fn past_space_end() -> RawObjectPointer {
+        RawObjectPointer::new(unsafe { getPastSpaceMemoryEnd() as i64 })
     }
 }

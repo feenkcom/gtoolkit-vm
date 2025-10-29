@@ -90,10 +90,11 @@ impl IdentityDictionary {
         finish: usize,
         object: AnyObjectRef,
     ) -> Option<usize> {
-        let nil_object =
-            AnyObjectRef::from(RawObjectPointer::from(Smalltalk::primitive_nil_object().as_i64()))
-                .as_object()
-                .unwrap();
+        let nil_object = AnyObjectRef::from(RawObjectPointer::from(
+            Smalltalk::primitive_nil_object().as_i64(),
+        ))
+        .as_object()
+        .unwrap();
 
         for (index, association) in self.array.as_slice()[start..finish]
             .iter()
@@ -162,10 +163,11 @@ impl IdentityDictionary {
     }
 
     fn scan_all_for(&self, key: AnyObjectRef) -> Vec<usize> {
-        let nil_object =
-            AnyObjectRef::from(RawObjectPointer::from(Smalltalk::primitive_nil_object().as_i64()))
-                .as_object()
-                .unwrap();
+        let nil_object = AnyObjectRef::from(RawObjectPointer::from(
+            Smalltalk::primitive_nil_object().as_i64(),
+        ))
+        .as_object()
+        .unwrap();
 
         let mut indices = vec![];
 
@@ -202,8 +204,9 @@ impl IdentityDictionary {
 
         self.tally = Immediate::new_i64(0);
 
-        let nil_object =
-            AnyObjectRef::from(RawObjectPointer::from(Smalltalk::primitive_nil_object().as_i64()));
+        let nil_object = AnyObjectRef::from(RawObjectPointer::from(
+            Smalltalk::primitive_nil_object().as_i64(),
+        ));
         for each in old_elements.iter() {
             if !each.equals(&nil_object).unwrap() {
                 self.no_check_add(each.clone().try_into().unwrap());

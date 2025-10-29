@@ -35,6 +35,9 @@ use crate::{
     primitiveTelemetryContextSignal, primitiveTelemetryObjectSignal, should_log_all_signals,
     should_log_signal, ConsoleLogger, EventLoop, EventLoopMessage, EventLoopWaker, VM_LOGGER,
 };
+
+use crate::memory::primitiveAnalyzeObjectMemory;
+
 use anyhow::Result;
 use vm_bindings::{
     virtual_machine_info, InterpreterConfiguration, InterpreterProxy, LogLevel, NamedPrimitive,
@@ -112,7 +115,7 @@ impl VirtualMachine {
             vm.add_primitive(primitive!(primitiveGetNamedPrimitives));
             vm.add_primitive(primitive!(primitiveEventLoopCallout));
             vm.add_primitive(primitive!(primitiveExtractReturnValue));
-            
+
             vm.add_primitive(try_primitive!(primitiveBareFfiCallout));
             vm.add_primitive(try_primitive!(primitiveBareFfiCalloutInvalidate));
             vm.add_primitive(try_primitive!(primitiveBareFfiCalloutRelease));
@@ -123,7 +126,7 @@ impl VirtualMachine {
             use crate::tonel::*;
             vm.add_primitive(try_primitive!(primitiveTonelBuildLoadPlan));
         }
-        
+
         vm.add_primitive(primitive!(primitiveGetSemaphoreSignaller));
         vm.add_primitive(primitive!(primitiveGetEventLoop));
         vm.add_primitive(primitive!(primitiveGetEventLoopReceiver));
@@ -164,6 +167,9 @@ impl VirtualMachine {
             primitiveClassInstanceReferenceFinderFindPath
         ));
         vm.add_primitive(primitive!(primitiveInstanceCounterCountAll));
+
+        // memory analyzer
+        vm.add_primitive(try_primitive!(primitiveAnalyzeObjectMemory));
 
         vm.add_primitive(primitive!(primitiveIsOldObject));
         vm.add_primitive(primitive!(primitiveIsYoungObject));

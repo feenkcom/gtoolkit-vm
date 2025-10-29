@@ -4,11 +4,11 @@ mod byte_array;
 mod byte_string;
 mod byte_symbol;
 mod compiled_method;
+mod external_address;
 pub mod identity_dictionary;
 mod ordered_collection;
 mod weak_symbol_set;
 mod wide_symbol;
-mod external_address;
 
 pub use array::*;
 pub use association::*;
@@ -16,11 +16,11 @@ pub use byte_array::*;
 pub use byte_string::*;
 pub use byte_symbol::*;
 pub use compiled_method::*;
+pub use external_address::*;
 pub use identity_dictionary::*;
 pub use ordered_collection::*;
 pub use weak_symbol_set::*;
 pub use wide_symbol::*;
-pub use external_address::*;
 
 #[macro_export]
 macro_rules! assign_field {

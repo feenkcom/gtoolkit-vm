@@ -90,9 +90,14 @@ impl Iterator for ObjectIterator {
                     break;
                 }
                 let next = if self.is_context {
-                    ReferencedObject::ContextVariable(Smalltalk::context_inst_var_at(object, self.index))
+                    ReferencedObject::ContextVariable(Smalltalk::context_inst_var_at(
+                        object, self.index,
+                    ))
                 } else {
-                    ReferencedObject::InstanceVariable(object.inst_var_at(self.index).unwrap(), self.index)
+                    ReferencedObject::InstanceVariable(
+                        object.inst_var_at(self.index).unwrap(),
+                        self.index,
+                    )
                 };
                 self.index += 1;
 

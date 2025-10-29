@@ -177,7 +177,7 @@ pub fn primitiveBareFfiCallout() -> Result<(), Error> {
     let mut external_function =
         unsafe { ExternalFunctionRef::from_any_object_unchecked(Smalltalk::method_receiver()) };
     external_function.invalidate()?;
-    
+
     let mut marshaller = ArgumentMarshall {
         external_object_class: external_function.external_object_class,
         external_enumeration_class: external_function.external_enumeration_class,
@@ -242,30 +242,14 @@ impl ArgumentMarshall {
             MarshallType::Bool => Ok(MarshalledValue::Bool(
                 Smalltalk::true_object() == ObjectPointer::from(object.as_i64()),
             )),
-            MarshallType::U8 => {
-                self.try_marshall_as_rust_integer(object, MarshalledValue::U8)
-            }
-            MarshallType::I8 => {
-                self.try_marshall_as_rust_integer(object, MarshalledValue::I8)
-            }
-            MarshallType::U16 => {
-                self.try_marshall_as_rust_integer(object, MarshalledValue::U16)
-            }
-            MarshallType::I16 => {
-                self.try_marshall_as_rust_integer(object, MarshalledValue::I16)
-            }
-            MarshallType::U32 => {
-                self.try_marshall_as_rust_integer(object, MarshalledValue::U32)
-            }
-            MarshallType::I32 => {
-                self.try_marshall_as_rust_integer(object, MarshalledValue::I32)
-            }
-            MarshallType::U64 => {
-                self.try_marshall_as_rust_integer(object, MarshalledValue::U64)
-            }
-            MarshallType::I64 => {
-                self.try_marshall_as_rust_integer(object, MarshalledValue::I64)
-            }
+            MarshallType::U8 => self.try_marshall_as_rust_integer(object, MarshalledValue::U8),
+            MarshallType::I8 => self.try_marshall_as_rust_integer(object, MarshalledValue::I8),
+            MarshallType::U16 => self.try_marshall_as_rust_integer(object, MarshalledValue::U16),
+            MarshallType::I16 => self.try_marshall_as_rust_integer(object, MarshalledValue::I16),
+            MarshallType::U32 => self.try_marshall_as_rust_integer(object, MarshalledValue::U32),
+            MarshallType::I32 => self.try_marshall_as_rust_integer(object, MarshalledValue::I32),
+            MarshallType::U64 => self.try_marshall_as_rust_integer(object, MarshalledValue::U64),
+            MarshallType::I64 => self.try_marshall_as_rust_integer(object, MarshalledValue::I64),
             MarshallType::USize => {
                 self.try_marshall_as_rust_integer(object, MarshalledValue::USize)
             }
@@ -284,15 +268,9 @@ impl ArgumentMarshall {
             MarshallType::UShort => {
                 self.try_marshall_as_rust_integer(object, MarshalledValue::UShort)
             }
-            MarshallType::Int => {
-                self.try_marshall_as_rust_integer(object, MarshalledValue::Int)
-            }
-            MarshallType::UInt => {
-                self.try_marshall_as_rust_integer(object, MarshalledValue::UInt)
-            }
-            MarshallType::Long => {
-                self.try_marshall_as_rust_integer(object, MarshalledValue::Long)
-            }
+            MarshallType::Int => self.try_marshall_as_rust_integer(object, MarshalledValue::Int),
+            MarshallType::UInt => self.try_marshall_as_rust_integer(object, MarshalledValue::UInt),
+            MarshallType::Long => self.try_marshall_as_rust_integer(object, MarshalledValue::Long),
             MarshallType::ULong => {
                 self.try_marshall_as_rust_integer(object, MarshalledValue::ULong)
             }
@@ -334,11 +312,21 @@ impl ArgumentMarshall {
             }
         }
     }
-    
-    fn try_marshall_as_rust_integer<T: TryFrom<i64>, F>(&self, object: AnyObjectRef, variant: F) -> Result<MarshalledValue, Error> where F: Fn(T) -> MarshalledValue  {
+
+    fn try_marshall_as_rust_integer<T: TryFrom<i64>, F>(
+        &self,
+        object: AnyObjectRef,
+        variant: F,
+    ) -> Result<MarshalledValue, Error>
+    where
+        F: Fn(T) -> MarshalledValue,
+    {
         match object.as_immediate() {
             Ok(immediate) => {
-                let value: T = immediate.try_as_integer()?.try_into().map_err(|error| Error::InstanceNotInteger)?;
+                let value: T = immediate
+                    .try_as_integer()?
+                    .try_into()
+                    .map_err(|error| Error::InstanceNotInteger)?;
                 Ok(variant(value))
             }
             Err(error) => {
@@ -347,7 +335,7 @@ impl ArgumentMarshall {
                     let value = object
                         .inst_var_at(0)
                         .ok_or_else(|| Error::WrongNumberOfArguments(0))?;
-                    
+
                     self.try_marshall_as_rust_integer(value, variant)
                 } else {
                     Err(error)?
@@ -635,4 +623,3 @@ impl TryFrom<BareFFITypeRef> for MarshallType {
         Ok(value.try_into()?)
     }
 }
-

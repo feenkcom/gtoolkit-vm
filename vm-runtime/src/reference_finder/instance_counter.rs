@@ -1,7 +1,7 @@
 use crate::objects::{Array, Association};
 use crate::reference_finder::{
-    visit_unique_objects, visitor_next_objects, ObjectVisitor, ReferencedObject,
-    VisitorAction, VisitorState,
+    visit_unique_objects, visitor_next_objects, ObjectVisitor, ReferencedObject, VisitorAction,
+    VisitorState,
 };
 use std::collections::HashMap;
 use vm_bindings::{ObjectPointer, Smalltalk, StackOffset};
