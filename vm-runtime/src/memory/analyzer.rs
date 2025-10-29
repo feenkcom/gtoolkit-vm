@@ -1,18 +1,19 @@
 use crate::assign_field;
 use crate::memory::{EdenMemorySpace, OldMemorySpace, PastMemorySpace};
 use crate::objects::{ArrayRef, Association};
+use fxhash::FxHashMap;
 use num_derive::{FromPrimitive, ToPrimitive};
 use num_traits::ToPrimitive;
-use std::collections::HashMap;
 use strum::EnumCount;
 use strum_macros::EnumCount;
+use vec_map::VecMap;
 use vm_bindings::{ObjectPointer, Smalltalk};
 use vm_object_model::{AnyObjectRef, Immediate, Object, ObjectRef};
 
 #[derive(Debug)]
 pub struct MemoryAnalyzer {
     total_amount_of_objects: usize,
-    tallies: HashMap<ObjectRef, ClassTally>,
+    tallies: VecMap<ClassTally>,
 }
 
 #[derive(Debug)]
@@ -28,7 +29,7 @@ pub struct ClassTallyPerSpace {
     space_type: SpaceType,
     amount_of_objects: usize,
     total_byte_size: usize,
-    object_byte_sizes: HashMap<usize, usize>,
+    object_byte_sizes: FxHashMap<usize, usize>,
 }
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, FromPrimitive, ToPrimitive, EnumCount)]
@@ -157,12 +158,13 @@ impl MemoryAnalyzer {
         space_type: SpaceType,
     ) {
         for object in objects {
-            let class = Smalltalk::class_of_object(object);
+            let class_index = object.header().class_index();
             let object_size = Smalltalk::byte_size(object);
+
             let tally = self
                 .tallies
-                .entry(class)
-                .or_insert_with(|| ClassTally::new(class));
+                .entry(class_index as usize)
+                .or_insert_with(|| ClassTally::new(Smalltalk::class_of_object(object)));
             tally.amount_of_objects += 1;
             tally.total_byte_size += object_size;
 

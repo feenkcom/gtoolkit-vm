@@ -8,6 +8,8 @@ edition = "2021"
 vm-bindings = { path = "../vm-bindings", default-features = false }
 vm-object-model = {path = "../vm-object-model" }
 vm-object-model-derive = {path = "../vm-object-model-derive" }
+vec_map = "0.8"
+fxhash = "0.2"
 default-env = "0.1"
 paste = "1.0"
 to_absolute = "0.1"
