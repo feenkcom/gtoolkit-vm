@@ -1,4 +1,3 @@
-use crate::assign_field;
 use std::fmt::Debug;
 use std::ops::Deref;
 use vm_bindings::Smalltalk;
@@ -23,13 +22,5 @@ impl Association {
 
     pub fn value(&self) -> AnyObjectRef {
         self.value
-    }
-
-    pub fn set_key(&mut self, key: impl Into<AnyObjectRef>) {
-        assign_field!(self.key, key.into());
-    }
-
-    pub fn set_value(&mut self, value: impl Into<AnyObjectRef>) {
-        assign_field!(self.value, value.into());
     }
 }

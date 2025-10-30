@@ -2,13 +2,13 @@ use proc_macro::TokenStream;
 use proc_macro2::Span;
 use quote::{format_ident, quote};
 use syn::{
-    Attribute, Data, DeriveInput, Fields, Ident, LitInt, Result,
+    Attribute, Data, DeriveInput, Fields, Ident, LitInt, LitStr, Result, Type, Visibility,
     parse::{Parse, ParseStream},
     parse_macro_input,
     spanned::Spanned,
 };
 
-#[proc_macro_derive(PharoObject, attributes(pharo_object))]
+#[proc_macro_derive(PharoObject, attributes(pharo_object, pharo_field))]
 pub fn derive_pharo_object(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
 
@@ -59,6 +59,7 @@ fn expand_pharo_object(input: &DeriveInput) -> Result<proc_macro2::TokenStream> 
         .unwrap_or_else(|| default_expected_slots(fields.iter()));
 
     let expected_slots_lit = LitInt::new(&expected_slots.to_string(), Span::call_site());
+    let setter_impl = generate_setters(struct_ident, fields)?;
 
     let tokens = quote! {
         #[derive(Debug, Copy, Clone)]
@@ -126,6 +127,8 @@ fn expand_pharo_object(input: &DeriveInput) -> Result<proc_macro2::TokenStream> 
                 value.0.into()
             }
         }
+
+        #setter_impl
     };
 
     Ok(tokens)
@@ -198,5 +201,162 @@ impl Parse for PharoObjectArgs {
         Ok(Self {
             expected_slots: Some(expected_slots),
         })
+    }
+}
+
+#[derive(Default)]
+struct SetterOptions {
+    skip: bool,
+    visibility: Option<Visibility>,
+    name: Option<Ident>,
+}
+
+fn generate_setters(
+    struct_ident: &Ident,
+    fields: &syn::punctuated::Punctuated<syn::Field, syn::token::Comma>,
+) -> Result<proc_macro2::TokenStream> {
+    let mut methods = Vec::new();
+
+    for field in fields {
+        let Some(field_ident) = &field.ident else {
+            continue;
+        };
+
+        if field_ident == "this" {
+            continue;
+        }
+
+        let mut options = parse_setter_options(field)?;
+        if options.skip {
+            continue;
+        }
+
+        let setter_ident = options
+            .name
+            .take()
+            .unwrap_or_else(|| format_ident!("set_{}", field_ident));
+
+        let setter_visibility: Visibility = options
+            .visibility
+            .take()
+            .unwrap_or_else(|| syn::parse_quote!(pub));
+
+        let field_ty = &field.ty;
+
+        let body = if is_immediate_type(field_ty) {
+            quote! {
+                #setter_visibility fn #setter_ident(&mut self, value: impl Into<::vm_object_model::Immediate>) {
+                    self.#field_ident = value.into();
+                }
+            }
+        } else {
+            quote! {
+                #setter_visibility fn #setter_ident(&mut self, value: impl Into<#field_ty>) {
+                    let value = value.into();
+                    ::vm_object_model::assign_field!(self, self.#field_ident, value);
+                }
+            }
+        };
+
+        methods.push(body);
+    }
+
+    if methods.is_empty() {
+        Ok(quote! {})
+    } else {
+        Ok(quote! {
+            impl #struct_ident {
+                #(#methods)*
+            }
+        })
+    }
+}
+
+fn parse_setter_options(field: &syn::Field) -> Result<SetterOptions> {
+    let mut options = SetterOptions::default();
+
+    for attr in &field.attrs {
+        if !attr.path().is_ident("pharo_field") {
+            continue;
+        }
+
+        attr.parse_nested_meta(|meta| {
+            if meta.path.is_ident("skip_setter") {
+                options.skip = true;
+                return Ok(());
+            }
+
+            if meta.path.is_ident("setter") {
+                if meta.input.peek(syn::token::Paren) {
+                    meta.parse_nested_meta(|setter_meta| {
+                        if setter_meta.path.is_ident("skip") {
+                            options.skip = true;
+                            Ok(())
+                        } else if setter_meta.path.is_ident("private") {
+                            options.visibility = Some(Visibility::Inherited);
+                            Ok(())
+                        } else if setter_meta.path.is_ident("name") {
+                            let lit: LitStr = setter_meta.value()?.parse()?;
+                            set_setter_name(&mut options, lit)
+                        } else if setter_meta.path.is_ident("visibility") {
+                            let lit: LitStr = setter_meta.value()?.parse()?;
+                            let visibility = parse_visibility(&lit)?;
+                            options.visibility = Some(visibility);
+                            Ok(())
+                        } else {
+                            Err(setter_meta.error(
+                                "unsupported setter option; expected `skip`, `private`, `name`, or `visibility`",
+                            ))
+                        }
+                    })?;
+                    return Ok(());
+                }
+
+                let lit: LitStr = meta.value()?.parse()?;
+                set_setter_name(&mut options, lit)?;
+                return Ok(());
+            }
+
+            Err(meta.error(
+                "unsupported field attribute; expected `skip_setter` or `setter(...)`",
+            ))
+        })?;
+    }
+
+    Ok(options)
+}
+
+fn set_setter_name(options: &mut SetterOptions, lit: LitStr) -> Result<()> {
+    if options.name.is_some() {
+        return Err(syn::Error::new(lit.span(), "setter name already specified"));
+    }
+
+    let ident = Ident::new(&lit.value(), lit.span());
+    options.name = Some(ident);
+    Ok(())
+}
+
+fn parse_visibility(lit: &LitStr) -> Result<Visibility> {
+    if lit.value() == "private" {
+        return Ok(Visibility::Inherited);
+    }
+
+    syn::parse_str::<Visibility>(&lit.value()).map_err(|_| {
+        syn::Error::new(
+            lit.span(),
+            "invalid visibility; expected values like `pub`, `pub(crate)` or `private`",
+        )
+    })
+}
+
+fn is_immediate_type(ty: &Type) -> bool {
+    match ty {
+        Type::Path(type_path) => type_path
+            .path
+            .segments
+            .last()
+            .map(|segment| segment.ident == "Immediate")
+            .unwrap_or(false),
+        _ => false,
     }
 }

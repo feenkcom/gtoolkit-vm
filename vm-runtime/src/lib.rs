@@ -8,6 +8,8 @@ extern crate lazy_static;
 extern crate log;
 #[macro_use]
 extern crate vm_object_model_derive;
+#[macro_use]
+extern crate vm_object_model;
 
 #[cfg(target_os = "android")]
 pub extern crate android_activity;

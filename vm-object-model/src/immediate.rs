@@ -44,6 +44,24 @@ impl Immediate {
     }
 }
 
+impl From<u64> for Immediate {
+    fn from(value: u64) -> Self {
+        Self::new_u64(value)
+    }
+}
+
+impl From<i64> for Immediate {
+    fn from(value: i64) -> Self {
+        Self::new_i64(value)
+    }
+}
+
+impl From<usize> for Immediate {
+    fn from(value: usize) -> Self {
+        Self::new_u64(value as u64)
+    }
+}
+
 impl TryFrom<RawObjectPointer> for Immediate {
     type Error = Error;
 

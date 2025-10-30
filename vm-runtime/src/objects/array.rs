@@ -1,4 +1,3 @@
-use crate::assign_field;
 use std::fmt::Debug;
 use std::ops::{Deref, DerefMut, Index};
 use vm_bindings::{ObjectPointer, Smalltalk};

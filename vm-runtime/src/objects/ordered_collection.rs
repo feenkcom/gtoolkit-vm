@@ -1,4 +1,3 @@
-use crate::assign_field;
 use crate::objects::{Array, ArrayRef};
 use std::ops::Deref;
 use vm_bindings::Smalltalk;

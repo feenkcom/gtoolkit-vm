@@ -1,4 +1,3 @@
-use crate::assign_field;
 use crate::memory::{EdenMemorySpace, OldMemorySpace, PastMemorySpace};
 use crate::objects::{ArrayRef, Association};
 use fxhash::FxHashMap;
@@ -54,6 +53,7 @@ pub struct ClassTallyObject {
 #[repr(C)]
 pub struct ClassTallyPerSpaceObject {
     this: Object,
+    #[pharo_field(skip_setter)]
     space_type: Immediate,
     amount_of_objects: Immediate,
     total_byte_size: Immediate,
@@ -108,39 +108,9 @@ impl ClassTallyPerSpace {
     }
 }
 
-impl ClassTallyObject {
-    pub fn set_class(&mut self, class: ObjectRef) {
-        assign_field!(self, self.class, class);
-    }
-
-    pub fn set_amount_of_objects(&mut self, amount_of_objects: usize) {
-        self.amount_of_objects = Immediate::new_u64(amount_of_objects as u64);
-    }
-
-    pub fn set_total_byte_size(&mut self, total_byte_size: usize) {
-        self.total_byte_size = Immediate::new_u64(total_byte_size as u64);
-    }
-
-    pub fn set_details_per_space(&mut self, details: impl Into<AnyObjectRef>) {
-        assign_field!(self, self.details_per_space, details.into());
-    }
-}
-
 impl ClassTallyPerSpaceObject {
     pub fn set_space_type(&mut self, space_type: SpaceType) {
         self.space_type = Immediate::new_u64(space_type.to_u64().unwrap());
-    }
-
-    pub fn set_amount_of_objects(&mut self, amount_of_objects: usize) {
-        self.amount_of_objects = Immediate::new_u64(amount_of_objects as u64);
-    }
-
-    pub fn set_total_byte_size(&mut self, total_byte_size: usize) {
-        self.total_byte_size = Immediate::new_u64(total_byte_size as u64);
-    }
-
-    pub fn set_byte_size_details(&mut self, details: ArrayRef) {
-        assign_field!(self, self.byte_size_details, details);
     }
 }
 
