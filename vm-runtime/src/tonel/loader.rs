@@ -74,13 +74,12 @@ struct PharoClasses {
     method_load: ObjectRef,
     method_document: ObjectRef,
     method_definition: ObjectRef,
-    method_metadata: ObjectRef,
     load_precondition: ObjectRef,
     dependent_entity: ObjectRef,
 }
 
 impl PharoClasses {
-    const EXPECTED_COUNT: usize = 14;
+    const EXPECTED_COUNT: usize = 13;
 
     fn from_array(array: ArrayRef) -> Result<Self, TonelPrimitiveError> {
         if array.len() != Self::EXPECTED_COUNT {
@@ -102,9 +101,8 @@ impl PharoClasses {
             method_load: class_from_array(&array, 8)?,
             method_document: class_from_array(&array, 9)?,
             method_definition: class_from_array(&array, 10)?,
-            method_metadata: class_from_array(&array, 11)?,
-            load_precondition: class_from_array(&array, 12)?,
-            dependent_entity: class_from_array(&array, 13)?,
+            load_precondition: class_from_array(&array, 11)?,
+            dependent_entity: class_from_array(&array, 12)?,
         })
     }
 }
@@ -422,14 +420,7 @@ mod documents {
         body: ByteStringRef,
         source: ByteStringRef,
         category: AnyObjectRef,
-        metadata: AnyObjectRef,
-    }
-
-    #[derive(Debug, PharoObject)]
-    #[repr(C)]
-    pub(super) struct TonelMethodMetadata {
-        this: Object,
-        raw: ByteStringRef,
+        raw_metadata: AnyObjectRef,
     }
 
     pub(super) fn build_behavior_document(
@@ -670,8 +661,8 @@ mod documents {
         }
 
         if let Some(metadata) = definition.metadata.as_ref() {
-            let metadata_object = build_method_metadata(proxy, metadata, classes)?;
-            method_definition.set_metadata(metadata_object);
+            let metadata_object = build_method_metadata(proxy, metadata)?;
+            method_definition.set_raw_metadata(metadata_object);
         }
 
         Ok(method_definition)
@@ -680,13 +671,9 @@ mod documents {
     fn build_method_metadata(
         proxy: &vm_bindings::InterpreterProxy,
         metadata: &tonel::MethodMetadata,
-        classes: &PharoClasses,
-    ) -> Result<TonelMethodMetadataRef, TonelPrimitiveError> {
-        let mut metadata_object =
-            Smalltalk::instantiate::<TonelMethodMetadataRef>(classes.method_metadata)?;
+    ) -> Result<ByteStringRef, TonelPrimitiveError> {
         let metadata_string = ston_value_to_string(&metadata.raw);
-        metadata_object.set_raw(byte_string(proxy, metadata_string.as_str())?);
-        Ok(metadata_object)
+        byte_string(proxy, metadata_string.as_str())
     }
 
     fn method_owner_kind_name(kind: MethodOwnerKind) -> &'static str {
