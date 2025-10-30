@@ -1,10 +1,10 @@
 use crate::assign_field;
 use crate::objects::{Array, ArrayRef};
-use std::ops::{Deref, DerefMut};
+use std::ops::Deref;
 use vm_bindings::Smalltalk;
-use vm_object_model::{AnyObjectRef, Error, Immediate, Object, ObjectRef, Result};
+use vm_object_model::{AnyObjectRef, Immediate, Object, ObjectRef, Result};
 
-#[derive(Debug)]
+#[derive(Debug, PharoObject)]
 #[repr(C)]
 pub struct OrderedCollection {
     this: Object,
@@ -97,66 +97,5 @@ impl OrderedCollection {
         if self.array.is_forwarded() {
             panic!("The array is forwarded!");
         }
-    }
-}
-
-impl Deref for OrderedCollection {
-    type Target = Object;
-
-    fn deref(&self) -> &Self::Target {
-        &self.this
-    }
-}
-
-#[derive(Debug, Copy, Clone)]
-#[repr(transparent)]
-pub struct OrderedCollectionRef(ObjectRef);
-
-impl Deref for OrderedCollectionRef {
-    type Target = OrderedCollection;
-    fn deref(&self) -> &Self::Target {
-        let c: &OrderedCollection = unsafe { self.0.cast() };
-        c.validate_non_forward();
-        c
-    }
-}
-
-impl DerefMut for OrderedCollectionRef {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        let c: &mut OrderedCollection = unsafe { self.0.cast_mut() };
-        c.validate_non_forward();
-        c
-    }
-}
-
-impl TryFrom<AnyObjectRef> for OrderedCollectionRef {
-    type Error = Error;
-
-    fn try_from(value: AnyObjectRef) -> Result<Self> {
-        const EXPECTED_AMOUNT_OF_SLOTS: usize = 3;
-        let object = value.as_object()?;
-        if object.is_forwarded() {
-            panic!("Object is forwarded!");
-        }
-
-        let actual_amount_of_slots = object.amount_of_slots();
-
-        if actual_amount_of_slots != EXPECTED_AMOUNT_OF_SLOTS {
-            return Err(Error::WrongAmountOfSlots {
-                object: object.header().clone(),
-                type_name: std::any::type_name::<Self>().to_string(),
-                expected: EXPECTED_AMOUNT_OF_SLOTS,
-                actual: actual_amount_of_slots,
-            }
-            .into());
-        }
-
-        Ok(Self(object))
-    }
-}
-
-impl From<OrderedCollectionRef> for AnyObjectRef {
-    fn from(value: OrderedCollectionRef) -> Self {
-        value.0.into()
     }
 }

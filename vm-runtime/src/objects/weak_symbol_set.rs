@@ -1,10 +1,9 @@
 use crate::objects::{hash_of, ArrayRef, ByteSymbol};
 use std::hash::Hash;
 use std::ops::Deref;
-use vm_object_model::Result;
-use vm_object_model::{AnyObjectRef, Error, Object, ObjectRef};
+use vm_object_model::{AnyObjectRef, Object, ObjectRef};
 
-#[derive(Debug)]
+#[derive(Debug, PharoObject)]
 #[repr(C)]
 pub struct WeakSymbolSet {
     this: Object,
@@ -51,38 +50,5 @@ impl WeakSymbolSet {
         }
 
         None
-    }
-}
-
-impl Deref for WeakSymbolSet {
-    type Target = Object;
-
-    fn deref(&self) -> &Self::Target {
-        &self.this
-    }
-}
-
-#[derive(Debug, Copy, Clone)]
-#[repr(transparent)]
-pub struct WeakSymbolSetRef(ObjectRef);
-
-impl Deref for WeakSymbolSetRef {
-    type Target = WeakSymbolSet;
-    fn deref(&self) -> &Self::Target {
-        unsafe { self.0.cast() }
-    }
-}
-
-impl TryFrom<AnyObjectRef> for WeakSymbolSetRef {
-    type Error = Error;
-
-    fn try_from(value: AnyObjectRef) -> Result<Self> {
-        let object = value.as_object()?;
-
-        if object.amount_of_slots() != 3 {
-            return Err(Error::InvalidType("WeakSymbolSet".to_string()));
-        }
-
-        Ok(Self(object))
     }
 }

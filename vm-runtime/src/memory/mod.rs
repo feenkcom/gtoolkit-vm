@@ -1,5 +1,5 @@
-mod memory;
 mod analyzer;
+mod memory;
 
-pub use memory::*;
 pub use analyzer::*;
+pub use memory::*;

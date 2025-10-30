@@ -1,13 +1,11 @@
 use crate::assign_field;
 use crate::objects::{Array, ArrayRef, Association, AssociationRef};
 use num_traits::Zero;
-use std::ops::{Deref, DerefMut};
+use std::ops::Deref;
 use vm_bindings::{ObjectPointer, Smalltalk};
-use vm_object_model::{
-    AnyObjectRef, Error, Immediate, Object, ObjectRef, RawObjectPointer, Result,
-};
+use vm_object_model::{AnyObjectRef, Immediate, Object, ObjectRef, RawObjectPointer};
 
-#[derive(Debug)]
+#[derive(Debug, PharoObject)]
 #[repr(C)]
 pub struct IdentityDictionary {
     this: Object,
@@ -219,43 +217,5 @@ impl IdentityDictionary {
         let index = self.scan_for(key).expect("Find an available slot");
         self.array.insert(index, association);
         self.tally = Immediate::new_i64(self.tally() + 1);
-    }
-}
-
-impl Deref for IdentityDictionary {
-    type Target = Object;
-    fn deref(&self) -> &Self::Target {
-        &self.this
-    }
-}
-
-#[derive(Debug, Copy, Clone)]
-#[repr(transparent)]
-pub struct IdentityDictionaryRef(ObjectRef);
-
-impl Deref for IdentityDictionaryRef {
-    type Target = IdentityDictionary;
-    fn deref(&self) -> &Self::Target {
-        unsafe { self.0.cast() }
-    }
-}
-
-impl DerefMut for IdentityDictionaryRef {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        unsafe { self.0.cast_mut() }
-    }
-}
-
-impl TryFrom<AnyObjectRef> for IdentityDictionaryRef {
-    type Error = Error;
-
-    fn try_from(value: AnyObjectRef) -> Result<Self> {
-        let object = value.as_object()?;
-
-        if object.amount_of_slots() != 3 {
-            return Err(Error::InvalidType("IdentityDictionary".to_string()));
-        }
-
-        Ok(Self(object))
     }
 }
