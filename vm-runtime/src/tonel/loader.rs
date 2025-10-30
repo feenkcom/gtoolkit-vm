@@ -1,119 +1,16 @@
 use crate::objects::{Array, ArrayRef, ByteStringRef};
 use crate::vm;
 use std::path::PathBuf;
+use ston::Value;
 use thiserror::Error;
 use tonel::MethodType;
 use tonel_loader::{
-    build_load_plan, BehaviorLoad, DependencyKind, DependencyReason, ExtensionLoad,
-    LoadPrecondition, MethodLoad, MethodOwnerKind,
+    build_load_plan, BehaviorDocument, BehaviorLoad, ClassDocument, DependencyKind,
+    DependencyReason, DependentEntity, ExtensionDocument, ExtensionLoad, LoadPrecondition,
+    MethodDocument, MethodLoad, MethodOwnerKind, TraitDocument,
 };
 use vm_bindings::{ObjectPointer, Smalltalk, StackOffset};
 use vm_object_model::{AnyObjectRef, Immediate, Object, ObjectRef, RawObjectPointer};
-
-#[derive(Debug, PharoObject)]
-#[repr(C)]
-pub struct TonelLoadPlan {
-    this: Object,
-    package_name: AnyObjectRef,
-    behaviors: ArrayRef,
-    methods: ArrayRef,
-    extensions: ArrayRef,
-    preconditions: ArrayRef,
-}
-
-#[derive(Debug, PharoObject)]
-#[repr(C)]
-pub struct TonelBehaviorLoad {
-    this: Object,
-    order: Immediate,
-    kind: ByteStringRef,
-    name: ByteStringRef,
-    path: ByteStringRef,
-    detail: AnyObjectRef,
-}
-
-#[derive(Debug, PharoObject)]
-#[repr(C)]
-pub struct TonelExtensionLoad {
-    this: Object,
-    order: Immediate,
-    target_name: ByteStringRef,
-    path: ByteStringRef,
-    detail: AnyObjectRef,
-}
-
-#[derive(Debug, PharoObject)]
-#[repr(C)]
-pub struct TonelMethodDefinition {
-    this: Object,
-    selector: ByteStringRef,
-    owner_name: ByteStringRef,
-    owner_kind: ByteStringRef,
-    class_name: ByteStringRef,
-    method_type: ByteStringRef,
-    category: AnyObjectRef,
-    source: ByteStringRef,
-    header: ByteStringRef,
-    body: ByteStringRef,
-    source_path: ByteStringRef,
-    owner_order: Immediate,
-}
-
-#[derive(Debug, PharoObject)]
-#[repr(C)]
-pub struct TonelClassDetail {
-    this: Object,
-    superclass_name: AnyObjectRef,
-    trait_composition: AnyObjectRef,
-    class_trait_composition: AnyObjectRef,
-    instance_variables: ArrayRef,
-    class_variables: ArrayRef,
-    class_instance_variables: ArrayRef,
-    pool_dictionaries: ArrayRef,
-    category: AnyObjectRef,
-    package: AnyObjectRef,
-    tag: AnyObjectRef,
-    type_name: AnyObjectRef,
-    comment: ByteStringRef,
-    source_path: ByteStringRef,
-}
-
-#[derive(Debug, PharoObject)]
-#[repr(C)]
-pub struct TonelTraitDetail {
-    this: Object,
-    trait_composition: AnyObjectRef,
-    class_trait_composition: AnyObjectRef,
-    instance_variables: ArrayRef,
-    class_instance_variables: ArrayRef,
-    category: AnyObjectRef,
-    package: AnyObjectRef,
-    tag: AnyObjectRef,
-    comment: ByteStringRef,
-    source_path: ByteStringRef,
-}
-
-#[derive(Debug, PharoObject)]
-#[repr(C)]
-pub struct TonelExtensionDetail {
-    this: Object,
-    selector_names: ArrayRef,
-    categories: ArrayRef,
-    method_types: ArrayRef,
-    source_path: ByteStringRef,
-}
-
-#[derive(Debug, PharoObject)]
-#[repr(C)]
-pub struct TonelLoadPrecondition {
-    this: Object,
-    required_name: ByteStringRef,
-    required_kind: ByteStringRef,
-    reason: ByteStringRef,
-    dependent_kind: ByteStringRef,
-    dependent_name: ByteStringRef,
-    dependent_source_path: AnyObjectRef,
-}
 
 #[derive(Debug, Error)]
 pub enum TonelPrimitiveError {
@@ -130,7 +27,7 @@ pub enum TonelPrimitiveError {
 #[no_mangle]
 #[allow(non_snake_case)]
 pub fn primitiveTonelBuildLoadPlan() -> Result<(), TonelPrimitiveError> {
-    const EXPECTED_ARGUMENTS: usize = 9;
+    const EXPECTED_ARGUMENTS: usize = 15;
     let argument_count = Smalltalk::method_argument_count();
     if argument_count != EXPECTED_ARGUMENTS {
         return Err(TonelPrimitiveError::WrongNumberOfArguments(argument_count));
@@ -138,67 +35,35 @@ pub fn primitiveTonelBuildLoadPlan() -> Result<(), TonelPrimitiveError> {
 
     let proxy = vm().proxy();
 
-    let path_argument = Smalltalk::stack_object_value_unchecked(StackOffset::new(8));
+    let path_argument = Smalltalk::stack_object_value_unchecked(StackOffset::new(14));
     let path_object = AnyObjectRef::from(RawObjectPointer::from(path_argument.as_i64()));
     let path_byte_string = ByteStringRef::try_from(path_object)
         .map_err(|_| TonelPrimitiveError::ExpectedByteString)?;
     let package_path = PathBuf::from(path_byte_string.as_str());
 
-    let plan_class = class_argument(StackOffset::new(7))?;
-    let behavior_class = class_argument(StackOffset::new(6))?;
-    let method_definition_class = class_argument(StackOffset::new(5))?;
-    let extension_class = class_argument(StackOffset::new(4))?;
-    let extension_detail_class = class_argument(StackOffset::new(3))?;
-    let precondition_class = class_argument(StackOffset::new(2))?;
-    let class_detail_class = class_argument(StackOffset::new(1))?;
-    let trait_detail_class = class_argument(StackOffset::new(0))?;
+    let classes = PharoClasses {
+        load_plan: class_argument(StackOffset::new(13))?,
+        behavior_load: class_argument(StackOffset::new(12))?,
+        class_document: class_argument(StackOffset::new(11))?,
+        class_definition: class_argument(StackOffset::new(10))?,
+        trait_document: class_argument(StackOffset::new(9))?,
+        trait_definition: class_argument(StackOffset::new(8))?,
+        extension_load: class_argument(StackOffset::new(7))?,
+        extension_document: class_argument(StackOffset::new(6))?,
+        method_load: class_argument(StackOffset::new(5))?,
+        method_document: class_argument(StackOffset::new(4))?,
+        method_definition: class_argument(StackOffset::new(3))?,
+        method_metadata: class_argument(StackOffset::new(2))?,
+        load_precondition: class_argument(StackOffset::new(1))?,
+        dependent_entity: class_argument(StackOffset::new(0))?,
+    };
 
     let load_plan = build_load_plan(package_path)?;
+    let mut plan_object = plan::build_pharo_load_plan(&proxy, &load_plan, &classes)?;
 
-    let mut plan_object = Smalltalk::instantiate::<TonelLoadPlanRef>(plan_class)?;
-
-    let mut behavior_array = Array::new(load_plan.behaviors().len())?;
-    build_behaviors(
-        &proxy,
-        load_plan.behaviors(),
-        &mut behavior_array,
-        behavior_class,
-        class_detail_class,
-        trait_detail_class,
-    )?;
-
-    let mut method_array = Array::new(load_plan.methods().len())?;
-    build_methods(
-        &proxy,
-        load_plan.methods(),
-        &mut method_array,
-        method_definition_class,
-    )?;
-
-    let mut extension_array = Array::new(load_plan.extensions().len())?;
-    build_extensions(
-        &proxy,
-        load_plan.extensions(),
-        &mut extension_array,
-        extension_class,
-        extension_detail_class,
-    )?;
-
-    let mut preconditions_array = Array::new(load_plan.preconditions().len())?;
-    build_preconditions(
-        &proxy,
-        load_plan.preconditions(),
-        &mut preconditions_array,
-        precondition_class,
-    )?;
-
-    if let Some(value) = load_plan.package_name() {
-        plan_object.set_package_name(byte_string(&proxy, value)?);
+    if let Some(name) = load_plan.package_name() {
+        plan_object.set_package_name(byte_string(&proxy, name)?);
     }
-    plan_object.set_behaviors(behavior_array);
-    plan_object.set_methods(method_array);
-    plan_object.set_extensions(extension_array);
-    plan_object.set_preconditions(preconditions_array);
 
     let plan_any: AnyObjectRef = plan_object.into();
     let plan_pointer = ObjectPointer::from(plan_any.as_ptr());
@@ -207,198 +72,616 @@ pub fn primitiveTonelBuildLoadPlan() -> Result<(), TonelPrimitiveError> {
     Ok(())
 }
 
-fn build_class_detail(
-    proxy: &vm_bindings::InterpreterProxy,
-    document: &tonel_loader::ClassDocument,
-    class_detail_class: ObjectRef,
-) -> Result<TonelClassDetailRef, TonelPrimitiveError> {
-    let mut detail = Smalltalk::instantiate::<TonelClassDetailRef>(class_detail_class)?;
-
-    let definition = document.definition();
-
-    if let Some(super_name) = document.superclass_name() {
-        detail.set_superclass_name(byte_string(proxy, super_name)?);
-    }
-
-    if let Some(text) = definition.trait_composition.as_deref() {
-        detail.set_trait_composition(byte_string(proxy, text)?);
-    }
-
-    if let Some(text) = definition.class_trait_composition.as_deref() {
-        detail.set_class_trait_composition(byte_string(proxy, text)?);
-    }
-
-    detail.set_instance_variables(byte_string_array_from_strings(
-        proxy,
-        &definition.inst_vars,
-    )?);
-    detail.set_class_variables(byte_string_array_from_strings(
-        proxy,
-        &definition.class_vars,
-    )?);
-    detail.set_class_instance_variables(byte_string_array_from_strings(
-        proxy,
-        &definition.class_inst_vars,
-    )?);
-    detail.set_pool_dictionaries(byte_string_array_from_strings(proxy, &definition.pools)?);
-
-    if let Some(category) = definition.category.as_deref() {
-        detail.set_category(byte_string(proxy, category)?);
-    }
-    if let Some(package) = definition.package.as_deref() {
-        detail.set_package(byte_string(proxy, package)?);
-    }
-
-    if let Some(tag) = definition.tag.as_deref() {
-        detail.set_tag(byte_string(proxy, tag)?);
-    }
-
-    if let Some(type_name) = definition.type_.as_deref() {
-        detail.set_type_name(byte_string(proxy, type_name)?);
-    }
-
-    detail.set_comment(byte_string(proxy, definition.comment.as_str())?);
-
-    let source_path_string = document.source_path().to_string_lossy();
-    detail.set_source_path(byte_string(proxy, source_path_string.as_ref())?);
-
-    Ok(detail)
+struct PharoClasses {
+    load_plan: ObjectRef,
+    behavior_load: ObjectRef,
+    class_document: ObjectRef,
+    class_definition: ObjectRef,
+    trait_document: ObjectRef,
+    trait_definition: ObjectRef,
+    extension_load: ObjectRef,
+    extension_document: ObjectRef,
+    method_load: ObjectRef,
+    method_document: ObjectRef,
+    method_definition: ObjectRef,
+    method_metadata: ObjectRef,
+    load_precondition: ObjectRef,
+    dependent_entity: ObjectRef,
 }
 
-fn build_trait_detail(
-    proxy: &vm_bindings::InterpreterProxy,
-    document: &tonel_loader::TraitDocument,
-    trait_detail_class: ObjectRef,
-) -> Result<TonelTraitDetailRef, TonelPrimitiveError> {
-    let mut detail = Smalltalk::instantiate::<TonelTraitDetailRef>(trait_detail_class)?;
+mod plan {
+    use super::*;
 
-    let definition = document.definition();
-
-    if let Some(text) = definition.trait_composition.as_deref() {
-        detail.set_trait_composition(byte_string(proxy, text)?);
+    #[derive(Debug, PharoObject)]
+    #[repr(C)]
+    pub(super) struct TonelLoadPlan {
+        this: Object,
+        package_name: AnyObjectRef,
+        behaviors: ArrayRef,
+        methods: ArrayRef,
+        extensions: ArrayRef,
+        preconditions: ArrayRef,
     }
 
-    if let Some(text) = definition.class_trait_composition.as_deref() {
-        detail.set_class_trait_composition(byte_string(proxy, text)?);
+    pub(super) fn build_pharo_load_plan(
+        proxy: &vm_bindings::InterpreterProxy,
+        load_plan: &tonel_loader::LoadPlan,
+        classes: &PharoClasses,
+    ) -> Result<TonelLoadPlanRef, TonelPrimitiveError> {
+        let mut plan_object = Smalltalk::instantiate::<TonelLoadPlanRef>(classes.load_plan)?;
+
+        let behaviors = instruction::build_behavior_loads(proxy, load_plan.behaviors(), classes)?;
+        plan_object.set_behaviors(behaviors);
+
+        let methods = instruction::build_method_loads(proxy, load_plan.methods(), classes)?;
+        plan_object.set_methods(methods);
+
+        let extensions =
+            instruction::build_extension_loads(proxy, load_plan.extensions(), classes)?;
+        plan_object.set_extensions(extensions);
+
+        let preconditions =
+            instruction::build_preconditions(proxy, load_plan.preconditions(), classes)?;
+        plan_object.set_preconditions(preconditions);
+
+        Ok(plan_object)
     }
-
-    detail.set_instance_variables(byte_string_array_from_strings(
-        proxy,
-        &definition.inst_vars,
-    )?);
-    detail.set_class_instance_variables(byte_string_array_from_strings(
-        proxy,
-        &definition.class_inst_vars,
-    )?);
-
-    if let Some(category) = definition.category.as_deref() {
-        detail.set_category(byte_string(proxy, category)?);
-    }
-
-    if let Some(package) = definition.package.as_deref() {
-        detail.set_package(byte_string(proxy, package)?);
-    }
-    if let Some(tag) = definition.tag.as_deref() {
-        detail.set_tag(byte_string(proxy, tag)?);
-    }
-
-    detail.set_comment(byte_string(proxy, definition.comment.as_str())?);
-
-    let source_path_string = document.source_path().to_string_lossy();
-    detail.set_source_path(byte_string(proxy, source_path_string.as_ref())?);
-
-    Ok(detail)
 }
 
-fn build_extension_detail(
-    proxy: &vm_bindings::InterpreterProxy,
-    document: &tonel_loader::ExtensionDocument,
-    extension_detail_class: ObjectRef,
-) -> Result<TonelExtensionDetailRef, TonelPrimitiveError> {
-    let mut detail = Smalltalk::instantiate::<TonelExtensionDetailRef>(extension_detail_class)?;
+mod instruction {
+    use super::*;
 
-    let methods = document.methods();
-    let selector_names: Vec<String> = methods
-        .iter()
-        .map(|method| method.selector.clone())
-        .collect();
-    detail.set_selector_names(byte_string_array_from_strings(proxy, &selector_names)?);
+    #[derive(Debug, PharoObject)]
+    #[repr(C)]
+    pub(super) struct TonelBehaviorLoad {
+        this: Object,
+        order: Immediate,
+        document: AnyObjectRef,
+    }
 
-    let mut categories = Array::new(methods.len())?;
-    let mut method_type_names = Vec::with_capacity(methods.len());
+    #[derive(Debug, PharoObject)]
+    #[repr(C)]
+    pub(super) struct TonelMethodLoad {
+        this: Object,
+        owner_order: Immediate,
+        document: AnyObjectRef,
+    }
 
-    for (index, method) in methods.iter().enumerate() {
-        if let Some(category) = method.category.as_deref() {
-            let category_value = byte_string(proxy, category)?;
-            categories.insert(index, category_value);
-        } else {
-            categories.insert(index, Smalltalk::nil_object());
+    #[derive(Debug, PharoObject)]
+    #[repr(C)]
+    pub(super) struct TonelExtensionLoad {
+        this: Object,
+        order: Immediate,
+        document: AnyObjectRef,
+    }
+
+    #[derive(Debug, PharoObject)]
+    #[repr(C)]
+    pub(super) struct TonelLoadPrecondition {
+        this: Object,
+        required_name: ByteStringRef,
+        required_kind: ByteStringRef,
+        reason: ByteStringRef,
+        dependent: AnyObjectRef,
+    }
+
+    #[derive(Debug, PharoObject)]
+    #[repr(C)]
+    pub(super) struct TonelDependentEntity {
+        this: Object,
+        kind: ByteStringRef,
+        name: ByteStringRef,
+        source_path: AnyObjectRef,
+    }
+
+    pub(super) fn build_behavior_loads(
+        proxy: &vm_bindings::InterpreterProxy,
+        behaviors: &[BehaviorLoad],
+        classes: &PharoClasses,
+    ) -> Result<ArrayRef, TonelPrimitiveError> {
+        let mut array = Array::new(behaviors.len())?;
+        for (index, behavior) in behaviors.iter().enumerate() {
+            let mut behavior_object =
+                Smalltalk::instantiate::<TonelBehaviorLoadRef>(classes.behavior_load)?;
+            behavior_object.set_order(behavior.order());
+
+            let document = documents::build_behavior_document(proxy, behavior, classes)?;
+            behavior_object.set_document(document);
+
+            let behavior_any: AnyObjectRef = behavior_object.into();
+            array.insert(index, behavior_any);
         }
-
-        let method_type = match method.method_type {
-            MethodType::Instance => "instance",
-            MethodType::Class => "class",
-        };
-        method_type_names.push(method_type.to_string());
+        Ok(array)
     }
 
-    detail.set_categories(categories);
-    let method_types = byte_string_array_from_strings(proxy, &method_type_names)?;
-    detail.set_method_types(method_types);
+    pub(super) fn build_method_loads(
+        proxy: &vm_bindings::InterpreterProxy,
+        methods: &[MethodLoad],
+        classes: &PharoClasses,
+    ) -> Result<ArrayRef, TonelPrimitiveError> {
+        let mut array = Array::new(methods.len())?;
+        for (index, method) in methods.iter().enumerate() {
+            let mut method_object =
+                Smalltalk::instantiate::<TonelMethodLoadRef>(classes.method_load)?;
+            method_object.set_owner_order(method.owner_order());
 
-    let source_path_string = document.source_path().to_string_lossy();
-    detail.set_source_path(byte_string(proxy, source_path_string.as_ref())?);
+            let document = documents::build_method_document(proxy, method.document(), classes)?;
+            method_object.set_document(document);
 
-    Ok(detail)
-}
+            let method_any: AnyObjectRef = method_object.into();
+            array.insert(index, method_any);
+        }
+        Ok(array)
+    }
 
-fn build_preconditions(
-    proxy: &vm_bindings::InterpreterProxy,
-    preconditions: &[LoadPrecondition],
-    preconditions_array: &mut ArrayRef,
-    precondition_class: ObjectRef,
-) -> Result<(), TonelPrimitiveError> {
-    for (index, precondition) in preconditions.iter().enumerate() {
-        let mut precondition_object =
-            Smalltalk::instantiate::<TonelLoadPreconditionRef>(precondition_class)?;
+    pub(super) fn build_extension_loads(
+        proxy: &vm_bindings::InterpreterProxy,
+        extensions: &[ExtensionLoad],
+        classes: &PharoClasses,
+    ) -> Result<ArrayRef, TonelPrimitiveError> {
+        let mut array = Array::new(extensions.len())?;
+        for (index, extension) in extensions.iter().enumerate() {
+            let mut extension_object =
+                Smalltalk::instantiate::<TonelExtensionLoadRef>(classes.extension_load)?;
+            extension_object.set_order(extension.order());
 
-        precondition_object
-            .set_required_name(byte_string(proxy, precondition.required_name.as_str())?);
-        precondition_object.set_required_kind(byte_string(
-            proxy,
-            dependency_kind_name(precondition.required_kind),
-        )?);
-        precondition_object.set_reason(byte_string(
-            proxy,
-            dependency_reason_name(precondition.reason),
-        )?);
+            let document =
+                documents::build_extension_document(proxy, extension.document(), classes)?;
+            extension_object.set_document(document);
 
-        match &precondition.dependent {
-            tonel_loader::DependentEntity::Trait { name } => {
-                precondition_object.set_dependent_kind(byte_string(proxy, "trait")?);
-                precondition_object.set_dependent_name(byte_string(proxy, name.as_str())?);
+            let extension_any: AnyObjectRef = extension_object.into();
+            array.insert(index, extension_any);
+        }
+        Ok(array)
+    }
+
+    pub(super) fn build_preconditions(
+        proxy: &vm_bindings::InterpreterProxy,
+        preconditions: &[LoadPrecondition],
+        classes: &PharoClasses,
+    ) -> Result<ArrayRef, TonelPrimitiveError> {
+        let mut array = Array::new(preconditions.len())?;
+        for (index, precondition) in preconditions.iter().enumerate() {
+            let mut precondition_object =
+                Smalltalk::instantiate::<TonelLoadPreconditionRef>(classes.load_precondition)?;
+
+            precondition_object
+                .set_required_name(byte_string(proxy, precondition.required_name.as_str())?);
+            precondition_object.set_required_kind(byte_string(
+                proxy,
+                dependency_kind_name(precondition.required_kind),
+            )?);
+            precondition_object.set_reason(byte_string(
+                proxy,
+                dependency_reason_name(precondition.reason),
+            )?);
+
+            let dependent = build_dependent_entity(proxy, &precondition.dependent, classes)?;
+            precondition_object.set_dependent(dependent);
+
+            let precondition_any: AnyObjectRef = precondition_object.into();
+            array.insert(index, precondition_any);
+        }
+        Ok(array)
+    }
+
+    fn build_dependent_entity(
+        proxy: &vm_bindings::InterpreterProxy,
+        dependent: &DependentEntity,
+        classes: &PharoClasses,
+    ) -> Result<AnyObjectRef, TonelPrimitiveError> {
+        let mut entity =
+            Smalltalk::instantiate::<TonelDependentEntityRef>(classes.dependent_entity)?;
+
+        match dependent {
+            DependentEntity::Trait { name } => {
+                entity.set_kind(byte_string(proxy, "trait")?);
+                entity.set_name(byte_string(proxy, name.as_str())?);
             }
-            tonel_loader::DependentEntity::Class { name } => {
-                precondition_object.set_dependent_kind(byte_string(proxy, "class")?);
-                precondition_object.set_dependent_name(byte_string(proxy, name.as_str())?);
+            DependentEntity::Class { name } => {
+                entity.set_kind(byte_string(proxy, "class")?);
+                entity.set_name(byte_string(proxy, name.as_str())?);
             }
-            tonel_loader::DependentEntity::Extension {
+            DependentEntity::Extension {
                 target_name,
                 source_path,
             } => {
-                precondition_object.set_dependent_kind(byte_string(proxy, "extension")?);
-                precondition_object.set_dependent_name(byte_string(proxy, target_name.as_str())?);
+                entity.set_kind(byte_string(proxy, "extension")?);
+                entity.set_name(byte_string(proxy, target_name.as_str())?);
                 let source_path_string = source_path.to_string_lossy();
-                precondition_object
-                    .set_dependent_source_path(byte_string(proxy, source_path_string.as_ref())?);
+                entity.set_source_path(byte_string(proxy, source_path_string.as_ref())?);
             }
         }
 
-        let precondition_any: AnyObjectRef = precondition_object.into();
-        preconditions_array.insert(index, precondition_any);
+        Ok(entity.into())
     }
 
-    Ok(())
+    fn dependency_kind_name(kind: DependencyKind) -> &'static str {
+        match kind {
+            DependencyKind::Class => "class",
+            DependencyKind::Trait => "trait",
+            DependencyKind::ClassOrTrait => "classOrTrait",
+        }
+    }
+
+    fn dependency_reason_name(reason: DependencyReason) -> &'static str {
+        match reason {
+            DependencyReason::Superclass => "superclass",
+            DependencyReason::TraitComposition => "traitComposition",
+            DependencyReason::ClassTraitComposition => "classTraitComposition",
+            DependencyReason::ExtensionTarget => "extensionTarget",
+        }
+    }
+}
+
+mod documents {
+    use super::*;
+
+    #[derive(Debug, PharoObject)]
+    #[repr(C)]
+    pub(super) struct TonelClassDocument {
+        this: Object,
+        definition: AnyObjectRef,
+        methods: ArrayRef,
+        source_path: ByteStringRef,
+    }
+
+    #[derive(Debug, PharoObject)]
+    #[repr(C)]
+    pub(super) struct TonelTraitDocument {
+        this: Object,
+        definition: AnyObjectRef,
+        methods: ArrayRef,
+        source_path: ByteStringRef,
+    }
+
+    #[derive(Debug, PharoObject)]
+    #[repr(C)]
+    pub(super) struct TonelExtensionDocument {
+        this: Object,
+        target_name: ByteStringRef,
+        methods: ArrayRef,
+        source_path: ByteStringRef,
+    }
+
+    #[derive(Debug, PharoObject)]
+    #[repr(C)]
+    pub(super) struct TonelMethodDocument {
+        this: Object,
+        definition: AnyObjectRef,
+        identifier: ByteStringRef,
+        owner_name: ByteStringRef,
+        owner_kind: ByteStringRef,
+        source_path: ByteStringRef,
+    }
+
+    #[derive(Debug, PharoObject)]
+    #[repr(C)]
+    pub(super) struct TonelClassDefinition {
+        this: Object,
+        name: ByteStringRef,
+        superclass: AnyObjectRef,
+        comment: ByteStringRef,
+        trait_composition: AnyObjectRef,
+        class_trait_composition: AnyObjectRef,
+        instance_variables: ArrayRef,
+        class_variables: ArrayRef,
+        class_instance_variables: ArrayRef,
+        pool_dictionaries: ArrayRef,
+        package: AnyObjectRef,
+        tag: AnyObjectRef,
+        category: AnyObjectRef,
+        type_name: AnyObjectRef,
+        raw_metadata: AnyObjectRef,
+    }
+
+    #[derive(Debug, PharoObject)]
+    #[repr(C)]
+    pub(super) struct TonelTraitDefinition {
+        this: Object,
+        name: ByteStringRef,
+        comment: ByteStringRef,
+        trait_composition: AnyObjectRef,
+        class_trait_composition: AnyObjectRef,
+        instance_variables: ArrayRef,
+        class_instance_variables: ArrayRef,
+        package: AnyObjectRef,
+        tag: AnyObjectRef,
+        category: AnyObjectRef,
+        raw_metadata: AnyObjectRef,
+    }
+
+    #[derive(Debug, PharoObject)]
+    #[repr(C)]
+    pub(super) struct TonelMethodDefinition {
+        this: Object,
+        class_name: ByteStringRef,
+        method_type: ByteStringRef,
+        selector: ByteStringRef,
+        header: ByteStringRef,
+        body: ByteStringRef,
+        source: ByteStringRef,
+        category: AnyObjectRef,
+        metadata: AnyObjectRef,
+    }
+
+    #[derive(Debug, PharoObject)]
+    #[repr(C)]
+    pub(super) struct TonelMethodMetadata {
+        this: Object,
+        raw: ByteStringRef,
+    }
+
+    pub(super) fn build_behavior_document(
+        proxy: &vm_bindings::InterpreterProxy,
+        behavior: &BehaviorLoad,
+        classes: &PharoClasses,
+    ) -> Result<AnyObjectRef, TonelPrimitiveError> {
+        if let Some(class_document) = behavior.as_class() {
+            build_class_document(proxy, class_document, classes).map(AnyObjectRef::from)
+        } else if let Some(trait_document) = behavior.as_trait() {
+            build_trait_document(proxy, trait_document, classes).map(AnyObjectRef::from)
+        } else {
+            unreachable!("BehaviorLoad must reference either a class or trait document");
+        }
+    }
+
+    pub(super) fn build_method_document(
+        proxy: &vm_bindings::InterpreterProxy,
+        document: &MethodDocument,
+        classes: &PharoClasses,
+    ) -> Result<TonelMethodDocumentRef, TonelPrimitiveError> {
+        let mut method_document =
+            Smalltalk::instantiate::<TonelMethodDocumentRef>(classes.method_document)?;
+
+        let definition = build_method_definition(proxy, document.definition(), classes)?;
+        method_document.set_definition(definition);
+
+        method_document.set_identifier(byte_string(proxy, document.identifier())?);
+        method_document.set_owner_name(byte_string(proxy, document.owner_name())?);
+        method_document.set_owner_kind(byte_string(
+            proxy,
+            method_owner_kind_name(document.owner_kind()),
+        )?);
+        let source_path_string = document.source_path().to_string_lossy();
+        method_document.set_source_path(byte_string(proxy, source_path_string.as_ref())?);
+
+        Ok(method_document)
+    }
+
+    pub(super) fn build_extension_document(
+        proxy: &vm_bindings::InterpreterProxy,
+        document: &ExtensionDocument,
+        classes: &PharoClasses,
+    ) -> Result<TonelExtensionDocumentRef, TonelPrimitiveError> {
+        let mut extension_document =
+            Smalltalk::instantiate::<TonelExtensionDocumentRef>(classes.extension_document)?;
+
+        extension_document.set_target_name(byte_string(proxy, document.target_name())?);
+
+        let method_definitions = build_method_definitions(proxy, document.methods(), classes)?;
+        extension_document.set_methods(method_definitions);
+
+        let source_path_string = document.source_path().to_string_lossy();
+        extension_document.set_source_path(byte_string(proxy, source_path_string.as_ref())?);
+
+        Ok(extension_document)
+    }
+
+    fn build_class_document(
+        proxy: &vm_bindings::InterpreterProxy,
+        document: &ClassDocument,
+        classes: &PharoClasses,
+    ) -> Result<TonelClassDocumentRef, TonelPrimitiveError> {
+        let mut class_document =
+            Smalltalk::instantiate::<TonelClassDocumentRef>(classes.class_document)?;
+
+        let definition = build_class_definition(proxy, document.definition(), classes)?;
+        class_document.set_definition(definition);
+
+        let method_definitions = build_method_definitions(proxy, document.methods(), classes)?;
+        class_document.set_methods(method_definitions);
+
+        let source_path_string = document.source_path().to_string_lossy();
+        class_document.set_source_path(byte_string(proxy, source_path_string.as_ref())?);
+
+        Ok(class_document)
+    }
+
+    fn build_trait_document(
+        proxy: &vm_bindings::InterpreterProxy,
+        document: &TraitDocument,
+        classes: &PharoClasses,
+    ) -> Result<TonelTraitDocumentRef, TonelPrimitiveError> {
+        let mut trait_document =
+            Smalltalk::instantiate::<TonelTraitDocumentRef>(classes.trait_document)?;
+
+        let definition = build_trait_definition(proxy, document.definition(), classes)?;
+        trait_document.set_definition(definition);
+
+        let method_definitions = build_method_definitions(proxy, document.methods(), classes)?;
+        trait_document.set_methods(method_definitions);
+
+        let source_path_string = document.source_path().to_string_lossy();
+        trait_document.set_source_path(byte_string(proxy, source_path_string.as_ref())?);
+
+        Ok(trait_document)
+    }
+
+    fn build_class_definition(
+        proxy: &vm_bindings::InterpreterProxy,
+        definition: &tonel::ClassDefinition,
+        classes: &PharoClasses,
+    ) -> Result<TonelClassDefinitionRef, TonelPrimitiveError> {
+        let mut class_definition =
+            Smalltalk::instantiate::<TonelClassDefinitionRef>(classes.class_definition)?;
+
+        class_definition.set_name(byte_string(proxy, definition.name.as_str())?);
+
+        if let Some(superclass) = definition.superclass.as_deref() {
+            if !superclass.eq_ignore_ascii_case("nil") {
+                class_definition.set_superclass(byte_string(proxy, superclass)?);
+            }
+        }
+
+        class_definition.set_comment(byte_string(proxy, definition.comment.as_str())?);
+
+        if let Some(text) = definition.trait_composition.as_deref() {
+            class_definition.set_trait_composition(byte_string(proxy, text)?);
+        }
+        if let Some(text) = definition.class_trait_composition.as_deref() {
+            class_definition.set_class_trait_composition(byte_string(proxy, text)?);
+        }
+
+        class_definition.set_instance_variables(byte_string_array_from_strings(
+            proxy,
+            &definition.inst_vars,
+        )?);
+        class_definition.set_class_variables(byte_string_array_from_strings(
+            proxy,
+            &definition.class_vars,
+        )?);
+        class_definition.set_class_instance_variables(byte_string_array_from_strings(
+            proxy,
+            &definition.class_inst_vars,
+        )?);
+        class_definition
+            .set_pool_dictionaries(byte_string_array_from_strings(proxy, &definition.pools)?);
+
+        if let Some(package) = definition.package.as_deref() {
+            class_definition.set_package(byte_string(proxy, package)?);
+        }
+        if let Some(tag) = definition.tag.as_deref() {
+            class_definition.set_tag(byte_string(proxy, tag)?);
+        }
+        if let Some(category) = definition.category.as_deref() {
+            class_definition.set_category(byte_string(proxy, category)?);
+        }
+        if let Some(type_name) = definition.type_.as_deref() {
+            class_definition.set_type_name(byte_string(proxy, type_name)?);
+        }
+
+        let metadata_string = ston_value_to_string(&definition.raw_metadata);
+        class_definition.set_raw_metadata(byte_string(proxy, metadata_string.as_str())?);
+
+        Ok(class_definition)
+    }
+
+    fn build_trait_definition(
+        proxy: &vm_bindings::InterpreterProxy,
+        definition: &tonel::TraitDefinition,
+        classes: &PharoClasses,
+    ) -> Result<TonelTraitDefinitionRef, TonelPrimitiveError> {
+        let mut trait_definition =
+            Smalltalk::instantiate::<TonelTraitDefinitionRef>(classes.trait_definition)?;
+
+        trait_definition.set_name(byte_string(proxy, definition.name.as_str())?);
+        trait_definition.set_comment(byte_string(proxy, definition.comment.as_str())?);
+
+        if let Some(text) = definition.trait_composition.as_deref() {
+            trait_definition.set_trait_composition(byte_string(proxy, text)?);
+        }
+        if let Some(text) = definition.class_trait_composition.as_deref() {
+            trait_definition.set_class_trait_composition(byte_string(proxy, text)?);
+        }
+
+        trait_definition.set_instance_variables(byte_string_array_from_strings(
+            proxy,
+            &definition.inst_vars,
+        )?);
+        trait_definition.set_class_instance_variables(byte_string_array_from_strings(
+            proxy,
+            &definition.class_inst_vars,
+        )?);
+
+        if let Some(package) = definition.package.as_deref() {
+            trait_definition.set_package(byte_string(proxy, package)?);
+        }
+        if let Some(tag) = definition.tag.as_deref() {
+            trait_definition.set_tag(byte_string(proxy, tag)?);
+        }
+        if let Some(category) = definition.category.as_deref() {
+            trait_definition.set_category(byte_string(proxy, category)?);
+        }
+
+        let metadata_string = ston_value_to_string(&definition.raw_metadata);
+        trait_definition.set_raw_metadata(byte_string(proxy, metadata_string.as_str())?);
+
+        Ok(trait_definition)
+    }
+
+    fn build_method_definitions(
+        proxy: &vm_bindings::InterpreterProxy,
+        methods: &[tonel::MethodDefinition],
+        classes: &PharoClasses,
+    ) -> Result<ArrayRef, TonelPrimitiveError> {
+        let mut array = Array::new(methods.len())?;
+        for (index, method) in methods.iter().enumerate() {
+            let definition = build_method_definition(proxy, method, classes)?;
+            let definition_any: AnyObjectRef = definition.into();
+            array.insert(index, definition_any);
+        }
+        Ok(array)
+    }
+
+    fn build_method_definition(
+        proxy: &vm_bindings::InterpreterProxy,
+        definition: &tonel::MethodDefinition,
+        classes: &PharoClasses,
+    ) -> Result<TonelMethodDefinitionRef, TonelPrimitiveError> {
+        let mut method_definition =
+            Smalltalk::instantiate::<TonelMethodDefinitionRef>(classes.method_definition)?;
+
+        method_definition.set_class_name(byte_string(proxy, definition.class_name.as_str())?);
+        method_definition.set_method_type(byte_string(
+            proxy,
+            match definition.method_type {
+                MethodType::Instance => "instance",
+                MethodType::Class => "class",
+            },
+        )?);
+        method_definition.set_selector(byte_string(proxy, definition.selector.as_str())?);
+        method_definition.set_header(byte_string(proxy, definition.header.as_str())?);
+        method_definition.set_body(byte_string(proxy, definition.body.as_str())?);
+        method_definition.set_source(byte_string(proxy, definition.source.as_str())?);
+
+        if let Some(category) = definition.category.as_deref() {
+            method_definition.set_category(byte_string(proxy, category)?);
+        }
+
+        if let Some(metadata) = definition.metadata.as_ref() {
+            let metadata_object = build_method_metadata(proxy, metadata, classes)?;
+            method_definition.set_metadata(metadata_object);
+        }
+
+        Ok(method_definition)
+    }
+
+    fn build_method_metadata(
+        proxy: &vm_bindings::InterpreterProxy,
+        metadata: &tonel::MethodMetadata,
+        classes: &PharoClasses,
+    ) -> Result<TonelMethodMetadataRef, TonelPrimitiveError> {
+        let mut metadata_object =
+            Smalltalk::instantiate::<TonelMethodMetadataRef>(classes.method_metadata)?;
+        let metadata_string = ston_value_to_string(&metadata.raw);
+        metadata_object.set_raw(byte_string(proxy, metadata_string.as_str())?);
+        Ok(metadata_object)
+    }
+
+    fn method_owner_kind_name(kind: MethodOwnerKind) -> &'static str {
+        match kind {
+            MethodOwnerKind::Trait => "trait",
+            MethodOwnerKind::Class => "class",
+            MethodOwnerKind::Extension => "extension",
+        }
+    }
+}
+
+fn class_argument(offset: StackOffset) -> Result<ObjectRef, TonelPrimitiveError> {
+    let class_pointer = Smalltalk::stack_object_value_unchecked(offset);
+    let class_any = AnyObjectRef::from(RawObjectPointer::from(class_pointer.as_i64()));
+    Ok(class_any.as_object()?)
 }
 
 fn byte_string(
@@ -422,130 +705,51 @@ fn byte_string_array_from_strings(
     Ok(array)
 }
 
-fn dependency_kind_name(kind: DependencyKind) -> &'static str {
-    match kind {
-        DependencyKind::Class => "class",
-        DependencyKind::Trait => "trait",
-        DependencyKind::ClassOrTrait => "classOrTrait",
-    }
-}
-
-fn dependency_reason_name(reason: DependencyReason) -> &'static str {
-    match reason {
-        DependencyReason::Superclass => "superclass",
-        DependencyReason::TraitComposition => "traitComposition",
-        DependencyReason::ClassTraitComposition => "classTraitComposition",
-        DependencyReason::ExtensionTarget => "extensionTarget",
-    }
-}
-
-fn class_argument(offset: StackOffset) -> Result<ObjectRef, TonelPrimitiveError> {
-    let class_pointer = Smalltalk::stack_object_value_unchecked(offset);
-    let class_any = AnyObjectRef::from(RawObjectPointer::from(class_pointer.as_i64()));
-    Ok(class_any.as_object()?)
-}
-fn build_behaviors(
-    proxy: &vm_bindings::InterpreterProxy,
-    behaviors: &[BehaviorLoad],
-    behavior_array: &mut ArrayRef,
-    behavior_class: ObjectRef,
-    class_detail_class: ObjectRef,
-    trait_detail_class: ObjectRef,
-) -> Result<(), TonelPrimitiveError> {
-    for (index, behavior) in behaviors.iter().enumerate() {
-        let mut behavior_object = Smalltalk::instantiate::<TonelBehaviorLoadRef>(behavior_class)?;
-
-        behavior_object.set_order(behavior.order());
-        behavior_object.set_name(byte_string(proxy, behavior.name())?);
-
-        let path_string = behavior.source_path().to_string_lossy();
-        behavior_object.set_path(byte_string(proxy, path_string.as_ref())?);
-
-        if let Some(class_document) = behavior.as_class() {
-            behavior_object.set_kind(byte_string(proxy, "class")?);
-            let class_detail = build_class_detail(proxy, class_document, class_detail_class)?;
-            behavior_object.set_detail(class_detail);
-        } else if let Some(trait_document) = behavior.as_trait() {
-            behavior_object.set_kind(byte_string(proxy, "trait")?);
-            let trait_detail = build_trait_detail(proxy, trait_document, trait_detail_class)?;
-            behavior_object.set_detail(trait_detail);
-        } else {
-            unreachable!("Behavior must be either class or trait");
+fn ston_value_to_string(value: &Value) -> String {
+    match value {
+        Value::Null => "nil".to_string(),
+        Value::Bool(true) => "true".to_string(),
+        Value::Bool(false) => "false".to_string(),
+        Value::Integer(number) => number.to_string(),
+        Value::Float(number) => {
+            let mut string = number.to_string();
+            if !string.contains('.') && !string.contains('e') && !string.contains('E') {
+                string.push_str(".0");
+            }
+            string
         }
-
-        let behavior_any: AnyObjectRef = behavior_object.into();
-        behavior_array.insert(index, behavior_any);
-    }
-
-    Ok(())
-}
-
-fn build_methods(
-    proxy: &vm_bindings::InterpreterProxy,
-    methods: &[MethodLoad],
-    method_array: &mut ArrayRef,
-    method_definition_class: ObjectRef,
-) -> Result<(), TonelPrimitiveError> {
-    for (index, method) in methods.iter().enumerate() {
-        let mut method_object =
-            Smalltalk::instantiate::<TonelMethodDefinitionRef>(method_definition_class)?;
-
-        method_object.set_owner_order(method.owner_order());
-        method_object.set_selector(byte_string(proxy, method.definition().selector.as_str())?);
-        method_object.set_owner_name(byte_string(proxy, method.owner_name())?);
-        method_object.set_owner_kind(byte_string(
-            proxy,
-            match method.owner_kind() {
-                MethodOwnerKind::Trait => "trait",
-                MethodOwnerKind::Class => "class",
-                MethodOwnerKind::Extension => "extension",
-            },
-        )?);
-        method_object.set_class_name(byte_string(proxy, method.definition().class_name.as_str())?);
-        method_object.set_method_type(byte_string(
-            proxy,
-            match method.definition().method_type {
-                MethodType::Instance => "instance",
-                MethodType::Class => "class",
-            },
-        )?);
-        if let Some(category) = method.definition().category.as_deref() {
-            method_object.set_category(byte_string(proxy, category)?);
+        Value::String(text) => format!("'{}'", text.replace('\'', "''")),
+        Value::Symbol(text) => {
+            if text
+                .chars()
+                .all(|ch| ch.is_ascii_alphanumeric() || ch == '_')
+            {
+                format!("#{}", text)
+            } else {
+                format!("#'{}'", text.replace('\'', "''"))
+            }
         }
-        method_object.set_source(byte_string(proxy, method.definition().source.as_str())?);
-        method_object.set_header(byte_string(proxy, method.definition().header.as_str())?);
-        method_object.set_body(byte_string(proxy, method.definition().body.as_str())?);
-        let source_path_string = method.source_path().to_string_lossy();
-        method_object.set_source_path(byte_string(proxy, source_path_string.as_ref())?);
-
-        let method_any: AnyObjectRef = method_object.into();
-        method_array.insert(index, method_any);
+        Value::Array(items) => {
+            let inner = items
+                .iter()
+                .map(ston_value_to_string)
+                .collect::<Vec<_>>()
+                .join(" ");
+            format!("[{}]", inner)
+        }
+        Value::Map(map) => {
+            let inner = map
+                .iter()
+                .map(|(key, value)| {
+                    format!(
+                        "'{}': {}",
+                        key.replace('\'', "''"),
+                        ston_value_to_string(value)
+                    )
+                })
+                .collect::<Vec<_>>()
+                .join(". ");
+            format!("{{{}}}", inner)
+        }
     }
-
-    Ok(())
-}
-
-fn build_extensions(
-    proxy: &vm_bindings::InterpreterProxy,
-    extensions: &[ExtensionLoad],
-    extension_array: &mut ArrayRef,
-    extension_class: ObjectRef,
-    extension_detail_class: ObjectRef,
-) -> Result<(), TonelPrimitiveError> {
-    for (index, extension) in extensions.iter().enumerate() {
-        let mut extension_object =
-            Smalltalk::instantiate::<TonelExtensionLoadRef>(extension_class)?;
-
-        extension_object.set_order(extension.order());
-        extension_object.set_target_name(byte_string(proxy, extension.target_name())?);
-        let path_string = extension.source_path().to_string_lossy();
-        extension_object.set_path(byte_string(proxy, path_string.as_ref())?);
-        let detail = build_extension_detail(proxy, extension.document(), extension_detail_class)?;
-        extension_object.set_detail(detail);
-
-        let extension_any: AnyObjectRef = extension_object.into();
-        extension_array.insert(index, extension_any);
-    }
-
-    Ok(())
 }
