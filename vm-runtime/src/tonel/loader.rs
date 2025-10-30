@@ -5,11 +5,11 @@ use ston::Value;
 use thiserror::Error;
 use tonel::MethodType;
 use tonel_loader::{
-    build_load_plan, BehaviorDocument, BehaviorLoad, ClassDocument, DependencyKind,
+    build_load_plan, BehaviorLoad, ClassDocument, DependencyKind,
     DependencyReason, DependentEntity, ExtensionDocument, ExtensionLoad, LoadPrecondition,
     MethodDocument, MethodLoad, MethodOwnerKind, TraitDocument,
 };
-use vm_bindings::{ObjectPointer, Smalltalk, StackOffset};
+use vm_bindings::{ObjectPointer, Smalltalk};
 use vm_object_model::{AnyObjectRef, Immediate, Object, ObjectRef, RawObjectPointer};
 
 #[derive(Debug, Error)]
@@ -18,6 +18,10 @@ pub enum TonelPrimitiveError {
     WrongNumberOfArguments(usize),
     #[error("Expected a ByteString for the tonel package path")]
     ExpectedByteString,
+    #[error("Expected {expected} classes in the helper array, received {actual}")]
+    InvalidClassesArrayLength { expected: usize, actual: usize },
+    #[error("Missing class entry at index {0} in the helper array")]
+    MissingClass(usize),
     #[error("Tonel loader error")]
     Loader(#[from] tonel_loader::LoaderError),
     #[error("Object model error")]
@@ -27,7 +31,7 @@ pub enum TonelPrimitiveError {
 #[no_mangle]
 #[allow(non_snake_case)]
 pub fn primitiveTonelBuildLoadPlan() -> Result<(), TonelPrimitiveError> {
-    const EXPECTED_ARGUMENTS: usize = 15;
+    const EXPECTED_ARGUMENTS: usize = 2;
     let argument_count = Smalltalk::method_argument_count();
     if argument_count != EXPECTED_ARGUMENTS {
         return Err(TonelPrimitiveError::WrongNumberOfArguments(argument_count));
@@ -35,28 +39,14 @@ pub fn primitiveTonelBuildLoadPlan() -> Result<(), TonelPrimitiveError> {
 
     let proxy = vm().proxy();
 
-    let path_argument = Smalltalk::stack_object_value_unchecked(StackOffset::new(14));
-    let path_object = AnyObjectRef::from(RawObjectPointer::from(path_argument.as_i64()));
+    let path_object = Smalltalk::get_method_argument(0);
     let path_byte_string = ByteStringRef::try_from(path_object)
         .map_err(|_| TonelPrimitiveError::ExpectedByteString)?;
     let package_path = PathBuf::from(path_byte_string.as_str());
 
-    let classes = PharoClasses {
-        load_plan: class_argument(StackOffset::new(13))?,
-        behavior_load: class_argument(StackOffset::new(12))?,
-        class_document: class_argument(StackOffset::new(11))?,
-        class_definition: class_argument(StackOffset::new(10))?,
-        trait_document: class_argument(StackOffset::new(9))?,
-        trait_definition: class_argument(StackOffset::new(8))?,
-        extension_load: class_argument(StackOffset::new(7))?,
-        extension_document: class_argument(StackOffset::new(6))?,
-        method_load: class_argument(StackOffset::new(5))?,
-        method_document: class_argument(StackOffset::new(4))?,
-        method_definition: class_argument(StackOffset::new(3))?,
-        method_metadata: class_argument(StackOffset::new(2))?,
-        load_precondition: class_argument(StackOffset::new(1))?,
-        dependent_entity: class_argument(StackOffset::new(0))?,
-    };
+    let classes_argument = Smalltalk::get_method_argument(1);
+    let classes_array = ArrayRef::try_from(classes_argument)?;
+    let classes = PharoClasses::from_array(classes_array)?;
 
     let load_plan = build_load_plan(package_path)?;
     let mut plan_object = plan::build_pharo_load_plan(&proxy, &load_plan, &classes)?;
@@ -87,6 +77,36 @@ struct PharoClasses {
     method_metadata: ObjectRef,
     load_precondition: ObjectRef,
     dependent_entity: ObjectRef,
+}
+
+impl PharoClasses {
+    const EXPECTED_COUNT: usize = 14;
+
+    fn from_array(array: ArrayRef) -> Result<Self, TonelPrimitiveError> {
+        if array.len() != Self::EXPECTED_COUNT {
+            return Err(TonelPrimitiveError::InvalidClassesArrayLength {
+                expected: Self::EXPECTED_COUNT,
+                actual: array.len(),
+            });
+        }
+
+        Ok(Self {
+            load_plan: class_from_array(&array, 0)?,
+            behavior_load: class_from_array(&array, 1)?,
+            class_document: class_from_array(&array, 2)?,
+            class_definition: class_from_array(&array, 3)?,
+            trait_document: class_from_array(&array, 4)?,
+            trait_definition: class_from_array(&array, 5)?,
+            extension_load: class_from_array(&array, 6)?,
+            extension_document: class_from_array(&array, 7)?,
+            method_load: class_from_array(&array, 8)?,
+            method_document: class_from_array(&array, 9)?,
+            method_definition: class_from_array(&array, 10)?,
+            method_metadata: class_from_array(&array, 11)?,
+            load_precondition: class_from_array(&array, 12)?,
+            dependent_entity: class_from_array(&array, 13)?,
+        })
+    }
 }
 
 mod plan {
@@ -678,12 +698,6 @@ mod documents {
     }
 }
 
-fn class_argument(offset: StackOffset) -> Result<ObjectRef, TonelPrimitiveError> {
-    let class_pointer = Smalltalk::stack_object_value_unchecked(offset);
-    let class_any = AnyObjectRef::from(RawObjectPointer::from(class_pointer.as_i64()));
-    Ok(class_any.as_object()?)
-}
-
 fn byte_string(
     proxy: &vm_bindings::InterpreterProxy,
     value: &str,
@@ -703,6 +717,13 @@ fn byte_string_array_from_strings(
         array.insert(index, value);
     }
     Ok(array)
+}
+
+fn class_from_array(array: &ArrayRef, index: usize) -> Result<ObjectRef, TonelPrimitiveError> {
+    let value = array
+        .get(index)
+        .ok_or(TonelPrimitiveError::MissingClass(index))?;
+    Ok(value.as_object()?)
 }
 
 fn ston_value_to_string(value: &Value) -> String {
