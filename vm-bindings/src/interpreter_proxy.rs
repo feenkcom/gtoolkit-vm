@@ -1,6 +1,6 @@
 use crate::bindings::{
-    calloc, exportClassOrNilAtIndex as classOrNilAtIndex, exportGetHandler as getHandler,
-    exportReadAddress as readAddress, free, malloc, sqInt, VirtualMachine as sqInterpreterProxy,
+    calloc, exportClassOrNilAtIndex as classOrNilAtIndex, exportGetHandler as getHandler, free,
+    malloc, sqInt, VirtualMachine as sqInterpreterProxy,
 };
 use std::any::type_name;
 
@@ -8,7 +8,6 @@ use crate::prelude::{Handle, NativeAccess, NativeDrop, NativeTransmutable};
 use crate::Smalltalk;
 use std::ffi::{CStr, CString};
 use std::fmt::Display;
-use std::mem::size_of;
 use std::os::raw::{c_char, c_double, c_void};
 
 pub type InterpreterProxy = Handle<sqInterpreterProxy>;

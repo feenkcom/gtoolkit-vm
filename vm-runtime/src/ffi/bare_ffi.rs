@@ -349,6 +349,10 @@ fn marshall_object_as_pointer(
     any_object: AnyObjectRef,
     external_object_class: ObjectRef,
 ) -> Result<*const c_void, Error> {
+    if Smalltalk::nil_object() == any_object {
+        return Ok(std::ptr::null());
+    }
+    
     let object = any_object.as_object()?;
 
     if Smalltalk::class_of_object(object) == Smalltalk::class_external_address() {
