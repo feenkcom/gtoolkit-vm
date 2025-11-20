@@ -1,12 +1,16 @@
 use std::collections::HashMap;
 use std::env;
 use std::ffi::OsStr;
+use std::fmt::format;
 use std::path::PathBuf;
+use std::process::Command;
 use std::rc::Rc;
 
 use anyhow::{bail, Result};
 use cc::Build;
 use file_matcher::FilesNamed;
+use fs_extra::dir::CopyOptions;
+use fs_extra::error::ErrorKind::OsString;
 use new_string_template::template::Template;
 use serde::{Serialize, Serializer};
 use to_absolute::canonicalize;
@@ -265,7 +269,21 @@ impl Unit {
         }
 
         let compiler = build.get_compiler();
-        // the `cc` crate create a static library by default. In case of msvc we should override the used archiver from lib.exe to link.exe and
+
+        let is_debug = match env::var_os("DEBUG") {
+            Some(s) => s != "false",
+            None => false,
+        };
+
+        if is_debug {
+            // force frame pointer
+            if compiler.is_like_msvc() {
+                build.flag("/Oy-");
+            }
+        }
+
+        // the `cc` crate create a static library by default.
+        // In the case of msvc, we should override the used archiver from lib.exe to link.exe and
         // correctly provide the linking libraries from the dependencies
         if compiler.is_like_msvc() {
             let target = env::var("TARGET").expect("Could not find TARGET env.var.");
@@ -423,15 +441,42 @@ impl Unit {
                     .join(format!("{}.exp", self.name())),
             )
             .unwrap();
+        }
 
-            if self.builder().is_debug() {
-                std::fs::copy(
-                    self.output_directory().join(format!("{}.pdb", self.name())),
-                    self.artefact_directory()
-                        .join(format!("{}.pdb", self.name())),
+        if is_debug && cfg!(target_os = "macos") {
+            let dylib = self.output_directory().join(self.binary_name());
+            let dylib_path_str = dylib.display().to_string();
+            let status = Command::new("dsymutil")
+                .args([
+                    dylib_path_str.as_str(),
+                    "-o",
+                    &format!("{}.dSYM", dylib.display()),
+                ])
+                .status()
+                .expect("failed to run dsymutil");
+            if !status.success() {
+                println!("cargo:warning=dsymutil failed to generate debug symbols");
+            }
+
+            if cfg!(target_os = "macos") {
+                let copy_options = CopyOptions::default().overwrite(true);
+                fs_extra::dir::copy(
+                    self.output_directory()
+                        .join(format!("{}.dSYM", self.binary_name())),
+                    self.artefact_directory(),
+                    &copy_options,
                 )
                 .unwrap();
             }
+        }
+
+        if is_debug && compiler.is_like_msvc() {
+            std::fs::copy(
+                self.output_directory().join(format!("{}.pdb", self.name())),
+                self.artefact_directory()
+                    .join(format!("{}.pdb", self.name())),
+            )
+            .unwrap();
         }
 
         build

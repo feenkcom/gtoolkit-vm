@@ -17,8 +17,9 @@ members = [
 exclude = ["target", "third_party", "libs"]
 
 [profile.release]
-rpath = false
 debug = true
+strip = false
+rpath = false
 
 [profile.dev]
 rpath = false
