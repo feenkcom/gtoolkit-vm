@@ -447,7 +447,7 @@ impl Unit {
             .unwrap();
         }
 
-        if is_debug && cfg!(target_os = "macos") {
+        if is_debug && self.target().is_macos() {
             let dylib = self.output_directory().join(self.binary_name());
             let dylib_path_str = dylib.display().to_string();
             let status = Command::new("dsymutil")
@@ -462,7 +462,7 @@ impl Unit {
                 println!("cargo:warning=dsymutil failed to generate debug symbols");
             }
 
-            if cfg!(target_os = "macos") {
+            if self.target().is_macos() {
                 let copy_options = CopyOptions::default().overwrite(true);
                 fs_extra::dir::copy(
                     self.output_directory()
