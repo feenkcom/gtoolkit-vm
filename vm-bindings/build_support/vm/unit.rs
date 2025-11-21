@@ -276,13 +276,13 @@ impl Unit {
         };
 
         if is_debug {
-            // force frame pointer
             if compiler.is_like_msvc() {
                 // We set our own debug flags, because we want to generate .pdb
                 build.debug(false);
-                build.flag("/DEBUG:FULL");
                 build.flag("/Zi");
+                // force frame pointer
                 build.flag("/Oy-");
+                build.ar_flag("/DEBUG:FULL");
             }
         }
 
