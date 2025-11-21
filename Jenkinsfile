@@ -3,8 +3,7 @@ import hudson.model.Actionable
 import hudson.tasks.junit.CaseResult
  
 def BUILD_MATRIX = [
-    [type: 'release', suffix: ''],
-    [type: 'debug', suffix: '-debug']
+    [type: 'release', suffix: '']
 ]
 
 def SIMPLE_BUILD_MATRIX = [
