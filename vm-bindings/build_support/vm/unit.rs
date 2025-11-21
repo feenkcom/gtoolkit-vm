@@ -279,10 +279,9 @@ impl Unit {
             if compiler.is_like_msvc() {
                 // We set our own debug flags, because we want to generate .pdb
                 build.debug(false);
-                build.flag("/Zi");
+                build.flag_if_supported("/Zi");
                 // force frame pointer
-                build.flag("/Oy-");
-                build.ar_flag("/DEBUG:FULL");
+                build.flag_if_supported("/Oy-");
             }
         }
 
@@ -296,8 +295,8 @@ impl Unit {
             build.archiver(linker.path());
             build.ar_flag("-DLL");
 
-            if self.builder().is_debug() {
-                build.ar_flag("-DEBUG");
+            if is_debug {
+                build.ar_flag("/DEBUG:FULL");
             }
 
             let libs = compiler
