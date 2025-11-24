@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use std::env;
 use std::ffi::OsStr;
-use std::fmt::format;
 use std::path::PathBuf;
 use std::process::Command;
 use std::rc::Rc;
@@ -10,7 +9,6 @@ use anyhow::{bail, Result};
 use cc::Build;
 use file_matcher::FilesNamed;
 use fs_extra::dir::CopyOptions;
-use fs_extra::error::ErrorKind::OsString;
 use new_string_template::template::Template;
 use serde::{Serialize, Serializer};
 use to_absolute::canonicalize;

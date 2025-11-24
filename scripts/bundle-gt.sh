@@ -7,7 +7,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 export CARGO_LOG=cargo::core::compiler::fingerprint=info
 
-"./$BUILDER" build \
+"./$BUILDER" bundle \
   --release \
   --app-name 'GlamorousToolkit' \
   --identifier 'com.gtoolkit' \

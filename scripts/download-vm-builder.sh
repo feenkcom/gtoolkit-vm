@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-BUILDER="gtoolkit-vm-builder"
+BUILDER="$1"
 
 if [[ ! -f "$BUILDER" ]]; then
   if [[ "$OSTYPE" == "linux-gnu"* ]]; then
@@ -31,15 +31,3 @@ if [[ ! -f "$BUILDER" ]]; then
   fi
   chmod +x "$BUILDER"
 fi
-
-"./$BUILDER" build \
-  --release \
-  --app-name 'GlamorousToolkit' \
-  --identifier 'com.gtoolkit' \
-  --author "feenk gmbh <contact@feenk.com>" \
-  --libraries-versions libraries.version \
-  --icons "icons/android" \
-  --executables android \
-  --target aarch64-linux-android \
-  -vvvv \
-  --libraries clipboard pixels process skia winit crypto git ssl

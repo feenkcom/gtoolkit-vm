@@ -11,7 +11,7 @@ git clone git@github.com:feenkcom/gtoolkit-vm.git
 cd gtoolkit-vm
 ```
 
-After cloning the repository please update the submodules:
+After cloning the repository, please update the submodules:
 ```
 git submodule update --init --recursive
 ```
@@ -26,7 +26,7 @@ The building of the vm happens with the help of `gtoolkit-vm-builder`.
 
 Follow the README.md of [github.com/feenkcom/gtoolkit-vm-builder](https://github.com/feenkcom/gtoolkit-vm-builder).
 
-### Building
+### Platform specific dependencies
 Please see a corresponding how-to guide based on the target platform:
  - [Linux](BUILDING_LINUX.md)
  - [MacOS](BUILDING_MAC.md)

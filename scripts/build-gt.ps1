@@ -10,7 +10,7 @@ if (-not(Test-Path -Path $builder -PathType Leaf)) {
     }
 }
 
-& .\$builder `
+& .\$builder build `
     --release `
     -vvvv `
     --app-name 'GlamorousToolkit' `

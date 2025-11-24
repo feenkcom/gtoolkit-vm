@@ -65,6 +65,7 @@ socket_plugin = []
 squeak_ssl_plugin = []
 surface_plugin = []
 uuid_plugin = []
+unix_os_process_plugin = ["socket_plugin", "file_plugin"]
 # Compile GNU processed interpreter sources.
 # Clang does not require gnuisation
 gnuisation = []

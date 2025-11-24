@@ -8,22 +8,26 @@ The client side is written in Rust. It can be installed via `rustup`:
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
 ### CMake
-Is responsible for managing the build process of C/C++ third party libraries. Install it according to the Linux distribution.
+it is responsible for managing the build process of C/C++ third party libraries.
+Install it according to the Linux distribution.
 
 ### GTK
-Is required by the [nativefiledialog](https://github.com/saurvs/nfd-rs) to open an image picker. Install it according to the Linux distribution. In case of Ubuntu:
+It Is required by the [nativefiledialog](https://github.com/saurvs/nfd-rs) to open an image picker.
+Install it according to the Linux distribution. In case of Ubuntu:
 ```
 sudo apt install libgtk-3-dev
 ```
 
 ### SSL
-Is required by multiple Rust crates
+It Is required by multiple Rust crates
 ```
 sudo apt install libssl-dev
 ```
 
 ### LLVM / CLang / Automake / Ninja
-The native libraries are such as Skia and Pharo are compiled using CLang. Install it according to the Linux distribution. In case of Ubuntu:
+The native libraries such as Skia and Pharo are compiled using CLang.
+Install it according to the Linux distribution.
+In the case of Ubuntu:
 ```
 sudo apt install clang llvm lld autoconf automake libtool libtool-bin ninja-build make build-essential
 ```
@@ -42,18 +46,3 @@ The rpaths of the GT executables are updated by gtoolkit-vm-builder:
 sudo apt install patchelf
 ```
 
-## Cloning
-```
-git clone git@github.com:feenkcom/gtoolkit-vm.git
-cd gtoolkit-vm
-```
-
-After cloning the repository please update the submodules:
-```
-git submodule update --init --recursive
-```
-
-## Building
-```
-cargo run --package vm-builder -- --app-name GlamorousToolkit --identifier com.gtoolkit --release
-```

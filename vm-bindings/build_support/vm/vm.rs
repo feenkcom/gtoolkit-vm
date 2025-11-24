@@ -317,6 +317,8 @@ impl VirtualMachine {
         core.flag("-Wno-pointer-sign");
         core.flag("-Wno-unused-command-line-argument");
         core.flag("-Wno-undef-prefix");
+        core.flag("-Wno-extern-initializer");
+        core.flag("-Wno-pointer-integer-compare");
 
         #[cfg(feature = "immutability")]
         core.define("IMMUTABILITY", "1");
