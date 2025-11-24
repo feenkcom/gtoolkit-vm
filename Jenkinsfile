@@ -344,6 +344,7 @@ pipeline {
                     steps {
                         powershell 'powershell -ExecutionPolicy Bypass -File .\\jenkins\\windows.ps1'
                         stash includes: "${APP_NAME}-${TARGET}.zip", name: "${TARGET}"
+                        stash includes: "${APP_NAME}-${TARGET}-with-debug-symbols.zip", name: "${TARGET}-with-debug-symbols"
                     }
                 }
                 stage ('Windows arm64') {
@@ -369,6 +370,7 @@ pipeline {
                     steps {
                         powershell 'powershell -ExecutionPolicy Bypass -File .\\jenkins\\windows.ps1'
                         stash includes: "${APP_NAME}-${TARGET}.zip", name: "${TARGET}"
+                        stash includes: "${APP_NAME}-${TARGET}-with-debug-symbols.zip", name: "${TARGET}-with-debug-symbols"
                     }
                 }
             }
@@ -387,47 +389,28 @@ pipeline {
             }
             steps {
                 script {
-                    def stash_names = []
-                    def asset_names = []
-
-                    for (build_type in SIMPLE_BUILD_MATRIX) {
-                       def assets = [
-                           "${APP_NAME}-${LINUX_AMD64_TARGET}${build_type.suffix}.zip",
-                           "${APP_NAME}-${LINUX_ARM64_TARGET}${build_type.suffix}.zip",
-                           "${APP_NAME}-${ANDROID_ARM64_TARGET}${build_type.suffix}.apk",
-                       ]
-                       asset_names.addAll(assets)
-
-                       def targets = [
-                           LINUX_AMD64_TARGET,
-                           LINUX_ARM64_TARGET,
-                           ANDROID_ARM64_TARGET ]
-
-                       for (target in targets) {
-                           stash_names.add("${target}${build_type.suffix}")
-                       }
-                    }
-
-                    for (build_type in BUILD_MATRIX) {
-                       def assets = [
-                           "${APP_NAME}-${MACOS_INTEL_TARGET}${build_type.suffix}.app.zip",
-                           "${APP_NAME}-${MACOS_M1_TARGET}${build_type.suffix}.app.zip",
-                           "${APP_NAME}-${WINDOWS_AMD64_TARGET}${build_type.suffix}.zip",
-                           "${APP_NAME}-${WINDOWS_ARM64_TARGET}${build_type.suffix}.zip"
-                       ]
-
-                       asset_names.addAll(assets)
-
-                       def targets = [
-                          MACOS_INTEL_TARGET,
-                          MACOS_M1_TARGET,
-                          WINDOWS_AMD64_TARGET,
-                          WINDOWS_ARM64_TARGET ]
-
-                      for (target in targets) {
-                          stash_names.add("${target}${build_type.suffix}")
-                      }
-                    }
+                    def stash_names = [
+                        MACOS_INTEL_TARGET,
+                        MACOS_M1_TARGET,
+                        LINUX_AMD64_TARGET,
+                        LINUX_ARM64_TARGET,
+                        ANDROID_ARM64_TARGET
+                        WINDOWS_AMD64_TARGET,
+                        "${WINDOWS_AMD64_TARGET}-with-debug-symbols",
+                        WINDOWS_ARM64_TARGET,
+                        "${WINDOWS_ARM64_TARGET}-with-debug-symbols",
+                    ]
+                    def asset_names = [
+                        "${APP_NAME}-${MACOS_INTEL_TARGET}.app.zip",
+                        "${APP_NAME}-${MACOS_M1_TARGET}.app.zip",
+                        "${APP_NAME}-${LINUX_AMD64_TARGET}${build_type.suffix}.zip",
+                        "${APP_NAME}-${LINUX_ARM64_TARGET}${build_type.suffix}.zip",
+                        "${APP_NAME}-${ANDROID_ARM64_TARGET}${build_type.suffix}.apk",
+                        "${APP_NAME}-${WINDOWS_AMD64_TARGET}.zip",
+                        "${APP_NAME}-${WINDOWS_AMD64_TARGET}-with-debug-symbols.zip",
+                        "${APP_NAME}-${WINDOWS_ARM64_TARGET}.zip",
+                        "${APP_NAME}-${WINDOWS_ARM64_TARGET}-with-debug-symbols.zip"
+                    ]
 
                     stash_names.each { name ->
                         echo "Unstashing ${name}"

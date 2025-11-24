@@ -52,6 +52,20 @@ curl -o gtoolkit-vm-builder.exe "https://github.com/feenkcom/gtoolkit-vm-builder
 
 ./gtoolkit-vm-builder.exe bundle `
     --strip-debug-symbols `
+    --bundle-dir "bundle" `
+    --app-name $env:APP_NAME `
+    --identifier $env:APP_IDENTIFIER `
+    --author $env:APP_AUTHOR `
+    --version $env:APP_VERSION `
+    --libraries $appLibraries `
+    --libraries-versions $env:APP_LIBRARIES_VERSIONS `
+    --icons icons/GlamorousToolkit.ico `
+    --release `
+    --target $env:TARGET `
+    --verbose
+
+./gtoolkit-vm-builder.exe bundle `
+    --bundle-dir "bundle_with_debug_symbols" `
     --app-name $env:APP_NAME `
     --identifier $env:APP_IDENTIFIER `
     --author $env:APP_AUTHOR `
@@ -65,4 +79,5 @@ curl -o gtoolkit-vm-builder.exe "https://github.com/feenkcom/gtoolkit-vm-builder
 
 cargo test --package vm-client-tests
 
-Compress-Archive -Path "target/$env:TARGET/release/bundle/$env:APP_NAME/*" -DestinationPath "$env:APP_NAME-$env:TARGET.zip"
+Compress-Archive -Path "bundle/$env:APP_NAME/*" -DestinationPath "$env:APP_NAME-$env:TARGET.zip"
+Compress-Archive -Path "bundle_with_debug_symbols/$env:APP_NAME/*" -DestinationPath "$env:APP_NAME-$env:TARGET-with-debug-symbols.zip"
