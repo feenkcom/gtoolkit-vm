@@ -46,10 +46,9 @@ chmod +x feenk-signer
   --release \
   --verbose
 
-cargo test --package vm-client-tests
-
 # shellcheck disable=SC2086
 ./gtoolkit-vm-builder bundle \
+  --strip-debug-symbols \
   --app-name "${APP_NAME}" \
   --identifier "${APP_IDENTIFIER}" \
   --author "${APP_AUTHOR}" \
@@ -59,6 +58,8 @@ cargo test --package vm-client-tests
   --libraries-versions "${APP_LIBRARIES_VERSIONS}" \
   --release \
   --verbose
+
+cargo test --package vm-client-tests
 
 ./feenk-signer mac "target/${TARGET}/release/bundle/${APP_NAME}.app"
 ditto -c -k --sequesterRsrc --keepParent "target/${TARGET}/release/bundle/${APP_NAME}.app" "${APP_NAME}-${TARGET}.app.zip"
