@@ -6,6 +6,7 @@ Set-PSDebug -Trace 1                 # like set -x
 $requiredVariables = @(
     'VM_BUILDER_VERSION',
     'TARGET',
+    'HOST',
     'APP_NAME',
     'APP_IDENTIFIER',
     'APP_AUTHOR',
@@ -39,7 +40,7 @@ git submodule foreach --recursive 'git fetch --tags'
 git submodule update --init --recursive
 
 Remove-Item gtoolkit-vm-builder.exe -ErrorAction Ignore
-curl -o gtoolkit-vm-builder.exe "https://github.com/feenkcom/gtoolkit-vm-builder/releases/download/${VM_BUILDER_VERSION}/gtoolkit-vm-builder-${TARGET}.exe"
+curl -o gtoolkit-vm-builder.exe "https://github.com/feenkcom/gtoolkit-vm-builder/releases/download/${VM_BUILDER_VERSION}/gtoolkit-vm-builder-${HOST}.exe"
 
 
 ./gtoolkit-vm-builder.exe compile `

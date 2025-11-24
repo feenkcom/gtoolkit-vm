@@ -332,6 +332,7 @@ pipeline {
 
                     environment {
                         TARGET = "${WINDOWS_AMD64_TARGET}"
+                        HOST = "${WINDOWS_AMD64_TARGET}"
                         LLVM_HOME = 'C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\Llvm\\x64'
                         LIBCLANG_PATH = "${LLVM_HOME}\\bin"
                         CARGO_HOME = "C:\\.cargo"
