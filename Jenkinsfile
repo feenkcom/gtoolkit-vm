@@ -394,7 +394,7 @@ pipeline {
                         MACOS_M1_TARGET,
                         LINUX_AMD64_TARGET,
                         LINUX_ARM64_TARGET,
-                        ANDROID_ARM64_TARGET
+                        ANDROID_ARM64_TARGET,
                         WINDOWS_AMD64_TARGET,
                         "${WINDOWS_AMD64_TARGET}-with-debug-symbols",
                         WINDOWS_ARM64_TARGET,
