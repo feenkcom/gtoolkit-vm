@@ -34,26 +34,28 @@ chmod +x gtoolkit-vm-builder
 curl -o feenk-signer -LsS "https://github.com/feenkcom/feenk-signer/releases/download/${FEENK_SIGNER_VERSION}/feenk-signer-${TARGET}"
 chmod +x feenk-signer
 
+# shellcheck disable=SC2086
 ./gtoolkit-vm-builder compile \
   --app-name "${APP_NAME}" \
   --identifier "${APP_IDENTIFIER}" \
   --author "${APP_AUTHOR}" \
   --version "${APP_VERSION}" \
   --icons icons/GlamorousToolkit.icns \
-  --libraries "${APP_LIBRARIES}" \
+  --libraries ${APP_LIBRARIES} \
   --libraries-versions "${APP_LIBRARIES_VERSIONS}" \
   --release \
   --verbose
 
 cargo test --package vm-client-tests
 
+# shellcheck disable=SC2086
 ./gtoolkit-vm-builder bundle \
   --app-name "${APP_NAME}" \
   --identifier "${APP_IDENTIFIER}" \
   --author "${APP_AUTHOR}" \
   --version "${APP_VERSION}" \
   --icons icons/GlamorousToolkit.icns \
-  --libraries "${APP_LIBRARIES}" \
+  --libraries ${APP_LIBRARIES} \
   --libraries-versions "${APP_LIBRARIES_VERSIONS}" \
   --release \
   --verbose
