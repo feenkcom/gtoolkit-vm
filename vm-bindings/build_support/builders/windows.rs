@@ -18,52 +18,49 @@ impl WindowsBuilder {
     }
 
     fn prepare_vcpkg() -> PathBuf {
-        match which::which("vcpkg") {
-            Ok(vcpkg) => vcpkg,
-            Err(_) => {
-                let vcpkg_directory = Self::out_dir().join("vcpkg");
+        which::which("vcpkg").unwrap_or_else(|_| {
+            let vcpkg_directory = Self::out_dir().join("vcpkg");
 
-                if !vcpkg_directory.exists() {
-                    let status = Command::new("git")
-                        .current_dir(Self::out_dir())
-                        .stdout(Stdio::inherit())
-                        .stderr(Stdio::inherit())
-                        .arg("clone")
-                        .arg("https://github.com/Microsoft/vcpkg.git")
-                        .status()
-                        .expect("Could not clone repository. Is git installed?");
+            if !vcpkg_directory.exists() {
+                let status = Command::new("git")
+                    .current_dir(Self::out_dir())
+                    .stdout(Stdio::inherit())
+                    .stderr(Stdio::inherit())
+                    .arg("clone")
+                    .arg("https://github.com/Microsoft/vcpkg.git")
+                    .status()
+                    .expect("Could not clone repository. Is git installed?");
 
-                    if !status.success() {
-                        panic!("Could not clone vcpkg repository. Is git installed?")
-                    }
+                if !status.success() {
+                    panic!("Could not clone vcpkg repository. Is git installed?")
                 }
-
-                let vcpkg = vcpkg_directory.join("vcpkg.exe");
-
-                if !vcpkg.exists() {
-                    let status = Command::new("cmd")
-                        .current_dir(&vcpkg_directory)
-                        .stdout(Stdio::inherit())
-                        .stderr(Stdio::inherit())
-                        .args(&["/C", ".\\bootstrap-vcpkg.bat"])
-                        .status()
-                        .expect("failed to execute process");
-
-                    if !status.success() {
-                        panic!("Failed bootstrap vcpkg.")
-                    }
-                }
-
-                if !vcpkg.exists() {
-                    panic!(
-                        "Could not find vcpkg executable in {}.",
-                        &vcpkg_directory.display()
-                    );
-                }
-
-                vcpkg
             }
-        }
+
+            let vcpkg = vcpkg_directory.join("vcpkg.exe");
+
+            if !vcpkg.exists() {
+                let status = Command::new("cmd")
+                    .current_dir(&vcpkg_directory)
+                    .stdout(Stdio::inherit())
+                    .stderr(Stdio::inherit())
+                    .args(&["/C", ".\\bootstrap-vcpkg.bat"])
+                    .status()
+                    .expect("failed to execute process");
+
+                if !status.success() {
+                    panic!("Failed bootstrap vcpkg.")
+                }
+            }
+
+            if !vcpkg.exists() {
+                panic!(
+                    "Could not find vcpkg executable in {}.",
+                    &vcpkg_directory.display()
+                );
+            }
+
+            vcpkg
+        })
     }
 
     pub fn vcpkg_triplet() -> &'static str {

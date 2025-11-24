@@ -1,5 +1,4 @@
 $ErrorActionPreference = 'Stop'      # like set -e + pipefail
-Set-PSDebug -Trace 1                 # like set -x
 
 ##
 # Validate required environment variables early and expose them as script variables.

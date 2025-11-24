@@ -343,7 +343,6 @@ pipeline {
 
                     steps {
                         powershell 'powershell -ExecutionPolicy Bypass -File .\\jenkins\\windows.ps1'
-                        powershell '.\\jenkins\\windows.ps1'
                         stash includes: "${APP_NAME}-${TARGET}.zip", name: "${TARGET}"
                     }
                 }
@@ -369,7 +368,6 @@ pipeline {
 
                     steps {
                         powershell 'powershell -ExecutionPolicy Bypass -File .\\jenkins\\windows.ps1'
-                        powershell '.\\jenkins\\windows.ps1'
                         stash includes: "${APP_NAME}-${TARGET}.zip", name: "${TARGET}"
                     }
                 }
