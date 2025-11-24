@@ -85,15 +85,15 @@ pipeline {
             }
             steps {
                 script {
-                    VM_BUILDER_VERSION = sh (
+                    env.VM_BUILDER_VERSION = sh (
                         script: "cat vm-builder.version",
                         returnStdout: true
                     ).trim()
-                    FEENK_RELEASER_VERSION = sh (
+                    env.FEENK_RELEASER_VERSION = sh (
                         script: "cat feenk-releaser.version",
                         returnStdout: true
                     ).trim()
-                    FEENK_SIGNER_VERSION = sh (
+                    env.FEENK_SIGNER_VERSION = sh (
                         script: "cat feenk-signer.version",
                         returnStdout: true
                     ).trim()
@@ -103,7 +103,7 @@ pipeline {
                 sh "curl -o feenk-releaser -LsS https://github.com/feenkcom/releaser-rs/releases/download/${FEENK_RELEASER_VERSION}/feenk-releaser-${TARGET}"
                 sh "chmod +x feenk-releaser"
                 script {
-                    APP_VERSION = sh (
+                    env.APP_VERSION = sh (
                         script: "./feenk-releaser --owner ${REPOSITORY_OWNER} --repo ${REPOSITORY_NAME} --token GITHUB_TOKEN next-version --bump ${params.BUMP}",
                         returnStdout: true
                     ).trim()
