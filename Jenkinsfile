@@ -341,40 +341,8 @@ pipeline {
                     }
 
                     steps {
-                        powershell 'Remove-Item -Force -Recurse -Path target -ErrorAction Ignore'
-                        powershell 'Remove-Item -Force -Recurse -Path third_party -ErrorAction Ignore'
-                        powershell 'Remove-Item -Force -Recurse -Path libs -ErrorAction Ignore'
-
-                        powershell 'git clean -fdx'
-                        powershell 'git submodule foreach --recursive \'git fetch --tags\''
-                        powershell 'git submodule update --init --recursive'
-
-                        powershell "Remove-Item gtoolkit-vm-builder.exe -ErrorAction Ignore"
-                        powershell "curl -o gtoolkit-vm-builder.exe https://github.com/feenkcom/gtoolkit-vm-builder/releases/download/${VM_BUILDER_VERSION}/gtoolkit-vm-builder-${TARGET}.exe"
-
-                        script {
-                            for (build_type in BUILD_MATRIX) {
-                                echo "Building for ${build_type.type}..."
-                                powershell """
-                                   ./gtoolkit-vm-builder.exe build `
-                                        --app-name ${APP_NAME} `
-                                        --identifier ${APP_IDENTIFIER} `
-                                        --author ${APP_AUTHOR} `
-                                        --version ${APP_VERSION} `
-                                        --libraries ${APP_LIBRARIES} `
-                                        --libraries-versions ${APP_LIBRARIES_VERSIONS} `
-                                        --icons icons/GlamorousToolkit.ico `
-                                        --${build_type.type} `
-                                        --target ${TARGET} `
-                                        --verbose """
-
-                                powershell "Compress-Archive -Path target/${TARGET}/${build_type.type}/bundle/${APP_NAME}/* -DestinationPath ${APP_NAME}-${TARGET}${build_type.suffix}.zip"
-
-                                powershell "cargo test --package vm-client-tests"
-
-                                stash includes: "${APP_NAME}-${TARGET}${build_type.suffix}.zip", name: "${TARGET}${build_type.suffix}"
-                            }
-                        }
+                        pwsh './jenkins/windows.ps1'
+                        stash includes: "${APP_NAME}-${TARGET}.zip", name: "${TARGET}"
                     }
                 }
                 stage ('Windows arm64') {
@@ -394,42 +362,12 @@ pipeline {
                         CARGO_PATH = "${CARGO_HOME}\\bin"
                         PATH = "${CARGO_PATH};${LIBCLANG_PATH};$PATH"
                         VM_CLIENT_EXECUTABLE = "${WORKSPACE}\\target\\${TARGET}\\release\\bundle\\${APP_NAME}\\bin\\${APP_NAME}-cli.exe"
+                        APP_LIBRARIES = "${WINDOWS_APP_LIBRARIES_ARM}"
                     }
 
                     steps {
-                        powershell 'Remove-Item -Force -Recurse -Path target -ErrorAction Ignore'
-                        powershell 'Remove-Item -Force -Recurse -Path third_party -ErrorAction Ignore'
-                        powershell 'Remove-Item -Force -Recurse -Path libs -ErrorAction Ignore'
-
-                        powershell 'git clean -fdx'
-                        powershell 'git submodule foreach --recursive \'git fetch --tags\''
-                        powershell 'git submodule update --init --recursive'
-
-                        powershell "Remove-Item gtoolkit-vm-builder.exe -ErrorAction Ignore"
-                        powershell "curl -o gtoolkit-vm-builder.exe https://github.com/feenkcom/gtoolkit-vm-builder/releases/download/${VM_BUILDER_VERSION}/gtoolkit-vm-builder-${HOST}.exe"
-
-                        script {
-                            for (build_type in BUILD_MATRIX) {
-                                echo "Building for ${build_type.type}..."
-
-                                powershell """
-                                   ./gtoolkit-vm-builder.exe build `
-                                        --app-name ${APP_NAME} `
-                                        --identifier ${APP_IDENTIFIER} `
-                                        --author ${APP_AUTHOR} `
-                                        --version ${APP_VERSION} `
-                                        --libraries ${WINDOWS_APP_LIBRARIES_ARM} `
-                                        --libraries-versions ${APP_LIBRARIES_VERSIONS} `
-                                        --icons icons/GlamorousToolkit.ico `
-                                        --${build_type.type} `
-                                        --target ${TARGET} `
-                                        --verbose """
-
-                                powershell "Compress-Archive -Path target/${TARGET}/${build_type.type}/bundle/${APP_NAME}/* -DestinationPath ${APP_NAME}-${TARGET}${build_type.suffix}.zip"
-
-                                stash includes: "${APP_NAME}-${TARGET}${build_type.suffix}.zip", name: "${TARGET}${build_type.suffix}"
-                            }
-                        }
+                        pwsh './jenkins/windows.ps1'
+                        stash includes: "${APP_NAME}-${TARGET}.zip", name: "${TARGET}"
                     }
                 }
             }
