@@ -28,6 +28,8 @@ foreach ($name in $requiredVariables) {
     Set-Variable -Name $name -Value $value -Scope Script
 }
 
+$appLibraries = $APP_LIBRARIES -split '[,;\s]+' | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+
 Remove-Item -Force -Recurse -Path target -ErrorAction Ignore
 Remove-Item -Force -Recurse -Path third_party -ErrorAction Ignore
 Remove-Item -Force -Recurse -Path libs -ErrorAction Ignore
@@ -45,7 +47,7 @@ curl -o gtoolkit-vm-builder.exe "https://github.com/feenkcom/gtoolkit-vm-builder
     --identifier ${APP_IDENTIFIER} `
     --author ${APP_AUTHOR} `
     --version ${APP_VERSION} `
-    --libraries ${APP_LIBRARIES} `
+    --libraries $appLibraries `
     --libraries-versions ${APP_LIBRARIES_VERSIONS} `
     --icons icons/GlamorousToolkit.ico `
     --release `
@@ -58,7 +60,7 @@ curl -o gtoolkit-vm-builder.exe "https://github.com/feenkcom/gtoolkit-vm-builder
     --identifier ${APP_IDENTIFIER} `
     --author ${APP_AUTHOR} `
     --version ${APP_VERSION} `
-    --libraries ${APP_LIBRARIES} `
+    --libraries $appLibraries `
     --libraries-versions ${APP_LIBRARIES_VERSIONS} `
     --icons icons/GlamorousToolkit.ico `
     --release `
