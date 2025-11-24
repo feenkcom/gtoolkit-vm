@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-env | cut -d= -f1 | sort
+set -euo pipefail
+set -x
 
 : "${VM_BUILDER_VERSION:?VM_BUILDER_VERSION environment variable is required}"
 : "${FEENK_SIGNER_VERSION:?FEENK_SIGNER_VERSION environment variable is required}"
