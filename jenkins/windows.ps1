@@ -1,5 +1,12 @@
 $ErrorActionPreference = 'Stop'      # like set -e + pipefail
 
+# fail on ANY external command automatically
+Register-EngineEvent PowerShell.Exiting -Action {
+    if (\$global:LASTEXITCODE -ne 0) {
+        exit \$global:LASTEXITCODE
+    }
+}
+
 ##
 # Validate required environment variables early and expose them as script variables.
 $requiredVariables = @(

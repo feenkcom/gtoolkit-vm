@@ -125,7 +125,7 @@ pipeline {
                         TARGET = "${MACOS_INTEL_TARGET}"
                         PATH = "$HOME/.cargo/bin:/usr/local/bin/:$PATH"
                         MACOSX_DEPLOYMENT_TARGET = '10.10'
-                        VM_CLIENT_EXECUTABLE = "${WORKSPACE}/target/${TARGET}/release/bundle/${APP_NAME}.app/Contents/MacOS/${APP_NAME}-cli"
+                        VM_CLIENT_EXECUTABLE = "${WORKSPACE}/bundle/${APP_NAME}.app/Contents/MacOS/${APP_NAME}-cli"
                     }
 
                     steps {
@@ -139,6 +139,7 @@ pipeline {
                             sh './jenkins/macos.sh'
                         }
                         stash includes: "${APP_NAME}-${TARGET}.app.zip", name: "${TARGET}"
+                        stash includes: "${APP_NAME}-${TARGET}-with-debug-symbols.app.zip", name: "${TARGET}-with-debug-symbols"
                     }
                 }
                 stage ('MacOS M1') {
@@ -149,7 +150,7 @@ pipeline {
                     environment {
                         TARGET = "${MACOS_M1_TARGET}"
                         PATH = "$HOME/.cargo/bin:/opt/homebrew/bin:$PATH"
-                        VM_CLIENT_EXECUTABLE = "${WORKSPACE}/target/${TARGET}/release/bundle/${APP_NAME}.app/Contents/MacOS/${APP_NAME}-cli"
+                        VM_CLIENT_EXECUTABLE = "${WORKSPACE}/bundle/${APP_NAME}.app/Contents/MacOS/${APP_NAME}-cli"
                     }
 
                     steps {
@@ -163,6 +164,7 @@ pipeline {
                             sh './jenkins/macos.sh'
                         }
                         stash includes: "${APP_NAME}-${TARGET}.app.zip", name: "${TARGET}"
+                        stash includes: "${APP_NAME}-${TARGET}-with-debug-symbols.app.zip", name: "${TARGET}-with-debug-symbols"
                     }
                 }
                 stage ('Linux x86_64') {
@@ -338,7 +340,7 @@ pipeline {
                         CARGO_HOME = "C:\\.cargo"
                         CARGO_PATH = "${CARGO_HOME}\\bin"
                         PATH = "${CARGO_PATH};${LIBCLANG_PATH};$PATH"
-                        VM_CLIENT_EXECUTABLE = "${WORKSPACE}\\target\\${TARGET}\\release\\bundle\\${APP_NAME}\\bin\\${APP_NAME}-cli.exe"
+                        VM_CLIENT_EXECUTABLE = "${WORKSPACE}\\bundle\\${APP_NAME}\\bin\\${APP_NAME}-cli.exe"
                     }
 
                     steps {
@@ -363,7 +365,7 @@ pipeline {
                         CARGO_HOME = "C:\\.cargo"
                         CARGO_PATH = "${CARGO_HOME}\\bin"
                         PATH = "${CARGO_PATH};${LIBCLANG_PATH};$PATH"
-                        VM_CLIENT_EXECUTABLE = "${WORKSPACE}\\target\\${TARGET}\\release\\bundle\\${APP_NAME}\\bin\\${APP_NAME}-cli.exe"
+                        VM_CLIENT_EXECUTABLE = "${WORKSPACE}\\bundle\\${APP_NAME}\\bin\\${APP_NAME}-cli.exe"
                         APP_LIBRARIES = "${WINDOWS_APP_LIBRARIES_ARM}"
                     }
 
@@ -391,7 +393,9 @@ pipeline {
                 script {
                     def stash_names = [
                         MACOS_INTEL_TARGET,
+                        "${MACOS_INTEL_TARGET}-with-debug-symbols",
                         MACOS_M1_TARGET,
+                        "${MACOS_M1_TARGET}-with-debug-symbols",
                         LINUX_AMD64_TARGET,
                         LINUX_ARM64_TARGET,
                         ANDROID_ARM64_TARGET,
@@ -402,7 +406,9 @@ pipeline {
                     ]
                     def asset_names = [
                         "${APP_NAME}-${MACOS_INTEL_TARGET}.app.zip",
+                        "${APP_NAME}-${MACOS_INTEL_TARGET}-with-debug-symbols.app.zip",
                         "${APP_NAME}-${MACOS_M1_TARGET}.app.zip",
+                        "${APP_NAME}-${MACOS_M1_TARGET}-with-debug-symbols.app.zip",
                         "${APP_NAME}-${LINUX_AMD64_TARGET}.zip",
                         "${APP_NAME}-${LINUX_ARM64_TARGET}.zip",
                         "${APP_NAME}-${ANDROID_ARM64_TARGET}.apk",
