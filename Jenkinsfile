@@ -403,9 +403,9 @@ pipeline {
                     def asset_names = [
                         "${APP_NAME}-${MACOS_INTEL_TARGET}.app.zip",
                         "${APP_NAME}-${MACOS_M1_TARGET}.app.zip",
-                        "${APP_NAME}-${LINUX_AMD64_TARGET}${build_type.suffix}.zip",
-                        "${APP_NAME}-${LINUX_ARM64_TARGET}${build_type.suffix}.zip",
-                        "${APP_NAME}-${ANDROID_ARM64_TARGET}${build_type.suffix}.apk",
+                        "${APP_NAME}-${LINUX_AMD64_TARGET}.zip",
+                        "${APP_NAME}-${LINUX_ARM64_TARGET}.zip",
+                        "${APP_NAME}-${ANDROID_ARM64_TARGET}.apk",
                         "${APP_NAME}-${WINDOWS_AMD64_TARGET}.zip",
                         "${APP_NAME}-${WINDOWS_AMD64_TARGET}-with-debug-symbols.zip",
                         "${APP_NAME}-${WINDOWS_ARM64_TARGET}.zip",
