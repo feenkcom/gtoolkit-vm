@@ -38,13 +38,14 @@ user-error = "1.2"
 libloading = "0.8"
 #pharo-compiler = { path = "../../pharo-compiler-rs/pharo-compiler", optional = true }
 #tonel = { path = "../../pharo-tonel-rs/tonel", optional = true }
+#ston = { path = "../../pharo-tonel-rs/ston", optional = true }
 #tonel-loader = { path = "../../pharo-tonel-rs/tonel-loader", optional = true }
 
 [target.'cfg(target_os="macos")'.dependencies]
 core-foundation = "0.9.1"
 
 [target.'cfg(target_os="android")'.dependencies]
-android-activity = { version = "0.4.1", features = [ "native-activity" ] }
+android-activity = { version = "0.6", features = [ "native-activity" ] }
 
 # wasm does not support colored terminal and tables
 [target.'cfg(not(any(target_arch = "wasm32")))'.dependencies]
@@ -53,7 +54,7 @@ colored = { version = "2", optional = true }
 
 [features]
 default = [ "full" ]
-#tonel = [ "dep:tonel", "dep:tonel-loader" ]
+# tonel = [ "dep:tonel", "dep:tonel-loader", "dep:ston" ]
 full = [ "jit", "full_without_jit" ]
 full_without_jit = [ "vm-bindings/full_without_jit", "ffi", "colored_terminal" ]
 minimal = [ "vm-bindings/minimal" ]

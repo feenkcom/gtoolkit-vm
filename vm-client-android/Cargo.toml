@@ -5,8 +5,10 @@ edition = "2021"
 
 [dependencies]
 vm-runtime = { path = "../vm-runtime" }
-android_logger = "0.13"
+android_logger = "0.15"
+android-activity = { version = "0.6.0", features = [ "native-activity" ] }
 log = "0.4"
+zip = "6.0"
 
 [lib]
 name = "vm_client_android"

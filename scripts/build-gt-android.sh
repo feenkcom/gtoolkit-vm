@@ -1,39 +1,35 @@
 #!/usr/bin/env bash
 
+set -euo pipefail
+set -x
+
 BUILDER="gtoolkit-vm-builder"
 
-if [[ ! -f "$BUILDER" ]]; then
-  if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-    curl -o "$BUILDER" -LsS https://github.com/feenkcom/gtoolkit-vm-builder/releases/latest/download/gtoolkit-vm-builder-x86_64-unknown-linux-gnu
-  elif [[ "$OSTYPE" == "darwin"* ]]; then
-    arch_name="$(uname -m)"
-    is_m1=false
-    if [ "${arch_name}" = "x86_64" ]; then
-      if [ "$(sysctl -in sysctl.proc_translated)" = "1" ]; then
-        is_m1=true
-      fi
-    elif [ "${arch_name}" = "arm64" ]; then
-      is_m1=true
-    fi
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-    if [[ "$is_m1" == true ]]; then
-      curl -o "$BUILDER" -LsS https://github.com/feenkcom/gtoolkit-vm-builder/releases/latest/download/gtoolkit-vm-builder-aarch64-apple-darwin
-    else
-      curl -o "$BUILDER" -LsS https://github.com/feenkcom/gtoolkit-vm-builder/releases/latest/download/gtoolkit-vm-builder-x86_64-apple-darwin
-    fi
+IMAGE_ARCHIVE_URL="https://github.com/feenkcom/gtoolkit/releases/latest/download/GlamorousToolkit-MacOS-aarch64-v1.1.18.zip"
+IMAGE_ARCHIVE_NAME="GlamorousToolkit.zip"
+IMAGE_ARCHIVE_PATH="target/assets"
+IMAGE_ARCHIVE_FILE="$IMAGE_ARCHIVE_PATH/$IMAGE_ARCHIVE_NAME"
 
-  elif [[ "$OSTYPE" == "cygwin" || "$OSTYPE" == "msys" || "$OSTYPE" == "win32" ]]; then
-    echo "$OSTYPE is unsupported. Please submit an issue at https://github.com/feenkcom/gtoolkit/issues".
-    exit 1
-  else
-    echo "$OSTYPE is unsupported. Please submit an issue at https://github.com/feenkcom/gtoolkit/issues".
+"$SCRIPT_DIR/download-vm-builder.sh" "$BUILDER"
+
+if [[ ! -f "$IMAGE_ARCHIVE_FILE" ]]; then
+  echo "Downloading GlamorousToolkit image archive..."
+  mkdir -p "$IMAGE_ARCHIVE_PATH"
+  if ! curl -L --fail -o "$IMAGE_ARCHIVE_FILE" "$IMAGE_ARCHIVE_URL"; then
+    echo "Failed to download GlamorousToolkit image archive" >&2
     exit 1
   fi
-  chmod +x "$BUILDER"
+else
+  echo "Using existing archive at $IMAGE_ARCHIVE_FILE"
 fi
+
+export CARGO_LOG=cargo::core::compiler::fingerprint=info
 
 "./$BUILDER" build \
   --release \
+  --bundle-dir "$(pwd)/target/bundle" \
   --app-name 'GlamorousToolkit' \
   --identifier 'com.gtoolkit' \
   --author "feenk gmbh <contact@feenk.com>" \
@@ -42,4 +38,10 @@ fi
   --executables android \
   --target aarch64-linux-android \
   -vvvv \
-  --libraries clipboard pixels process skia winit crypto git ssl
+  --libraries clipboard filewatcher pixels process skia winit winit30 webview crypto git ssl
+
+cd target || exit
+zip -r bundle/GlamorousToolkit.apk assets/
+"$ANDROID_HOME"/build-tools/34.0.0-rc1/zipalign -f 4 bundle/GlamorousToolkit.apk bundle/GlamorousToolkit-aligned.apk
+"$ANDROID_HOME"/build-tools/34.0.0-rc1/apksigner sign --ks ~/.android/debug.keystore --ks-pass pass:android bundle/GlamorousToolkit-aligned.apk
+adb install -r -d bundle/GlamorousToolkit-aligned.apk

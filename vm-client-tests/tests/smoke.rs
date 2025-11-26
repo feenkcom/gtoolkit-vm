@@ -2,7 +2,7 @@ use std::path::PathBuf;
 use std::process::Command;
 
 fn executable() -> PathBuf {
-    let executable = PathBuf::from(env!("VM_CLIENT_EXECUTABLE"));
+    let executable = PathBuf::from(std::env::var("VM_CLIENT_EXECUTABLE").unwrap());
     if !executable.exists() {
         panic!("{} does not exist", &executable.display());
     }
@@ -39,7 +39,6 @@ fn minimal_image() -> PathBuf {
 pub fn minimal_add() {
     let executable = executable();
     let output = Command::new(&executable)
-        .current_dir(executable.parent().unwrap())
         .arg(minimal_image())
         .arg("--worker")
         .arg("no")
@@ -58,7 +57,6 @@ pub fn minimal_add() {
 pub fn minimal_worker_add() {
     let executable = executable();
     let output = Command::new(&executable)
-        .current_dir(executable.parent().unwrap())
         .arg("--worker")
         .arg("yes")
         .arg(minimal_image())
@@ -79,7 +77,6 @@ pub fn minimal_worker_add() {
 pub fn minimal_is_not_in_worker() {
     let executable = executable();
     let output = Command::new(&executable)
-        .current_dir(executable.parent().unwrap())
         .arg("--worker")
         .arg("no")
         .arg(minimal_image())
@@ -100,7 +97,6 @@ pub fn minimal_is_not_in_worker() {
 pub fn minimal_worker_is_in_worker() {
     let executable = executable();
     let output = Command::new(&executable)
-        .current_dir(executable.parent().unwrap())
         .arg("--worker")
         .arg("yes")
         .arg(minimal_image())
@@ -121,7 +117,6 @@ pub fn minimal_worker_is_in_worker() {
 pub fn minimal_worker_auto() {
     let executable = executable();
     let output = Command::new(&executable)
-        .current_dir(executable.parent().unwrap())
         .arg("--worker")
         .arg("auto")
         .arg(minimal_image())
@@ -152,7 +147,6 @@ pub fn minimal_worker_auto() {
 pub fn default_add() {
     let executable = executable();
     let output = Command::new(&executable)
-        .current_dir(executable.parent().unwrap())
         .arg(default_image())
         .arg("--worker")
         .arg("no")
@@ -171,7 +165,6 @@ pub fn default_add() {
 pub fn default_worker_add() {
     let executable = executable();
     let output = Command::new(&executable)
-        .current_dir(executable.parent().unwrap())
         .arg("--worker")
         .arg("yes")
         .arg(default_image())
@@ -190,7 +183,6 @@ pub fn default_worker_add() {
 pub fn default_worker_is_in_worker() {
     let executable = executable();
     let output = Command::new(&executable)
-        .current_dir(executable.parent().unwrap())
         .arg("--worker")
         .arg("yes")
         .arg(default_image())

@@ -15,31 +15,6 @@ compile_error!("\"pharo-compiler\" feature must be enabled for this module.");
 
 #[no_mangle]
 #[allow(non_snake_case)]
-pub fn primitivePharoCompilerNew() {
-    let proxy = vm().proxy();
-    let compiled_method_class = Smalltalk::stack_object_value_unchecked(StackOffset::new(1));
-    let symbol_table = Smalltalk::stack_object_value_unchecked(StackOffset::new(0));
-
-    let compiler = PharoCompiler {
-        environment: kernel_environment(),
-        compiled_method_class: compiled_method_class.into(),
-        symbol_table: symbol_table.into(),
-        vm_create_new_compiled_method: vm_bindings::bindings::createNewMethodheaderbytecodeCount,
-        vm_method_return_value: vm_bindings::bindings::methodReturnValue,
-        vm_object_size: vm_bindings::bindings::stSizeOf,
-        vm_object_at_put: vm_bindings::bindings::stObjectatput,
-        vm_object_first_indexable_field: vm_bindings::bindings::firstIndexableField,
-        vm_object_first_fixed_field: vm_bindings::bindings::firstFixedField,
-        vm_integer_object_of: vm_bindings::bindings::integerObjectOf,
-    };
-
-    let boxed_compiler = Box::into_raw(Box::new(compiler));
-    let compiler_address = proxy.new_external_address(boxed_compiler);
-    Smalltalk::method_return_value(compiler_address);
-}
-
-#[no_mangle]
-#[allow(non_snake_case)]
 pub fn primitivePharoCompilerCompile() {
     let proxy = vm().proxy();
 
