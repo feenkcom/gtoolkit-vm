@@ -229,7 +229,7 @@ pipeline {
                     }
                     environment {
                         TARGET = "${LINUX_ARM64_TARGET}"
-                        PATH = "$HOME/.cargo/bin:$PATH"
+                        PATH = "$HOME/.cargo/bin:$HOME/patchelf/bin:$PATH"
                         OPENSSL_STATIC = 1
                         OPENSSL_LIB_DIR = "/usr/lib/aarch64-linux-gnu"
                         OPENSSL_INCLUDE_DIR = "/usr/include/openssl"
