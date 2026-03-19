@@ -353,6 +353,7 @@ pipeline {
                     agent {
                         node {
                           label "${WINDOWS_ARM64_TARGET}-${WINDOWS_ARM64_SERVER_NAME}"
+                          customWorkspace 'D:\\gtvm'
                         }
                     }
 
