@@ -44,7 +44,7 @@ pipeline {
 
         WINDOWS_AMD64_SERVER_NAME = 'daffy-duck'
         WINDOWS_AMD64_TARGET = 'x86_64-pc-windows-msvc'
-        WINDOWS_ARM64_SERVER_NAME = 'bugs-bunny'
+        WINDOWS_ARM64_SERVER_NAME = 'johnny-bravo'
         WINDOWS_ARM64_TARGET = 'aarch64-pc-windows-msvc'
 
         LINUX_AMD64_SERVER_NAME = 'mickey-mouse'
@@ -353,7 +353,6 @@ pipeline {
                     agent {
                         node {
                           label "${WINDOWS_ARM64_TARGET}-${WINDOWS_ARM64_SERVER_NAME}"
-                          customWorkspace 'C:\\j\\gtvm'
                         }
                     }
 
@@ -362,9 +361,7 @@ pipeline {
                         HOST = "${WINDOWS_AMD64_TARGET}"
                         LLVM_HOME = 'C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\Llvm\\x64'
                         LIBCLANG_PATH = "${LLVM_HOME}\\bin"
-                        CARGO_HOME = "C:\\.cargo"
-                        CARGO_PATH = "${CARGO_HOME}\\bin"
-                        PATH = "${CARGO_PATH};${LIBCLANG_PATH};$PATH"
+                        PATH = "${LIBCLANG_PATH};$PATH"
                         VM_CLIENT_EXECUTABLE = "${WORKSPACE}\\bundle\\${APP_NAME}\\bin\\${APP_NAME}-cli.exe"
                         APP_LIBRARIES = "${WINDOWS_APP_LIBRARIES_ARM}"
                     }
