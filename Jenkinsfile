@@ -314,7 +314,7 @@ pipeline {
                                         --target ${TARGET} \
                                         --libraries clipboard filewatcher pixels process skia winit webview crypto git ssl \
                                         --libraries-versions ${APP_LIBRARIES_VERSIONS} \
-                                        --override-library-version "Git=v0.6.0"
+                                        --override-library-version "Git=v0.6.0" \
                                         --${build_type.type} \
                                         --verbose """
 
