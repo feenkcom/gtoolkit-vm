@@ -51,7 +51,7 @@ git submodule foreach --recursive 'git fetch --tags'
 git submodule update --init --recursive
 
 $builder = 'gtoolkit-vm-builder.exe'
-$builderUrl = "https://github.com/feenkcom/gtoolkit-vm-builder/releases/download/$env:VM_BUILDER_VERSION/gtoolkit-vm-builder-$env:TARGET.exe"
+$builderUrl = "https://github.com/feenkcom/gtoolkit-vm-builder/releases/download/$env:VM_BUILDER_VERSION/gtoolkit-vm-builder-$env:HOST.exe"
 
 Remove-Item $builder -ErrorAction Ignore
 Write-Host "Downloading builder from $builderUrl"
