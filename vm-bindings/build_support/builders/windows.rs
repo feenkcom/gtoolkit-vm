@@ -80,15 +80,6 @@ impl WindowsBuilder {
     }
 
     fn vcpkg_root(vcpkg: &Path) -> PathBuf {
-        if let Ok(output) = Command::new(vcpkg).arg("root").output() {
-            if output.status.success() {
-                let root = String::from_utf8_lossy(&output.stdout).trim().to_string();
-                if !root.is_empty() {
-                    return PathBuf::from(root);
-                }
-            }
-        }
-
         if let Ok(root) = env::var("VCPKG_ROOT") {
             return PathBuf::from(root);
         }
