@@ -79,12 +79,42 @@ impl WindowsBuilder {
         Path::new(env::var("OUT_DIR").unwrap().as_str()).to_path_buf()
     }
 
+    fn vcpkg_root(vcpkg: &Path) -> PathBuf {
+        if let Ok(output) = Command::new(vcpkg).arg("root").output() {
+            if output.status.success() {
+                let root = String::from_utf8_lossy(&output.stdout).trim().to_string();
+                if !root.is_empty() {
+                    return PathBuf::from(root);
+                }
+            }
+        }
+
+        if let Ok(root) = env::var("VCPKG_ROOT") {
+            return PathBuf::from(root);
+        }
+
+        let vcpkg = vcpkg.canonicalize().unwrap_or_else(|_| vcpkg.to_path_buf());
+        vcpkg
+            .parent()
+            .unwrap_or_else(|| panic!("Could not infer vcpkg root from {}", vcpkg.display()))
+            .to_path_buf()
+    }
+
+    fn vcpkg_packages_directory() -> PathBuf {
+        let vcpkg = Self::prepare_vcpkg();
+        Self::vcpkg_root(&vcpkg).join("packages")
+    }
+
     fn pthreads_install_directory() -> PathBuf {
-        Self::out_dir().join("pthreads")
+        Self::vcpkg_packages_directory()
     }
 
     fn pthreads_directory() -> PathBuf {
-        Self::pthreads_install_directory().join(Self::vcpkg_triplet())
+        Self::pthreads_install_directory().join(format!(
+            "{}_{}",
+            Self::pthreads_name(),
+            Self::vcpkg_triplet()
+        ))
     }
 
     pub fn pthreads_name() -> &'static str {
@@ -95,25 +125,28 @@ impl WindowsBuilder {
         Self::pthreads_directory().join("lib")
     }
 
+    pub fn pthreads_include() -> PathBuf {
+        Self::pthreads_directory().join("include")
+    }
+
     pub fn pthreads_lib_name() -> &'static str {
         "pthreadVC3"
     }
 
     fn install_pthreads() -> PathBuf {
         let vcpkg = Self::prepare_vcpkg();
-        let pthread_install_directory = Self::pthreads_install_directory();
         let triplet = Self::vcpkg_triplet();
 
         let pthreads_directory = Self::pthreads_directory();
-        if !pthreads_directory.exists() {
+        let pthreads_library =
+            Self::pthreads_lib().join(format!("{}.lib", Self::pthreads_lib_name()));
+        if !pthreads_library.exists() {
             let output = Command::new(&vcpkg)
                 .current_dir(&Self::out_dir())
                 .stdout(Stdio::inherit())
                 .stderr(Stdio::inherit())
                 .args(&["--triplet", triplet])
                 .args(&["install", "pthreads"])
-                .arg("--x-install-root")
-                .arg(&pthread_install_directory)
                 .arg("--editable")
                 .output()
                 .expect("Failed to execute command to build pthreads");
@@ -127,6 +160,13 @@ impl WindowsBuilder {
             }
         }
 
+        if !pthreads_library.exists() {
+            panic!(
+                "Could not find pthreads library at {} after vcpkg install.",
+                pthreads_library.display()
+            )
+        }
+
         pthreads_directory
     }
 
@@ -135,28 +175,36 @@ impl WindowsBuilder {
     }
 
     fn ffi_install_directory() -> PathBuf {
-        Self::out_dir().join(Self::ffi_name())
+        Self::vcpkg_packages_directory()
     }
 
     fn ffi_directory() -> PathBuf {
-        Self::ffi_install_directory().join(Self::vcpkg_triplet())
+        Self::ffi_install_directory().join(format!(
+            "{}_{}",
+            Self::ffi_name(),
+            Self::vcpkg_triplet()
+        ))
+    }
+
+    pub fn ffi_include() -> PathBuf {
+        Self::ffi_directory().join("include")
     }
 
     pub fn install_ffi() -> PathBuf {
         let vcpkg = Self::prepare_vcpkg();
-        let ffi_install_directory = Self::ffi_install_directory();
         let triplet = Self::vcpkg_triplet();
 
         let ffi_directory = Self::ffi_directory();
-        if !ffi_directory.exists() {
+        let ffi_library = ffi_directory
+            .join("lib")
+            .join(format!("{}.lib", Self::ffi_name()));
+        if !ffi_library.exists() {
             let output = Command::new(&vcpkg)
                 .current_dir(&Self::out_dir())
                 .stdout(Stdio::inherit())
                 .stderr(Stdio::inherit())
                 .args(&["--triplet", triplet])
                 .args(&["install", Self::ffi_name()])
-                .arg("--x-install-root")
-                .arg(&ffi_install_directory)
                 .output()
                 .expect("Failed to execute command to build ffi");
 
@@ -167,6 +215,13 @@ impl WindowsBuilder {
                     String::from_utf8(output.stderr).unwrap()
                 )
             }
+        }
+
+        if !ffi_library.exists() {
+            panic!(
+                "Could not find ffi library at {} after vcpkg install.",
+                ffi_library.display()
+            )
         }
 
         ffi_directory

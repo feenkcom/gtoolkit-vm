@@ -46,11 +46,7 @@ pub fn ffi_feature(core: &Core) -> Feature {
         }
         FamilyOS::Windows => {
             let lib_ffi = WindowsBuilder::install_ffi().join("lib");
-            feature.include(format!(
-                "{{ output }}/{}/{}/include",
-                WindowsBuilder::ffi_name(),
-                WindowsBuilder::vcpkg_triplet()
-            ));
+            feature.include(WindowsBuilder::ffi_include().display().to_string());
             feature.dependency(Dependency::Library("libffi".to_string(), vec![lib_ffi]));
         }
         FamilyOS::Other => {

@@ -272,11 +272,7 @@ impl VirtualMachine {
             FamilyOS::Windows => {
                 includes.push("{crate}/extra/extracted/vm/include/win".to_owned());
                 includes.push("{sources}/extracted/vm/include/win".to_owned());
-                includes.push(format!(
-                    "{{ output }}/{}/{}/include",
-                    WindowsBuilder::pthreads_name(),
-                    WindowsBuilder::vcpkg_triplet()
-                ));
+                includes.push(WindowsBuilder::pthreads_include().display().to_string());
             }
         }
         includes
