@@ -84,11 +84,20 @@ impl WindowsBuilder {
             return PathBuf::from(root);
         }
 
-        let vcpkg = vcpkg.canonicalize().unwrap_or_else(|_| vcpkg.to_path_buf());
-        vcpkg
+        let vcpkg_parent = vcpkg
             .parent()
-            .unwrap_or_else(|| panic!("Could not infer vcpkg root from {}", vcpkg.display()))
-            .to_path_buf()
+            .unwrap_or_else(|| panic!("Could not infer vcpkg root from {}", vcpkg.display()));
+
+        for directory in vcpkg_parent.ancestors() {
+            if directory.join(".vcpkg-root").exists()
+                || (directory.join("scripts").is_dir() && directory.join("triplets").is_dir())
+                || (directory.join("ports").is_dir() && directory.join("versions").is_dir())
+            {
+                return directory.to_path_buf();
+            }
+        }
+
+        vcpkg_parent.to_path_buf()
     }
 
     fn vcpkg_packages_directory() -> PathBuf {
@@ -186,9 +195,8 @@ impl WindowsBuilder {
         let triplet = Self::vcpkg_triplet();
 
         let ffi_directory = Self::ffi_directory();
-        let ffi_library = ffi_directory
-            .join("lib")
-            .join(format!("{}.lib", Self::ffi_name()));
+        let ffi_lib = ffi_directory.join("lib");
+        let ffi_library = ffi_lib.join(format!("{}.lib", Self::ffi_name()));
         if !ffi_library.exists() {
             let output = Command::new(&vcpkg)
                 .current_dir(&Self::out_dir())
@@ -209,6 +217,17 @@ impl WindowsBuilder {
         }
 
         if !ffi_library.exists() {
+            match std::fs::read_dir(&ffi_lib) {
+                Ok(entries) => {
+                    println!("Contents of {}:", ffi_lib.display());
+                    for entry in entries.flatten() {
+                        println!("  {}", entry.path().display());
+                    }
+                }
+                Err(error) => {
+                    println!("Could not read {}: {}", ffi_lib.display(), error);
+                }
+            }
             panic!(
                 "Could not find ffi library at {} after vcpkg install.",
                 ffi_library.display()
