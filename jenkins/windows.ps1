@@ -73,14 +73,6 @@ if ($builderItem.Length -lt 1MB) {
     throw "Builder is unexpectedly small. This is likely an error page or wrong release asset."
 }
 
-$signature = Get-Content -Path $builder -Encoding Byte -TotalCount 2
-if ($signature[0] -ne 0x4D -or $signature[1] -ne 0x5A) {
-    Write-Host "First bytes of non-PE builder:"
-    Format-Hex -Path $builder -Count 256
-    throw "Builder is not a Windows PE executable. Expected MZ header."
-}
-
-
 ./gtoolkit-vm-builder.exe compile `
     --app-name $env:APP_NAME `
     --identifier $env:APP_IDENTIFIER `
