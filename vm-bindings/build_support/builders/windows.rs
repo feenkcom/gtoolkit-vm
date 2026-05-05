@@ -174,6 +174,10 @@ impl WindowsBuilder {
         "libffi"
     }
 
+    fn ffi_lib_names() -> &'static [&'static str] {
+        &["libffi", "ffi"]
+    }
+
     fn ffi_install_directory() -> PathBuf {
         Self::vcpkg_packages_directory()
     }
@@ -190,14 +194,25 @@ impl WindowsBuilder {
         Self::ffi_directory().join("include")
     }
 
+    fn find_ffi_lib_name() -> Option<&'static str> {
+        let ffi_lib = Self::ffi_directory().join("lib");
+        Self::ffi_lib_names()
+            .iter()
+            .copied()
+            .find(|name| ffi_lib.join(format!("{}.lib", name)).exists())
+    }
+
+    pub fn ffi_lib_name() -> &'static str {
+        Self::find_ffi_lib_name().unwrap_or(Self::ffi_name())
+    }
+
     pub fn install_ffi() -> PathBuf {
         let vcpkg = Self::prepare_vcpkg();
         let triplet = Self::vcpkg_triplet();
 
         let ffi_directory = Self::ffi_directory();
         let ffi_lib = ffi_directory.join("lib");
-        let ffi_library = ffi_lib.join(format!("{}.lib", Self::ffi_name()));
-        if !ffi_library.exists() {
+        if Self::find_ffi_lib_name().is_none() {
             let output = Command::new(&vcpkg)
                 .current_dir(&Self::out_dir())
                 .stdout(Stdio::inherit())
@@ -216,7 +231,7 @@ impl WindowsBuilder {
             }
         }
 
-        if !ffi_library.exists() {
+        if Self::find_ffi_lib_name().is_none() {
             match std::fs::read_dir(&ffi_lib) {
                 Ok(entries) => {
                     println!("Contents of {}:", ffi_lib.display());
@@ -228,9 +243,13 @@ impl WindowsBuilder {
                     println!("Could not read {}: {}", ffi_lib.display(), error);
                 }
             }
+            let expected_libraries: Vec<String> = Self::ffi_lib_names()
+                .iter()
+                .map(|name| ffi_lib.join(format!("{}.lib", name)).display().to_string())
+                .collect();
             panic!(
-                "Could not find ffi library at {} after vcpkg install.",
-                ffi_library.display()
+                "Could not find ffi library after vcpkg install. Expected one of: {}",
+                expected_libraries.join(", ")
             )
         }
 
