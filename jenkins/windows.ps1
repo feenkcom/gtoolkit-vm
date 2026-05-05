@@ -31,6 +31,15 @@ foreach ($name in $requiredVariables) {
     }
 }
 
+Write-Host "VM_BUILDER_VERSION=$env:VM_BUILDER_VERSION"
+Write-Host "TARGET=$env:TARGET"
+Write-Host "HOST=$env:HOST"
+Write-Host "APP_VERSION=$env:APP_VERSION"
+Write-Host "PWD=$(Get-Location)"
+Write-Host "PowerShell=$($PSVersionTable.PSVersion)"
+Write-Host "OS=$([System.Runtime.InteropServices.RuntimeInformation]::OSDescription)"
+Write-Host "ProcessArch=$([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture)"
+
 $appLibraries = $env:APP_LIBRARIES -split '[,;\s]+' | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
 
 Remove-Item -Force -Recurse -Path target -ErrorAction Ignore
@@ -41,8 +50,35 @@ git clean -fdx
 git submodule foreach --recursive 'git fetch --tags'
 git submodule update --init --recursive
 
-Remove-Item gtoolkit-vm-builder.exe -ErrorAction Ignore
-curl -o gtoolkit-vm-builder.exe "https://github.com/feenkcom/gtoolkit-vm-builder/releases/download/$env:VM_BUILDER_VERSION/gtoolkit-vm-builder-$env:HOST.exe"
+$builder = 'gtoolkit-vm-builder.exe'
+$builderUrl = "https://github.com/feenkcom/gtoolkit-vm-builder/releases/download/$env:VM_BUILDER_VERSION/gtoolkit-vm-builder-$env:TARGET.exe"
+
+Remove-Item $builder -ErrorAction Ignore
+Write-Host "Downloading builder from $builderUrl"
+curl.exe --fail --location --show-error --output $builder $builderUrl
+
+if (-not (Test-Path -Path $builder -PathType Leaf)) {
+    throw "Builder was not downloaded: $builder"
+}
+
+# validate the gtoolkit-vm-builder before executing it:
+$builderItem = Get-Item $builder
+Write-Host "Builder path: $($builderItem.FullName)"
+Write-Host "Builder size: $($builderItem.Length) bytes"
+Write-Host "Builder sha256: $((Get-FileHash $builder -Algorithm SHA256).Hash)"
+
+if ($builderItem.Length -lt 1MB) {
+    Write-Host "First bytes of suspicious builder:"
+    Format-Hex -Path $builder -Count 256
+    throw "Builder is unexpectedly small. This is likely an error page or wrong release asset."
+}
+
+$signature = Get-Content -Path $builder -Encoding Byte -TotalCount 2
+if ($signature[0] -ne 0x4D -or $signature[1] -ne 0x5A) {
+    Write-Host "First bytes of non-PE builder:"
+    Format-Hex -Path $builder -Count 256
+    throw "Builder is not a Windows PE executable. Expected MZ header."
+}
 
 
 ./gtoolkit-vm-builder.exe compile `
