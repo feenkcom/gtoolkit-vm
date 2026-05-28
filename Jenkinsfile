@@ -161,9 +161,9 @@ pipeline {
                             string(credentialsId: 'feenk-apple-developer-certificate-password', variable: 'CERT_PASSWORD'),
                             string(credentialsId: 'feenk-apple-signing-identity', variable: 'SIGNING_IDENTITY'),
                             string(credentialsId: 'notarizeusername', variable: 'APPLE_ID'),
-                            string(credentialsId: 'notarizepassword-manager', variable: 'APPLE_PASSWORD')
-                            string(credentialsId: 'editor-private-key', variable: 'EDITOR_PRIVATE_KEY')
-                            string(credentialsId: 'editor-customer-id', variable: 'EDITOR_CUSTOMER_ID')
+                            string(credentialsId: 'notarizepassword-manager', variable: 'APPLE_PASSWORD'),
+                            string(credentialsId: 'editor-private-key', variable: 'EDITOR_PRIVATE_KEY'),
+                            string(credentialsId: 'editor-customer-id', variable: 'EDITOR_CUSTOMER_ID'),
                             string(credentialsId: 'feenk-auth-server', variable: 'EDITOR_AUTH_SERVER_URL')
                         ]) {
                             sh './jenkins/macos.sh'
