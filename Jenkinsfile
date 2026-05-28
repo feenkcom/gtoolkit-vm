@@ -32,7 +32,9 @@ pipeline {
 
         APP_NAME = 'GlamorousToolkit'
         APP_IDENTIFIER = 'com.gtoolkit'
+        APP_PRO_IDENTIFIER = 'com.gtoolkit.pro'
         APP_LIBRARIES =              'clipboard filewatcher gleam glutin pixels process skia webview winit winit30 test-library cairo crypto freetype git sdl2 ssl'
+        APP_PRO_LIBRARIES =              'editor'
         LINUX_APP_LIBRARIES_AMD =    'clipboard filewatcher gleam glutin pixels process skia webview winit winit30 test-library cairo crypto freetype git sdl2 ssl'
         LINUX_APP_LIBRARIES_ARM =    'clipboard filewatcher gleam glutin pixels process skia webview winit winit30 test-library       crypto freetype git      ssl'
         WINDOWS_APP_LIBRARIES_ARM =  'clipboard filewatcher gleam        pixels process skia webview winit winit30 test-library       crypto freetype git sdl2 ssl'
@@ -160,11 +162,16 @@ pipeline {
                             string(credentialsId: 'feenk-apple-signing-identity', variable: 'SIGNING_IDENTITY'),
                             string(credentialsId: 'notarizeusername', variable: 'APPLE_ID'),
                             string(credentialsId: 'notarizepassword-manager', variable: 'APPLE_PASSWORD')
+                            string(credentialsId: 'editor-private-key', variable: 'EDITOR_PRIVATE_KEY')
+                            string(credentialsId: 'editor-customer-id', variable: 'EDITOR_CUSTOMER_ID')
+                            string(credentialsId: 'feenk-auth-server', variable: 'EDITOR_AUTH_SERVER_URL')
                         ]) {
                             sh './jenkins/macos.sh'
                         }
                         stash includes: "${APP_NAME}-${TARGET}.app.zip", name: "${TARGET}"
                         stash includes: "${APP_NAME}-${TARGET}-with-debug-symbols.app.zip", name: "${TARGET}-with-debug-symbols"
+                        stash includes: "${APP_NAME}-${TARGET}-pro.app.zip", name: "${TARGET}-pro"
+                        stash includes: "${APP_NAME}-${TARGET}-pro-with-debug-symbols.app.zip", name: "${TARGET}-pro-with-debug-symbols"
                     }
                 }
                 stage ('Linux x86_64') {
@@ -395,8 +402,12 @@ pipeline {
                     def stash_names = [
                         MACOS_INTEL_TARGET,
                         "${MACOS_INTEL_TARGET}-with-debug-symbols",
+                        "${MACOS_INTEL_TARGET}-pro",
+                        "${MACOS_INTEL_TARGET}-pro-with-debug-symbols",
                         MACOS_M1_TARGET,
                         "${MACOS_M1_TARGET}-with-debug-symbols",
+                        "${MACOS_M1_TARGET}-pro",
+                        "${MACOS_M1_TARGET}-pro-with-debug-symbols",
                         LINUX_AMD64_TARGET,
                         LINUX_ARM64_TARGET,
                         ANDROID_ARM64_TARGET,
@@ -418,6 +429,13 @@ pipeline {
                         "${APP_NAME}-${WINDOWS_ARM64_TARGET}.zip",
                         "${APP_NAME}-${WINDOWS_ARM64_TARGET}-with-debug-symbols.zip"
                     ]
+                    
+                    def pro_asset_names = [
+                        "${APP_NAME}-${MACOS_INTEL_TARGET}-pro.app.zip",
+                        "${APP_NAME}-${MACOS_INTEL_TARGET}-pro-with-debug-symbols.app.zip",
+                        "${APP_NAME}-${MACOS_M1_TARGET}-pro.app.zip",
+                        "${APP_NAME}-${MACOS_M1_TARGET}-pro-with-debug-symbols.app.zip"
+                    ]
 
                     stash_names.each { name ->
                         echo "Unstashing ${name}"
@@ -436,6 +454,16 @@ pipeline {
                         --version ${APP_VERSION} \
                         --auto-accept \
                         --assets ${asset_names.join(' ')} """
+                        
+                    sh """
+                    ./feenk-releaser \
+                        --owner ${REPOSITORY_OWNER} \
+                        --repo gtoolkit-vm-pro \
+                        --token GITHUB_TOKEN \
+                        release \
+                        --version ${APP_VERSION} \
+                        --auto-accept \
+                        --assets ${pro_asset_names.join(' ')} """
                 }
             }
         }

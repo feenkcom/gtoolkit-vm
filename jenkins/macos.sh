@@ -8,9 +8,11 @@ set -x
 : "${TARGET:?TARGET environment variable is required}"
 : "${APP_NAME:?APP_NAME environment variable is required}"
 : "${APP_IDENTIFIER:?APP_IDENTIFIER environment variable is required}"
+: "${APP_PRO_IDENTIFIER:?APP_PRO_IDENTIFIER environment variable is required}"
 : "${APP_AUTHOR:?APP_AUTHOR environment variable is required}"
 : "${APP_VERSION:?APP_VERSION environment variable is required}"
 : "${APP_LIBRARIES:?APP_LIBRARIES environment variable is required}"
+: "${APP_PRO_LIBRARIES:?APP_PRO_LIBRARIES environment variable is required}"
 : "${APP_LIBRARIES_VERSIONS:?APP_LIBRARIES_VERSIONS environment variable is required}"
 : "${APPLE_ID:?APPLE_ID environment variable is required}"
 : "${APPLE_PASSWORD:?APPLE_PASSWORD environment variable is required}"
@@ -41,7 +43,7 @@ chmod +x feenk-signer
   --author "${APP_AUTHOR}" \
   --version "${APP_VERSION}" \
   --icons icons/GlamorousToolkit.icns \
-  --libraries ${APP_LIBRARIES} \
+  --libraries ${APP_LIBRARIES} ${APP_PRO_LIBRARIES} \
   --libraries-versions "${APP_LIBRARIES_VERSIONS}" \
   --release \
   --verbose
@@ -72,14 +74,46 @@ chmod +x feenk-signer
   --libraries-versions "${APP_LIBRARIES_VERSIONS}" \
   --release \
   --verbose
+  
+# shellcheck disable=SC2086
+./gtoolkit-vm-builder bundle \
+  --strip-debug-symbols \
+  --bundle-dir "bundle_pro" \
+  --app-name "${APP_NAME}" \
+  --identifier "${APP_PRO_IDENTIFIER}" \
+  --author "${APP_AUTHOR}" \
+  --version "${APP_VERSION}" \
+  --icons icons/GlamorousToolkit.icns \
+  --libraries ${APP_LIBRARIES} ${APP_PRO_LIBRARIES} \
+  --libraries-versions "${APP_LIBRARIES_VERSIONS}" \
+  --release \
+  --verbose
+  
+# shellcheck disable=SC2086
+./gtoolkit-vm-builder bundle \
+  --bundle-dir "bundle_pro_with_debug_symbols" \
+  --app-name "${APP_NAME}" \
+  --identifier "${APP_PRO_IDENTIFIER}" \
+  --author "${APP_AUTHOR}" \
+  --version "${APP_VERSION}" \
+  --icons icons/GlamorousToolkit.icns \
+  --libraries ${APP_LIBRARIES} ${APP_PRO_LIBRARIES} \
+  --libraries-versions "${APP_LIBRARIES_VERSIONS}" \
+  --release \
+  --verbose
 
 cargo test --package vm-client-tests
 
 ./feenk-signer mac "bundle/${APP_NAME}.app"
 ./feenk-signer mac "bundle_with_debug_symbols/${APP_NAME}.app"
 
+./feenk-signer mac "bundle_pro/${APP_NAME}.app"
+./feenk-signer mac "bundle_pro_with_debug_symbols/${APP_NAME}.app"
+
 ditto -c -k --sequesterRsrc --keepParent "bundle/${APP_NAME}.app" "${APP_NAME}-${TARGET}.app.zip"
 ditto -c -k --sequesterRsrc --keepParent "bundle_with_debug_symbols/${APP_NAME}.app" "${APP_NAME}-${TARGET}-with-debug-symbols.app.zip"
+ditto -c -k --sequesterRsrc --keepParent "bundle_pro/${APP_NAME}.app" "${APP_NAME}-${TARGET}-pro.app.zip"
+ditto -c -k --sequesterRsrc --keepParent "bundle_pro_with_debug_symbols/${APP_NAME}.app" "${APP_NAME}-${TARGET}-pro-with-debug-symbols.app.zip"
 
 /Library/Developer/CommandLineTools/usr/bin/notarytool submit \
   --verbose \
@@ -96,3 +130,19 @@ ditto -c -k --sequesterRsrc --keepParent "bundle_with_debug_symbols/${APP_NAME}.
   --team-id "77664ZXL29" \
   --wait \
   "${APP_NAME}-${TARGET}-with-debug-symbols.app.zip"
+  
+/Library/Developer/CommandLineTools/usr/bin/notarytool submit \
+  --verbose \
+  --apple-id "$APPLE_ID" \
+  --password "$APPLE_PASSWORD" \
+  --team-id "77664ZXL29" \
+  --wait \
+  "${APP_NAME}-${TARGET}-pro.app.zip"
+
+/Library/Developer/CommandLineTools/usr/bin/notarytool submit \
+  --verbose \
+  --apple-id "$APPLE_ID" \
+  --password "$APPLE_PASSWORD" \
+  --team-id "77664ZXL29" \
+  --wait \
+  "${APP_NAME}-${TARGET}-pro-with-debug-symbols.app.zip"
