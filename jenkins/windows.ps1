@@ -147,5 +147,5 @@ cargo test --package vm-client-tests
 
 Compress-Archive -Path "bundle/$env:APP_NAME/*" -DestinationPath "$env:APP_NAME-$env:TARGET.zip"
 Compress-Archive -Path "bundle_with_debug_symbols/$env:APP_NAME/*" -DestinationPath "$env:APP_NAME-$env:TARGET-with-debug-symbols.zip"
-Compress-Archive -Path "bundle_pro/$env:APP_NAME/*" -DestinationPath "$env:APP_NAME-Pro-$env:TARGET.zip"
-Compress-Archive -Path "bundle_pro_with_debug_symbols/$env:APP_NAME/*" -DestinationPath "$env:APP_NAME-Pro-$env:TARGET-with-debug-symbols.zip"
+Compress-Archive -Path "bundle_pro/$env:APP_NAME/*" -DestinationPath "$env:APP_NAME-$env:TARGET-pro.zip"
+Compress-Archive -Path "bundle_pro_with_debug_symbols/$env:APP_NAME/*" -DestinationPath "$env:APP_NAME-$env:TARGET-pro-with-debug-symbols.zip"
