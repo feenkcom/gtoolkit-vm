@@ -367,6 +367,8 @@ pipeline {
                                             
                         stash includes: "${APP_NAME}-${TARGET}.zip", name: "${TARGET}"
                         stash includes: "${APP_NAME}-${TARGET}-with-debug-symbols.zip", name: "${TARGET}-with-debug-symbols"
+                        stash includes: "${APP_NAME}-${TARGET}-pro.zip", name: "${TARGET}-pro"
+                        stash includes: "${APP_NAME}-${TARGET}-pro-with-debug-symbols.zip", name: "${TARGET}-pro-with-debug-symbols"
                     }
                 }
                 stage ('Windows arm64') {
@@ -399,6 +401,8 @@ pipeline {
                         }
                         stash includes: "${APP_NAME}-${TARGET}.zip", name: "${TARGET}"
                         stash includes: "${APP_NAME}-${TARGET}-with-debug-symbols.zip", name: "${TARGET}-with-debug-symbols"
+                        stash includes: "${APP_NAME}-${TARGET}-pro.zip", name: "${TARGET}-pro"
+                        stash includes: "${APP_NAME}-${TARGET}-pro-with-debug-symbols.zip", name: "${TARGET}-pro-with-debug-symbols"
                     }
                 }
             }
