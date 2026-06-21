@@ -357,7 +357,14 @@ pipeline {
                     }
 
                     steps {
-                        powershell 'powershell -ExecutionPolicy Bypass -File .\\jenkins\\windows.ps1'
+                        withCredentials([
+                            string(credentialsId: 'editor-private-key', variable: 'EDITOR_PRIVATE_KEY'),
+                            string(credentialsId: 'editor-customer-id', variable: 'EDITOR_CUSTOMER_ID'),
+                            string(credentialsId: 'feenk-auth-server', variable: 'EDITOR_AUTH_SERVER_URL')
+                        ]) {
+                            powershell 'powershell -ExecutionPolicy Bypass -File .\\jenkins\\windows.ps1'
+                        }
+                                            
                         stash includes: "${APP_NAME}-${TARGET}.zip", name: "${TARGET}"
                         stash includes: "${APP_NAME}-${TARGET}-with-debug-symbols.zip", name: "${TARGET}-with-debug-symbols"
                     }
@@ -383,7 +390,13 @@ pipeline {
                     }
 
                     steps {
-                        powershell 'powershell -ExecutionPolicy Bypass -File .\\jenkins\\windows.ps1'
+                        withCredentials([
+                            string(credentialsId: 'editor-private-key', variable: 'EDITOR_PRIVATE_KEY'),
+                            string(credentialsId: 'editor-customer-id', variable: 'EDITOR_CUSTOMER_ID'),
+                            string(credentialsId: 'feenk-auth-server', variable: 'EDITOR_AUTH_SERVER_URL')
+                        ]) {
+                            powershell 'powershell -ExecutionPolicy Bypass -File .\\jenkins\\windows.ps1'
+                        }
                         stash includes: "${APP_NAME}-${TARGET}.zip", name: "${TARGET}"
                         stash includes: "${APP_NAME}-${TARGET}-with-debug-symbols.zip", name: "${TARGET}-with-debug-symbols"
                     }
@@ -418,8 +431,12 @@ pipeline {
                         ANDROID_ARM64_TARGET,
                         WINDOWS_AMD64_TARGET,
                         "${WINDOWS_AMD64_TARGET}-with-debug-symbols",
+                        "${WINDOWS_AMD64_TARGET}-pro",
+                        "${WINDOWS_AMD64_TARGET}-pro-with-debug-symbols",
                         WINDOWS_ARM64_TARGET,
                         "${WINDOWS_ARM64_TARGET}-with-debug-symbols",
+                        "${WINDOWS_ARM64_TARGET}-pro",
+                        "${WINDOWS_ARM64_TARGET}-pro-with-debug-symbols",
                     ]
                     def asset_names = [
                         "${APP_NAME}-${MACOS_INTEL_TARGET}.app.zip",
@@ -439,7 +456,11 @@ pipeline {
                         "${APP_NAME}-${MACOS_INTEL_TARGET}-pro.app.zip",
                         "${APP_NAME}-${MACOS_INTEL_TARGET}-pro-with-debug-symbols.app.zip",
                         "${APP_NAME}-${MACOS_M1_TARGET}-pro.app.zip",
-                        "${APP_NAME}-${MACOS_M1_TARGET}-pro-with-debug-symbols.app.zip"
+                        "${APP_NAME}-${MACOS_M1_TARGET}-pro-with-debug-symbols.app.zip",
+                        "${APP_NAME}-${WINDOWS_AMD64_TARGET}-pro.zip",
+                        "${APP_NAME}-${WINDOWS_AMD64_TARGET}-pro-with-debug-symbols.zip",
+                        "${APP_NAME}-${WINDOWS_ARM64_TARGET}-pro.zip",
+                        "${APP_NAME}-${WINDOWS_ARM64_TARGET}-pro-with-debug-symbols.zip",
                     ]
 
                     stash_names.each { name ->

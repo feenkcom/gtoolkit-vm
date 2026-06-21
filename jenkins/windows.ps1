@@ -19,6 +19,8 @@ $requiredVariables = @(
     'APP_VERSION',
     'APP_LIBRARIES',
     'APP_LIBRARIES_VERSIONS',
+    'APP_PRO_IDENTIFIER',
+    'APP_PRO_LIBRARIES',
     'VM_CLIENT_EXECUTABLE'
 )
 
@@ -35,12 +37,11 @@ Write-Host "VM_BUILDER_VERSION=$env:VM_BUILDER_VERSION"
 Write-Host "TARGET=$env:TARGET"
 Write-Host "HOST=$env:HOST"
 Write-Host "APP_VERSION=$env:APP_VERSION"
+Write-Host "BUILD_PRO=$BUILD_PRO"
 Write-Host "PWD=$(Get-Location)"
 Write-Host "PowerShell=$($PSVersionTable.PSVersion)"
 Write-Host "OS=$([System.Runtime.InteropServices.RuntimeInformation]::OSDescription)"
 Write-Host "ProcessArch=$([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture)"
-
-$appLibraries = $env:APP_LIBRARIES -split '[,;\s]+' | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
 
 Remove-Item -Force -Recurse -Path target -ErrorAction Ignore
 Remove-Item -Force -Recurse -Path third_party -ErrorAction Ignore
@@ -72,6 +73,9 @@ if ($builderItem.Length -lt 1MB) {
     Format-Hex -Path $builder -Count 256
     throw "Builder is unexpectedly small. This is likely an error page or wrong release asset."
 }
+
+$appLibraries = $env:APP_LIBRARIES -split '[,;\s]+' | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+$appProLibraries = $appLibraries + ($env:APP_PRO_LIBRARIES -split '[,;\s]+' | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
 
 ./gtoolkit-vm-builder.exe compile `
     --app-name $env:APP_NAME `
@@ -112,7 +116,36 @@ if ($builderItem.Length -lt 1MB) {
     --target $env:TARGET `
     --verbose
 
+./gtoolkit-vm-builder.exe bundle `
+    --strip-debug-symbols `
+    --bundle-dir "bundle_pro" `
+    --app-name $env:APP_NAME `
+    --identifier $env:APP_PRO_IDENTIFIER `
+    --author $env:APP_AUTHOR `
+    --version $env:APP_VERSION `
+    --libraries $appProLibraries `
+    --libraries-versions $env:APP_LIBRARIES_VERSIONS `
+    --icons icons/GlamorousToolkit.ico `
+    --release `
+    --target $env:TARGET `
+    --verbose
+
+./gtoolkit-vm-builder.exe bundle `
+    --bundle-dir "bundle_pro_with_debug_symbols" `
+    --app-name $env:APP_NAME `
+    --identifier $env:APP_PRO_IDENTIFIER `
+    --author $env:APP_AUTHOR `
+    --version $env:APP_VERSION `
+    --libraries $appProLibraries `
+    --libraries-versions $env:APP_LIBRARIES_VERSIONS `
+    --icons icons/GlamorousToolkit.ico `
+    --release `
+    --target $env:TARGET `
+    --verbose
+
 cargo test --package vm-client-tests
 
 Compress-Archive -Path "bundle/$env:APP_NAME/*" -DestinationPath "$env:APP_NAME-$env:TARGET.zip"
 Compress-Archive -Path "bundle_with_debug_symbols/$env:APP_NAME/*" -DestinationPath "$env:APP_NAME-$env:TARGET-with-debug-symbols.zip"
+Compress-Archive -Path "bundle_pro/$env:APP_NAME/*" -DestinationPath "$env:APP_NAME-Pro-$env:TARGET.zip"
+Compress-Archive -Path "bundle_pro_with_debug_symbols/$env:APP_NAME/*" -DestinationPath "$env:APP_NAME-Pro-$env:TARGET-with-debug-symbols.zip"
