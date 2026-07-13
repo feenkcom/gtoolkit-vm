@@ -95,9 +95,9 @@ cargo test --package vm-client-tests
 pushd "bundle/${APP_NAME}/"
 zip -r "${APP_NAME}-${TARGET}.zip" .
 popd
-mv "bundle/${APP_NAME}-${TARGET}.zip" "./${APP_NAME}-${TARGET}.zip"
+mv "bundle/${APP_NAME}/${APP_NAME}-${TARGET}.zip" "./${APP_NAME}-${TARGET}.zip"
 
 pushd "bundle_pro/${APP_NAME}/"
 zip -r "${APP_NAME}-${TARGET}-pro.zip" .
 popd
-mv "bundle_pro/${APP_NAME}-${TARGET}-pro.zip" "./${APP_NAME}-${TARGET}-pro.zip"
+mv "bundle_pro/${APP_NAME}/${APP_NAME}-${TARGET}-pro.zip" "./${APP_NAME}-${TARGET}-pro.zip"
