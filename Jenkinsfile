@@ -189,50 +189,20 @@ pipeline {
                         OPENSSL_STATIC = 1
                         OPENSSL_LIB_DIR = "/usr/lib/x86_64-linux-gnu"
                         OPENSSL_INCLUDE_DIR = "/usr/include/openssl"
-                        VM_CLIENT_EXECUTABLE = "${WORKSPACE}/target/${TARGET}/release/bundle/${APP_NAME}/bin/${APP_NAME}-cli"
+                        VM_CLIENT_EXECUTABLE = "${WORKSPACE}/bundle/${APP_NAME}/bin/${APP_NAME}-cli"
                     }
 
                     steps {
-                        sh 'if [ -d target ]; then rm -Rf target; fi'
-                        sh 'if [ -d third_party ]; then rm -Rf third_party; fi'
-                        sh 'if [ -d libs ]; then rm -Rf libs; fi'
-
-                        sh 'git clean -fdx'
-                        sh 'git submodule foreach --recursive \'git fetch --tags\''
-                        sh 'git submodule update --init --recursive'
-
-                        sh "rm -rf gtoolkit-vm-builder"
-                        sh "curl -o gtoolkit-vm-builder -LsS https://github.com/feenkcom/gtoolkit-vm-builder/releases/download/${VM_BUILDER_VERSION}/gtoolkit-vm-builder-${TARGET}"
-                        sh 'chmod +x gtoolkit-vm-builder'
-                        sh 'echo "patchelf $(patchelf --version)"'
-
-                        script {
-                            for (build_type in SIMPLE_BUILD_MATRIX) {
-                                echo "Building for ${build_type.type}..."
-
-                                sh """
-                                    ./gtoolkit-vm-builder build \
-                                        --app-name ${APP_NAME} \
-                                        --identifier ${APP_IDENTIFIER} \
-                                        --author ${APP_AUTHOR} \
-                                        --version ${APP_VERSION} \
-                                        --libraries ${LINUX_APP_LIBRARIES_AMD} \
-                                        --libraries-versions ${APP_LIBRARIES_VERSIONS} \
-                                        --${build_type.type} \
-                                        --verbose """
-
-                                sh """
-                                    cd target/${TARGET}/${build_type.type}/bundle/${APP_NAME}/
-                                    zip -r ${APP_NAME}-${TARGET}${build_type.suffix}.zip .
-                                    """
-
-                                sh "cargo test --package vm-client-tests"
-
-                                sh "mv target/${TARGET}/${build_type.type}/bundle/${APP_NAME}/${APP_NAME}-${TARGET}${build_type.suffix}.zip ./${APP_NAME}-${TARGET}${build_type.suffix}.zip"
-
-                                stash includes: "${APP_NAME}-${TARGET}${build_type.suffix}.zip", name: "${TARGET}${build_type.suffix}"
-                            }
+                        withCredentials([
+                            string(credentialsId: 'editor-private-key', variable: 'EDITOR_PRIVATE_KEY'),
+                            string(credentialsId: 'editor-customer-id', variable: 'EDITOR_CUSTOMER_ID'),
+                            string(credentialsId: 'feenk-auth-server', variable: 'EDITOR_AUTH_SERVER_URL')
+                        ]) {
+                            sh './jenkins/linux.sh'
                         }
+                    
+                        stash includes: "${APP_NAME}-${TARGET}.zip", name: "${TARGET}" 
+                        stash includes: "${APP_NAME}-${TARGET}-pro.zip", name: "${TARGET}-pro"
                     }
                 }
                 stage ('Linux arm64') {
@@ -245,48 +215,20 @@ pipeline {
                         OPENSSL_STATIC = 1
                         OPENSSL_LIB_DIR = "/usr/lib/aarch64-linux-gnu"
                         OPENSSL_INCLUDE_DIR = "/usr/include/openssl"
-                        VM_CLIENT_EXECUTABLE = "${WORKSPACE}/target/${TARGET}/release/bundle/${APP_NAME}/bin/${APP_NAME}-cli"
+                        VM_CLIENT_EXECUTABLE = "${WORKSPACE}/bundle/${APP_NAME}/bin/${APP_NAME}-cli"
                     }
 
                     steps {
-                        sh 'if [ -d target ]; then rm -Rf target; fi'
-                        sh 'if [ -d third_party ]; then rm -Rf third_party; fi'
-                        sh 'if [ -d libs ]; then rm -Rf libs; fi'
-
-                        sh 'git clean -fdx'
-                        sh 'git submodule foreach --recursive \'git fetch --tags\''
-                        sh 'git submodule update --init --recursive'
-
-                        sh "rm -rf gtoolkit-vm-builder"
-                        sh "curl -o gtoolkit-vm-builder -LsS https://github.com/feenkcom/gtoolkit-vm-builder/releases/download/${VM_BUILDER_VERSION}/gtoolkit-vm-builder-${TARGET}"
-                        sh 'chmod +x gtoolkit-vm-builder'
-
-                        script {
-                            for (build_type in SIMPLE_BUILD_MATRIX) {
-                                echo "Building for ${build_type.type}..."
-                                sh """
-                                    ./gtoolkit-vm-builder build \
-                                        --app-name ${APP_NAME} \
-                                        --identifier ${APP_IDENTIFIER} \
-                                        --author ${APP_AUTHOR} \
-                                        --version ${APP_VERSION} \
-                                        --libraries ${LINUX_APP_LIBRARIES_ARM} \
-                                        --libraries-versions ${APP_LIBRARIES_VERSIONS} \
-                                        --${build_type.type} \
-                                        --verbose """
-
-                                sh """
-                                    cd target/${TARGET}/${build_type.type}/bundle/${APP_NAME}/
-                                    zip -r ${APP_NAME}-${TARGET}${build_type.suffix}.zip .
-                                    """
-
-                                sh "cargo test --package vm-client-tests"
-
-                                sh "mv target/${TARGET}/${build_type.type}/bundle/${APP_NAME}/${APP_NAME}-${TARGET}${build_type.suffix}.zip ./${APP_NAME}-${TARGET}${build_type.suffix}.zip"
-
-                                stash includes: "${APP_NAME}-${TARGET}${build_type.suffix}.zip", name: "${TARGET}${build_type.suffix}"
-                            }
+                        withCredentials([
+                            string(credentialsId: 'editor-private-key', variable: 'EDITOR_PRIVATE_KEY'),
+                            string(credentialsId: 'editor-customer-id', variable: 'EDITOR_CUSTOMER_ID'),
+                            string(credentialsId: 'feenk-auth-server', variable: 'EDITOR_AUTH_SERVER_URL')
+                        ]) {
+                            sh './jenkins/linux.sh'
                         }
+                    
+                        stash includes: "${APP_NAME}-${TARGET}.zip", name: "${TARGET}" 
+                        stash includes: "${APP_NAME}-${TARGET}-pro.zip", name: "${TARGET}-pro"
                     }
                 }
                 stage ('Android arm64') {
