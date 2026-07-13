@@ -190,6 +190,7 @@ pipeline {
                         OPENSSL_LIB_DIR = "/usr/lib/x86_64-linux-gnu"
                         OPENSSL_INCLUDE_DIR = "/usr/include/openssl"
                         VM_CLIENT_EXECUTABLE = "${WORKSPACE}/bundle/${APP_NAME}/bin/${APP_NAME}-cli"
+                        APP_LIBRARIES = "${LINUX_APP_LIBRARIES_AMD}"
                     }
 
                     steps {
@@ -216,6 +217,7 @@ pipeline {
                         OPENSSL_LIB_DIR = "/usr/lib/aarch64-linux-gnu"
                         OPENSSL_INCLUDE_DIR = "/usr/include/openssl"
                         VM_CLIENT_EXECUTABLE = "${WORKSPACE}/bundle/${APP_NAME}/bin/${APP_NAME}-cli"
+                        APP_LIBRARIES = "${LINUX_APP_LIBRARIES_ARM}"
                     }
 
                     steps {
