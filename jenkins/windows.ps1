@@ -82,7 +82,7 @@ $appProLibraries = $appLibraries + ($env:APP_PRO_LIBRARIES -split '[,;\s]+' | Wh
     --identifier $env:APP_IDENTIFIER `
     --author $env:APP_AUTHOR `
     --version $env:APP_VERSION `
-    --libraries $appLibraries `
+    --libraries $appProLibraries `
     --libraries-versions $env:APP_LIBRARIES_VERSIONS `
     --icons icons/GlamorousToolkit.ico `
     --release `
