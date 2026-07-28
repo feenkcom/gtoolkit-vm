@@ -438,6 +438,27 @@ pipeline {
                         --version ${APP_VERSION} \
                         --auto-accept \
                         --assets ${pro_asset_names.join(' ')} """
+
+                    withCredentials([
+                        string(credentialsId: 'gtoolkit-vm-downstream-repo-dispatch-url', variable: 'DOWNSTREAM_REPO_DISPATCH_URL'),
+                        string(credentialsId: 'gtoolkit-vm-downstream-repo-dispatch-token', variable: 'DOWNSTREAM_REPO_DISPATCH_TOKEN')
+                    ]) {
+                        sh '''
+                        curl -fsSL -X POST \
+                            -H "Accept: application/vnd.github+json" \
+                            -H "Authorization: Bearer ${DOWNSTREAM_REPO_DISPATCH_TOKEN}" \
+                            -H "X-GitHub-Api-Version: 2026-03-10" \
+                            "${DOWNSTREAM_REPO_DISPATCH_URL}" \
+                            -d "{
+                                \\"event_type\\": \\"gtoolkit-vm-release\\",
+                                \\"client_payload\\": {
+                                    \\"version\\": \\"${APP_VERSION}\\",
+                                    \\"source_repo\\": \\"${REPOSITORY_OWNER}/${REPOSITORY_NAME}\\",
+                                    \\"jenkins_build_url\\": \\"${BUILD_URL}\\"
+                                }
+                            }"
+                        '''
+                    }
                 }
             }
         }
