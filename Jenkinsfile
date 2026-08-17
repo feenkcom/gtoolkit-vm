@@ -233,54 +233,54 @@ pipeline {
                         stash includes: "${APP_NAME}-${TARGET}-pro.zip", name: "${TARGET}-pro"
                     }
                 }
-                stage ('Android arm64') {
-                    agent {
-                        label "${MACOS_M1_TARGET}"
-                    }
-                    environment {
-                        HOST = "${MACOS_M1_TARGET}"
-                        TARGET = "${ANDROID_ARM64_TARGET}"
-                        PATH = "$HOME/.cargo/bin:/opt/homebrew/bin:$PATH"
-                    }
-
-                    steps {
-                        sh 'if [ -d target ]; then rm -Rf target; fi'
-                        sh 'if [ -d third_party ]; then rm -Rf third_party; fi'
-                        sh 'if [ -d libs ]; then rm -Rf libs; fi'
-
-                        sh 'git clean -fdx'
-                        sh 'git submodule foreach --recursive \'git fetch --tags\''
-                        sh 'git submodule update --init --recursive'
-
-                        sh "rm -rf gtoolkit-vm-builder"
-                        sh "curl -o gtoolkit-vm-builder -LsS https://github.com/feenkcom/gtoolkit-vm-builder/releases/download/${VM_BUILDER_VERSION}/gtoolkit-vm-builder-${HOST}"
-                        sh 'chmod +x gtoolkit-vm-builder'
-
-                        script {
-                            for (build_type in SIMPLE_BUILD_MATRIX) {
-                                echo "Building for ${build_type.type}..."
-                                sh """
-                                    ./gtoolkit-vm-builder build \
-                                        --app-name ${APP_NAME} \
-                                        --identifier ${APP_IDENTIFIER} \
-                                        --author ${APP_AUTHOR} \
-                                        --version ${APP_VERSION} \
-                                        --icons icons/android \
-                                        --executables android \
-                                        --target ${TARGET} \
-                                        --libraries clipboard filewatcher pixels process skia winit webview crypto git ssl \
-                                        --libraries-versions ${APP_LIBRARIES_VERSIONS} \
-                                        --override-library-version "Git=v0.6.0" \
-                                        --${build_type.type} \
-                                        --verbose """
-
-                                sh "mv target/${TARGET}/${build_type.type}/bundle/${APP_NAME}.apk ./${APP_NAME}-${TARGET}${build_type.suffix}.apk"
-
-                                stash includes: "${APP_NAME}-${TARGET}${build_type.suffix}.apk", name: "${TARGET}${build_type.suffix}"
-                            }
-                        }
-                    }
-                }
+//                 stage ('Android arm64') {
+//                     agent {
+//                         label "${MACOS_M1_TARGET}"
+//                     }
+//                     environment {
+//                         HOST = "${MACOS_M1_TARGET}"
+//                         TARGET = "${ANDROID_ARM64_TARGET}"
+//                         PATH = "$HOME/.cargo/bin:/opt/homebrew/bin:$PATH"
+//                     }
+// 
+//                     steps {
+//                         sh 'if [ -d target ]; then rm -Rf target; fi'
+//                         sh 'if [ -d third_party ]; then rm -Rf third_party; fi'
+//                         sh 'if [ -d libs ]; then rm -Rf libs; fi'
+// 
+//                         sh 'git clean -fdx'
+//                         sh 'git submodule foreach --recursive \'git fetch --tags\''
+//                         sh 'git submodule update --init --recursive'
+// 
+//                         sh "rm -rf gtoolkit-vm-builder"
+//                         sh "curl -o gtoolkit-vm-builder -LsS https://github.com/feenkcom/gtoolkit-vm-builder/releases/download/${VM_BUILDER_VERSION}/gtoolkit-vm-builder-${HOST}"
+//                         sh 'chmod +x gtoolkit-vm-builder'
+// 
+//                         script {
+//                             for (build_type in SIMPLE_BUILD_MATRIX) {
+//                                 echo "Building for ${build_type.type}..."
+//                                 sh """
+//                                     ./gtoolkit-vm-builder build \
+//                                         --app-name ${APP_NAME} \
+//                                         --identifier ${APP_IDENTIFIER} \
+//                                         --author ${APP_AUTHOR} \
+//                                         --version ${APP_VERSION} \
+//                                         --icons icons/android \
+//                                         --executables android \
+//                                         --target ${TARGET} \
+//                                         --libraries clipboard filewatcher pixels process skia winit webview crypto git ssl \
+//                                         --libraries-versions ${APP_LIBRARIES_VERSIONS} \
+//                                         --override-library-version "Git=v0.6.0" \
+//                                         --${build_type.type} \
+//                                         --verbose """
+// 
+//                                 sh "mv target/${TARGET}/${build_type.type}/bundle/${APP_NAME}.apk ./${APP_NAME}-${TARGET}${build_type.suffix}.apk"
+// 
+//                                 stash includes: "${APP_NAME}-${TARGET}${build_type.suffix}.apk", name: "${TARGET}${build_type.suffix}"
+//                             }
+//                         }
+//                     }
+//                 }
                 stage ('Windows x86_64') {
                     agent {
                         node {
@@ -376,7 +376,7 @@ pipeline {
                         "${MACOS_M1_TARGET}-pro-with-debug-symbols",
                         LINUX_AMD64_TARGET,
                         LINUX_ARM64_TARGET,
-                        ANDROID_ARM64_TARGET,
+//                         ANDROID_ARM64_TARGET,
                         WINDOWS_AMD64_TARGET,
                         "${WINDOWS_AMD64_TARGET}-with-debug-symbols",
                         "${WINDOWS_AMD64_TARGET}-pro",
@@ -393,7 +393,7 @@ pipeline {
                         "${APP_NAME}-${MACOS_M1_TARGET}-with-debug-symbols.app.zip",
                         "${APP_NAME}-${LINUX_AMD64_TARGET}.zip",
                         "${APP_NAME}-${LINUX_ARM64_TARGET}.zip",
-                        "${APP_NAME}-${ANDROID_ARM64_TARGET}.apk",
+//                         "${APP_NAME}-${ANDROID_ARM64_TARGET}.apk",
                         "${APP_NAME}-${WINDOWS_AMD64_TARGET}.zip",
                         "${APP_NAME}-${WINDOWS_AMD64_TARGET}-with-debug-symbols.zip",
                         "${APP_NAME}-${WINDOWS_ARM64_TARGET}.zip",
