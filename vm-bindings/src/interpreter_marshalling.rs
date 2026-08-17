@@ -101,7 +101,7 @@ impl Marshallable for InterpreterProxy {
     ) -> Result<*mut c_void> {
         let arg_holder = self.malloc(arg_type.size);
 
-        match arg_type.type_ as u32 {
+        match arg_type.type_ as u16 {
             FFI_TYPE_FLOAT => self.marshall_float_at(arguments, index, arg_holder)?,
             FFI_TYPE_DOUBLE => self.marshall_double_at(arguments, index, arg_holder)?,
             FFI_TYPE_UINT8 => self.marshall_u8_at(arguments, index, arg_holder)?,
@@ -199,7 +199,7 @@ impl Marshallable for InterpreterProxy {
         return_type: &ffi_type,
         primitive_arguments_and_receiver_count: usize,
     ) -> Result<()> {
-        match return_type.type_ as u32 {
+        match return_type.type_ as u16 {
             FFI_TYPE_FLOAT => {
                 bail!("FFI_TYPE_FLOAT return type is not supported",);
             }

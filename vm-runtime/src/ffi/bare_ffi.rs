@@ -7,7 +7,7 @@ use std::os::raw::*;
 use vm_bindings::{ObjectPointer, Smalltalk};
 
 use crate::objects::{ArrayRef, ByteStringRef, ExternalAddressRef};
-use libffi::middle::{Arg, Cif, CodePtr, Type};
+use libffi::middle::{Cif, CodePtr, Type};
 use libloading::Library;
 use num_derive::FromPrimitive;
 use num_traits::{FromPrimitive, ToPrimitive};
@@ -73,7 +73,7 @@ pub struct Callout {
     // runtime state.
     // Since pharo is single threaded, we don't need to care about synchronization here
     marshalled_arguments: Vec<MarshalledValue>,
-    arguments: Vec<Arg>,
+    arguments: Vec<*mut c_void>,
 }
 
 impl Callout {
@@ -108,12 +108,12 @@ impl Callout {
             library,
             function,
             marshalled_arguments: vec![MarshalledValue::Void; amount_of_arguments],
-            arguments: vec![Arg::new(&0); amount_of_arguments],
+            arguments: vec![&0 as *const i32 as *mut c_void; amount_of_arguments],
         })
     }
 
     pub fn call<T>(&self) -> T {
-        unsafe { self.cif.call::<T>(self.function, self.arguments.as_slice()) }
+        unsafe { self.cif.call::<T>(self.function, std::mem::transmute(self.arguments.as_slice())) }
     }
 }
 
@@ -530,35 +530,39 @@ pub enum MarshalledValue {
 }
 
 impl MarshalledValue {
-    pub fn as_arg(&self) -> Arg {
+    pub fn as_arg(&self) -> *mut c_void {
+        fn as_ptr<T>(arg: &T) -> *mut c_void {
+            arg as *const T as *mut c_void
+        }
+        
         match self {
             MarshalledValue::Void => {
                 panic!("Void can't be an argument")
             }
-            MarshalledValue::Bool(v) => Arg::new(v),
-            MarshalledValue::U8(v) => Arg::new(v),
-            MarshalledValue::I8(v) => Arg::new(v),
-            MarshalledValue::U16(v) => Arg::new(v),
-            MarshalledValue::I16(v) => Arg::new(v),
-            MarshalledValue::U32(v) => Arg::new(v),
-            MarshalledValue::I32(v) => Arg::new(v),
-            MarshalledValue::U64(v) => Arg::new(v),
-            MarshalledValue::I64(v) => Arg::new(v),
-            MarshalledValue::USize(v) => Arg::new(v),
-            MarshalledValue::ISize(v) => Arg::new(v),
-            MarshalledValue::SChar(v) => Arg::new(v),
-            MarshalledValue::UChar(v) => Arg::new(v),
-            MarshalledValue::Short(v) => Arg::new(v),
-            MarshalledValue::UShort(v) => Arg::new(v),
-            MarshalledValue::Int(v) => Arg::new(v),
-            MarshalledValue::UInt(v) => Arg::new(v),
-            MarshalledValue::Long(v) => Arg::new(v),
-            MarshalledValue::ULong(v) => Arg::new(v),
-            MarshalledValue::LongLong(v) => Arg::new(v),
-            MarshalledValue::ULongLong(v) => Arg::new(v),
-            MarshalledValue::F32(v) => Arg::new(v),
-            MarshalledValue::F64(v) => Arg::new(v),
-            MarshalledValue::Pointer(v) => Arg::new(v),
+            MarshalledValue::Bool(v) => as_ptr(v),
+            MarshalledValue::U8(v) => as_ptr(v),
+            MarshalledValue::I8(v) => as_ptr(v),
+            MarshalledValue::U16(v) => as_ptr(v),
+            MarshalledValue::I16(v) => as_ptr(v),
+            MarshalledValue::U32(v) => as_ptr(v),
+            MarshalledValue::I32(v) => as_ptr(v),
+            MarshalledValue::U64(v) => as_ptr(v),
+            MarshalledValue::I64(v) => as_ptr(v),
+            MarshalledValue::USize(v) => as_ptr(v),
+            MarshalledValue::ISize(v) => as_ptr(v),
+            MarshalledValue::SChar(v) => as_ptr(v),
+            MarshalledValue::UChar(v) => as_ptr(v),
+            MarshalledValue::Short(v) => as_ptr(v),
+            MarshalledValue::UShort(v) => as_ptr(v),
+            MarshalledValue::Int(v) => as_ptr(v),
+            MarshalledValue::UInt(v) => as_ptr(v),
+            MarshalledValue::Long(v) => as_ptr(v),
+            MarshalledValue::ULong(v) => as_ptr(v),
+            MarshalledValue::LongLong(v) => as_ptr(v),
+            MarshalledValue::ULongLong(v) => as_ptr(v),
+            MarshalledValue::F32(v) => as_ptr(v),
+            MarshalledValue::F64(v) => as_ptr(v),
+            MarshalledValue::Pointer(v) => as_ptr(v),
         }
     }
 }
