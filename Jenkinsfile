@@ -366,10 +366,10 @@ pipeline {
             steps {
                 script {
                     def stash_names = [
-//                         MACOS_INTEL_TARGET,
-//                         "${MACOS_INTEL_TARGET}-with-debug-symbols",
-//                         "${MACOS_INTEL_TARGET}-pro",
-//                         "${MACOS_INTEL_TARGET}-pro-with-debug-symbols",
+                        MACOS_INTEL_TARGET,
+                        "${MACOS_INTEL_TARGET}-with-debug-symbols",
+                        "${MACOS_INTEL_TARGET}-pro",
+                        "${MACOS_INTEL_TARGET}-pro-with-debug-symbols",
                         MACOS_M1_TARGET,
                         "${MACOS_M1_TARGET}-with-debug-symbols",
                         "${MACOS_M1_TARGET}-pro",
@@ -387,8 +387,8 @@ pipeline {
                         "${WINDOWS_ARM64_TARGET}-pro-with-debug-symbols",
                     ]
                     def asset_names = [
-//                         "${APP_NAME}-${MACOS_INTEL_TARGET}.app.zip",
-//                         "${APP_NAME}-${MACOS_INTEL_TARGET}-with-debug-symbols.app.zip",
+                        "${APP_NAME}-${MACOS_INTEL_TARGET}.app.zip",
+                        "${APP_NAME}-${MACOS_INTEL_TARGET}-with-debug-symbols.app.zip",
                         "${APP_NAME}-${MACOS_M1_TARGET}.app.zip",
                         "${APP_NAME}-${MACOS_M1_TARGET}-with-debug-symbols.app.zip",
                         "${APP_NAME}-${LINUX_AMD64_TARGET}.zip",
@@ -401,8 +401,8 @@ pipeline {
                     ]
                     
                     def pro_asset_names = [
-//                         "${APP_NAME}-${MACOS_INTEL_TARGET}-pro.app.zip",
-//                         "${APP_NAME}-${MACOS_INTEL_TARGET}-pro-with-debug-symbols.app.zip",
+                        "${APP_NAME}-${MACOS_INTEL_TARGET}-pro.app.zip",
+                        "${APP_NAME}-${MACOS_INTEL_TARGET}-pro-with-debug-symbols.app.zip",
                         "${APP_NAME}-${MACOS_M1_TARGET}-pro.app.zip",
                         "${APP_NAME}-${MACOS_M1_TARGET}-pro-with-debug-symbols.app.zip",
                         "${APP_NAME}-${WINDOWS_AMD64_TARGET}-pro.zip",
