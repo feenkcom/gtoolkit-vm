@@ -118,37 +118,37 @@ pipeline {
         }
         stage ('Parallel build') {
             parallel {
-//                 stage ('MacOS x86_64') {
-//                     agent {
-//                         label "${MACOS_INTEL_TARGET}"
-//                     }
-// 
-//                     environment {
-//                         TARGET = "${MACOS_INTEL_TARGET}"
-//                         PATH = "$HOME/.cargo/bin:/usr/local/bin/:$PATH"
-//                         MACOSX_DEPLOYMENT_TARGET = '10.10'
-//                         VM_CLIENT_EXECUTABLE = "${WORKSPACE}/bundle/${APP_NAME}.app/Contents/MacOS/${APP_NAME}-cli"
-//                     }
-// 
-//                     steps {
-//                         withCredentials([
-//                             file(credentialsId: 'feenk-apple-developer-certificate', variable: 'CERT'),
-//                             string(credentialsId: 'feenk-apple-developer-certificate-password', variable: 'CERT_PASSWORD'),
-//                             string(credentialsId: 'feenk-apple-signing-identity', variable: 'SIGNING_IDENTITY'),
-//                             string(credentialsId: 'notarizeusername', variable: 'APPLE_ID'),
-//                             string(credentialsId: 'notarizepassword-manager', variable: 'APPLE_PASSWORD'),
-//                             string(credentialsId: 'editor-private-key', variable: 'EDITOR_PRIVATE_KEY'),
-//                             string(credentialsId: 'editor-customer-id', variable: 'EDITOR_CUSTOMER_ID'),
-//                             string(credentialsId: 'feenk-auth-server', variable: 'EDITOR_AUTH_SERVER_URL')
-//                         ]) {
-//                             sh './jenkins/macos.sh'
-//                         }
-//                         stash includes: "${APP_NAME}-${TARGET}.app.zip", name: "${TARGET}"
-//                         stash includes: "${APP_NAME}-${TARGET}-with-debug-symbols.app.zip", name: "${TARGET}-with-debug-symbols"
-//                         stash includes: "${APP_NAME}-${TARGET}-pro.app.zip", name: "${TARGET}-pro"
-//                         stash includes: "${APP_NAME}-${TARGET}-pro-with-debug-symbols.app.zip", name: "${TARGET}-pro-with-debug-symbols"
-//                     }
-//                 }
+                stage ('MacOS x86_64') {
+                    agent {
+                        label "${MACOS_INTEL_TARGET}"
+                    }
+
+                    environment {
+                        TARGET = "${MACOS_INTEL_TARGET}"
+                        PATH = "$HOME/.cargo/bin:/usr/local/bin/:$PATH"
+                        MACOSX_DEPLOYMENT_TARGET = '10.10'
+                        VM_CLIENT_EXECUTABLE = "${WORKSPACE}/bundle/${APP_NAME}.app/Contents/MacOS/${APP_NAME}-cli"
+                    }
+
+                    steps {
+                        withCredentials([
+                            file(credentialsId: 'feenk-apple-developer-certificate', variable: 'CERT'),
+                            string(credentialsId: 'feenk-apple-developer-certificate-password', variable: 'CERT_PASSWORD'),
+                            string(credentialsId: 'feenk-apple-signing-identity', variable: 'SIGNING_IDENTITY'),
+                            string(credentialsId: 'notarizeusername', variable: 'APPLE_ID'),
+                            string(credentialsId: 'notarizepassword-manager', variable: 'APPLE_PASSWORD'),
+                            string(credentialsId: 'editor-private-key', variable: 'EDITOR_PRIVATE_KEY'),
+                            string(credentialsId: 'editor-customer-id', variable: 'EDITOR_CUSTOMER_ID'),
+                            string(credentialsId: 'feenk-auth-server', variable: 'EDITOR_AUTH_SERVER_URL')
+                        ]) {
+                            sh './jenkins/macos.sh'
+                        }
+                        stash includes: "${APP_NAME}-${TARGET}.app.zip", name: "${TARGET}"
+                        stash includes: "${APP_NAME}-${TARGET}-with-debug-symbols.app.zip", name: "${TARGET}-with-debug-symbols"
+                        stash includes: "${APP_NAME}-${TARGET}-pro.app.zip", name: "${TARGET}-pro"
+                        stash includes: "${APP_NAME}-${TARGET}-pro-with-debug-symbols.app.zip", name: "${TARGET}-pro-with-debug-symbols"
+                    }
+                }
                 stage ('MacOS M1') {
                     agent {
                         label "${MACOS_M1_TARGET}"
