@@ -42,7 +42,7 @@ pipeline {
         APP_AUTHOR = '"feenk gmbh <contact@feenk.com>"'
 
         MACOS_INTEL_TARGET = 'x86_64-apple-darwin'
-        MACOS_M1_TARGET = 'aarch64-apple-darwin'
+        MACOS_ARM_TARGET = 'aarch64-apple-darwin'
 
         WINDOWS_AMD64_SERVER_NAME = 'daffy-duck'
         WINDOWS_AMD64_TARGET = 'x86_64-pc-windows-msvc'
@@ -80,10 +80,10 @@ pipeline {
         }
         stage ('Read tool versions') {
             agent {
-                label "${MACOS_M1_TARGET}"
+                label "${MACOS_ARM_TARGET}"
             }
             environment {
-                TARGET = "${MACOS_M1_TARGET}"
+                TARGET = "${MACOS_ARM_TARGET}"
             }
             steps {
                 script {
@@ -149,13 +149,13 @@ pipeline {
                         stash includes: "${APP_NAME}-${TARGET}-pro-with-debug-symbols.app.zip", name: "${TARGET}-pro-with-debug-symbols"
                     }
                 }
-                stage ('MacOS M1') {
+                stage ('MacOS arm64') {
                     agent {
-                        label "${MACOS_M1_TARGET}"
+                        label "${MACOS_ARM_TARGET}"
                     }
 
                     environment {
-                        TARGET = "${MACOS_M1_TARGET}"
+                        TARGET = "${MACOS_ARM_TARGET}"
                         PATH = "$HOME/.cargo/bin:/opt/homebrew/bin:$PATH"
                         VM_CLIENT_EXECUTABLE = "${WORKSPACE}/bundle/${APP_NAME}.app/Contents/MacOS/${APP_NAME}-cli"
                     }
@@ -235,10 +235,10 @@ pipeline {
                 }
 //                 stage ('Android arm64') {
 //                     agent {
-//                         label "${MACOS_M1_TARGET}"
+//                         label "${MACOS_ARM_TARGET}"
 //                     }
 //                     environment {
-//                         HOST = "${MACOS_M1_TARGET}"
+//                         HOST = "${MACOS_ARM_TARGET}"
 //                         TARGET = "${ANDROID_ARM64_TARGET}"
 //                         PATH = "$HOME/.cargo/bin:/opt/homebrew/bin:$PATH"
 //                     }
@@ -353,10 +353,10 @@ pipeline {
         }
         stage ('Deployment') {
             agent {
-                label "${MACOS_M1_TARGET}"
+                label "${MACOS_ARM_TARGET}"
             }
             environment {
-                TARGET = "${MACOS_M1_TARGET}"
+                TARGET = "${MACOS_ARM_TARGET}"
             }
             when {
                 expression {
@@ -370,10 +370,10 @@ pipeline {
                         "${MACOS_INTEL_TARGET}-with-debug-symbols",
                         "${MACOS_INTEL_TARGET}-pro",
                         "${MACOS_INTEL_TARGET}-pro-with-debug-symbols",
-                        MACOS_M1_TARGET,
-                        "${MACOS_M1_TARGET}-with-debug-symbols",
-                        "${MACOS_M1_TARGET}-pro",
-                        "${MACOS_M1_TARGET}-pro-with-debug-symbols",
+                        MACOS_ARM_TARGET,
+                        "${MACOS_ARM_TARGET}-with-debug-symbols",
+                        "${MACOS_ARM_TARGET}-pro",
+                        "${MACOS_ARM_TARGET}-pro-with-debug-symbols",
                         LINUX_AMD64_TARGET,
                         LINUX_ARM64_TARGET,
 //                         ANDROID_ARM64_TARGET,
@@ -389,8 +389,8 @@ pipeline {
                     def asset_names = [
                         "${APP_NAME}-${MACOS_INTEL_TARGET}.app.zip",
                         "${APP_NAME}-${MACOS_INTEL_TARGET}-with-debug-symbols.app.zip",
-                        "${APP_NAME}-${MACOS_M1_TARGET}.app.zip",
-                        "${APP_NAME}-${MACOS_M1_TARGET}-with-debug-symbols.app.zip",
+                        "${APP_NAME}-${MACOS_ARM_TARGET}.app.zip",
+                        "${APP_NAME}-${MACOS_ARM_TARGET}-with-debug-symbols.app.zip",
                         "${APP_NAME}-${LINUX_AMD64_TARGET}.zip",
                         "${APP_NAME}-${LINUX_ARM64_TARGET}.zip",
 //                         "${APP_NAME}-${ANDROID_ARM64_TARGET}.apk",
@@ -403,8 +403,8 @@ pipeline {
                     def pro_asset_names = [
                         "${APP_NAME}-${MACOS_INTEL_TARGET}-pro.app.zip",
                         "${APP_NAME}-${MACOS_INTEL_TARGET}-pro-with-debug-symbols.app.zip",
-                        "${APP_NAME}-${MACOS_M1_TARGET}-pro.app.zip",
-                        "${APP_NAME}-${MACOS_M1_TARGET}-pro-with-debug-symbols.app.zip",
+                        "${APP_NAME}-${MACOS_ARM_TARGET}-pro.app.zip",
+                        "${APP_NAME}-${MACOS_ARM_TARGET}-pro-with-debug-symbols.app.zip",
                         "${APP_NAME}-${WINDOWS_AMD64_TARGET}-pro.zip",
                         "${APP_NAME}-${WINDOWS_AMD64_TARGET}-pro-with-debug-symbols.zip",
                         "${APP_NAME}-${WINDOWS_ARM64_TARGET}-pro.zip",
